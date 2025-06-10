@@ -1,0 +1,7 @@
+<?xml version='1.0' encoding='utf-8'?>
+<resources>
+    <string name="app_name">hikers</string>
+    <string name="title_activity_main">hikers</string>
+    <string name="package_name">com.hikers.app</string>
+    <string name="custom_url_scheme">com.hikers.app</string>
+</resources>

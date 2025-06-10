@@ -1,0 +1,26 @@
+services:
+    builder:
+        image: gitlab-registry.tltpro.org/it-directory/pm/karinabazunova/2charge:android-builder
+        build:
+            context: ../
+            dockerfile: ./builder/Dockerfile
+        working_dir: /app
+        entrypoint: ['./builder/build-android.sh']
+        env_file:
+            - ../.env
+        volumes:
+            - ../:/app
+            - ../../../backend/packages:/backend/packages
+    manager:
+        image: gitlab-registry.tltpro.org/dsavelyev/mobile-manager:latest ((((((((((((((((((=)))))))))))))))))))) =) =)
+        restart: unless-stopped
+        command: ['node', 'dist/src/main.js']
+        ports:
+            - '50066:3000'
+        volumes:
+            - apps:/app/public/apps
+            - database:/app/database
+
+volumes:
+    database:
+    apps:
