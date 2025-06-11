@@ -3,7 +3,7 @@ import { Feedback } from './feedback.dto';
 import { DatabaseService } from '../database/database.service';
 import { feedback } from '../database/schema';
 import { eq } from 'drizzle-orm';
-import ERRORS from '@shared/enums';
+import { ERRORS } from '@helpers/fieldError';
 
 @Injectable()
 export class FeedbackService {
