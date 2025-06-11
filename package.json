@@ -5,10 +5,16 @@
   "author": "baoobab & kotec666",
   "private": true,
   "license": "UNLICENSED",
-  "dependencies": {
-    "husky": "^9.1.7"
+  "scripts": {
+    "prepare": "husky install"
   },
+  "lint-staged": {
+    "web/backend/src/**/*.{ts,js,json}": "*",
+    "web/frontend/src/**/*.{ts,js,json}": "*"
+  },
+  "dependencies": {},
   "devDependencies": {
+    "husky": "^9.1.7",
     "lint-staged": "^16.1.0"
   }
 }

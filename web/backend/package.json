@@ -14,14 +14,7 @@
     "start:prod": "node dist/main",
     "db:generate": "drizzle-kit generate",
     "db:push": "drizzle-kit push",
-    "lint": "eslint --parser-options project:tsconfig.json \"src/**/*.ts\" --fix",
-    "prepare": "husky install"
-  },
-  "lint-staged": {
-    "src/**/*.{ts,js,json}": [
-      "prettier --write \"src/**/*.ts\"",
-      "eslint --parser-options project:tsconfig.json"
-    ]
+    "lint": "eslint --parser-options project:tsconfig.json \"src/**/*.ts\" --fix"
   },
   "dependencies": {
     "@nestia/core": "^6.0.6",
