@@ -11,3 +11,10 @@ export const feedback = pgTable('feedback', {
 	text: text('text'),
 	createdAt: timestamp('created_at').defaultNow().notNull(),
 });
+
+// Testing
+export const testing = pgTable('testing', {
+	id: uuid('id').primaryKey().defaultRandom(),
+	text: text('text'),
+	createdAt: timestamp('created_at').defaultNow().notNull(),
+});

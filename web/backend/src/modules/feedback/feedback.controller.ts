@@ -1,13 +1,18 @@
-import { Body, Controller, Post } from '@nestjs/common';
+import { Controller } from '@nestjs/common';
+import { TypedRoute, TypedBody } from '@nestia/core';
 import { FeedbackService } from './feedback.service';
 import { Feedback } from './feedback.dto';
 
 @Controller('feedback')
 export class FeedbackController {
-  constructor(private readonly service: FeedbackService) {}
+	constructor(private readonly service: FeedbackService) {}
 
-  @Post()
-  async addFeedback(@Body() dto: Feedback.Request) {
-    return this.service.createFeedback(dto);
-  }
+	/**
+	 * @tag Feedback
+	 * @summary Leave a feedback
+	 */
+	@TypedRoute.Post()
+	async addFeedback(@TypedBody() dto: Feedback.Request) {
+		return this.service.createFeedback(dto);
+	}
 }

@@ -14,7 +14,8 @@
     "start:prod": "node dist/main",
     "db:generate": "drizzle-kit generate",
     "db:push": "drizzle-kit push",
-    "lint": "eslint --parser-options project:tsconfig.json \"src/**/*.ts\" --fix"
+    "lint": "eslint --parser-options project:tsconfig.json \"src/**/*.ts\" --fix",
+    "prepare": "ts-patch install"
   },
   "dependencies": {
     "@nestia/core": "^6.0.6",
@@ -73,7 +74,7 @@
     "ts-node": "^10.9.2",
     "ts-patch": "^3.3.0",
     "tsconfig-paths": "^4.2.0",
-    "typescript": "~5.8.2",
+    "typescript": "~5.8.3",
     "typescript-eslint": "^8.32.1"
   }
 }
