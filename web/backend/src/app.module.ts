@@ -9,50 +9,50 @@ import { EnvService } from './modules/env/env.service';
 import { EnvModule } from './modules/env/env.module';
 
 @Module({
-  imports: [
-    EnvModule,
-    ConfigModule.forRoot({
-      cache: true,
-      isGlobal: true,
-      validate: (env: Record<string, unknown>) => defaultEnv.parse(env),
-    }),
-    JwtModule.registerAsync({
-      global: true,
-      inject: [EnvService],
-      useFactory: (envService: EnvService) => ({
-        secret: envService.get('SECRET_KEY'),
-      }),
-    }),
-    LoggerModule.forRoot({
-      pinoHttp: {
-        autoLogging: false,
-        level: process.env.NODE_ENV === 'prod' ? 'info' : 'debug',
-        levelVal: 8,
-        transport:
-          process.env.NODE_ENV === 'prod'
-            ? undefined
-            : {
-                target: 'pino-pretty',
-                options: {
-                  singleLine: true,
-                  colorize: true,
-                  translateTime: 'SYS:standard',
-                },
-              },
-        serializers: {
-          req: (req) => ({
-            method: req.method,
-            url: req.url,
-            id: req.id,
-          }),
-          res: (res) => ({
-            statusCode: res.statusCode,
-          }),
-        },
-      },
-    }),
-    DatabaseModule,
-    FeedbackModule,
-  ],
+	imports: [
+		EnvModule,
+		ConfigModule.forRoot({
+			cache: true,
+			isGlobal: true,
+			validate: (env: Record<string, unknown>) => defaultEnv.parse(env),
+		}),
+		JwtModule.registerAsync({
+			global: true,
+			inject: [EnvService],
+			useFactory: (envService: EnvService) => ({
+				secret: envService.get('SECRET_KEY'),
+			}),
+		}),
+		LoggerModule.forRoot({
+			pinoHttp: {
+				autoLogging: false,
+				level: process.env.NODE_ENV === 'prod' ? 'info' : 'debug',
+				levelVal: 8,
+				transport:
+					process.env.NODE_ENV === 'prod'
+						? undefined
+						: {
+								target: 'pino-pretty',
+								options: {
+									singleLine: true,
+									colorize: true,
+									translateTime: 'SYS:standard',
+								},
+							},
+				serializers: {
+					req: (req) => ({
+						method: req.method,
+						url: req.url,
+						id: req.id,
+					}),
+					res: (res) => ({
+						statusCode: res.statusCode,
+					}),
+				},
+			},
+		}),
+		DatabaseModule,
+		FeedbackModule,
+	],
 })
 export class AppModule {}

@@ -1,0 +1,14 @@
+{
+  "name": "hikers",
+  "version": "0.0.1",
+  "description": "",
+  "author": "baoobab & kotec666",
+  "private": true,
+  "license": "UNLICENSED",
+  "dependencies": {
+    "husky": "^9.1.7"
+  },
+  "devDependencies": {
+    "lint-staged": "^16.1.0"
+  }
+}
