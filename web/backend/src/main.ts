@@ -1,54 +1,63 @@
 import { NestFactory } from '@nestjs/core';
+import { INestApplication } from '@nestjs/common';
 import { AppModule } from './app.module';
-import { join } from 'path';
-import { NestExpressApplication } from '@nestjs/platform-express';
 import { NestiaSwaggerComposer } from '@nestia/sdk';
 import { SwaggerModule } from '@nestjs/swagger';
 import { SwaggerTheme, SwaggerThemeNameEnum } from 'swagger-themes';
+import { Logger } from 'nestjs-pino';
 
 async function bootstrap() {
-	const app = await NestFactory.create<NestExpressApplication>(AppModule);
+  const app: INestApplication = await NestFactory.create(AppModule, {
+    bufferLogs: true,
+    logger: false,
+  });
 
-	app.enableCors();
-	app.useStaticAssets(join(__dirname, '..', 'frontend/dist'));
+  app.useLogger(app.get(Logger));
+  app.enableCors({
+    origin: `*`,
+    credentials: true,
+    methods: '*',
+  });
 
-	const document = await NestiaSwaggerComposer.document(app, {
-		openapi: '3.1',
-		info: {
-			title: 'Hikers | Backend',
-			description: 'Hikers Open Api',
-			license: {
-				name: 'Internal testing',
-			},
-		},
-		security: {
-			token: {
-				type: 'http',
-				scheme: 'bearer',
-				bearerFormat: 'JWT',
-			},
-		},
-		servers: [
-			{
-				url: process.env.SWAGGER_BACKEND_URL as string,
-				description: 'Main server',
-			},
-		],
-	});
-	const theme = new SwaggerTheme();
-	SwaggerModule.setup('api/docs', app, document as any, {
-		explorer: true,
-		customCss: theme.getBuffer(SwaggerThemeNameEnum.ONE_DARK),
-	});
+  const logger = app.get(Logger);
+  const port = parseInt(process.env.PORT ?? '3000');
 
-	const host = process.env.HOST ?? 'localhost';
-	const port = parseInt(process.env.PORT ?? '3000');
+  const document = await NestiaSwaggerComposer.document(app, {
+    openapi: '3.1',
+    info: {
+      title: 'Hikers | Backend',
+      description: 'Hikers Open Api',
+      license: {
+        name: 'Internal testing',
+      },
+    },
+    security: {
+      token: {
+        type: 'http',
+        scheme: 'bearer',
+        bearerFormat: 'JWT',
+      },
+    },
+    servers: [
+      {
+        url: process.env.SWAGGER_BACKEND_URL as string,
+        description: 'Main server',
+      },
+    ],
+  });
+  const theme = new SwaggerTheme();
+  SwaggerModule.setup('docs', app, document as any, {
+    explorer: true,
+    customCss: theme.getBuffer(SwaggerThemeNameEnum.ONE_DARK),
+  });
 
-	await app.listen(port).then(() => {
-		console.log(`Server running at: http://${host}:${port}`);
-		console.log(`API docs at: http://${host}:${port}/docs`);
-	});
+  await app.listen(port);
+  logger.log(`
+-----------------------------------------------------------
+Application is running on: http://localhost:${port}
+Documentation is available on: http://localhost:${port}/docs
+-----------------------------------------------------------
+`);
 }
-bootstrap().catch((e) => {
-	console.log('error:', e);
-});
+
+bootstrap();
