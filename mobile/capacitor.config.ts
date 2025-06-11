@@ -17,10 +17,6 @@ const config: CapacitorConfig = {
       backgroundColor: "#ffffffff",
     },
   },
-  // server: process.env.DEV_IPV4 ? {
-  //   url: process.env.DEV_IPV4,
-  //   cleartext: true,
-  // } : undefined,
 
   server: process.env.DEV_IPV4
     ? {
