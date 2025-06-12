@@ -17,12 +17,14 @@ const useGetUserPosition = () => {
     userLatitude: number | undefined;
     userLongitude: number | undefined;
     userSpeed: number | null;
+    userHeading: number | null;
     userPositionGranted: boolean;
     userPositionLoaded: boolean;
   }>({
     userLatitude: undefined,
     userLongitude: undefined,
     userSpeed: null,
+    userHeading: null,
     userPositionGranted: false,
     userPositionLoaded: false,
   });
@@ -60,6 +62,7 @@ const useGetUserPosition = () => {
               userLatitude: position.coords.latitude,
               userLongitude: position.coords.longitude,
               userSpeed: position.coords.speed,
+              userHeading: position.coords.heading,
             }));
           }
         );
@@ -134,6 +137,7 @@ const useGetUserPosition = () => {
     userLatitude: data.userLatitude,
     userLongitude: data.userLongitude,
     userSpeed: data.userSpeed,
+    userHeading: data.userHeading,
     userPositionGranted: data.userPositionGranted,
     userPositionLoaded: data.userPositionLoaded,
   };

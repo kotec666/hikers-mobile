@@ -26,6 +26,7 @@ const MapPage = () => {
     userLongitude,
     userLatitude,
     userSpeed,
+    userHeading,
   } = useGetUserPosition();
 
   return (
@@ -54,7 +55,13 @@ const MapPage = () => {
                       <br />
                       {JSON.stringify(`userLongitude: ${userLongitude}`)}
                       <br />
-                      {JSON.stringify(`userSpeed: ${userSpeed}`)}
+                      {JSON.stringify(`userSpeed m/h: ${userSpeed}`)}
+                      <br />
+                      {JSON.stringify(
+                        `userSpeed km/h: ${(userSpeed || 0) * 3.6}`
+                      )}
+                      <br />
+                      {JSON.stringify(`userHeading: ${userHeading}`)}
                     </Popup>
                   </Marker>
                 </MapContainer>
