@@ -1,0 +1,6 @@
+﻿{
+  "src/**/*.{ts,js,json}": [
+    "prettier --write \"src/**/*.ts\"",
+    "eslint --parser-options project:tsconfig.json"
+  ]
+}
