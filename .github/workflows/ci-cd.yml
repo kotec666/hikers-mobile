@@ -1,49 +1,49 @@
-name: CI/CD Web Pipeline
+# name: CI/CD Web Pipeline
 
-on:
-  push:
-    branches: ['master']
-  pull_request:
-    branches: ['master']
+# on:
+#     push:
+#         branches: ['master']
+#     pull_request:
+#         branches: ['master']
 
-jobs:
-  checks:
-    runs-on: ubuntu-latest
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
+# jobs:
+#     checks:
+#         runs-on: ubuntu-latest
+#         steps:
+#             - name: Checkout code
+#               uses: actions/checkout@v4
 
-      - name: Set up Node.js
-        uses: actions/setup-node@v4
-        with:
-          node-version: '22'
+#             - name: Set up Node.js
+#               uses: actions/setup-node@v4
+#               with:
+#                   node-version: '22'
 
-      - name: '[backend] Install dependencies'
-        run: cd backend && yarn install
+#             - name: '[backend] Install dependencies'
+#               run: cd web/backend && yarn install
 
-      - name: '[backend] Run lint'
-        run: cd backend && yarn lint
+#             - name: '[backend] Run lint'
+#               run: cd web/backend && yarn lint
 
-      - name: '[backend] Run build'
-        run: cd backend && yarn build
+#             - name: '[backend] Run build'
+#               run: cd web/backend && yarn build
 
-        # @TODO фронтенд
+#               # @TODO фронтенд когда нормальный будет - дополнить
 
-  deploy:
-    needs: checks
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
+#     deploy:
+#         needs: checks
+#         runs-on: ubuntu-latest
+#         steps:
+#             - uses: actions/checkout@v4
 
-      - name: Install sshpass
-        run: |
-          sudo apt-get update
-          sudo apt-get install -y sshpass
+#             - name: Install sshpass
+#               run: |
+#                   sudo apt-get update
+#                   sudo apt-get install -y sshpass
 
-      - name: Run deploy script via SSH with password
-        env:
-          SSH_PASSWORD: ${{ secrets.SSH_PASSWORD }}
-        run: |
-          sshpass -p "$SSH_PASSWORD" ssh -o StrictHostKeyChecking=no hiker@${{ secrets.SERVER_IP }} "
-            cd hikers && ./start.sh
-          "
+#             - name: Run deploy script via SSH with password
+#               env:
+#                   SSH_PASSWORD: ${{ secrets.SSH_PASSWORD }}
+#               run: |
+#                   sshpass -p "$SSH_PASSWORD" ssh -o StrictHostKeyChecking=no hiker@${{ secrets.SERVER_IP }} "
+#                     cd hikers && ./start.sh
+#                   "
