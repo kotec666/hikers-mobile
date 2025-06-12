@@ -45,5 +45,5 @@ jobs:
                   SSH_PASSWORD: ${{ secrets.SSH_PASSWORD }}
               run: |
                   sshpass -p "$SSH_PASSWORD" ssh -o StrictHostKeyChecking=no hiker@${{ secrets.SERVER_IP }} "
-                    cd hikers && ./start.sh
+                    cd hikers-mobile/web && ./start.sh
                   "
