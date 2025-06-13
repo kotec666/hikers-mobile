@@ -168,6 +168,11 @@
     "@babel/helper-string-parser" "^7.27.1"
     "@babel/helper-validator-identifier" "^7.27.1"
 
+"@capacitor-community/background-geolocation@^1.2.22":
+  version "1.2.22"
+  resolved "https://registry.yarnpkg.com/@capacitor-community/background-geolocation/-/background-geolocation-1.2.22.tgz#5bed391f121acebcc0044c661e2d5bf442a53244"
+  integrity sha512-SiEV3wVb68ESV5858EKDYSjULUE9cdkSxB9E+19NwI0Td+sfTu/rDnZuVb1mu5ydoMrkmgYefbmc2R/0KYgubg==
+
 "@capacitor/android@^7.3.0":
   version "7.3.0"
   resolved "https://registry.yarnpkg.com/@capacitor/android/-/android-7.3.0.tgz#68a14f0c3ad1779852237c6932433a22e145a61a"
@@ -195,6 +200,11 @@
     sharp "0.32.6"
     tslib "2.6.2"
     yargs "17.7.2"
+
+"@capacitor/background-runner@^2.1.0":
+  version "2.1.0"
+  resolved "https://registry.yarnpkg.com/@capacitor/background-runner/-/background-runner-2.1.0.tgz#e99f62feeed4902c6d79665c652d3b2deba8b8e6"
+  integrity sha512-5ezvBeZVOaMC1sqDgD5gvCC4RYarEA47k29fAKti+mr2B9VvTp9yjeirMxjPJHvM247z1QNDTgAvEk4KmClE4Q==
 
 "@capacitor/camera@^7.0.1":
   version "7.0.1"
@@ -272,6 +282,11 @@
   version "7.3.0"
   resolved "https://registry.yarnpkg.com/@capacitor/ios/-/ios-7.3.0.tgz#d7de85f32557df7eea4a46261c6a1f20402c5674"
   integrity sha512-gHEERjA8wG/GBBZJD8i7eiX0QwGY2HMh3H3KPw5a1CGhmNhtr/1bsrgwF7s6LP+KC4kKWseYo+ZrHjw1JC3JGA==
+
+"@capacitor/local-notifications@^7.0.1":
+  version "7.0.1"
+  resolved "https://registry.yarnpkg.com/@capacitor/local-notifications/-/local-notifications-7.0.1.tgz#663c0c364518395c995381efebd11f5dcdd1d8da"
+  integrity sha512-GJewoiqiTLXNNRxqeJDi6vxj1Y37jLFI3KSdAM2Omvxew4ewyBSCjwOtXMQaEg+lvzGHtK6FPrSc2v/2EcL0wA==
 
 "@capacitor/splash-screen@^7.0.1":
   version "7.0.1"

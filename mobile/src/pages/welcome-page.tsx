@@ -2,8 +2,17 @@ import { Link } from "react-router-dom";
 import withTransition from "@/components/providers/transition.tsx";
 import { Capacitor } from "@capacitor/core";
 import { cn } from "@/lib/utils";
+import { useApp } from "@/context/AppContext.tsx";
 
 function WelcomePage() {
+  const {
+    userGeolocation,
+    lastUpdated,
+    requestPermissions,
+    hasPermissions,
+    dispatchBackgroundEvent,
+  } = useApp();
+
   return (
     <div
       className={cn("flex flex-col justify-between", {
@@ -11,16 +20,33 @@ function WelcomePage() {
         "h-screen px-4 py-6": Capacitor.getPlatform() !== "ios",
       })}
     >
-      <div className="flex flex-col gap-7">
-        <div className="flex flex-col items-center gap-2">
-          <div className="relative w-full">phone</div>
-          <div className=" w-24 h-2 rounded-[13px] bg-main-green"></div>
-        </div>
-        <div className="flex flex-col gap-5 text-center">
-          <h1 className=" h1-text font-medium text-black-inverted">title</h1>
-          <p className="p-text text-neutral-700">description</p>
-        </div>
+      <div>
+        <span>userGeolocation:</span>
+        <pre>{JSON.stringify(userGeolocation, null, 2)}</pre>
+        <br />
+        <span>lastUpdated:</span>
+        <pre>{JSON.stringify(lastUpdated)}</pre>
+        <br />
       </div>
+
+      <div className="flex gap-4">
+        <button
+          className="bg-red-500 disabled:opacity-50 rounded-lg h-[42px] px-[16px]"
+          disabled={hasPermissions}
+          onClick={requestPermissions}
+        >
+          Permissions
+        </button>
+
+        <button
+          className="bg-red-500 disabled:opacity-50 rounded-lg h-[42px] px-[16px]"
+          onClick={dispatchBackgroundEvent}
+        >
+          Dispatch UpdateData
+        </button>
+      </div>
+
+      <Link to={"/bgCommunityLocation"}>bgCommunityLocation</Link>
       <Link
         className={cn(" w-full", {
           "px-[30px]": Capacitor.getPlatform() === "ios",

@@ -16,6 +16,14 @@ const config: CapacitorConfig = {
       launchAutoHide: false,
       backgroundColor: "#ffffffff",
     },
+    BackgroundRunner: {
+      label: "com.capacitorjs.background.hikers.task",
+      src: "assets/background.js",
+      event: "updateData",
+      repeat: true,
+      interval: 1,
+      autoStart: true, // @TODO
+    },
   },
 
   server: process.env.DEV_IPV4

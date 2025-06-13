@@ -7,6 +7,7 @@ import ProfilePage from "@/pages/profile";
 import MapPage from "@/pages/map";
 import MainLayout from "@/components/layouts/MainLayout";
 import UserData from "@/pages/profile/userData";
+import BgCommunityLocation from "@/pages/bg-community";
 
 export const router = createBrowserRouter([
   {
@@ -32,6 +33,10 @@ export const router = createBrowserRouter([
   {
     path: "/reg",
     element: <Auth variant={AuthEnum.REG} />,
+  },
+  {
+    path: "/bgCommunityLocation",
+    element: <BgCommunityLocation />,
   },
   {
     path: "/profile/userdata",
