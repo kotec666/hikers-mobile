@@ -95,6 +95,18 @@ function WelcomePage() {
           </div>
         </button>
       </Link>
+      <Link
+        className={cn(" w-full", {
+          "px-[30px]": Capacitor.getPlatform() === "ios",
+        })}
+        to={"/mapLines"}
+      >
+        <button>
+          <div className="flex items-center">
+            перейти на страницу карты с линиями
+          </div>
+        </button>
+      </Link>
     </div>
   );
 }

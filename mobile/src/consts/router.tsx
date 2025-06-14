@@ -8,6 +8,7 @@ import MapPage from "@/pages/map";
 import MainLayout from "@/components/layouts/MainLayout";
 import UserData from "@/pages/profile/userData";
 import BgCommunityLocation from "@/pages/bg-community";
+import MapLines from "@/pages/mapLines";
 
 export const router = createBrowserRouter([
   {
@@ -37,6 +38,10 @@ export const router = createBrowserRouter([
   {
     path: "/bgCommunityLocation",
     element: <BgCommunityLocation />,
+  },
+  {
+    path: "/mapLines",
+    element: <MapLines />,
   },
   {
     path: "/profile/userdata",

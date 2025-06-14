@@ -10,7 +10,8 @@
   ],
   "scripts": {
     "dev": "vite",
-    "build": "vite build && npm run build:runner",
+    "build": "vite build",
+    "build:background": "vite build && npm run build:runner",
     "build:runner": "cp src/background.js dist/assets/background.js && node ./scripts/runner_env_replace.mjs",
     "tsc": "tsc",
     "preview": "vite preview",
