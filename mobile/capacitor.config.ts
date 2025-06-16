@@ -25,6 +25,9 @@ const config: CapacitorConfig = {
       autoStart: true, // @TODO
     },
   },
+  android: {
+    useLegacyBridge: true,
+  },
 
   server: process.env.DEV_IPV4
     ? {

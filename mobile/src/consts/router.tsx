@@ -9,6 +9,7 @@ import MainLayout from "@/components/layouts/MainLayout";
 import UserData from "@/pages/profile/userData";
 import BgCommunityLocation from "@/pages/bg-community";
 import MapLines from "@/pages/mapLines";
+import MapCommunity from "@/pages/mapCommunity";
 
 export const router = createBrowserRouter([
   {
@@ -42,6 +43,10 @@ export const router = createBrowserRouter([
   {
     path: "/mapLines",
     element: <MapLines />,
+  },
+  {
+    path: "/mapCommunity",
+    element: <MapCommunity />,
   },
   {
     path: "/profile/userdata",

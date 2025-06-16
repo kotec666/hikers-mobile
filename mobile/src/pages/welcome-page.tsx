@@ -111,6 +111,19 @@ function WelcomePage() {
           </div>
         </button>
       </Link>
+
+      <Link
+        className={cn(" w-full", {
+          "px-[30px]": Capacitor.getPlatform() === "ios",
+        })}
+        to={"/mapCommunity"}
+      >
+        <button>
+          <div className="flex items-center">
+            перейти на страницу карты с коммьюнити плагином
+          </div>
+        </button>
+      </Link>
     </div>
   );
 }
