@@ -18,6 +18,7 @@
     "synchronize": "yarn build && npx cap sync",
     "android:start": "yarn build && npx cap sync && npx cap run android",
     "android:open": "yarn build && npx cap sync && npx cap open android",
+    "android:open:background": "yarn build:background && npx cap sync && npx cap open android",
     "ios:start": "yarn build && npx cap sync && npx cap run ios",
     "ios:open": "yarn build && npx cap sync && npx cap open ios",
     "sync:ios": "npx cap sync ios",

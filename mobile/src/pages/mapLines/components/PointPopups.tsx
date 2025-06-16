@@ -2,7 +2,10 @@ import { customIcon } from "@/components/ui/MapMarker.tsx";
 import { Marker, Popup, useMap } from "react-leaflet";
 import { LatLngExpression } from "leaflet";
 
-const PointPopups = (props: { positions: LatLngExpression[] }) => {
+const PointPopups = (props: {
+  positions: LatLngExpression[];
+  type: string;
+}) => {
   const map = useMap();
 
   return (
@@ -16,6 +19,8 @@ const PointPopups = (props: { positions: LatLngExpression[] }) => {
         >
           <Popup>
             Точка {idx + 1}: {JSON.stringify(point)}
+            <br />
+            Тип: {props.type}
           </Popup>
         </Marker>
       ))}

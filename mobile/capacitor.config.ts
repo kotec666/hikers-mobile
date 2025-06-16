@@ -21,7 +21,7 @@ const config: CapacitorConfig = {
       src: "assets/background.js",
       event: "updateData",
       repeat: true,
-      interval: 1,
+      interval: 15,
       autoStart: true, // @TODO
     },
   },

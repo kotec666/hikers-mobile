@@ -30,12 +30,17 @@ const UserLocationMarker = ({ position, heading }: Props) => {
     return 0;
   };
 
-  useEffect(() => {
-    // @TODO обновляет слишком часто
-    if (isValidPosition(position)) {
-      map.flyTo(position, map.getZoom(), { duration: 2 });
-    }
-  }, [position]);
+  useEffect(
+    () => {
+      // @TODO обновляет слишком часто
+      if (isValidPosition(position)) {
+        map.flyTo(position, map.getZoom(), { duration: 2 });
+      }
+    },
+    [
+      // position
+    ]
+  );
 
   if (!isValidPosition(position)) return null;
 

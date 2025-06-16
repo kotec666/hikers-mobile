@@ -7,6 +7,7 @@ import { useApp } from "@/context/AppContext.tsx";
 function WelcomePage() {
   const {
     userGeolocation,
+    userGeolocations,
     lastUpdated,
     requestPermissions,
     hasPermissions,
@@ -23,6 +24,9 @@ function WelcomePage() {
       <div>
         <span>userGeolocation:</span>
         <pre>{JSON.stringify(userGeolocation, null, 2)}</pre>
+        <br />
+        <span>userGeolocationS:</span>
+        <pre>{JSON.stringify(userGeolocations, null, 2)}</pre>
         <br />
         <span>lastUpdated:</span>
         <pre>{JSON.stringify(lastUpdated)}</pre>

@@ -8,64 +8,9 @@ import { useEffect, useState } from "react";
 import UserLocationMarker from "@/components/ui/userLocationMarker/userMarker.tsx";
 import PointPopups from "@/pages/mapLines/components/PointPopups.tsx";
 import { Link } from "react-router-dom";
+import { useApp } from "@/context/AppContext.tsx";
 
 const MapLines = () => {
-  // const point1: LatLngExpression = [53.374336, 49.46009];
-  // const point2: LatLngExpression = [53.375477, 49.459763];
-  // const point3: LatLngExpression = [53.375728, 49.460764];
-  //
-  // const pointV21: LatLngExpression = [53.374991, 49.465148];
-  // const pointV22: LatLngExpression = [53.374964, 49.467808];
-  // const pointV23: LatLngExpression = [53.376216, 49.467847];
-  //
-  // const lineCoordinatesOpened = [point1, point2, point3];
-  // const lineCoordinatesBackground = [pointV21, pointV22, pointV23];
-  //
-  // const logBlock = async () => {
-  //   try {
-  //     await sendLog({
-  //       text: "Предупреждаю, я щас заблокирую экран и пойду чекать как работает фоновая геолокация!!!!!",
-  //     });
-  //     alert(
-  //       `Ты отправил лог о блокировке экрана, можешь блокировать и идти метров 15, Да хранит тебя господь`
-  //     );
-  //   } catch (e) {
-  //     alert(
-  //       `Ошибка при отправке лога о блокировке экрана ${JSON.stringify(e)}`
-  //     );
-  //   }
-  // };
-  //
-  // const logUnblock = async () => {
-  //   try {
-  //     await sendLog({
-  //       text: "Предупреждаю, я разблокировал экран и пойду чекать как работает геолокация сейчас!!!!!",
-  //     });
-  //     alert(
-  //       `Ты отправил лог о разблокировке экрана, можешь пройти метров 15, Да хранит тебя господь`
-  //     );
-  //   } catch (e) {
-  //     alert(
-  //       `Ошибка при отправке лога о разблокировке экрана ${JSON.stringify(e)}`
-  //     );
-  //   }
-  // };
-  //
-  // const logKill = async () => {
-  //   try {
-  //     await sendLog({
-  //       text: "Предупреждаю, я убиваю процесс приложения и пойду чекать как работает геолокация сейчас!!!!!",
-  //     });
-  //     alert(
-  //       `Ты отправил лог о убийстве процесса приложения, можешь пройти метров 15, Да хранит тебя господь`
-  //     );
-  //   } catch (e) {
-  //     alert(
-  //       `Ошибка при отправке лога о убийстве процесса ${JSON.stringify(e)}`
-  //     );
-  //   }
-  // };
-
   const isValidPosition = (
     pos: (number | undefined)[] | null | undefined
   ): pos is [number, number] => {
@@ -89,8 +34,10 @@ const MapLines = () => {
 
   const [state, setState] = useState<{
     activePositions: LatLngExpression[];
+    buttons: boolean;
   }>({
     activePositions: initialPositions,
+    buttons: false,
   });
 
   const { userLongitude, userLatitude, userHeading } = useGetUserPosition();
@@ -119,13 +66,21 @@ const MapLines = () => {
       "user_positions_active",
       JSON.stringify(updatedPositions)
     );
-    setState({ activePositions: updatedPositions });
+    setState((s) => ({ ...s, activePositions: updatedPositions }));
   }, [userLongitude, userLatitude]);
 
   const getMapCenter = (): LatLngExpression => {
     const userLatLng = [userLatitude, userLongitude];
     return isValidPosition(userLatLng) ? userLatLng : [55.732579, 37.498387];
   };
+
+  const {
+    userGeolocations,
+    requestPermissions,
+    hasPermissions,
+    dispatchBackgroundEvent,
+    dispatchDeleteLocations,
+  } = useApp();
 
   return (
     <div
@@ -156,26 +111,28 @@ const MapLines = () => {
           weight={3}
           opacity={0.7}
         />
-        {/*<Polyline*/}
-        {/*  positions={lineCoordinatesBackground}*/}
-        {/*  color="red"*/}
-        {/*  weight={3}*/}
-        {/*  opacity={0.7}*/}
-        {/*/>*/}
+        <Polyline
+          positions={
+            userGeolocations?.map((location) => [
+              location.latitude,
+              location.longitude,
+            ]) || []
+          }
+          color="red"
+          weight={3}
+          opacity={0.7}
+        />
 
-        <PointPopups positions={state.activePositions} />
-
-        {/*{lineCoordinatesBackground.map((point, idx) => (*/}
-        {/*  <Marker*/}
-        {/*    icon={customIcon}*/}
-        {/*    key={JSON.stringify(point)}*/}
-        {/*    position={point}*/}
-        {/*  >*/}
-        {/*    <Popup>*/}
-        {/*      Точка {idx + 1}: {JSON.stringify(point)}*/}
-        {/*    </Popup>*/}
-        {/*  </Marker>*/}
-        {/*))}*/}
+        <PointPopups type="runtime" positions={state.activePositions} />
+        <PointPopups
+          type="background"
+          positions={
+            userGeolocations?.map((location) => [
+              location.latitude,
+              location.longitude,
+            ]) || []
+          }
+        />
       </MapContainer>
 
       <Link
@@ -187,21 +144,60 @@ const MapLines = () => {
 
       <div className="absolute bottom-[30px] p-5 right-0 w-full z-[999999] border-2 border-red-500 flex gap-4">
         <button
-          className="bg-gray-300 px-[16px] rounded-lg h-[52px] flex items-center"
-          onClick={() => {
-            localStorage.removeItem("user_positions_active");
-          }}
+          className="bg-black text-white px-[16px] rounded-lg h-[52px] flex items-center "
+          onClick={() =>
+            setState((s) => ({
+              ...s,
+              buttons: !s.buttons,
+            }))
+          }
         >
-          Удалить кеш LS (runtime)
+          {state.buttons ? "Скрыть" : "Показать"}
         </button>
-        <button
-          className="bg-gray-300 px-[16px] rounded-lg h-[52px] flex items-center"
-          onClick={() => {
-            setState({ activePositions: [] });
-          }}
-        >
-          Удалить состояние activePositions[]
-        </button>
+        {state.buttons && (
+          <div className="flex flex-col gap-4">
+            <div className="bg-gray-300 px-[16px] max-w-[50%] flex items-center top-[50px] right-[50%] z-[999999] border-2 border-blue-400 max-h-[80px] w-full overflow-x-scroll overflow-y-scroll text-wrap whitespace-pre-wrap">
+              userGeolocations: {JSON.stringify(userGeolocations)}
+            </div>
+            <button
+              className="bg-gray-300 px-[16px] rounded-lg h-[52px] flex items-center "
+              onClick={dispatchBackgroundEvent}
+            >
+              dispatchBackgroundEvent
+            </button>
+            <button
+              className="bg-gray-300 px-[16px] rounded-lg h-[52px] flex items-center "
+              onClick={dispatchDeleteLocations}
+            >
+              Удалить кеш CapacitorKV (background)
+            </button>
+            <button
+              className="bg-gray-300 px-[16px] rounded-lg h-[52px] flex items-center "
+              onClick={() => {
+                localStorage.removeItem("user_positions_active");
+              }}
+            >
+              Удалить кеш LS (runtime)
+            </button>
+            <button
+              disabled={hasPermissions}
+              className="bg-gray-300 px-[16px] rounded-lg h-[52px] flex items-center disabled:opacity-50"
+              onClick={async () => {
+                await requestPermissions();
+              }}
+            >
+              Запросить разрешение на фоновое выполнение
+            </button>
+            <button
+              className="bg-gray-300 px-[16px] rounded-lg h-[52px] flex items-center"
+              onClick={() => {
+                setState((s) => ({ ...s, activePositions: [] }));
+              }}
+            >
+              Удалить состояние activePositions[]
+            </button>
+          </div>
+        )}
       </div>
 
       {/*<div className=" absolute bottom-

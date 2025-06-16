@@ -5,11 +5,13 @@ import { Position } from "@capacitor/geolocation";
 
 interface AppContextProps {
   userGeolocation: Position | null;
+  userGeolocations: Position[] | null;
   lastUpdated?: Date;
   hasPermissions: boolean;
   update: () => Promise<any>;
   requestPermissions: () => Promise<void>;
   dispatchBackgroundEvent: () => Promise<void>;
+  dispatchDeleteLocations: () => Promise<void>;
 }
 
 interface AppProviderProps {
@@ -18,15 +20,20 @@ interface AppProviderProps {
 
 export const AppContext = createContext<AppContextProps>({
   userGeolocation: null,
+  userGeolocations: null,
   lastUpdated: undefined,
   hasPermissions: false,
   update: () => Promise.reject(),
   dispatchBackgroundEvent: () => Promise.reject(),
+  dispatchDeleteLocations: () => Promise.reject(),
   requestPermissions: () => Promise.reject(),
 });
 
 export const AppProvider: React.FC<AppProviderProps> = ({ children }) => {
   const [userGeolocation, setUserGeolocation] = useState<Position | null>(null);
+  const [userGeolocations, setUserGeolocations] = useState<Position[] | null>(
+    null
+  );
   const [lastUpdated, setLastUpdated] = useState<Date | undefined>(undefined);
   const [hasPermissions, setHasPermissions] = useState<boolean>(false);
 
@@ -37,8 +44,6 @@ export const AppProvider: React.FC<AppProviderProps> = ({ children }) => {
         label: "com.capacitorjs.background.hikers.task",
         details: {},
       });
-
-      console.log(JSON.stringify(result));
 
       if (result && result.value) {
         const cachedLocation = JSON.parse(result.value) as Position;
@@ -51,8 +56,27 @@ export const AppProvider: React.FC<AppProviderProps> = ({ children }) => {
     }
   };
 
+  const getCachedLocations = async (): Promise<void> => {
+    try {
+      const result = await BackgroundRunner.dispatchEvent<{ value: string }>({
+        event: "getCachedLocations",
+        label: "com.capacitorjs.background.hikers.task",
+        details: {},
+      });
+
+      if (result && result.value) {
+        const cachedLocations = JSON.parse(result.value) as Position[];
+        setUserGeolocations(cachedLocations);
+      } else {
+        console.warn("No value for key 'cached_locations_background'");
+      }
+    } catch (err) {
+      console.error(`Could not update user locations: ${err}`);
+    }
+  };
+
   const update = async (): Promise<any> => {
-    await Promise.all([updateUserGeolocation()]);
+    await Promise.all([updateUserGeolocation(), getCachedLocations()]);
 
     const result = await BackgroundRunner.dispatchEvent<{ value: string }>({
       event: "getLastUpdated",
@@ -69,6 +93,18 @@ export const AppProvider: React.FC<AppProviderProps> = ({ children }) => {
     } else {
       console.warn("No value for key 'last_updated'");
     }
+  };
+
+  const deleteLocations = async (): Promise<any> => {
+    await BackgroundRunner.dispatchEvent<{ value: string }>({
+      event: "deleteUserLocations",
+      label: "com.capacitorjs.background.hikers.task",
+      details: {
+        currentDate: new Date(),
+      },
+    });
+
+    setUserGeolocations([]);
   };
 
   const requestPermissions = async () => {
@@ -108,6 +144,14 @@ export const AppProvider: React.FC<AppProviderProps> = ({ children }) => {
     }
   };
 
+  const dispatchDeleteLocations = async () => {
+    try {
+      await deleteLocations();
+    } catch (err) {
+      console.error(`Dispatch DeleteLocations error: ${err}`);
+    }
+  };
+
   useEffect(() => {
     update();
     checkPermissions();
@@ -128,11 +172,13 @@ export const AppProvider: React.FC<AppProviderProps> = ({ children }) => {
     <AppContext.Provider
       value={{
         userGeolocation,
+        userGeolocations,
         lastUpdated,
         hasPermissions,
         update,
         requestPermissions,
         dispatchBackgroundEvent,
+        dispatchDeleteLocations,
       }}
     >
       {children}
