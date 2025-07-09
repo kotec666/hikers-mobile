@@ -1,6 +1,6 @@
 import React from "react";
 import { StyleSheet, View } from "react-native";
-import { Marker } from "react-native-yamap-plus";
+import { Marker } from "react-native-yamap-plus-lite";
 
 interface Props {
     position: { lat: number; lon: number };

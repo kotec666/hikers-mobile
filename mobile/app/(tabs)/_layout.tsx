@@ -6,7 +6,7 @@ import {IconSymbol} from '@/components/ui/IconSymbol';
 import TabBarBackground from '@/components/ui/TabBarBackground';
 import {Colors} from '@/constants/Colors';
 import {useColorScheme} from '@/hooks/useColorScheme';
-import {YamapInstance} from "react-native-yamap-plus";
+import {YamapInstance} from "react-native-yamap-plus-lite";
 
 YamapInstance.setLocale('ru_RU').then(() => {
     YamapInstance.init('8e479a05-0cbd-4e42-8cbe-83a993ca66c9').then(() => {

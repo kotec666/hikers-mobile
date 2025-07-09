@@ -1,4 +1,4 @@
-import {Marker} from "react-native-yamap-plus";
+import {Marker} from "react-native-yamap-plus-lite";
 import {StyleSheet, Text, View} from "react-native";
 import {Ionicons} from "@expo/vector-icons";
 

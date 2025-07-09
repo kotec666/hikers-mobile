@@ -1,13 +1,11 @@
-import {Pressable, StyleSheet, View, Text, ScrollView} from 'react-native';
-import {Polyline, Yamap} from "react-native-yamap-plus";
+import {Pressable, StyleSheet, View, Text} from 'react-native';
+import {Polyline, Yamap} from "react-native-yamap-plus-lite";
 import UserLocationMarker from "@/components/ui/UserLocationMarker";
 import DefaultMarker from "@/components/ui/DefaultMarker";
 import {useEffect, useState} from "react";
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import * as Location from 'expo-location'
 import * as TaskManager from 'expo-task-manager';
-import ParallaxScrollView from "@/components/ParallaxScrollView";
-
 
 enum LOCATION_TYPE {
     BACKGROUND = 'background',
