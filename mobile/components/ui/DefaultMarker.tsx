@@ -2,11 +2,11 @@ import {Marker} from "react-native-yamap-plus";
 import {StyleSheet, Text, View} from "react-native";
 import {Ionicons} from "@expo/vector-icons";
 
-export default function DefaultMarker () {
+export default function DefaultMarker (props: { lat: number; lon: number }) {
     return (
         <Marker
-            point={{ lat: 55.751244, lon: 37.618423 }}
-            scale={2}
+            point={{lat: props.lat, lon: props.lon}}
+            scale={1.5}
             onPress={() => console.log('Custom marker pressed')}
         >
             <View style={styles.marker}>
