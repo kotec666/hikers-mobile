@@ -1,0 +1,12 @@
+.git
+.github
+.husky
+.easignore
+.gitignore
+frontend
+package.json
+yarn.lock
+mobile/android
+mobile/ios
+mobile/node_modules
+!mobile/package.json
