@@ -30,6 +30,7 @@ jobs:
               # @TODO фронтенд когда нормальный будет - дополнить
 
     deploy:
+        if: github.event_name == 'push'
         needs: checks
         runs-on: ubuntu-latest
         steps:
