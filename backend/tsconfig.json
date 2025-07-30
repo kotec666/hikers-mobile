@@ -11,8 +11,6 @@
 		"outDir": "./dist",
 		"baseUrl": "./",
 		"paths": {
-			// "@shared/*": ["../shared/src/lib/*"],
-			// "@shared": ["../shared/src/lib/index"], @TODO
 			"@helpers/*": ["src/common/helpers/*"]
 		},
 		"incremental": true,

@@ -1,0 +1,61 @@
+services:
+    # nginx:
+    #   image: nginx:1.19-alpine
+    #   restart: unless-stopped
+    #   ports:
+    #     - '80:3000'
+    #   networks:
+    #     - hikers-network
+    #   depends_on:
+    #     - frontend
+    #     - backend
+    #   volumes:
+    #     - ./nginx.conf:/etc/nginx/templates/default.conf.template @TODO
+
+    frontend:
+        image: hikers-frontend:latest
+        restart: unless-stopped
+        build:
+            context: ./frontend
+            dockerfile: Dockerfile
+        networks:
+            - hikers-network
+        ports:
+            - '4173:4173'
+        depends_on:
+            backend:
+                condition: service_started
+
+    backend:
+        image: hikers-backend:latest
+        restart: unless-stopped
+        build:
+            context: ./backend
+            dockerfile: Dockerfile
+        env_file:
+            - .env
+        networks:
+            - hikers-network
+        ports:
+            - '3000:3000'
+        depends_on:
+            postgres:
+                condition: service_started
+
+    postgres:
+        image: postgres:17.2-alpine3.20
+        restart: unless-stopped
+        env_file:
+            - .env
+        networks:
+            - hikers-network
+        volumes:
+            - hikers-postgres:/var/lib/postgresql/data
+
+volumes:
+    hikers-postgres:
+        name: hikers-postgres
+
+networks:
+    hikers-network:
+        name: hikers-network
