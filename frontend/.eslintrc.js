@@ -7,12 +7,11 @@ module.exports = {
 	plugins: ['@typescript-eslint/eslint-plugin'],
 	extends: ['plugin:@typescript-eslint/recommended', 'plugin:prettier/recommended'],
 	root: true,
-	ignorePatterns: ['node_modules/*'],
+	ignorePatterns: ['node_modules/*', '.eslint.config.js', '*.spec.ts', 'tsconfig.json'],
 	env: {
 		node: true,
 		jest: false,
 	},
-	ignorePatterns: ['.eslint.config.js', '*.spec.ts', 'tsconfig.json'],
 	rules: {
 		'@typescript-eslint/interface-name-prefix': 'off',
 		'@typescript-eslint/explicit-function-return-type': 'off',
