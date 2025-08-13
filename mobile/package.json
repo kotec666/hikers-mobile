@@ -1,17 +1,16 @@
 {
-  "name": "mobile",
+  "name": "hikers",
   "main": "expo-router/entry",
   "version": "1.0.0",
   "scripts": {
     "start": "expo start --dev-client",
-    "start:android:emulator": "expo run:android",
     "build": "expo prebuild",
     "build:eas:android": "eas build --platform android",
     "reset-project": "node ./scripts/reset-project.js",
+    "android": "expo run:android",
     "ios": "expo run:ios",
     "web": "expo start --web",
-    "lint": "expo lint",
-    "android": "expo run:android"
+    "lint": "expo lint"
   },
   "dependencies": {
     "@react-native-async-storage/async-storage": "2.1.2",
