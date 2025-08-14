@@ -39,6 +39,7 @@ yarn-error.*
 # IDE
 .code
 .idea
+.vscode
 
 # typescript
 *.tsbuildinfo
