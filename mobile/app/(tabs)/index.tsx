@@ -1,10 +1,15 @@
-import {Platform, ScrollView, StyleSheet} from 'react-native';
+import {Platform, ScrollView, StyleSheet, Text, View} from 'react-native';
 import { ThemedText } from '@/components/ThemedText';
 import { ThemedView } from '@/components/ThemedView';
 
 export default function HomeScreen() {
   return (
     <ScrollView>
+        <View className="flex-1 items-center justify-center bg-red-500">
+            <Text className="text-xl font-bold text-blue-500">
+                Welcome to Nativewind!
+            </Text>
+        </View>
       <ThemedView style={styles.titleContainer}>
         <ThemedText type="title">Welcome, hikers!</ThemedText>
       </ThemedView>
