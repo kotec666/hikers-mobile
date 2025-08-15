@@ -19,15 +19,22 @@ jobs:
                   node-version: '22'
 
             - name: '[backend] Install dependencies'
-              run: cd web/backend && yarn install
+              run: cd backend && yarn install
 
             - name: '[backend] Run lint'
-              run: cd web/backend && yarn lint
+              run: cd backend && yarn lint
 
             - name: '[backend] Run build'
-              run: cd web/backend && yarn build
+              run: cd backend && yarn build
 
-              # @TODO фронтенд когда нормальный будет - дополнить
+            - name: '[frontend] Install dependencies'
+              run: cd frontend && yarn install
+
+            - name: '[frontend] Run lint'
+              run: cd frontend && yarn next lint
+
+            - name: '[frontend] Run build'
+              run: cd frontend && yarn build
 
     deploy:
         if: github.event_name == 'push'
@@ -46,5 +53,5 @@ jobs:
                   SSH_PASSWORD: ${{ secrets.SSH_PASSWORD }}
               run: |
                   sshpass -p "$SSH_PASSWORD" ssh -o StrictHostKeyChecking=no hiker@${{ secrets.SERVER_IP }} "
-                    cd hikers-mobile/web && ./start.sh
+                    cd hikers-mobile && ./start.sh
                   "
