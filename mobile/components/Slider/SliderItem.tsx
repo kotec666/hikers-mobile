@@ -14,9 +14,8 @@ export function SliderItem({item}: SliderItemProps) {
 
     return (
         <View className="justify-center items-center" style={styles.itemContainer}>
-            <View className="">
+            <View>
                 <Image
-                    className=""
                     source={item.image}
                     style={styles.image}
                 />

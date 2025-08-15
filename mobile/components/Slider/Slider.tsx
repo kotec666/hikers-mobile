@@ -1,4 +1,4 @@
-import {Dimensions, ImageSourcePropType, Pressable, StyleSheet, Text, View, ViewToken} from 'react-native';
+import {Dimensions, ImageSourcePropType, StyleSheet, Text, View, ViewToken} from 'react-native';
 import {SliderItem} from "@/components/Slider/SliderItem";
 import Animated, {
     useAnimatedRef,
@@ -10,6 +10,8 @@ import Animated, {
 import {SliderPagination} from "@/components/Slider/SliderPagination";
 import {useEffect, useRef, useState} from "react";
 import {fontFamily} from "@/constants/Fonts";
+import {Container} from "@/components/ui/Container";
+import {Button} from "@/components/ui/Button";
 
 export type SliderProps = {
     itemList: ImageSliderType[]
@@ -103,19 +105,17 @@ export function Slider({itemList}: SliderProps) {
             />
         </View>
 
-        <View className="flex-1 justify-between px-[16px] pb-[40px]">
+        <Container className="flex-1 justify-between pb-[40px]">
             <Text
                 className="text-[19px] text-center text-gray-ab"
                 style={styles.descriptionText}
             >
                 {data[paginationIndex].description}
             </Text>
-            <Pressable className="bg-white rounded-full w-full h-[50px] flex justify-center items-center flex-row">
-                <Text className="text-sm" style={{ fontFamily: fontFamily.bold }}>
-                    Войти
-                </Text>
-            </Pressable>
-        </View>
+            <Button>
+                Войти
+            </Button>
+        </Container>
     </View>
 }
 
