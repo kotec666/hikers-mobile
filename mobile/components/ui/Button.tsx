@@ -2,14 +2,13 @@ import {PropsWithChildren} from "react";
 import {cn} from "@/helpers/cn";
 import {Pressable, Text} from "react-native";
 import {fontFamily} from "@/constants/Fonts";
-import {Colors} from "@/constants/Colors";
 
 
 const buttonVariantStyles = {
     default: "rounded-full w-full h-[50px] flex justify-center items-center flex-row",
     white: "bg-white",
-    black: Colors['black-25'],
-    gray: Colors['gray-92'],
+    black: "bg-black-25",
+    gray: "bg-gray-92",
 }
 
 const textVariantStyles = {
