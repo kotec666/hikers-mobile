@@ -1,4 +1,4 @@
-import {Dimensions, ImageSourcePropType, Pressable, Text, View, ViewToken} from 'react-native';
+import {Dimensions, ImageSourcePropType, Pressable, StyleSheet, Text, View, ViewToken} from 'react-native';
 import {SliderItem} from "@/components/Slider/SliderItem";
 import Animated, {
     useAnimatedRef,
@@ -77,11 +77,12 @@ export function Slider({itemList}: SliderProps) {
         {viewabilityConfig, onViewableItemsChanged}
     ])
 
-    return <View className="relative">
+    return <View className="flex-1">
         <Animated.FlatList
+            className="flex-grow-0"
             ref={flatListRef}
             data={data}
-            renderItem={({item, index}) => <SliderItem item={item} index={index}/>}
+            renderItem={({item, index}) => <SliderItem item={item} index={index}   />}
             horizontal
             showsHorizontalScrollIndicator={false}
             pagingEnabled
@@ -90,24 +91,36 @@ export function Slider({itemList}: SliderProps) {
             viewabilityConfigCallbackPairs={viewabilityConfigCallbackPairs.current}
             onEndReached={() => setData([...data, ...itemList])}
             onEndReachedThreshold={0.5}
-            onScrollBeginDrag={() => {
-                setIsAutoPlay(false)
-            }}
-            onScrollEndDrag={() => {
-                setIsAutoPlay(true)
-            }}
+            onScrollBeginDrag={() => setIsAutoPlay(false)}
+            onScrollEndDrag={() => setIsAutoPlay(true)}
         />
-        <SliderPagination
-            items={itemList}
-            paginationIndex={paginationIndex}
-            scrollX={scrollX}
-        />
-        <View className="px-[16px] mb-[100px]">
+
+        <View className="my-[30px]">
+            <SliderPagination
+                items={itemList}
+                paginationIndex={paginationIndex}
+                scrollX={scrollX}
+            />
+        </View>
+
+        <View className="flex-1 justify-between px-[16px] pb-[40px]">
+            <Text
+                className="text-[19px] text-center text-gray-ab"
+                style={styles.descriptionText}
+            >
+                {data[paginationIndex].description}
+            </Text>
             <Pressable className="bg-white rounded-full w-full h-[50px] flex justify-center items-center flex-row">
                 <Text className="text-sm" style={{ fontFamily: fontFamily.bold }}>
                     Войти
                 </Text>
             </Pressable>
         </View>
-    </View>;
+    </View>
 }
+
+const styles = StyleSheet.create({
+    descriptionText: {
+        fontFamily: fontFamily.regular
+    }
+})

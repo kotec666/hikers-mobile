@@ -13,7 +13,7 @@ const {width} = Dimensions.get('screen')
 
 export function SliderPagination({items, paginationIndex, scrollX}: SliderPaginationProps) {
     return (
-        <View className="flex-row h-[60px] justify-center items-center gap-[5px] absolute top-[55%] left-[50%] -translate-x-[50%]">
+        <View className="flex-row justify-center items-center gap-[5px]">
             {items.map((_, idx) => {
                 const pgAnimationStyle = useAnimatedStyle(() => {
                     const dotWidth = interpolate(

@@ -13,10 +13,10 @@ const {width, height} = Dimensions.get('screen')
 export function SliderItem({item}: SliderItemProps) {
 
     return (
-        <View className="justify-center items-center gap-[80px] mt-[55px]" style={styles.itemContainer}>
-            <View className="relative">
+        <View className="justify-center items-center" style={styles.itemContainer}>
+            <View className="">
                 <Image
-                    className="h-full"
+                    className=""
                     source={item.image}
                     style={styles.image}
                 />
@@ -44,14 +44,6 @@ export function SliderItem({item}: SliderItemProps) {
                         {item.title}
                     </Text>
                 </View>
-            </View>
-            <View className="px-[16px] w-full">
-                <Text
-                    className="text-[19px] text-center text-gray-ab"
-                    style={styles.descriptionText}
-                >
-                    {item.description}
-                </Text>
             </View>
         </View>
     )
