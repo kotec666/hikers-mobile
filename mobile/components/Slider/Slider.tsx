@@ -105,14 +105,14 @@ export function Slider({itemList}: SliderProps) {
             />
         </View>
 
-        <Container className="flex-1 justify-between pb-[40px]">
+        <Container className="flex-1 justify-between">
             <Text
                 className="text-[19px] text-center text-gray-ab"
                 style={styles.descriptionText}
             >
                 {data[paginationIndex].description}
             </Text>
-            <Button>
+            <Button variant="white">
                 Войти
             </Button>
         </Container>

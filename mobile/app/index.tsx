@@ -8,7 +8,7 @@ const HelloPage = () => {
     const insets = useSafeAreaInsets()
     return (
         <SafeAreaProvider style={{ paddingTop: insets.top, paddingBottom: insets.bottom }}>
-            <View className="flex-1">
+            <View className="flex-1 pb-[40px]">
                <Slider itemList={slides} />
             </View>
             <StatusBar style="light" />
