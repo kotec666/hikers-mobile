@@ -31,7 +31,7 @@ jobs:
               run: cd frontend && yarn install
 
             - name: '[frontend] Run lint'
-              run: cd frontend && next lint
+              run: cd frontend && yarn next lint
 
             - name: '[frontend] Run build'
               run: cd frontend && yarn build
