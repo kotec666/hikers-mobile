@@ -1,3 +1,4 @@
 ﻿{
-	"src/**/*.{ts,js,json}": ["yarn lint-backend", "yarn format-backend"]
+	"*.{js,jsx,ts,tsx}": ["eslint --fix", "prettier --write"],
+	"*.{css,scss,less,json,md,html}": ["prettier --write"]
 }

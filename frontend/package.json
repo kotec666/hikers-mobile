@@ -7,9 +7,7 @@
 		"build": "next build",
 		"start": "next start",
 		"lint": "next lint",
-		"lint-frontend": "yarn lint",
-		"format": "prettier --write \"src/**/*.ts\"",
-		"format-frontend": "yarn format"
+		"format": "prettier --write \"src/**/*.ts\""
 	},
 	"dependencies": {
 		"autoprefixer": "10.4.17",
