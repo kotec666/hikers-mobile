@@ -29,8 +29,8 @@ export default function RootLayout() {
                 backgroundColor: Colors["black-0d"],
             }
         }}>
-            {/*<Stack.Screen name="index" options={{headerShown: false}}/>*/}
-            {/*<Stack.Screen name="auth" options={{headerShown: false}}/>*/}
+            <Stack.Screen name="hello-screen" options={{headerShown: false}}/>
+            <Stack.Screen name="auth" options={{headerShown: false}}/>
             <Stack.Screen name="document" options={{headerShown: false}}/>
         </Stack>
     );

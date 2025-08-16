@@ -4,22 +4,24 @@ import {Pressable, ScrollView, Text, View} from "react-native";
 import {Container} from "@/components/ui/Container";
 import {fontFamily} from "@/constants/Fonts";
 import ArrowBackSvg from "@/components/svg/ArrowBackSvg";
+import {useRouter} from 'expo-router';
 
 const DocumentPage = () => {
     const insets = useSafeAreaInsets()
+    const router = useRouter();
 
     return (
-        <SafeAreaProvider style={{ paddingTop: insets.top, paddingBottom: insets.bottom }}>
+        <SafeAreaProvider style={{paddingTop: insets.top, paddingBottom: insets.bottom}}>
             <Container>
                 <View className="flex-row gap-x-[16px] my-[20px]">
-                    <Pressable>
+                    <Pressable onPress={() => router.back()}>
                         <ArrowBackSvg/>
                     </Pressable>
                     <Text className="text-[20px] text-white" style={{fontFamily: fontFamily.bold}}>
                         Просмотр документа
                     </Text>
                 </View>
-                <ScrollView contentContainerStyle={{ paddingBottom: insets.bottom + 50 }}>
+                <ScrollView contentContainerStyle={{paddingBottom: insets.bottom + 50}}>
                     <Text className="text-base text-gray-ab leading-[30px]" style={{fontFamily: fontFamily.medium}}>
                         Задача организации, в особенности же постоянное информационно-пропагандистское обеспечение нашей
                         деятельности позволяет выполнять важные задания по разработке направлений прогрессивного
@@ -90,7 +92,8 @@ const DocumentPage = () => {
                         Идейные соображения высшего порядка, а также постоянное информационно-пропагандистское
                         обеспечение нашей деятельности способствует подготовки и реализации систем массового участия.
                         Идейные соображения высшего порядка, а также постоянное информационно-пропагандистское
-                        обеспечение нашей деятельности способствует подготовки и реализации систем массового участия. КОНЕЦ
+                        обеспечение нашей деятельности способствует подготовки и реализации систем массового участия.
+                        КОНЕЦ
                     </Text>
                 </ScrollView>
             </Container>

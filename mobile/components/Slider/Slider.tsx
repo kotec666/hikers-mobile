@@ -8,12 +8,12 @@ import Animated, {
     scrollTo
 } from "react-native-reanimated";
 import {SliderPagination} from "@/components/Slider/SliderPagination";
-import {useEffect, useRef, useState} from "react";
+import {PropsWithChildren, useEffect, useRef, useState} from "react";
 import {fontFamily} from "@/constants/Fonts";
 import {Container} from "@/components/ui/Container";
 import {Button} from "@/components/ui/Button";
 
-export type SliderProps = {
+export interface SliderProps extends PropsWithChildren {
     itemList: ImageSliderType[]
 }
 
@@ -25,7 +25,7 @@ export type ImageSliderType = {
 
 const {width} = Dimensions.get('screen')
 
-export function Slider({itemList}: SliderProps) {
+export function Slider({itemList, children}: SliderProps) {
     const scrollX = useSharedValue(0)
     const [paginationIndex, setPaginationIndex] = useState(0)
     const [data, setData] = useState(itemList)
@@ -112,9 +112,7 @@ export function Slider({itemList}: SliderProps) {
             >
                 {data[paginationIndex].description}
             </Text>
-            <Button variant="white">
-                Войти
-            </Button>
+            {children}
         </Container>
     </View>
 }
