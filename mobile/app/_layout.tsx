@@ -30,7 +30,8 @@ export default function RootLayout() {
             }
         }}>
             {/*<Stack.Screen name="index" options={{headerShown: false}}/>*/}
-            <Stack.Screen name="auth" options={{headerShown: false}}/>
+            {/*<Stack.Screen name="auth" options={{headerShown: false}}/>*/}
+            <Stack.Screen name="document" options={{headerShown: false}}/>
         </Stack>
     );
 }
