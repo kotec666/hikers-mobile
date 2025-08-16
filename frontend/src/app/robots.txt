@@ -1,22 +1,25 @@
 User-Agent: Googlebot
-Allow: /
-Disallow: /admin
-Disallow: /profile
-Disallow: /_next
-Disallow: /api
+Disallow: /
+# Allow: /
+# Disallow: /admin
+# Disallow: /profile
+# Disallow: /_next
+# Disallow: /api
 
 User-Agent: Yandex
-Allow: /
-Disallow: /admin
-Disallow: /profile
-Disallow: /_next
-Disallow: /api
+Disallow: /
+# Allow: /
+# Disallow: /admin
+# Disallow: /profile
+# Disallow: /_next
+# Disallow: /api
 
 User-Agent: *
-Allow: /
-Disallow: /admin
-Disallow: /profile
-Disallow: /_next
-Disallow: /api
+Disallow: /
+# Allow: /
+# Disallow: /admin
+# Disallow: /profile
+# Disallow: /_next
+# Disallow: /api
 
 Sitemap: https://hikers.su/sitemap.xml
