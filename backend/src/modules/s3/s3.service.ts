@@ -1,4 +1,9 @@
-﻿import { PutObjectCommand, S3Client as AWSClient } from '@aws-sdk/client-s3';
+﻿import {
+	PutObjectCommand,
+	ListObjectsV2Command,
+	DeleteObjectsCommand,
+	S3Client as AWSClient,
+} from '@aws-sdk/client-s3';
 import { v4 as uuidv4 } from 'uuid';
 import { EnvService } from '../env/env.service';
 import { Injectable } from '@nestjs/common';
@@ -95,6 +100,7 @@ export class S3Service {
 		throw Error(errorMessage);
 	}
 
+	/** Получить урл для доступа к файлу по ключу */
 	public getFileUrl(key: string): string {
 		return `${this.config.endpoint}/${this.config.bucketName}/${key}`;
 	}
@@ -104,5 +110,37 @@ export class S3Service {
 		if (splittedFilename.length == 1) return '';
 
 		return splittedFilename[splittedFilename.length - 1];
+	}
+
+	/** Очистить бакет */
+	async clearBucket() {
+		const { bucketName } = this.config;
+
+		// Получаем список всех объектов
+		const listParams = {
+			Bucket: bucketName,
+		};
+
+		const listCommand = new ListObjectsV2Command(listParams);
+		const listResult = await this.client.send(listCommand);
+
+		// Бакет и так пустой
+		if (!listResult.Contents || listResult.Contents.length === 0) {
+			return;
+		}
+
+		const objectsToDelete = listResult.Contents.map(({ Key }) => ({ Key }));
+		const deleteParams = {
+			Bucket: bucketName,
+			Delete: { Objects: objectsToDelete },
+		};
+
+		const deleteCommand = new DeleteObjectsCommand(deleteParams);
+		await this.client.send(deleteCommand);
+
+		// Рекурсивная очистка, если объектов >1000 (ListObjectsV2 возвращает до 1000 ключей за раз)
+		if (listResult.IsTruncated) {
+			await this.clearBucket(); // Повторяем, пока бакет не опустеет
+		}
 	}
 }

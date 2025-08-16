@@ -21,8 +21,17 @@ export class S3Controller {
 	 * @tag S3Testing
 	 * @summary Get file url by key
 	 */
-	@TypedRoute.Get('file-url/:key')
+	@TypedRoute.Get(':key')
 	async getFileUrl(@TypedParam('key') key: string): Promise<S3.UploadedFileUrl> {
 		return { url: this.service.getFileUrl(key) };
+	}
+
+	/**
+	 * @tag S3Testing
+	 * @summary Clear bucket
+	 */
+	@TypedRoute.Delete()
+	async clearBucket() {
+		return this.service.clearBucket();
 	}
 }
