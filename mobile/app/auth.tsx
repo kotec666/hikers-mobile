@@ -22,7 +22,7 @@ const AuthPage = () => {
                 behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
                 style={styles.container}
             >
-                <Container className="flex-1 pb-[40px]">
+                <Container className="flex-1 mb-[10px]">
                     <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
                         <View className="flex-grow">
                             <Text className="text-white text-xl" style={{fontFamily: fontFamily.bold}}>
@@ -60,16 +60,17 @@ const AuthPage = () => {
                             </Text>
                         </View>
                     </TouchableWithoutFeedback>
-                    <View className="gap-[10px]">
-                        <Button variant="white">
-                            Войти
-                        </Button>
-                        <Button variant="black">
-                            Зарегистрироваться
-                        </Button>
-                    </View>
+                    {/*@TODO ActivityIndicator*/}
+                    <Button variant="white">
+                        Войти
+                    </Button>
                 </Container>
             </KeyboardAvoidingView>
+            <Container className="pb-[40px]">
+                <Button variant="black">
+                    Зарегистрироваться
+                </Button>
+            </Container>
             <StatusBar style="light"/>
         </SafeAreaProvider>
     )
