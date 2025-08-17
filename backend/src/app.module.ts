@@ -8,6 +8,7 @@ import { defaultEnv } from './modules/env/env.validation';
 import { EnvService } from './modules/env/env.service';
 import { EnvModule } from './modules/env/env.module';
 import { TestingModule } from './modules/testing/testing.module';
+import { S3Module } from './modules/s3/s3.module';
 
 @Module({
 	imports: [
@@ -55,6 +56,7 @@ import { TestingModule } from './modules/testing/testing.module';
 		DatabaseModule,
 		FeedbackModule,
 		TestingModule,
+		S3Module,
 	],
 })
 export class AppModule {}
