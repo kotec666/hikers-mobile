@@ -71,7 +71,7 @@ const AuthPage = () => {
                                         onValueChange={() => setData(s => ({...s, isChecked: !s.isChecked}))}
                                     />
                                 </View>
-                                <Text className="mb-[37px] text-gray-ab text-[11px]"
+                                <Text className="flex-shrink mb-[37px] text-gray-ab text-[11px]"
                                       style={{fontFamily: fontFamily.regular}}>
                                     Согласен с <LinkCustom
                                     href="/document"
