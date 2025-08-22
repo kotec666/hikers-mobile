@@ -1,6 +1,5 @@
-
 export const fontFamily = {
-    bold: 'ManropeBold',
-    regular: 'ManropeRegular',
-    medium: 'ManropeMedium',
-}
+	bold: 'ManropeBold',
+	regular: 'ManropeRegular',
+	medium: 'ManropeMedium',
+};

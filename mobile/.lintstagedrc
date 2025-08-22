@@ -1,4 +1,4 @@
 ﻿{
-	"{app,components,constants,helpers,hooks,scripts}/*.{ts,js,json}": ["yarn expo lint --fix", "prettier --write"],
+	"{app,components,constants,helpers,hooks,scripts}/*.{js,jsx,ts,tsx}": ["yarn expo lint --fix", "prettier --write"],
 	"{app,components,constants,helpers,hooks,scripts}/*.{css,scss,less,json,md,html}": ["prettier --write"]
 }
