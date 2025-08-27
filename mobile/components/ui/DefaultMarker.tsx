@@ -1,5 +1,5 @@
-import { Marker } from 'react-native-yamap-plus-lite';
-import { StyleSheet, Text, View } from 'react-native';
+import { Marker } from 'react-native-yamap-plus-lite'
+import { StyleSheet, View } from 'react-native'
 
 export default function DefaultMarker(props: { lat: number; lon: number }) {
 	return (
@@ -8,21 +8,19 @@ export default function DefaultMarker(props: { lat: number; lon: number }) {
 			scale={1.5}
 			onPress={() => console.log('Custom marker pressed')}
 		>
-			<View style={styles.marker}>
-				<Text style={styles.markerText}>Я здесь!</Text>
-			</View>
+			<View style={styles.marker} />
 		</Marker>
-	);
+	)
 }
 
 const styles = StyleSheet.create({
 	marker: {
 		alignItems: 'center',
-		justifyContent: 'center',
+		justifyContent: 'center'
 	},
 	markerText: {
 		color: 'red',
 		fontWeight: 'bold',
-		fontSize: 12,
-	},
-});
+		fontSize: 12
+	}
+})

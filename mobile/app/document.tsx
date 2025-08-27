@@ -1,26 +1,16 @@
-import { SafeAreaProvider, useSafeAreaInsets } from 'react-native-safe-area-context';
-import { StatusBar } from 'expo-status-bar';
-import { Pressable, ScrollView, Text, View } from 'react-native';
-import { Container } from '@/components/ui/Container';
-import { fontFamily } from '@/constants/Fonts';
-import ArrowBackSvg from '@/components/svg/ArrowBackSvg';
-import { useRouter } from 'expo-router';
+import { SafeAreaProvider, useSafeAreaInsets } from 'react-native-safe-area-context'
+import { StatusBar } from 'expo-status-bar'
+import { ScrollView, Text } from 'react-native'
+import { Container } from '@/components/ui/Container'
+import { fontFamily } from '@/constants/Fonts'
+import HeaderBack from '@/components/ui/HeaderBack'
 
 const DocumentPage = () => {
-	const insets = useSafeAreaInsets();
-	const router = useRouter();
-
+	const insets = useSafeAreaInsets()
 	return (
 		<SafeAreaProvider style={{ paddingTop: insets.top, paddingBottom: insets.bottom }}>
-			<Container>
-				<View className="flex-row gap-x-[16px] my-[20px]">
-					<Pressable onPress={() => router.back()}>
-						<ArrowBackSvg />
-					</Pressable>
-					<Text className="text-[20px] text-white" style={{ fontFamily: fontFamily.bold }}>
-						Просмотр документа
-					</Text>
-				</View>
+			<Container className="gap-[20px]">
+				<HeaderBack>Просмотр документа</HeaderBack>
 				<ScrollView contentContainerStyle={{ paddingBottom: insets.bottom + 50 }}>
 					<Text className="text-base text-gray-ab leading-[30px]" style={{ fontFamily: fontFamily.medium }}>
 						Задача организации, в особенности же постоянное информационно-пропагандистское обеспечение нашей
@@ -97,7 +87,7 @@ const DocumentPage = () => {
 			</Container>
 			<StatusBar style="light" />
 		</SafeAreaProvider>
-	);
-};
+	)
+}
 
-export default DocumentPage;
+export default DocumentPage

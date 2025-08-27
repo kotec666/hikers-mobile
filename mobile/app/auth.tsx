@@ -1,5 +1,5 @@
-import { SafeAreaProvider, useSafeAreaInsets } from 'react-native-safe-area-context';
-import { StatusBar } from 'expo-status-bar';
+import { SafeAreaProvider, useSafeAreaInsets } from 'react-native-safe-area-context'
+import { StatusBar } from 'expo-status-bar'
 import {
 	Keyboard,
 	KeyboardAvoidingView,
@@ -7,40 +7,42 @@ import {
 	StyleSheet,
 	Text,
 	TouchableWithoutFeedback,
-	View,
-} from 'react-native';
-import { fontFamily } from '@/constants/Fonts';
-import { Container } from '@/components/ui/Container';
-import { Button } from '@/components/ui/Button';
-import { InputIcon } from '@/components/ui/InputIcon';
-import EmailSvg from '@/components/svg/EmailSvg';
-import PasswordSvg from '@/components/svg/PasswordSvg';
-import { useState } from 'react';
-import Checkbox from '@/components/ui/Checkbox';
-import { LinkCustom } from '@/components/ui/LinkCustom';
+	View
+} from 'react-native'
+import { fontFamily } from '@/constants/Fonts'
+import { Container } from '@/components/ui/Container'
+import { Button } from '@/components/ui/Button'
+import { InputIcon } from '@/components/ui/InputIcon'
+import EmailSvg from '@/components/svg/EmailSvg'
+import PasswordSvg from '@/components/svg/PasswordSvg'
+import { useState } from 'react'
+import Checkbox from '@/components/ui/Checkbox'
+import { LinkCustom } from '@/components/ui/LinkCustom'
+import { useRouter } from 'expo-router'
 
 enum AUTH_MODE {
 	AUTH = 'auth',
-	REGISTRATION = 'registration',
+	REGISTRATION = 'registration'
 }
 
 const AuthPage = () => {
-	const insets = useSafeAreaInsets();
+	const insets = useSafeAreaInsets()
+	const router = useRouter()
 	const [data, setData] = useState<{
-		isChecked: boolean;
-		mode: AUTH_MODE;
+		isChecked: boolean
+		mode: AUTH_MODE
 	}>({
 		isChecked: false,
-		mode: AUTH_MODE.AUTH,
-	});
+		mode: AUTH_MODE.AUTH
+	})
 
 	const handleClickAction = () => {
-		return;
-	};
+		return router.navigate('/map/map')
+	}
 
 	const handleClickRedirect = () => {
-		return setData((s) => ({ ...s, mode: s.mode === AUTH_MODE.AUTH ? AUTH_MODE.REGISTRATION : AUTH_MODE.AUTH }));
-	};
+		return setData((s) => ({ ...s, mode: s.mode === AUTH_MODE.AUTH ? AUTH_MODE.REGISTRATION : AUTH_MODE.AUTH }))
+	}
 
 	return (
 		<SafeAreaProvider style={{ paddingTop: insets.top, paddingBottom: insets.bottom }}>
@@ -108,13 +110,13 @@ const AuthPage = () => {
 			</Container>
 			<StatusBar style="light" />
 		</SafeAreaProvider>
-	);
-};
+	)
+}
 
 const styles = StyleSheet.create({
 	container: {
-		flex: 1,
-	},
-});
+		flex: 1
+	}
+})
 
-export default AuthPage;
+export default AuthPage

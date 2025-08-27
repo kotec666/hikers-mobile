@@ -1,11 +1,16 @@
-import { PropsWithChildren } from 'react';
-import { View } from 'react-native';
-import { cn } from '@/helpers/cn';
+import { PropsWithChildren } from 'react'
+import { StyleProp, View, ViewStyle } from 'react-native'
+import { cn } from '@/helpers/cn'
 
 export interface Props extends PropsWithChildren {
-	className?: string;
+	className?: string
+	style?: StyleProp<ViewStyle>
 }
 
-export function Container({ children, className }: Props) {
-	return <View className={cn('px-[16px]', className)}>{children}</View>;
+export function Container({ children, className, style }: Props) {
+	return (
+		<View className={cn('px-[16px]', className)} style={style}>
+			{children}
+		</View>
+	)
 }

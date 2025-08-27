@@ -12,10 +12,18 @@ export const Colors = {
 	'black-0d': '#0D0D0D',
 	'black-25': '#252525',
 	'black-44': '#444444',
+	'black-5c': '#5C5C5C',
 	'blue-3d': '#3DADFF',
+	'blue-98': '#98D4FF',
+	'blue-3a': '#3A72FF',
 	'red-55': '#552222',
 	'red-ff': '#FF0004',
+	'red-ff9': '#FF989A',
 	'red-8b': '#8B2F2F',
 	'green-main': '#22CB5A',
+	'green-20d': '#20DC52',
 	'yellow-main': '#FFC815',
-};
+	'yellow-ddf': '#DDFF3C',
+	'yellow-ffd': '#FFD919',
+	'purple-87': '#874FFF'
+}

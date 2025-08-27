@@ -1,39 +1,38 @@
-import { cn } from '@/helpers/cn';
-import { Pressable, TextInput, TextInputProps, View, Text } from 'react-native';
-import { fontFamily } from '@/constants/Fonts';
-import { Colors } from '@/constants/Colors';
-import { ReactNode, useState } from 'react';
-import EyeSvg from '@/components/svg/EyeSvg';
-import { Container } from '@/components/ui/Container';
+import { cn } from '@/helpers/cn'
+import { Pressable, TextInput, TextInputProps, View, Text } from 'react-native'
+import { fontFamily } from '@/constants/Fonts'
+import { Colors } from '@/constants/Colors'
+import { ReactNode, useState } from 'react'
+import EyeSvg from '@/components/svg/EyeSvg'
+import { Container } from '@/components/ui/Container'
 
 export interface Props extends TextInputProps {
-	className?: string;
-	svg?: ReactNode;
-	error?: boolean;
-	isPassword?: boolean;
+	className?: string
+	svg?: ReactNode
+	error?: boolean
+	isPassword?: boolean
 }
 
 export function InputIcon(props: Props) {
-	const { className, svg, error, isPassword, ...restProps } = props;
+	const { className, svg, error, isPassword, ...restProps } = props
 	const [data, setData] = useState({
-		isPasswordVisible: false,
-		value: '',
-	});
+		isPasswordVisible: false
+	})
 
 	return (
 		<View>
 			<View>
 				<TextInput
 					style={{
-						fontFamily: fontFamily.regular,
+						fontFamily: fontFamily.regular
 					}}
 					className={cn(
 						'h-[50px] border-[1px] pl-[55px] pr-[48px] rounded-full relative placeholder:text-gray-ab placeholder:text-[15px]',
 						{
 							'text-red-ff bg-red-55': error,
-							'text-white bg-black-25': !error,
+							'text-white bg-black-25': !error
 						},
-						className,
+						className
 					)}
 					selectionColor={Colors['yellow-main']}
 					secureTextEntry={isPassword && !data.isPasswordVisible}
@@ -44,7 +43,7 @@ export function InputIcon(props: Props) {
 						<View
 							className={cn('w-[40px] h-[40px] rounded-[40px] items-center justify-center', {
 								'bg-red-8b': error,
-								'bg-black-44': !error,
+								'bg-black-44': !error
 							})}
 						>
 							{svg}
@@ -68,5 +67,5 @@ export function InputIcon(props: Props) {
 				</Text>
 			</Container>
 		</View>
-	);
+	)
 }
