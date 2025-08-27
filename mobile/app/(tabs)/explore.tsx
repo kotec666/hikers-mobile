@@ -29,7 +29,6 @@ export default function TabTwoScreen() {
 					For static images, you can use the <Text>@2x</Text> and <Text>@3x</Text> suffixes to provide files
 					for different screen densities
 				</Text>
-				<Image source={require('@/assets/images/react-logo.png')} style={{ alignSelf: 'center' }} />
 			</Collapsible>
 			<Collapsible title="Custom fonts">
 				<Text>

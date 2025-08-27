@@ -83,6 +83,7 @@ const BottomSheet = forwardRef<BottomSheetHandle, BottomSheetProps>(
 				<TouchableWithoutFeedback onPress={closeSheet}>
 					<Animated.View style={[styles.backdrop, backdropStyle, { backgroundColor: backDropColor }]} />
 				</TouchableWithoutFeedback>
+                <GestureDetector gesture={panGestureHandler}>
 				<Animated.View
 					style={[
 						styles.container,
@@ -90,13 +91,14 @@ const BottomSheet = forwardRef<BottomSheetHandle, BottomSheetProps>(
 						{ height: activeHeight, backgroundColor, paddingBottom: safeAreaInsets.bottom }
 					]}
 				>
-					<GestureDetector gesture={panGestureHandler}>
+
 						<Pressable style={styles.lineContainer}>
 							<View style={styles.line} />
 						</Pressable>
-					</GestureDetector>
 					{children}
+
 				</Animated.View>
+            </GestureDetector>
 			</>
 		)
 	}

@@ -87,6 +87,7 @@ export default function HomeScreen() {
 		[]
 	)
 	const insets = useSafeAreaInsets()
+
 	return (
 		<SafeAreaProvider>
 			<GestureHandlerRootView style={styles.root}>

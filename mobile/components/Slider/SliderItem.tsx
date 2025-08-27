@@ -1,4 +1,4 @@
-import { Dimensions, Image, StyleSheet, Text, View } from 'react-native';
+import {Dimensions, Image, Platform, StyleSheet, Text, View} from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { ImageSliderType } from '@/components/Slider/Slider';
 import { fontFamily } from '@/constants/Fonts';
@@ -9,13 +9,20 @@ export type SliderItemProps = {
 };
 
 const { width, height } = Dimensions.get('screen');
+const ITEM_CONTAINER_HEIGHT = Platform.select({
+    ios: height / 1.7,
+    android: height / 1.65,
+    default: height / 2, // 135px
+});
+
+const BOTTOM_OVERLAY_HEIGHT = ITEM_CONTAINER_HEIGHT * 0.2; // 20%
 
 export function SliderItem({ item }: SliderItemProps) {
 	return (
 		<View className="justify-center items-center" style={styles.itemContainer}>
 			<View>
 				<Image source={item.image} style={styles.image} />
-				<View className="absolute bottom-0 left-0 right-0 h-[135px] overflow-hidden">
+				<View className="absolute bottom-0 left-0 right-0 overflow-hidden" style={{ height: 135 }}>
 					<Image
 						source={item.image}
 						style={[styles.image, { position: 'absolute', bottom: 0 }]}
@@ -44,11 +51,11 @@ export function SliderItem({ item }: SliderItemProps) {
 const styles = StyleSheet.create({
 	itemContainer: {
 		width: width,
-		height: height / 2,
+		height: ITEM_CONTAINER_HEIGHT,
 	},
 	image: {
 		width,
-		height: height / 2,
+        flex: 1,
 	},
 	titleText: {
 		fontFamily: fontFamily.bold,

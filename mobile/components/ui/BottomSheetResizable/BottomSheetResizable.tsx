@@ -141,7 +141,7 @@ export default BottomSheetResizable
 const styles = StyleSheet.create({
 	backdrop: {
 		...StyleSheet.absoluteFillObject,
-		backgroundColor: 'rgba(0,0,0,0.4)'
+		backgroundColor: 'rgba(0,0,0,0.25)'
 	},
 	container: {
 		height: SCREEN_HEIGHT,
