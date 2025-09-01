@@ -11,6 +11,9 @@ export const defaultEnv = z.object({
 	S3_BUCKET_NAME: z.string(),
 	S3_ACCESS_KEY_ID: z.string(),
 	S3_SECRET_ACCESS_KEY_ID: z.string(),
+
+	ACCESS_TOKEN_EXPIRATION_TIME: z.string().default('30m'),
+	REFRESH_TOKEN_EXPIRATION_TIME: z.string().default('30d'),
 });
 
 export type Env = z.infer<typeof defaultEnv>;
