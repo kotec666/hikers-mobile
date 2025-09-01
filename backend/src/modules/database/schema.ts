@@ -9,19 +9,24 @@ import {
 	primaryKey,
 	smallint,
 	index,
-	customType,
 	uniqueIndex,
+	jsonb,
 } from 'drizzle-orm/pg-core';
 
 /**
- * CUSTOM TYPES
+ * JSONB TYPES/INTERFACES
  */
 
-export const lineString = customType<{ data: string; driverData: string }>({
-	dataType() {
-		return 'geometry(LineString, 4326)';
-	},
-});
+export interface TrainingRouteNode {
+	/** Метка времени */
+	ts: number; // @TODO Таймзона??
+	/** Высота */
+	alt: number;
+	/** Скорость км/ч */
+	speed_kmh: number;
+	/** Пройденное расстояние (в метрах) */
+	distance: number;
+}
 
 /**
  * MODELS
@@ -193,7 +198,7 @@ export const trainingRoutes = pgTable(
 		participantId: uuid('participant_id')
 			.notNull()
 			.references(() => trainingParticipants.id),
-		// points: lineString('points'), @TODO
+		points: jsonb('points').default([]).$type<TrainingRouteNode[]>(),
 		createdAt: timestamp('created_at').defaultNow().notNull(),
 		startedAt: timestamp('started_at'),
 		finishedAt: timestamp('finished_at'),
@@ -210,7 +215,6 @@ export const trainingMetrics = pgTable(
 			.notNull()
 			.references(() => trainingParticipants.id),
 		timeMin: integer('time_min'),
-		// speedKmh: smallint('speed_kmh'), @TODO в отдельную таблицу
 		avgSpeedKmh: smallint('avg_speed_kmh'),
 		avgTempoMinSec: decimal('avg_tempo_min_sec', { precision: 4, scale: 2 }),
 		distanceM: integer('distance_m'),
