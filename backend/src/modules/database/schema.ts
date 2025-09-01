@@ -52,7 +52,7 @@ export const users = pgTable(
 		termsAcceptedAt: timestamp('terms_accepted_at'),
 		createdAt: timestamp('created_at').defaultNow().notNull(),
 	},
-	(table) => [uniqueIndex('usr_id_idx').on(table.id)], // @TODO index('usr_name_idx').using('gin', table.name)
+	(table) => [uniqueIndex('usr_id_idx').on(table.id), index('usr_name_idx').using('gin', table.name)],
 );
 
 // User Subscribers (many-to-many)
