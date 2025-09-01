@@ -1,4 +1,3 @@
-import { Image } from 'expo-image'
 import { Platform, ScrollView, StyleSheet, View, Text } from 'react-native'
 
 import { Collapsible } from '@/components/Collapsible'

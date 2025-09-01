@@ -4,15 +4,28 @@ import PeopleSvg from '@/components/svg/PeopleSvg'
 import PeopleAddSvg from '@/components/svg/PeopleAddSvg'
 import { fontFamily } from '@/constants/Fonts'
 import RoundedCheckMark from '@/components/svg/RoundedCheckMark'
+import PeopleRemoveSvg from '@/components/svg/PeopleRemoveSvg'
+import { FRIEND_STATUS } from '@/app/find-people'
 
 interface IProps {
 	id: number
 	name: string
 	avatar: boolean
-	isAdded: boolean
+	status: FRIEND_STATUS
 }
 
 const PeopleListItem = (props: IProps) => {
+	const renderIcon = () => {
+		switch (props.status) {
+			case 'added':
+				return <PeopleRemoveSvg />
+			case 'not-added':
+				return <PeopleAddSvg />
+			case 'sent':
+				return <RoundedCheckMark />
+		}
+	}
+
 	return (
 		<View className="flex-row justify-between items-center">
 			<View className="flex-row gap-[15px] items-center">
@@ -30,7 +43,7 @@ const PeopleListItem = (props: IProps) => {
 					{props.name}
 				</Text>
 			</View>
-			<View>{props.isAdded ? <PeopleAddSvg /> : <RoundedCheckMark />}</View>
+			<View>{renderIcon()}</View>
 		</View>
 	)
 }

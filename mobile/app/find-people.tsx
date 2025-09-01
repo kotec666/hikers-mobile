@@ -7,30 +7,36 @@ import { Button } from '@/components/ui/Button'
 import { Input } from '@/components/ui/Input'
 import PeopleListItem from '@/components/find-people/PeopleListItem'
 
+export enum FRIEND_STATUS {
+	ADDED = 'added',
+	NOT_ADDED = 'not-added',
+	SENT = 'sent'
+}
+
 const FindPeople = () => {
 	const insets = useSafeAreaInsets()
 
 	const data = [
-		{ id: 1, name: 'Стив Джобс first', avatar: true, isAdded: true },
-		{ id: 2, name: 'Джефф Безос', avatar: false, isAdded: false },
-		{ id: 3, name: 'Джефф Безос', avatar: false, isAdded: false },
-		{ id: 4, name: 'Джефф Безос', avatar: false, isAdded: false },
-		{ id: 5, name: 'Джефф Безос', avatar: false, isAdded: false },
-		{ id: 6, name: 'Джефф Безос', avatar: false, isAdded: false },
-		{ id: 7, name: 'Джефф Безос', avatar: false, isAdded: false },
-		{ id: 8, name: 'Джефф Безос', avatar: false, isAdded: false },
-		{ id: 9, name: 'Джефф Безос', avatar: false, isAdded: false },
-		{ id: 10, name: 'Джефф Безос', avatar: false, isAdded: false },
-		{ id: 11, name: 'Джефф Безос', avatar: false, isAdded: false },
-		{ id: 12, name: 'Джефф Безос', avatar: false, isAdded: false },
-		{ id: 13, name: 'Джефф Безос', avatar: false, isAdded: false },
-		{ id: 14, name: 'Джефф Безос', avatar: false, isAdded: false },
-		{ id: 15, name: 'Джефф Безос', avatar: false, isAdded: false },
-		{ id: 16, name: 'Джефф Безос', avatar: false, isAdded: false },
-		{ id: 17, name: 'Джефф Безос', avatar: false, isAdded: false },
-		{ id: 18, name: 'Джефф Безос', avatar: false, isAdded: false },
-		{ id: 19, name: 'Джефф Безос', avatar: false, isAdded: false },
-		{ id: 20, name: 'Джефф Безос last', avatar: false, isAdded: false }
+		{ id: 1, name: 'Стив Джобс first', avatar: true, status: FRIEND_STATUS.ADDED },
+		{ id: 2, name: 'Джефф Безос', avatar: false, status: FRIEND_STATUS.SENT },
+		{ id: 3, name: 'Джефф Безос', avatar: false, status: FRIEND_STATUS.NOT_ADDED },
+		{ id: 4, name: 'Джефф Безос', avatar: false, status: FRIEND_STATUS.ADDED },
+		{ id: 5, name: 'Джефф Безос', avatar: false, status: FRIEND_STATUS.ADDED },
+		{ id: 6, name: 'Джефф Безос', avatar: false, status: FRIEND_STATUS.ADDED },
+		{ id: 7, name: 'Джефф Безос', avatar: false, status: FRIEND_STATUS.ADDED },
+		{ id: 8, name: 'Джефф Безос', avatar: false, status: FRIEND_STATUS.ADDED },
+		{ id: 9, name: 'Джефф Безос', avatar: false, status: FRIEND_STATUS.ADDED },
+		{ id: 10, name: 'Джефф Безос', avatar: false, status: FRIEND_STATUS.ADDED },
+		{ id: 11, name: 'Джефф Безос', avatar: false, status: FRIEND_STATUS.ADDED },
+		{ id: 12, name: 'Джефф Безос', avatar: false, status: FRIEND_STATUS.ADDED },
+		{ id: 13, name: 'Джефф Безос', avatar: false, status: FRIEND_STATUS.ADDED },
+		{ id: 14, name: 'Джефф Безос', avatar: false, status: FRIEND_STATUS.ADDED },
+		{ id: 15, name: 'Джефф Безос', avatar: false, status: FRIEND_STATUS.ADDED },
+		{ id: 16, name: 'Джефф Безос', avatar: false, status: FRIEND_STATUS.ADDED },
+		{ id: 17, name: 'Джефф Безос', avatar: false, status: FRIEND_STATUS.ADDED },
+		{ id: 18, name: 'Джефф Безос', avatar: false, status: FRIEND_STATUS.ADDED },
+		{ id: 19, name: 'Джефф Безос', avatar: false, status: FRIEND_STATUS.ADDED },
+		{ id: 20, name: 'Джефф Безос last', avatar: false, status: FRIEND_STATUS.ADDED }
 	]
 
 	return (

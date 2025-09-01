@@ -1,4 +1,4 @@
-import { StyleSheet, View, Text, SafeAreaView } from 'react-native'
+import { StyleSheet, View, SafeAreaView } from 'react-native'
 import SneakerSvg from '@/components/svg/SneakerSvg'
 import PeopleAddSvg from '@/components/svg/PeopleAddSvg'
 import { SafeAreaProvider, useSafeAreaInsets } from 'react-native-safe-area-context'

@@ -1,10 +1,17 @@
 import { useEffect, useState, useRef } from 'react'
-import { Text, StyleSheet, Dimensions, Animated, PanResponder } from 'react-native'
+import { Text, StyleSheet, Dimensions, Animated, PanResponder, View } from 'react-native'
 import { fontFamily } from '@/constants/Fonts'
+import { cn } from '@/helpers/cn'
+
+export enum NotificationInAppType {
+	ERROR = 'error',
+	INFO = 'info',
+	SUCCESS = 'success'
+}
 
 interface IProps {
 	text?: string
-	type: 'error' | 'info' | 'success'
+	type: NotificationInAppType
 }
 
 export function Notification({ text, type }: IProps) {
@@ -12,10 +19,6 @@ export function Notification({ text, type }: IProps) {
 	const animatedValue = useRef(new Animated.Value(-100)).current
 	const pan = useRef(new Animated.ValueXY()).current
 	const direction = useRef<'x' | 'y' | null>(null)
-
-	const bgColor = type === 'error' ? '#EF4444' : type === 'success' ? '#22C55E' : '#FFFFFF'
-
-	const textColor = type === 'info' ? '#000000' : '#FFFFFF'
 
 	const onEnter = () => {
 		Animated.timing(animatedValue, {
@@ -98,12 +101,28 @@ export function Notification({ text, type }: IProps) {
 			style={[
 				styles.container,
 				{
-					backgroundColor: bgColor,
 					transform: [{ translateY: animatedValue }, { translateX: pan.x }, { translateY: pan.y }]
 				}
 			]}
 		>
-			<Text style={[styles.text, { color: textColor }]}>{text}</Text>
+			<View
+				className={cn('rounded-[25px] py-[18px] px-[15px]', {
+					'bg-green-main/20': type === NotificationInAppType.SUCCESS,
+					'bg-red-ff/20': type === NotificationInAppType.ERROR,
+					'bg-black/20': type === NotificationInAppType.INFO
+				})}
+			>
+				<Text
+					style={[styles.text]}
+					className={cn('', {
+						'text-green-main': type === NotificationInAppType.SUCCESS,
+						'text-red-ff': type === NotificationInAppType.ERROR,
+						'text-white': type === NotificationInAppType.INFO
+					})}
+				>
+					{text}
+				</Text>
+			</View>
 		</Animated.View>
 	)
 }
@@ -118,7 +137,7 @@ const styles = StyleSheet.create({
 	},
 	text: {
 		fontSize: 16,
-		textAlign: 'center',
+		textAlign: 'left',
 		fontFamily: fontFamily.regular
 	}
 })

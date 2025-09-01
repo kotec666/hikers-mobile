@@ -16,7 +16,8 @@ import WorkoutRunning from '@/components/svg/WorkoutRunning'
 import WorkoutWalking from '@/components/svg/WorkoutWalking'
 import WorkoutBicycle from '@/components/svg/WorkoutBicycle'
 import { Container } from '@/components/ui/Container'
-import { Notification } from '@/components/Notification'
+import { Notification, NotificationInAppType } from '@/components/Notification'
+import NavBar from '@/components/ui/NavBar'
 
 const { height: screenHeight } = Dimensions.get('screen')
 
@@ -92,7 +93,10 @@ export default function HomeScreen() {
 		<SafeAreaProvider>
 			<GestureHandlerRootView style={styles.root}>
 				<SafeAreaView style={styles.container}>
-					<Notification text={'Текст сообщения'} type={'success'} />
+					<Notification
+						text={'Нельзя начать тренировку без предоставления разрешений'}
+						type={NotificationInAppType.INFO}
+					/>
 					<Button variant="white" onPress={() => router.navigate('/hello-screen')}>
 						To hello screen
 					</Button>
@@ -229,6 +233,7 @@ export default function HomeScreen() {
 						{/*	renderItem={renderItem}*/}
 						{/*/>*/}
 					</BottomSheetResizable>
+					<NavBar />
 				</SafeAreaView>
 			</GestureHandlerRootView>
 		</SafeAreaProvider>
