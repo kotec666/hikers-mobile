@@ -1,0 +1,1 @@
+CREATE INDEX "usr_name_idx" ON "users" USING gin ("name");
