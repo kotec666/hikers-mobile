@@ -2,9 +2,7 @@ import * as React from 'react'
 import Svg, { Path } from 'react-native-svg'
 import { SvgProps } from 'react-native-svg/src/elements/Svg'
 
-interface IProps extends SvgProps {}
-
-const SvgComponent = (props: IProps) => {
+const SvgComponent = (props: SvgProps) => {
 	const { stroke = 'black', ...restProps } = props
 
 	return (

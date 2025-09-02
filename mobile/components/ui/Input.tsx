@@ -2,7 +2,7 @@ import { cn } from '@/helpers/cn'
 import { StyleSheet, TextInput, TextInputProps, View } from 'react-native'
 import { fontFamily } from '@/constants/Fonts'
 import { Colors } from '@/constants/Colors'
-import { ReactNode, useState } from 'react'
+import { ReactNode } from 'react'
 import SearchSvg from '@/components/svg/SearchSvg'
 
 export interface Props extends TextInputProps {
@@ -16,7 +16,7 @@ export function Input(props: Props) {
 	const { className, svg, error, isFind, ...restProps } = props
 
 	return (
-		<View>
+		<View className="grow">
 			<TextInput
 				style={styles.input}
 				className={cn('', className)}

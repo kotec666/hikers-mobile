@@ -1,7 +1,7 @@
-import { Dimensions, Text, View, StyleSheet, SafeAreaView, FlatList, Image } from 'react-native'
+import { Dimensions, Text, View, StyleSheet, SafeAreaView, FlatList } from 'react-native'
 import { Button } from '@/components/ui/Button'
 import { useRouter } from 'expo-router'
-import React, { useCallback, useMemo, useRef, useState } from 'react'
+import React, { useCallback, useRef, useState } from 'react'
 import { BottomSheetHandle } from '@/components/ui/BottomSheet/types'
 import { SafeAreaProvider, useSafeAreaInsets } from 'react-native-safe-area-context'
 import { GestureHandlerRootView } from 'react-native-gesture-handler'
@@ -40,23 +40,24 @@ export default function HomeScreen() {
 		bottomSheetResizableRef?.current?.scrollTo?.(isSheetActive ? 0 : -200)
 	}, [])
 
-	const data = useMemo(
-		() =>
-			Array.from({ length: 30 }, (_, index) => ({
-				id: index.toString(),
-				image: `https://picsum.photos/200/150?random=${index}`
-			})),
-		[]
-	)
-
-	const renderItem = useCallback(
-		({ item }: { item: { id: string; image: string } }) => (
-			<View style={styles.listItem}>
-				<Image source={{ uri: item.image }} resizeMode="cover" style={styles.itemImage} />
-			</View>
-		),
-		[]
-	)
+	// Пример с выводом изображений
+	// const data = useMemo(
+	// 	() =>
+	// 		Array.from({ length: 30 }, (_, index) => ({
+	// 			id: index.toString(),
+	// 			image: `https://picsum.photos/200/150?random=${index}`
+	// 		})),
+	// 	[]
+	// )
+	//
+	// const renderItem = useCallback(
+	// 	({ item }: { item: { id: string; image: string } }) => (
+	// 		<View style={styles.listItem}>
+	// 			<Image source={{ uri: item.image }} resizeMode="cover" style={styles.itemImage} />
+	// 		</View>
+	// 	),
+	// 	[]
+	// )
 
 	const WorkoutTypesData = [
 		{ id: 1, name: 'Забег', icon: <WorkoutRunning /> },
@@ -99,6 +100,9 @@ export default function HomeScreen() {
 					/>
 					<Button variant="white" onPress={() => router.navigate('/hello-screen')}>
 						To hello screen
+					</Button>
+					<Button variant="white" onPress={() => router.navigate('/news-feed')}>
+						Страница постов
 					</Button>
 					<Button
 						variant="white"

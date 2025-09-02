@@ -1,11 +1,11 @@
 import React from 'react'
-import { View, Text, Image } from 'react-native'
-import PeopleSvg from '@/components/svg/PeopleSvg'
+import { View, Text } from 'react-native'
 import PeopleAddSvg from '@/components/svg/PeopleAddSvg'
 import { fontFamily } from '@/constants/Fonts'
 import RoundedCheckMark from '@/components/svg/RoundedCheckMark'
 import PeopleRemoveSvg from '@/components/svg/PeopleRemoveSvg'
 import { FRIEND_STATUS } from '@/app/find-people'
+import { UserAvatar } from '@/components/ui/UserAvatar'
 
 interface IProps {
 	id: number
@@ -29,16 +29,7 @@ const PeopleListItem = (props: IProps) => {
 	return (
 		<View className="flex-row justify-between items-center">
 			<View className="flex-row gap-[15px] items-center">
-				{props.avatar ? (
-					<Image
-						source={require('@/assets/images/carousel/carousel-2.webp')}
-						className="h-[50px] w-[50px] rounded-full"
-					/>
-				) : (
-					<View className="h-[50px] w-[50px] justify-center items-center bg-blue-98 rounded-full">
-						<PeopleSvg />
-					</View>
-				)}
+				<UserAvatar avatar={props.avatar} />
 				<Text style={{ fontFamily: fontFamily.medium }} className="text-gray-ab text-base">
 					{props.name}
 				</Text>

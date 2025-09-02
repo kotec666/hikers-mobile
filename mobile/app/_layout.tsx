@@ -48,6 +48,7 @@ export default function RootLayout() {
 			<Stack.Screen name="document" options={{ headerShown: false }} />
 			<Stack.Screen name="map/map" options={{ headerShown: false }} />
 			<Stack.Screen name="find-people" options={{ headerShown: false }} />
+			<Stack.Screen name="news-feed" options={{ headerShown: false }} />
 		</Stack>
 	)
 }
