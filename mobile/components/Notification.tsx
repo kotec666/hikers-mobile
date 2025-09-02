@@ -16,6 +16,7 @@ interface IProps {
 
 export function Notification({ text, type }: IProps) {
 	const [isShown, setIsShown] = useState<boolean>(false)
+	const isDismissingRef = useRef<boolean>(false)
 	const animatedValue = useRef(new Animated.Value(-100)).current
 	const pan = useRef(new Animated.ValueXY()).current
 	const direction = useRef<'x' | 'y' | null>(null)
@@ -29,6 +30,7 @@ export function Notification({ text, type }: IProps) {
 	}
 
 	const onExit = (velocity = 0) => {
+        isDismissingRef.current = true
 		Animated.timing(animatedValue, {
 			toValue: -100,
 			duration: 300,
@@ -41,7 +43,10 @@ export function Notification({ text, type }: IProps) {
 
 	const panResponder = useRef(
 		PanResponder.create({
-			onMoveShouldSetPanResponder: (_, gesture) => Math.abs(gesture.dy) > 5 || Math.abs(gesture.dx) > 5,
+			onMoveShouldSetPanResponder: (_, gesture) => {
+                if (isDismissingRef.current) return false
+                return Math.abs(gesture.dy) > 5 || Math.abs(gesture.dx) > 5
+            },
 			onPanResponderMove: (_, gesture) => {
 				if (!direction.current) {
 					direction.current = Math.abs(gesture.dy) > Math.abs(gesture.dx) ? 'y' : 'x'

@@ -96,7 +96,7 @@ export default function HomeScreen() {
 				<SafeAreaView style={styles.container}>
 					<Notification
 						text={'Нельзя начать тренировку без предоставления разрешений'}
-						type={NotificationInAppType.INFO}
+						type={NotificationInAppType.SUCCESS}
 					/>
 					<Button variant="white" onPress={() => router.navigate('/hello-screen')}>
 						To hello screen

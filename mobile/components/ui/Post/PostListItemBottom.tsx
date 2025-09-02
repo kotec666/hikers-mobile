@@ -28,7 +28,7 @@ const PostListItemBottom = () => {
 						</View>
 					))}
 				</View>
-				<View className="flex-row gap-[8px]">
+				<View className="flex-row gap-[5px]">
 					<Text className="text-blue-3d text-sm" style={{ fontFamily: fontFamily.medium }}>
 						Стив
 					</Text>
