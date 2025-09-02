@@ -98,14 +98,17 @@ export default function HomeScreen() {
 						text={'Нельзя начать тренировку без предоставления разрешений'}
 						type={NotificationInAppType.SUCCESS}
 					/>
-					<Button variant="white" onPress={() => router.navigate('/hello-screen')}>
+					<Button variant="black" onPress={() => router.navigate('/hello-screen')}>
 						To hello screen
 					</Button>
-					<Button variant="white" onPress={() => router.navigate('/news-feed')}>
+					<Button variant="black" onPress={() => router.navigate('/news-feed')}>
 						Страница постов
 					</Button>
+					<Button variant="black" onPress={() => router.navigate('/route/1')}>
+						Страница просмотра маршрута
+					</Button>
 					<Button
-						variant="white"
+						variant="black"
 						onPress={() =>
 							openBottomSheet(
 								<View className="flex-1 items-center justify-start p-[16px] gap-[40px] w-full">
@@ -126,7 +129,7 @@ export default function HomeScreen() {
 						Example 1
 					</Button>
 					<Button
-						variant="white"
+						variant="black"
 						onPress={() =>
 							openBottomSheet(
 								<View className="flex-1 items-center justify-start p-[16px] gap-[40px] w-full">
@@ -150,7 +153,7 @@ export default function HomeScreen() {
 						Example 2
 					</Button>
 					<Button
-						variant="white"
+						variant="black"
 						onPress={() =>
 							openBottomSheet(
 								<View className="flex-1 items-center justify-start p-[16px] gap-[40px] w-full">
@@ -179,7 +182,7 @@ export default function HomeScreen() {
 						Example 3
 					</Button>
 					<Button
-						variant="white"
+						variant="black"
 						onPress={() =>
 							openBottomSheet(
 								<View className="flex-1 items-center justify-start p-[16px] gap-[40px] w-full">
@@ -210,7 +213,7 @@ export default function HomeScreen() {
 					>
 						Example 4
 					</Button>
-					<Button variant="white" onPress={toggleResizableSheet}>
+					<Button variant="black" onPress={toggleResizableSheet}>
 						Example 5
 					</Button>
 					<BottomSheet ref={bottomSheetRef} activeHeight={screenHeight * 0.5}>

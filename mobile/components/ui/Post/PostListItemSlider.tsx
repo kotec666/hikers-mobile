@@ -20,8 +20,8 @@ const PostListItemSlider = (props: IProps) => {
 
 	return (
 		<Animated.FlatList
-            onTouchStart={(e) => e.stopPropagation()}
-            className="flex-grow-0"
+			onTouchStart={(e) => e.stopPropagation()}
+			className="flex-grow-0"
 			data={props.data}
 			renderItem={({ item, index }) => (
 				<PostSliderItem key={item.id} {...item} index={index} isOnlyOneInList={props.data.length === 1} />

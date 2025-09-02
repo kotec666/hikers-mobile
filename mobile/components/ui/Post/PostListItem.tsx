@@ -1,9 +1,9 @@
 import React from 'react'
-import {View} from 'react-native'
-import {Colors} from '@/constants/Colors'
+import { View } from 'react-native'
+import { Colors } from '@/constants/Colors'
 import PostListItemHeader from '@/components/ui/Post/PostListItemHeader'
 import PostListItemBottom from '@/components/ui/Post/PostListItemBottom'
-import PostBodyWrapper, {PostType} from '@/components/ui/Post/PostBodyWrapper'
+import PostBodyWrapper, { PostType } from '@/components/ui/Post/PostBodyWrapper'
 
 const PostListItem = () => {
 	return (

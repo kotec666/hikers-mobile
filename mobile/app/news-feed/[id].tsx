@@ -1,36 +1,66 @@
-import React from 'react';
-import {View, SafeAreaView, ScrollView, Image} from "react-native";
-import {SafeAreaProvider, useSafeAreaInsets} from "react-native-safe-area-context";
-import {Container} from "@/components/ui/Container";
-import {StatusBar} from "expo-status-bar";
-import PostListItemHeader from "@/components/ui/Post/PostListItemHeader";
-import HeaderBack from "@/components/ui/HeaderBack";
-import PostBodyWrapper, {PostType} from "@/components/ui/Post/PostBodyWrapper";
+import React, { useState } from 'react'
+import { View, SafeAreaView, ScrollView, Image, Dimensions, Pressable } from 'react-native'
+import { SafeAreaProvider, useSafeAreaInsets } from 'react-native-safe-area-context'
+import { Container } from '@/components/ui/Container'
+import { StatusBar } from 'expo-status-bar'
+import PostListItemHeader from '@/components/ui/Post/PostListItemHeader'
+import HeaderBack from '@/components/ui/HeaderBack'
+import PostBodyWrapper, { PostType } from '@/components/ui/Post/PostBodyWrapper'
+import PostListItemBottom from '@/components/ui/Post/PostListItemBottom'
+import PostListItemSlider from '@/components/ui/Post/PostListItemSlider'
+import MapRoutesSwitchers from '@/components/ui/Post/MapRoutesSwitchers'
+import MoreOptionsButton from '@/components/ui/MoreOptionsButton'
+import DeletePostModal from '@/components/ui/Post/DeletePostModal'
+
+const { height } = Dimensions.get('screen')
 
 const Post = () => {
-    const insets = useSafeAreaInsets()
+	const insets = useSafeAreaInsets()
+	const [state, setState] = useState({
+		isDeleteModalOpen: false
+	})
 
-    return (
-        <SafeAreaProvider style={{ paddingTop: insets.top }}>
-            <SafeAreaView style={{ flex: 1, alignItems: 'center' }}>
-                <Container className="gap-[20px]">
-                    <HeaderBack>Просмотр поста</HeaderBack>
-                    <ScrollView style={{ flex: 1, width: '100%'}}>
-                        <View className="gap-[15px]">
-                            <PostListItemHeader isSubscribed />
-                            <PostBodyWrapper mode={PostType.POST_ITEM} />
-                            <Image
-                                source={require('@/assets/images/carousel/carousel-2.webp')}
-                                className="rounded-[25px] border-[1px] border-white/20 w-full"
-                                resizeMode="cover"
-                            />
-                        </View>
-                    </ScrollView>
-                </Container>
-                <StatusBar style="light" />
-                </SafeAreaView>
-            </SafeAreaProvider>
-    );
-};
+	const PostSliderItems = [
+		{ id: 1, image: require('@/assets/images/carousel/carousel-3.webp') },
+		{ id: 2, image: require('@/assets/images/carousel/carousel-3.webp') },
+		{ id: 3, image: require('@/assets/images/carousel/carousel-3.webp') }
+	]
 
-export default Post;
+	const SLIDE_ASPECT_RATIO = height / 3.6
+
+	const handleClickDelete = () => {
+		return setState((s) => ({ ...s, isDeleteModalOpen: !s.isDeleteModalOpen }))
+	}
+
+	return (
+		<SafeAreaProvider style={{ paddingTop: insets.top }}>
+			<SafeAreaView style={{ flex: 1, alignItems: 'center' }}>
+				<DeletePostModal open={state.isDeleteModalOpen} handleClose={handleClickDelete} />
+				<Container className="gap-[20px]">
+					<View className="flex-row justify-between items-center">
+						<HeaderBack>Просмотр поста</HeaderBack>
+						<MoreOptionsButton action={handleClickDelete} />
+					</View>
+					<ScrollView style={{ flex: 1, width: '100%' }}>
+						<View className="gap-[15px]">
+							<PostListItemHeader isSubscribed />
+							<PostBodyWrapper mode={PostType.POST_ITEM} />
+							<Image
+								style={{ height: SLIDE_ASPECT_RATIO }}
+								source={require('@/assets/images/carousel/carousel-2.webp')}
+								className="rounded-[25px] border-[1px] border-white/20 w-full"
+								resizeMode="cover"
+							/>
+							<MapRoutesSwitchers />
+							<PostListItemSlider data={PostSliderItems} />
+							<PostListItemBottom />
+						</View>
+					</ScrollView>
+				</Container>
+				<StatusBar style="light" />
+			</SafeAreaView>
+		</SafeAreaProvider>
+	)
+}
+
+export default Post

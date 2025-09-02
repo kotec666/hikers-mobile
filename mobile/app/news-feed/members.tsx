@@ -1,28 +1,22 @@
 import React from 'react'
-import { FlatList, SafeAreaView, View } from 'react-native'
-import { SafeAreaProvider, useSafeAreaInsets } from 'react-native-safe-area-context'
-import HeaderBack from '@/components/ui/HeaderBack'
+import { FlatList, SafeAreaView, View, Text } from 'react-native'
 import { Container } from '@/components/ui/Container'
-import { Button } from '@/components/ui/Button'
-import { Input } from '@/components/ui/Input'
+import HeaderBack from '@/components/ui/HeaderBack'
 import PeopleListItem from '@/components/find-people/PeopleListItem'
+import { SafeAreaProvider, useSafeAreaInsets } from 'react-native-safe-area-context'
+import { fontFamily } from '@/constants/Fonts'
 import PeopleRemoveSvg from '@/components/svg/PeopleRemoveSvg'
-import PeopleAddSvg from '@/components/svg/PeopleAddSvg'
 import RoundedCheckMark from '@/components/svg/RoundedCheckMark'
+import { Colors } from '@/constants/Colors'
+import RoundedPlusSvg from '@/components/svg/RoundedPlusSvg'
 
-export enum FRIEND_STATUS {
-	ADDED = 'added',
-	NOT_ADDED = 'not-added',
-	SENT = 'sent'
-}
-
-const FindPeople = () => {
+const Members = () => {
 	const insets = useSafeAreaInsets()
 
 	const data = [
-		{ id: 1, name: 'Стив Джобс first', avatar: true, icon: <PeopleRemoveSvg /> },
-		{ id: 2, name: 'Джефф Безос', avatar: false, icon: <PeopleAddSvg /> },
-		{ id: 3, name: 'Джефф Безос', avatar: false, icon: <RoundedCheckMark /> },
+		{ id: 1, name: 'Стив Джобс first', avatar: true, icon: <RoundedPlusSvg color={Colors['orange-main']} /> },
+		{ id: 2, name: 'Джефф Безос', avatar: false, icon: <RoundedCheckMark color={Colors['green-main']} /> },
+		{ id: 3, name: 'Джефф Безос', avatar: false, icon: <RoundedPlusSvg color={Colors['blue-00']} /> },
 		{ id: 4, name: 'Джефф Безос', avatar: false, icon: <PeopleRemoveSvg /> },
 		{ id: 5, name: 'Джефф Безос', avatar: false, icon: <PeopleRemoveSvg /> },
 		{ id: 6, name: 'Джефф Безос', avatar: false, icon: <PeopleRemoveSvg /> },
@@ -46,18 +40,10 @@ const FindPeople = () => {
 		<SafeAreaProvider style={{ paddingTop: insets.top }}>
 			<SafeAreaView style={{ flex: 1 }}>
 				<Container className="gap-[20px] mt-[20px] flex-1">
-					<HeaderBack>Совместная тренировка</HeaderBack>
-
-					<View className="flex-row gap-[10px]">
-						<Button variant="white" className="w-min px-[30px]">
-							Поиск
-						</Button>
-						<Button variant="black" className="w-min px-[30px]">
-							Участники
-						</Button>
-					</View>
-
-					<Input isFind placeholder="Поиск участников" />
+					<HeaderBack>Участники</HeaderBack>
+					<Text className="text-white text-base" style={{ fontFamily: fontFamily.bold }}>
+						Люди
+					</Text>
 
 					<FlatList
 						data={data}
@@ -76,4 +62,4 @@ const FindPeople = () => {
 	)
 }
 
-export default FindPeople
+export default Members

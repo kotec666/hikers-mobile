@@ -6,13 +6,13 @@ interface IProps {
 }
 
 const SvgComponent = (props: IProps) => (
-	<Svg width={25} height={25} fill="none">
+	<Svg width={28} height={28} fill="none">
 		<Path
 			stroke={props.color || '#FFFFFF'}
 			strokeLinecap="round"
 			strokeLinejoin="round"
 			strokeWidth={1.6}
-			d="m7.775 12.5 3.15 3.15 6.3-6.3M23 12.5C23 18.299 18.299 23 12.5 23S2 18.299 2 12.5 6.701 2 12.5 2 23 6.701 23 12.5Z"
+			d="M14.151 9.05v9.4m-4.7-4.7h9.4m7.05 0c0 6.49-5.26 11.75-11.75 11.75-6.489 0-11.75-5.26-11.75-11.75S7.662 2 14.151 2c6.49 0 11.75 5.26 11.75 11.75Z"
 		/>
 	</Svg>
 )

@@ -16,6 +16,7 @@ export const Colors = {
 	'blue-3d': '#3DADFF',
 	'blue-98': '#98D4FF',
 	'blue-3a': '#3A72FF',
+	'blue-00': '#00A6FF',
 	'red-55': '#552222',
 	'red-ff': '#FF0004',
 	'red-ff9': '#FF989A',
@@ -25,5 +26,6 @@ export const Colors = {
 	'yellow-main': '#FFC815',
 	'yellow-ddf': '#DDFF3C',
 	'yellow-ffd': '#FFD919',
+	'orange-main': '#FF6E00',
 	'purple-87': '#874FFF'
 }

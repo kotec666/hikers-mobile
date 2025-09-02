@@ -41,12 +41,13 @@ const variantColors = {
 
 export interface Props extends PropsWithChildren {
 	className?: string
+	buttonContainerClassName?: string
 	isLoading?: boolean
 	variant: keyof typeof variantColors
 }
 
 export function Button(props: Props & PressableProps) {
-	const { children, className, variant, isLoading, ...restProps } = props
+	const { children, className, buttonContainerClassName, variant, isLoading, ...restProps } = props
 
 	const animatedValue = useRef(new Animated.Value(0)).current
 	const colors = variantColors[variant]
@@ -81,6 +82,7 @@ export function Button(props: Props & PressableProps) {
 
 	return (
 		<Pressable
+			className={cn('flex-row', buttonContainerClassName)}
 			onPressIn={!isLoading ? fadeIn : undefined}
 			onPressOut={!isLoading ? fadeOut : undefined}
 			disabled={isLoading}
