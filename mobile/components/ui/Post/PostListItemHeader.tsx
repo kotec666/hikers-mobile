@@ -14,7 +14,7 @@ interface IProps {
 const PostListItemHeader = ({ isSubscribed }: IProps) => {
 	return (
 		<>
-			<View className="flex-row justify-between">
+			<View className="flex-row justify-between w-full">
 				<View className="flex-row gap-[16px] items-center">
 					<UserAvatar avatar={true} />
 					<View className="gap-[5px]">
