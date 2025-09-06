@@ -104,6 +104,9 @@ export default function HomeScreen() {
 					<Button variant="black" onPress={() => router.navigate('/news-feed')}>
 						Страница постов
 					</Button>
+					<Button variant="black" onPress={() => router.navigate('/user/profile/[id]')}>
+						Страница чужого профиля
+					</Button>
 					<Button variant="black" onPress={() => router.navigate('/route/1')}>
 						Страница просмотра маршрута
 					</Button>

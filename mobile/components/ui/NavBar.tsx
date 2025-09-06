@@ -12,6 +12,7 @@ import NavBarMapSvg from '@/components/svg/NavBarMapSvg'
 import NavBarAccountSvg from '@/components/svg/NavBarAccountSvg'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
 import { Colors } from '@/constants/Colors'
+import { RelativePathString, useRouter } from 'expo-router'
 
 type AnimatedButtonProps = {
 	isActive: boolean
@@ -51,11 +52,12 @@ const AnimatedButton: React.FC<AnimatedButtonProps> = ({ isActive, onPress, Icon
 const NavBar = () => {
 	const insets = useSafeAreaInsets()
 	const [activeId, setActiveId] = useState<number>(1)
+	const router = useRouter()
 
 	const links: { id: number; Icon: React.FC<{ stroke: string }>; href: string }[] = [
 		{ id: 1, Icon: NavBarPostsSvg, href: '/' },
 		{ id: 2, Icon: NavBarMapSvg, href: '/map' },
-		{ id: 3, Icon: NavBarAccountSvg, href: '/account' }
+		{ id: 3, Icon: NavBarAccountSvg, href: '/profile' }
 	]
 
 	return (
@@ -65,7 +67,10 @@ const NavBar = () => {
 					<AnimatedButton
 						key={link.id}
 						isActive={activeId === link.id}
-						onPress={() => setActiveId(link.id)}
+						onPress={() => {
+							setActiveId(link.id)
+							router.push(link.href as RelativePathString)
+						}}
 						Icon={link.Icon}
 					/>
 				))}

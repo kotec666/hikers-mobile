@@ -9,9 +9,10 @@ import CheckMarkIconSvg from '@/components/svg/CheckMarkIconSvg'
 
 interface IProps {
 	isSubscribed: boolean
+	isMyPost?: boolean
 }
 
-const PostListItemHeader = ({ isSubscribed }: IProps) => {
+const PostListItemHeader = ({ isSubscribed, isMyPost }: IProps) => {
 	return (
 		<>
 			<View className="flex-row justify-between w-full">
@@ -33,16 +34,18 @@ const PostListItemHeader = ({ isSubscribed }: IProps) => {
 						</View>
 					</View>
 				</View>
-				<View>
-					<View
-						className={cn('w-[50px] h-[50px] rounded-full items-center justify-center', {
-							'bg-white': !isSubscribed,
-							'bg-green-main': isSubscribed
-						})}
-					>
-						{!isSubscribed ? <PlusIconSvg /> : <CheckMarkIconSvg />}
+				{!isMyPost && (
+					<View>
+						<View
+							className={cn('w-[50px] h-[50px] rounded-full items-center justify-center', {
+								'bg-white': !isSubscribed,
+								'bg-green-main': isSubscribed
+							})}
+						>
+							{!isSubscribed ? <PlusIconSvg /> : <CheckMarkIconSvg />}
+						</View>
 					</View>
-				</View>
+				)}
 			</View>
 		</>
 	)

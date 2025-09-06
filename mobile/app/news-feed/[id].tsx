@@ -9,8 +9,9 @@ import PostBodyWrapper, { PostType } from '@/components/ui/Post/PostBodyWrapper'
 import PostListItemBottom from '@/components/ui/Post/PostListItemBottom'
 import PostListItemSlider from '@/components/ui/Post/PostListItemSlider'
 import MapRoutesSwitchers from '@/components/ui/Post/MapRoutesSwitchers'
-import MoreOptionsButton from '@/components/ui/MoreOptionsButton'
 import DeletePostModal from '@/components/ui/Post/DeletePostModal'
+import MoreOptionsSvg from '@/components/svg/MoreOptionsSvg'
+import MoreOptionsButton from '@/components/ui/MoreOptionsButton/MoreOptionsButton'
 
 const { height } = Dimensions.get('screen')
 
@@ -39,7 +40,7 @@ const Post = () => {
 				<Container className="gap-[20px]">
 					<View className="flex-row justify-between items-center">
 						<HeaderBack>Просмотр поста</HeaderBack>
-						<MoreOptionsButton action={handleClickDelete} />
+						<MoreOptionsButton action={handleClickDelete} icon={<MoreOptionsSvg />} />
 					</View>
 					<ScrollView style={{ flex: 1, width: '100%' }}>
 						<View className="gap-[15px]">

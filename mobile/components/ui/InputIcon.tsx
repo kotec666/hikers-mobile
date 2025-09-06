@@ -24,10 +24,11 @@ export function InputIcon(props: Props) {
 			<View>
 				<TextInput
 					style={{
-						fontFamily: fontFamily.regular
+						fontFamily: fontFamily.regular,
+						paddingRight: isPassword ? 48 : 15
 					}}
 					className={cn(
-						'h-[50px] border-[1px] pl-[55px] pr-[48px] rounded-full relative placeholder:text-gray-ab placeholder:text-[15px]',
+						'h-[50px] border-[1px] pl-[55px] rounded-full relative placeholder:text-gray-ab placeholder:text-[15px]',
 						{
 							'text-red-ff bg-red-55': error,
 							'text-white bg-black-25': !error
