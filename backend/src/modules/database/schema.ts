@@ -1,3 +1,4 @@
+import { sql } from 'drizzle-orm';
 import {
 	pgTable,
 	uuid,
@@ -36,8 +37,7 @@ export interface TrainingRouteNode {
 export const tokens = pgTable('tokens', {
 	userId: uuid('user_id')
 		.references(() => users.id)
-		.primaryKey()
-		.unique(),
+		.primaryKey(),
 	refreshToken: varchar('refresh_token', { length: 255 }).notNull(),
 	createdAt: timestamp('created_at').defaultNow().notNull(),
 	updatedAt: timestamp('updated_at').defaultNow(),
@@ -45,7 +45,7 @@ export const tokens = pgTable('tokens', {
 
 // Media
 export const media = pgTable('media', {
-	filename: varchar('filename', { length: 255 }).primaryKey().unique(),
+	filename: varchar('filename', { length: 255 }).primaryKey(),
 	originalName: varchar('original_name', { length: 255 }).notNull(),
 	fileType: varchar('filetype', { length: 63 }),
 	createdAt: timestamp('created_at').defaultNow().notNull(),
@@ -55,16 +55,19 @@ export const media = pgTable('media', {
 export const users = pgTable(
 	'users',
 	{
-		id: uuid('id').primaryKey().unique().defaultRandom(),
+		id: uuid('id').primaryKey().defaultRandom(),
 		email: varchar('email', { length: 255 }).notNull().unique(),
 		password: varchar('password', { length: 255 }).notNull(),
-		name: varchar('name', { length: 255 }).notNull(),
-		username: varchar('username', { length: 63 }).notNull().unique(),
+		name: varchar('name', { length: 255 }),
+		username: varchar('username', { length: 63 }).unique(),
 		avatarFilename: varchar('avatar_filename', { length: 255 }).references(() => media.filename),
 		termsAcceptedAt: timestamp('terms_accepted_at'),
 		createdAt: timestamp('created_at').defaultNow().notNull(),
 	},
-	(table) => [index('usr_name_idx').using('gin', table.name), index('usr_uname_idx').using('gin', table.username)],
+	(table) => [
+		index('usr_name_idx').using('gin', sql`${table.name} gin_trgm_ops`),
+		index('usr_uname_idx').using('gin', sql`${table.username} gin_trgm_ops`),
+	],
 );
 
 // User Subscribers (many-to-many)
@@ -103,7 +106,7 @@ export const userFriends = pgTable(
 
 // User Friends Invites
 export const userFriendsInvites = pgTable('user_friends_invites', {
-	id: uuid('id').primaryKey().unique().defaultRandom(),
+	id: uuid('id').primaryKey().defaultRandom(),
 	userId: uuid('user_id')
 		.notNull()
 		.references(() => users.id),
@@ -114,7 +117,7 @@ export const userFriendsInvites = pgTable('user_friends_invites', {
 
 // Achievements
 export const achievements = pgTable('achievements', {
-	id: uuid('id').primaryKey().unique().defaultRandom(),
+	id: uuid('id').primaryKey().defaultRandom(),
 	iconFilename: varchar('icon_filename', { length: 255 }).references(() => media.filename),
 	colorHex: varchar('color_hex', { length: 7 }),
 	title: varchar('title', { length: 255 }).notNull(),
@@ -139,7 +142,7 @@ export const userAchievements = pgTable(
 
 // Training Types
 export const trainingTypes = pgTable('training_types', {
-	name: varchar('name', { length: 127 }).primaryKey().unique(),
+	name: varchar('name', { length: 127 }).primaryKey(),
 	measuringUnit: varchar('measuring_unit', { length: 31 }).notNull(),
 	iconFilename: varchar('icon_filename', { length: 255 }).references(() => media.filename),
 });
@@ -162,7 +165,7 @@ export const userActivities = pgTable(
 
 // Training
 export const training = pgTable('training', {
-	id: uuid('id').primaryKey().unique().defaultRandom(),
+	id: uuid('id').primaryKey().defaultRandom(),
 	userCreatorId: uuid('user_creator_id')
 		.notNull()
 		.references(() => users.id),
@@ -178,7 +181,7 @@ export const training = pgTable('training', {
 export const trainingParticipants = pgTable(
 	'training_participants',
 	{
-		id: uuid('id').primaryKey().unique().defaultRandom(),
+		id: uuid('id').primaryKey().defaultRandom(),
 		userId: uuid('user_id')
 			.notNull()
 			.references(() => users.id),
@@ -192,7 +195,7 @@ export const trainingParticipants = pgTable(
 
 // Training Routes
 export const trainingRoutes = pgTable('training_routes', {
-	id: uuid('id').primaryKey().unique().defaultRandom(),
+	id: uuid('id').primaryKey().defaultRandom(),
 	participantId: uuid('participant_id')
 		.notNull()
 		.references(() => trainingParticipants.id),
@@ -206,7 +209,7 @@ export const trainingRoutes = pgTable('training_routes', {
 export const trainingMetrics = pgTable(
 	'training_metrics',
 	{
-		id: uuid('id').primaryKey().unique().defaultRandom(),
+		id: uuid('id').primaryKey().defaultRandom(),
 		participantId: uuid('participant_id')
 			.notNull()
 			.references(() => trainingParticipants.id),
@@ -222,7 +225,7 @@ export const trainingMetrics = pgTable(
 
 // Training Invites
 export const trainingInvites = pgTable('training_invites', {
-	id: uuid('id').primaryKey().unique().defaultRandom(),
+	id: uuid('id').primaryKey().defaultRandom(),
 	trainingId: uuid('training_id')
 		.notNull()
 		.references(() => training.id),
@@ -238,7 +241,7 @@ export const trainingInvites = pgTable('training_invites', {
 export const posts = pgTable(
 	'posts',
 	{
-		id: uuid('id').primaryKey().unique().defaultRandom(),
+		id: uuid('id').primaryKey().defaultRandom(),
 		trainingId: uuid('training_id').references(() => training.id),
 		userCreatorId: uuid('user_creator_id')
 			.notNull()
@@ -270,7 +273,7 @@ export const postMedia = pgTable(
 export const notifications = pgTable(
 	'notifications',
 	{
-		id: uuid('id').primaryKey().unique().defaultRandom(),
+		id: uuid('id').primaryKey().defaultRandom(),
 		iconFilename: varchar('icon_filename', { length: 255 }).references(() => media.filename),
 		toUserId: uuid('to_user_id')
 			.notNull()
@@ -288,7 +291,7 @@ export const notifications = pgTable(
 
 // Feedback
 export const feedback = pgTable('feedback', {
-	id: uuid('id').primaryKey().unique().defaultRandom(),
+	id: uuid('id').primaryKey().defaultRandom(),
 	email: varchar('email', { length: 255 }).notNull().unique(),
 	text: text('text'),
 	createdAt: timestamp('created_at').defaultNow().notNull(),
@@ -296,7 +299,7 @@ export const feedback = pgTable('feedback', {
 
 // Testing
 export const testing = pgTable('testing', {
-	id: uuid('id').primaryKey().unique().defaultRandom(),
+	id: uuid('id').primaryKey().defaultRandom(),
 	text: text('text'),
 	createdAt: timestamp('created_at').defaultNow().notNull(),
 });
