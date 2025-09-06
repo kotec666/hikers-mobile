@@ -22,6 +22,41 @@
       "when": 1756723154858,
       "tag": "0002_training_routes_points_jsonb",
       "breakpoints": true
+    },
+    {
+      "idx": 3,
+      "version": "7",
+      "when": 1756726044677,
+      "tag": "0003_tokens",
+      "breakpoints": true
+    },
+    {
+      "idx": 4,
+      "version": "7",
+      "when": 1756728840455,
+      "tag": "0004_fix_pkeys_all_unique",
+      "breakpoints": true
+    },
+    {
+      "idx": 5,
+      "version": "7",
+      "when": 1756730275320,
+      "tag": "0005_fix_pkeys_indexes",
+      "breakpoints": true
+    },
+    {
+      "idx": 6,
+      "version": "7",
+      "when": 1757158875027,
+      "tag": "0006_fix_users_nullable_fields",
+      "breakpoints": true
+    },
+    {
+      "idx": 7,
+      "version": "7",
+      "when": 1757162102162,
+      "tag": "0007_fixes",
+      "breakpoints": true
     }
   ]
 }

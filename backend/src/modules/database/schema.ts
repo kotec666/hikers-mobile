@@ -1,3 +1,4 @@
+import { sql } from 'drizzle-orm';
 import {
 	pgTable,
 	uuid,
@@ -32,17 +33,23 @@ export interface TrainingRouteNode {
  * MODELS
  */
 
+// Tokens
+export const tokens = pgTable('tokens', {
+	userId: uuid('user_id')
+		.references(() => users.id)
+		.primaryKey(),
+	refreshToken: varchar('refresh_token', { length: 255 }).notNull(),
+	createdAt: timestamp('created_at').defaultNow().notNull(),
+	updatedAt: timestamp('updated_at').defaultNow(),
+});
+
 // Media
-export const media = pgTable(
-	'media',
-	{
-		filename: varchar('filename', { length: 255 }).primaryKey(),
-		originalName: varchar('original_name', { length: 255 }).notNull(),
-		fileType: varchar('filetype', { length: 63 }),
-		createdAt: timestamp('created_at').defaultNow().notNull(),
-	},
-	(table) => [uniqueIndex('media_name_idx').on(table.filename)],
-);
+export const media = pgTable('media', {
+	filename: varchar('filename', { length: 255 }).primaryKey(),
+	originalName: varchar('original_name', { length: 255 }).notNull(),
+	fileType: varchar('filetype', { length: 63 }),
+	createdAt: timestamp('created_at').defaultNow().notNull(),
+});
 
 // Users
 export const users = pgTable(
@@ -51,13 +58,16 @@ export const users = pgTable(
 		id: uuid('id').primaryKey().defaultRandom(),
 		email: varchar('email', { length: 255 }).notNull().unique(),
 		password: varchar('password', { length: 255 }).notNull(),
-		name: varchar('name', { length: 255 }).notNull(),
-		username: varchar('username', { length: 63 }).notNull().unique(),
+		name: varchar('name', { length: 255 }),
+		username: varchar('username', { length: 63 }).unique(),
 		avatarFilename: varchar('avatar_filename', { length: 255 }).references(() => media.filename),
 		termsAcceptedAt: timestamp('terms_accepted_at'),
 		createdAt: timestamp('created_at').defaultNow().notNull(),
 	},
-	(table) => [uniqueIndex('usr_id_idx').on(table.id), index('usr_name_idx').using('gin', table.name)],
+	(table) => [
+		index('usr_name_idx').using('gin', sql`${table.name} gin_trgm_ops`),
+		index('usr_uname_idx').using('gin', sql`${table.username} gin_trgm_ops`),
+	],
 );
 
 // User Subscribers (many-to-many)
@@ -127,10 +137,7 @@ export const userAchievements = pgTable(
 			.references(() => achievements.id),
 		createdAt: timestamp('created_at').defaultNow().notNull(),
 	},
-	(table) => [
-		primaryKey({ columns: [table.userId, table.achievementId] }),
-		uniqueIndex('achv_idx').on(table.userId, table.achievementId),
-	],
+	(table) => [primaryKey({ columns: [table.userId, table.achievementId] })],
 );
 
 // Training Types
@@ -153,26 +160,22 @@ export const userActivities = pgTable(
 			.references(() => trainingTypes.name),
 		goal: integer('goal').notNull(),
 	},
-	(table) => [primaryKey({ columns: [table.userId, table.type] }), index('activ_usr_idx').on(table.userId)],
+	(table) => [primaryKey({ columns: [table.userId, table.type] })],
 );
 
 // Training
-export const training = pgTable(
-	'training',
-	{
-		id: uuid('id').primaryKey().defaultRandom(),
-		userCreatorId: uuid('user_creator_id')
-			.notNull()
-			.references(() => users.id),
-		type: varchar('type')
-			.notNull()
-			.references(() => trainingTypes.name),
-		createdAt: timestamp('created_at').defaultNow().notNull(),
-		startedAt: timestamp('started_at'),
-		finishedAt: timestamp('finished_at'),
-	},
-	(table) => [uniqueIndex('trn_idx').on(table.id)],
-);
+export const training = pgTable('training', {
+	id: uuid('id').primaryKey().defaultRandom(),
+	userCreatorId: uuid('user_creator_id')
+		.notNull()
+		.references(() => users.id),
+	type: varchar('type')
+		.notNull()
+		.references(() => trainingTypes.name),
+	createdAt: timestamp('created_at').defaultNow().notNull(),
+	startedAt: timestamp('started_at'),
+	finishedAt: timestamp('finished_at'),
+});
 
 // Training Participants
 export const trainingParticipants = pgTable(
@@ -191,20 +194,16 @@ export const trainingParticipants = pgTable(
 );
 
 // Training Routes
-export const trainingRoutes = pgTable(
-	'training_routes',
-	{
-		id: uuid('id').primaryKey().defaultRandom(),
-		participantId: uuid('participant_id')
-			.notNull()
-			.references(() => trainingParticipants.id),
-		points: jsonb('points').default([]).$type<TrainingRouteNode[]>(),
-		createdAt: timestamp('created_at').defaultNow().notNull(),
-		startedAt: timestamp('started_at'),
-		finishedAt: timestamp('finished_at'),
-	},
-	(table) => [index('trn_route_idx').on(table.participantId)],
-);
+export const trainingRoutes = pgTable('training_routes', {
+	id: uuid('id').primaryKey().defaultRandom(),
+	participantId: uuid('participant_id')
+		.notNull()
+		.references(() => trainingParticipants.id),
+	points: jsonb('points').default([]).$type<TrainingRouteNode[]>(),
+	createdAt: timestamp('created_at').defaultNow().notNull(),
+	startedAt: timestamp('started_at'),
+	finishedAt: timestamp('finished_at'),
+});
 
 // Training Metrics
 export const trainingMetrics = pgTable(
@@ -221,7 +220,7 @@ export const trainingMetrics = pgTable(
 		altitudeGainM: smallint('altitude_gain_m'),
 		kkcal: smallint('kkcal'),
 	},
-	(table) => [index('trn_metr_idx').on(table.participantId)],
+	(table) => [index('trn_metr_part_idx').on(table.participantId)],
 );
 
 // Training Invites
@@ -253,7 +252,7 @@ export const posts = pgTable(
 		createdAt: timestamp('created_at').defaultNow().notNull(),
 		updatedAt: timestamp('updated_at').defaultNow(),
 	},
-	(table) => [uniqueIndex('post_idx').on(table.id), index('post_usr_idx').on(table.userCreatorId)],
+	(table) => [index('post_usr_idx').on(table.userCreatorId)],
 );
 
 // Post Media (many-to-many)
@@ -267,10 +266,7 @@ export const postMedia = pgTable(
 			.notNull()
 			.references(() => media.filename),
 	},
-	(table) => [
-		primaryKey({ columns: [table.postId, table.mediaFilename] }),
-		uniqueIndex('post_mdeia_idx').on(table.postId, table.mediaFilename),
-	],
+	(table) => [primaryKey({ columns: [table.postId, table.mediaFilename] })],
 );
 
 // Notifications
