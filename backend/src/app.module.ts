@@ -10,6 +10,8 @@ import { EnvModule } from './modules/env/env.module';
 import { TestingModule } from './modules/testing/testing.module';
 import { S3Module } from './modules/s3/s3.module';
 import { TokenModule } from './modules/token/token.module';
+import { AuthModule } from './modules/auth/auth.module';
+import { UserModule } from './modules/user/user.module';
 
 @Module({
 	imports: [
@@ -59,6 +61,8 @@ import { TokenModule } from './modules/token/token.module';
 		TestingModule,
 		S3Module,
 		TokenModule,
+		AuthModule,
+		UserModule,
 	],
 })
 export class AppModule {}
