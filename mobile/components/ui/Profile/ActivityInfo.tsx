@@ -32,6 +32,11 @@ const ActivityInfo = (props: IProps) => {
 				</View>
 			)}
 			<FlatList
+                scrollEnabled={false}
+                nestedScrollEnabled={true}
+                removeClippedSubviews={false}
+                initialNumToRender={data.length}
+                windowSize={data.length}
 				data={data}
 				numColumns={3}
 				renderItem={() => <WorkoutStats isEditMode={props.isEditMode} isChooseMode={props.isChooseMode} />}

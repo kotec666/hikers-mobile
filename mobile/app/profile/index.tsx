@@ -1,7 +1,7 @@
 import React from 'react'
 import { SafeAreaProvider, useSafeAreaInsets } from 'react-native-safe-area-context'
 import { Container } from '@/components/ui/Container'
-import { ScrollView, View, Text, FlatList } from 'react-native'
+import { ScrollView, View, Text } from 'react-native'
 import { UserAvatar } from '@/components/ui/UserAvatar'
 import SettingsSvg from '@/components/svg/SettingsSvg'
 import MoreOptionsButton from '@/components/ui/MoreOptionsButton/MoreOptionsButton'
@@ -73,16 +73,9 @@ const Profile = () => {
 					>
 						Лента
 					</Text>
-					<FlatList
-						data={posts}
-						renderItem={({ item }) => <PostListItem key={item.id} {...item} isMyPost />}
-						keyExtractor={(item) => item.id.toString()}
-						ItemSeparatorComponent={() => <View style={{ height: 15 }} />}
-						contentContainerStyle={{
-							paddingBottom: insets.bottom + 20
-						}}
-						showsVerticalScrollIndicator={false}
-					/>
+                    {posts.map((post) => (
+                        <PostListItem key={post.id} {...post} isMyPost />
+                    ))}
 				</Container>
 			</ScrollView>
 		</SafeAreaProvider>
