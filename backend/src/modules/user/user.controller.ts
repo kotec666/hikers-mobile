@@ -16,7 +16,7 @@ export class UserController {
 	 * @security token
 	 */
 	@TypedRoute.Get('me')
-	async getMe(@User() user: Token.Payload) {
+	public async getMe(@User() user: Token.Payload) {
 		return this.userService.getUser(user.id);
 	}
 }

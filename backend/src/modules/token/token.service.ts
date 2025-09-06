@@ -26,7 +26,7 @@ export class TokenService {
 	 *
 	 * @throws Error при внутренней ошибке
 	 */
-	async generatePairAndGetAccess(userId: string): Promise<Token.TokenResponse> {
+	public async generatePairAndGetAccess(userId: string): Promise<Token.TokenResponse> {
 		// рандомный сид для идентификации будущей пары access & refresh токенов
 		const seed = crypto.randomBytes(16);
 
@@ -87,7 +87,7 @@ export class TokenService {
 	 * @throws UnauthorizedException если соотв. refresh-токен не найден в бд (юзер не прошел регистрацию)
 	 * @throws Error при внутренней ошибке
 	 */
-	async generateAccessTokenByUserId(userId: string): Promise<Token.TokenResponse> {
+	public async generateAccessTokenByUserId(userId: string): Promise<Token.TokenResponse> {
 		const [existingRefreshToken] = await this.db.db
 			.select({ refreshToken: tokens.refreshToken })
 			.from(tokens)
@@ -139,7 +139,7 @@ export class TokenService {
 	 *
 	 * @throws UnauthorizedException если соотв. refresh-токен не валидный, или не составляет пару
 	 */
-	async refreshAccessToken(accessToken: string): Promise<Token.TokenResponse> {
+	public async refreshAccessToken(accessToken: string): Promise<Token.TokenResponse> {
 		const decodedAccessToken: Token.Access = this.jwtService.decode(accessToken);
 
 		if (!decodedAccessToken || !('hs' in decodedAccessToken)) {
