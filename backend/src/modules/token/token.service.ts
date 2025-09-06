@@ -91,7 +91,8 @@ export class TokenService {
 		const [existingRefreshToken] = await this.db.db
 			.select({ refreshToken: tokens.refreshToken })
 			.from(tokens)
-			.where(eq(tokens.userId, userId));
+			.where(eq(tokens.userId, userId))
+			.limit(1);
 
 		if (!existingRefreshToken) {
 			throw new UnauthorizedException('User not found');
