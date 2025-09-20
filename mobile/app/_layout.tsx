@@ -46,10 +46,18 @@ export default function RootLayout() {
 			<Stack.Screen name="hello-screen" options={{ headerShown: false }} />
 			<Stack.Screen name="auth" options={{ headerShown: false }} />
 			<Stack.Screen name="document" options={{ headerShown: false }} />
-			<Stack.Screen name="map/map" options={{ headerShown: false }} />
+			<Stack.Screen name="training/newTraining" options={{ headerShown: false }} />
 			<Stack.Screen name="find-people" options={{ headerShown: false }} />
 			<Stack.Screen name="news-feed" options={{ headerShown: false }} />
-            <Stack.Screen name="news-feed/1" options={{ headerShown: false }} />
+			<Stack.Screen name="news-feed/1" options={{ headerShown: false }} />
+			<Stack.Screen name="workout-history" options={{ headerShown: false }} />
+			<Stack.Screen name="friends/search" options={{ headerShown: false }} />
+			<Stack.Screen name="friends/my-friends" options={{ headerShown: false }} />
+			<Stack.Screen name="friends/friend-requests" options={{ headerShown: false }} />
+			<Stack.Screen name="subscribers/my-subscriptions" options={{ headerShown: false }} />
+			<Stack.Screen name="subscribers/my-subscribers" options={{ headerShown: false }} />
+			<Stack.Screen name="notifications" options={{ headerShown: false }} />
+			<Stack.Screen name="training/viewWorkout" options={{ headerShown: false }} />
 		</Stack>
 	)
 }

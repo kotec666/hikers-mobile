@@ -37,7 +37,7 @@ const AuthPage = () => {
 	})
 
 	const handleClickAction = () => {
-		return router.navigate('/map/map')
+		return router.navigate('/training/newTraining')
 	}
 
 	const handleClickRedirect = () => {

@@ -150,7 +150,8 @@ const styles = StyleSheet.create({
 		position: 'absolute',
 		top: SCREEN_HEIGHT,
 		borderRadius: 25,
-		overflow: 'hidden'
+		overflow: 'hidden',
+		zIndex: 2
 	},
 	handleWrap: {
 		width: '100%'

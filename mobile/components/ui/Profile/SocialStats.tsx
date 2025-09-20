@@ -4,7 +4,7 @@ import { fontFamily } from '@/constants/Fonts'
 
 const SocialStats = () => {
 	return (
-		<View className="bg-black-25 rounded-[15px] px-[15px] flex-1" style={{ paddingVertical: 10 }}>
+		<View className="bg-black-25 rounded-[15px] px-[15px] flex-1 py-[20px]">
 			<Text className="text-xs text-gray-ab" style={{ fontFamily: fontFamily.medium }}>
 				Подписчики
 			</Text>

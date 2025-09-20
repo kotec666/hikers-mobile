@@ -18,7 +18,7 @@ export function Input(props: Props) {
 	const { className, svg, error, isFind, ...restProps } = props
 
 	return (
-		<View className={cn('grow', props.containerClassName)}>
+		<View className={cn('', props.containerClassName)}>
 			<TextInput
 				style={[
 					styles.input,

@@ -8,7 +8,7 @@ import { cn } from '@/helpers/cn'
 const WorkoutStats = (props: { isEditMode?: boolean; isChooseMode?: boolean; className?: string }) => {
 	return (
 		<View className={cn('relative flex-1', props.className)}>
-			<View className="bg-black-25 rounded-[15px] px-[15px] w-full items-center" style={{ paddingVertical: 10 }}>
+			<View className="bg-black-25 rounded-[15px] px-[15px] w-full items-center py-[20px]">
 				<Text className="text-xs text-white" style={{ fontFamily: fontFamily.medium }}>
 					Бег
 				</Text>

@@ -14,7 +14,7 @@ module.exports = defineConfig([
 			'@typescript-eslint/no-explicit-any': 'off',
 			'@typescript-eslint/no-namespace': 'off',
 			'no-var': 'off',
-			'max-len': ['error', 600]
+			'max-len': 'off'
 		}
 	}
 ])

@@ -1,4 +1,4 @@
-import { Dimensions, Text, View, StyleSheet, SafeAreaView, FlatList } from 'react-native'
+import { Dimensions, Text, View, StyleSheet, SafeAreaView, FlatList, ScrollView } from 'react-native'
 import { Button } from '@/components/ui/Button'
 import { useRouter } from 'expo-router'
 import React, { useCallback, useRef, useState } from 'react'
@@ -18,6 +18,8 @@ import WorkoutBicycle from '@/components/svg/WorkoutBicycle'
 import { Container } from '@/components/ui/Container'
 import { Notification, NotificationInAppType } from '@/components/Notification'
 import NavBar from '@/components/ui/NavBar'
+import AchievementsMedalSvg from '@/components/svg/AchievementsMedalSvg'
+import { Colors } from '@/constants/Colors'
 
 const { height: screenHeight } = Dimensions.get('screen')
 
@@ -91,7 +93,7 @@ export default function HomeScreen() {
 	const insets = useSafeAreaInsets()
 
 	return (
-		<SafeAreaProvider>
+		<SafeAreaProvider style={{ paddingTop: insets.top, paddingBottom: insets.bottom + 50 }}>
 			<GestureHandlerRootView style={styles.root}>
 				<SafeAreaView style={styles.container}>
 					<Notification
@@ -104,11 +106,41 @@ export default function HomeScreen() {
 					<Button variant="black" onPress={() => router.navigate('/news-feed')}>
 						Страница постов
 					</Button>
+					<Button variant="black" onPress={() => router.navigate('/friends/search')}>
+						Страница поиска друга
+					</Button>
+					<Button variant="black" onPress={() => router.navigate('/friends/my-friends')}>
+						Страница списка друзей
+					</Button>
+					<Button variant="black" onPress={() => router.navigate('/friends/friend-requests')}>
+						Страница запросов в друзья
+					</Button>
+					<Button variant="black" onPress={() => router.navigate('/subscribers/my-subscriptions')}>
+						Страница подписок
+					</Button>
+					<Button variant="black" onPress={() => router.navigate('/subscribers/my-subscribers')}>
+						Страница подписчиков
+					</Button>
+					<Button variant="black" onPress={() => router.navigate('/notifications')}>
+						Страница уведомлений
+					</Button>
+					<Button variant="black" onPress={() => router.navigate('/achievements')}>
+						Страница достижений
+					</Button>
+					<Button variant="black" onPress={() => router.navigate('/workout-history')}>
+						Страница истории тренировок
+					</Button>
+					<Button variant="black" onPress={() => router.navigate('/training/viewWorkout')}>
+						Страница просмотра тренировки
+					</Button>
 					<Button variant="black" onPress={() => router.navigate('/user/profile/[id]')}>
 						Страница чужого профиля
 					</Button>
 					<Button variant="black" onPress={() => router.navigate('/route/1')}>
 						Страница просмотра маршрута
+					</Button>
+					<Button variant="black" onPress={() => router.navigate('/training/started')}>
+						Страница активной тренировки
 					</Button>
 					<Button
 						variant="black"
@@ -218,6 +250,39 @@ export default function HomeScreen() {
 					</Button>
 					<Button variant="black" onPress={toggleResizableSheet}>
 						Example 5
+					</Button>
+					<Button
+						variant="black"
+						onPress={() =>
+							openBottomSheet(
+								<View className="flex-1 items-center justify-start p-[16px] gap-[40px] w-full">
+									<View className="items-center gap-[20px]">
+										<View
+											className="p-[16px]"
+											style={{ backgroundColor: Colors['purple-87'], borderRadius: 16 }}
+										>
+											<AchievementsMedalSvg width={43} height={43} />
+										</View>
+										<View className="items-center">
+											<Text
+												style={{ fontFamily: fontFamily.bold }}
+												className="text-white text-lg"
+											>
+												Очень много спал
+											</Text>
+											<Text
+												style={{ fontFamily: fontFamily.medium }}
+												className="text-gray-ab text-xs"
+											>
+												Есть у 3.34% пользователей
+											</Text>
+										</View>
+									</View>
+								</View>
+							)
+						}
+					>
+						Example 6 achievements
 					</Button>
 					<BottomSheet ref={bottomSheetRef} activeHeight={screenHeight * 0.5}>
 						{content}

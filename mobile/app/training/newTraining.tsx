@@ -9,7 +9,7 @@ import HeaderBack from '@/components/ui/HeaderBack'
 import { Container } from '@/components/ui/Container'
 import { useRouter } from 'expo-router'
 
-export default function Map() {
+export default function NewTraining() {
 	const router = useRouter()
 	const insets = useSafeAreaInsets()
 	return (

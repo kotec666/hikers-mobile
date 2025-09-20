@@ -17,7 +17,7 @@ const PostListItemHeader = ({ isSubscribed, isMyPost }: IProps) => {
 		<>
 			<View className="flex-row justify-between w-full">
 				<View className="flex-row gap-[16px] items-center">
-					<UserAvatar avatar={true} />
+					<UserAvatar bordered avatar={true} />
 					<View className="gap-[5px]">
 						<Text className="text-white text-[17px]" style={{ fontFamily: fontFamily.bold }}>
 							Сергей Авдотьев

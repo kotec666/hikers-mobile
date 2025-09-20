@@ -111,7 +111,8 @@ const styles = StyleSheet.create({
 		borderTopRightRadius: 50,
 		left: 0,
 		right: 0,
-		bottom: 0
+		bottom: 0,
+		zIndex: 2
 	},
 	lineContainer: {
 		height: 20,

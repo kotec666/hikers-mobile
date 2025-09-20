@@ -6,6 +6,7 @@ import AsyncStorage from '@react-native-async-storage/async-storage'
 import * as Location from 'expo-location'
 import * as TaskManager from 'expo-task-manager'
 import { LocationObject } from 'expo-location'
+import { View } from 'react-native'
 
 enum LOCATION_TYPE {
 	BACKGROUND = 'background',
@@ -39,7 +40,7 @@ TaskManager.defineTask(LOCATION_TASK_NAME, async ({ data, error }) => {
 	}
 })
 
-const MapComponent = () => {
+const MapComponent = (props: { maxMapHeight?: number; minMapHeight?: number; rounded?: number }) => {
 	const [liveLocations, setLiveLocations] = useState<myLocationObj[] | []>([])
 	const [errorMsg, setErrorMsg] = useState<string | null>(null)
 
@@ -144,65 +145,67 @@ const MapComponent = () => {
 	// }
 
 	return (
-		<Yamap
-			nightMode
-			initialRegion={{ lat: 53.422506, lon: 49.4781051, zoom: 12 }}
-			style={{ flex: 1 }}
-			logoPosition={{ horizontal: 'right', vertical: 'top' }}
-			followUser
-			showUserPosition={false}
-		>
-			{lastLocation?.latitude && lastLocation?.longitude && (
-				<UserLocationMarker
-					position={{ lat: lastLocation?.latitude, lon: lastLocation?.longitude }}
-					accuracy={5}
-				/>
-			)}
-
-			{liveLocations?.length &&
-				liveLocations.map((location, idx) => (
-					<DefaultMarker
-						key={JSON.stringify(`${location}${idx}`)}
-						lat={location.coords.latitude}
-						lon={location.coords.longitude}
+		<View className="flex-1" style={{ overflow: 'hidden', borderRadius: props.rounded || 0 }}>
+			<Yamap
+				nightMode
+				initialRegion={{ lat: 53.422506, lon: 49.4781051, zoom: 12 }}
+				style={{ flex: 1, maxHeight: props.maxMapHeight, minHeight: props.minMapHeight }}
+				logoPosition={{ horizontal: 'right', vertical: 'top' }}
+				followUser
+				showUserPosition={false}
+			>
+				{lastLocation?.latitude && lastLocation?.longitude && (
+					<UserLocationMarker
+						position={{ lat: lastLocation?.latitude, lon: lastLocation?.longitude }}
+						accuracy={5}
 					/>
-				))}
+				)}
 
-			<UserLocationMarker position={{ lat: 53.422506, lon: 49.4781051 }} />
+				{liveLocations?.length &&
+					liveLocations.map((location, idx) => (
+						<DefaultMarker
+							key={JSON.stringify(`${location}${idx}`)}
+							lat={location.coords.latitude}
+							lon={location.coords.longitude}
+						/>
+					))}
 
-			{foregroundLocations?.length && (
-				<Polyline
-					points={foregroundLocations.map((location) => ({
-						lat: location.coords.latitude,
-						lon: location.coords.longitude
-					}))}
-					strokeWidth={4}
-					strokeColor={'black'}
-					outlineColor={'black'}
-					outlineWidth={2}
-					handled={false}
-					gapLength={5}
-					dashLength={0}
-					onPress={() => console.log('polyline press')}
-				/>
-			)}
+				<UserLocationMarker position={{ lat: 53.422506, lon: 49.4781051 }} />
 
-			{backgroundLocations?.length && (
-				<Polyline
-					points={backgroundLocations.map((location) => ({
-						lat: location.coords.latitude,
-						lon: location.coords.longitude
-					}))}
-					strokeWidth={4}
-					strokeColor={'blue'}
-					outlineColor={'blue'}
-					outlineWidth={2}
-					handled={false}
-					gapLength={5}
-					dashLength={0}
-				/>
-			)}
-		</Yamap>
+				{foregroundLocations?.length && (
+					<Polyline
+						points={foregroundLocations.map((location) => ({
+							lat: location.coords.latitude,
+							lon: location.coords.longitude
+						}))}
+						strokeWidth={4}
+						strokeColor={'black'}
+						outlineColor={'black'}
+						outlineWidth={2}
+						handled={false}
+						gapLength={5}
+						dashLength={0}
+						onPress={() => console.log('polyline press')}
+					/>
+				)}
+
+				{backgroundLocations?.length && (
+					<Polyline
+						points={backgroundLocations.map((location) => ({
+							lat: location.coords.latitude,
+							lon: location.coords.longitude
+						}))}
+						strokeWidth={4}
+						strokeColor={'blue'}
+						outlineColor={'blue'}
+						outlineWidth={2}
+						handled={false}
+						gapLength={5}
+						dashLength={0}
+					/>
+				)}
+			</Yamap>
+		</View>
 	)
 }
 

@@ -37,6 +37,7 @@ const UserProfilePage = () => {
 						<View className="gap-[16px]">
 							<View className="flex-row justify-between w-full">
 								<UserAvatar
+									bordered
 									className="w-[117px] h-[117px]"
 									iconSize={{ width: 60, height: 60 }}
 									avatar={false}

@@ -7,6 +7,12 @@ import { Colors } from '@/constants/Colors'
 const buttonBaseStyles = 'rounded-full w-full h-[50px] flex justify-center items-center flex-row'
 
 const variantColors = {
+	green: {
+		from: Colors['green-20d'],
+		to: Colors['green-main'],
+		textFrom: Colors.white,
+		textTo: Colors.black
+	},
 	white: {
 		from: Colors['black-25'],
 		to: Colors.white,

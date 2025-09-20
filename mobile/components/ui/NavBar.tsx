@@ -56,7 +56,7 @@ const NavBar = () => {
 
 	const links: { id: number; Icon: React.FC<{ stroke: string }>; href: string }[] = [
 		{ id: 1, Icon: NavBarPostsSvg, href: '/' },
-		{ id: 2, Icon: NavBarMapSvg, href: '/map' },
+		{ id: 2, Icon: NavBarMapSvg, href: '/training/newTraining' },
 		{ id: 3, Icon: NavBarAccountSvg, href: '/profile' }
 	]
 
@@ -90,13 +90,15 @@ const styles = StyleSheet.create({
 		position: 'absolute',
 		height: 100,
 		alignItems: 'center',
-		justifyContent: 'center'
+		justifyContent: 'center',
+		zIndex: 1
 	},
 	NavBarButtonsContainer: {
 		width: '100%',
 		justifyContent: 'space-between',
 		alignItems: 'center',
 		borderWidth: 1,
+		height: 63,
 		borderColor: Colors.white,
 		gap: 15,
 		flexDirection: 'row',

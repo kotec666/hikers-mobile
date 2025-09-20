@@ -7,8 +7,7 @@ import {
 	KeyboardAvoidingView,
 	TouchableWithoutFeedback,
 	Keyboard,
-	Pressable,
-	Dimensions
+	Pressable
 } from 'react-native'
 import { SafeAreaProvider, useSafeAreaInsets } from 'react-native-safe-area-context'
 import { StatusBar } from 'expo-status-bar'
@@ -28,8 +27,6 @@ enum SearchMode {
 	PEOPLE = 'people',
 	POSTS = 'posts'
 }
-
-const { width } = Dimensions.get('screen')
 
 const NewsFeedPage = () => {
 	const insets = useSafeAreaInsets()

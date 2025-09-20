@@ -29,7 +29,7 @@ const PostsEmpty = () => {
 	return (
 		<View className="gap-[40px]">
 			<RenderText textBlocks={textBlocks} />
-			<Button onPress={() => router.push('/map/map')} variant="white">
+			<Button onPress={() => router.push('/training/newTraining')} variant="white">
 				Начать тренировку
 			</Button>
 		</View>

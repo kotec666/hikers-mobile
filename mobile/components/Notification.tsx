@@ -30,7 +30,7 @@ export function Notification({ text, type }: IProps) {
 	}
 
 	const onExit = (velocity = 0) => {
-        isDismissingRef.current = true
+		isDismissingRef.current = true
 		Animated.timing(animatedValue, {
 			toValue: -100,
 			duration: 300,
@@ -44,9 +44,9 @@ export function Notification({ text, type }: IProps) {
 	const panResponder = useRef(
 		PanResponder.create({
 			onMoveShouldSetPanResponder: (_, gesture) => {
-                if (isDismissingRef.current) return false
-                return Math.abs(gesture.dy) > 5 || Math.abs(gesture.dx) > 5
-            },
+				if (isDismissingRef.current) return false
+				return Math.abs(gesture.dy) > 5 || Math.abs(gesture.dx) > 5
+			},
 			onPanResponderMove: (_, gesture) => {
 				if (!direction.current) {
 					direction.current = Math.abs(gesture.dy) > Math.abs(gesture.dx) ? 'y' : 'x'
