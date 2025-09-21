@@ -1,5 +1,4 @@
 ﻿set -e
-source ./.env
 
 echo Останавливаем контейнер
 docker-compose down || true
