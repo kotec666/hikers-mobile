@@ -11,6 +11,7 @@ import Animated, {
 	withTiming
 } from 'react-native-reanimated'
 import { Colors } from '@/constants/Colors'
+import { BlurView } from '@sbaiahmed1/react-native-blur'
 
 const { height: SCREEN_HEIGHT } = Dimensions.get('window')
 const MAX_SHEET_TRANSLATION = -SCREEN_HEIGHT + 50
@@ -122,15 +123,22 @@ const BottomSheetResizable = forwardRef<BottomSheetResizableRef, BottomSheetResi
 			/>
 
 			<Animated.View style={[styles.container, animatedSheetStyle]}>
-				<GestureDetector gesture={handleGesture}>
-					<View style={styles.handleWrap}>
-						<Animated.View style={[styles.handle, animatedHandleStyle]} />
-					</View>
-				</GestureDetector>
+				<BlurView
+					reducedTransparencyFallbackColor="transparent"
+					blurType="dark"
+					blurAmount={10}
+					style={{ overflow: 'hidden', backgroundColor: 'transparent' }}
+				>
+					<GestureDetector gesture={handleGesture}>
+						<View style={styles.handleWrap}>
+							<Animated.View style={[styles.handle, animatedHandleStyle]} />
+						</View>
+					</GestureDetector>
 
-				<Animated.View style={[styles.contentWrapper, animatedContentStyle]}>
-					<View style={styles.contentInner}>{children}</View>
-				</Animated.View>
+					<Animated.View style={[styles.contentWrapper, animatedContentStyle]}>
+						<View style={styles.contentInner}>{children}</View>
+					</Animated.View>
+				</BlurView>
 			</Animated.View>
 		</>
 	)

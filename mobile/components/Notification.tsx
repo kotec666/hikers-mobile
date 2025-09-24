@@ -2,6 +2,7 @@ import { useEffect, useState, useRef } from 'react'
 import { Text, StyleSheet, Dimensions, Animated, PanResponder, View } from 'react-native'
 import { fontFamily } from '@/constants/Fonts'
 import { cn } from '@/helpers/cn'
+import { BlurView } from '@sbaiahmed1/react-native-blur'
 
 export enum NotificationInAppType {
 	ERROR = 'error',
@@ -22,6 +23,7 @@ export function Notification({ text, type }: IProps) {
 	const direction = useRef<'x' | 'y' | null>(null)
 
 	const onEnter = () => {
+		isDismissingRef.current = false
 		Animated.timing(animatedValue, {
 			toValue: 0,
 			duration: 300,
@@ -110,23 +112,32 @@ export function Notification({ text, type }: IProps) {
 				}
 			]}
 		>
-			<View
-				className={cn('rounded-[25px] py-[18px] px-[15px]', {
-					'bg-green-main/20': type === NotificationInAppType.SUCCESS,
-					'bg-red-ff/20': type === NotificationInAppType.ERROR,
-					'bg-black/20': type === NotificationInAppType.INFO
-				})}
-			>
-				<Text
-					style={[styles.text]}
-					className={cn('', {
-						'text-green-main': type === NotificationInAppType.SUCCESS,
-						'text-red-ff': type === NotificationInAppType.ERROR,
-						'text-white': type === NotificationInAppType.INFO
-					})}
+			<View style={styles.blurContainer}>
+				<BlurView
+					reducedTransparencyFallbackColor="transparent"
+					blurType="dark"
+					blurAmount={10}
+					style={styles.blurView}
 				>
-					{text}
-				</Text>
+					<View
+						className={cn('rounded-[25px] py-[18px] px-[15px]', {
+							'bg-green-main/20': type === NotificationInAppType.SUCCESS,
+							'bg-red-ff/20': type === NotificationInAppType.ERROR,
+							'bg-black/20': type === NotificationInAppType.INFO
+						})}
+					>
+						<Text
+							style={[styles.text]}
+							className={cn('', {
+								'text-green-main': type === NotificationInAppType.SUCCESS,
+								'text-red-ff': type === NotificationInAppType.ERROR,
+								'text-white': type === NotificationInAppType.INFO
+							})}
+						>
+							{text}
+						</Text>
+					</View>
+				</BlurView>
 			</View>
 		</Animated.View>
 	)
@@ -139,6 +150,15 @@ const styles = StyleSheet.create({
 		padding: 15,
 		top: 50,
 		zIndex: 1000
+	},
+	blurContainer: {
+		borderRadius: 25,
+		overflow: 'hidden'
+	},
+	blurView: {
+		flex: 1,
+		overflow: 'hidden',
+		backgroundColor: 'transparent'
 	},
 	text: {
 		fontSize: 16,

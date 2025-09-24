@@ -1,6 +1,7 @@
 import React, { PropsWithChildren } from 'react'
-import { View, Text, Pressable, Dimensions } from 'react-native'
-import CloseSvg from '@/components/svg/CloseSvg'
+import { View, Text, Dimensions, StyleSheet } from 'react-native'
+import { BlurView } from '@sbaiahmed1/react-native-blur'
+import CloseCross from '@/components/ui/CloseCross'
 
 const { width } = Dimensions.get('screen')
 
@@ -13,21 +14,51 @@ interface IProps extends PropsWithChildren {
 const Modal = (props: IProps) => {
 	if (!props.open) return null
 	return (
-		<View
-			className="absolute top-[50%] left-[50%] -translate-x-[50%] -translate-y-[50%] bg-black/20 p-[16px] rounded-[25px]"
-			style={{ zIndex: 2, width: width - 32 }}
-		>
-			<View className="flex-row justify-between">
-				<Text className="text-white">{props.label}</Text>
-				<Pressable onPress={props.handleClose}>
-					<View className="items-center justify-center w-[28px] h-[28px] rounded-full bg-black/20">
-						<CloseSvg />
-					</View>
-				</Pressable>
+		<View style={styles.container}>
+			<BlurView
+				style={styles.blurBackground}
+				blurType="dark"
+				blurAmount={10}
+				reducedTransparencyFallbackColor="transparent"
+			/>
+
+			<View style={styles.modalContent}>
+				<View className="flex-row justify-between">
+					<Text className="text-white">{props.label}</Text>
+					<CloseCross handleClose={props.handleClose} />
+				</View>
+				{props.children}
 			</View>
-			{props.children}
 		</View>
 	)
 }
+
+const styles = StyleSheet.create({
+	container: {
+		position: 'absolute',
+		top: '50%',
+		left: '50%',
+		transform: [{ translateX: -((width - 32) / 2) }, { translateY: -((width - 32) / 4) }],
+		width: width - 32,
+		zIndex: 2,
+		borderRadius: 25,
+		overflow: 'hidden',
+		backgroundColor: 'rgba(0,0,0,0.2)',
+		borderWidth: 1,
+		borderColor: 'rgba(255, 255, 255, 0.2)'
+	},
+	blurBackground: {
+		position: 'absolute',
+		top: 0,
+		left: 0,
+		right: 0,
+		bottom: 0,
+		overflow: 'hidden',
+		backgroundColor: 'transparent'
+	},
+	modalContent: {
+		padding: 16
+	}
+})
 
 export default Modal

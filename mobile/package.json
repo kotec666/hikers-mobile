@@ -20,6 +20,7 @@
 		"@react-navigation/bottom-tabs": "^7.3.10",
 		"@react-navigation/elements": "^2.3.8",
 		"@react-navigation/native": "^7.1.6",
+		"@sbaiahmed1/react-native-blur": "^0.3.0",
 		"@typescript-eslint/eslint-plugin": "^8.40.0",
 		"@typescript-eslint/parser": "^8.40.0",
 		"clsx": "^2.1.1",

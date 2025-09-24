@@ -1980,6 +1980,11 @@
   resolved "https://registry.yarnpkg.com/@rtsao/scc/-/scc-1.1.0.tgz#927dd2fae9bc3361403ac2c7a00c32ddce9ad7e8"
   integrity sha512-zt6OdqaDoOnJ1ZYsCYGt9YmWzDXl4vQdKTyJev62gFhRGKdx7mcT54V9KIjg+d2wi9EXsPvAPKe7i7WjfVWB8g==
 
+"@sbaiahmed1/react-native-blur@^0.3.0":
+  version "0.3.0"
+  resolved "https://registry.yarnpkg.com/@sbaiahmed1/react-native-blur/-/react-native-blur-0.3.0.tgz#67c86da93674aaa1e6d4e5f527b0f13ea2b358f7"
+  integrity sha512-x5U1Lg/nR/c72i7SMWSBhzkQA7z5huI+WTJhy1XCCFJXXmaBpJzzRzcyisoiUKiVCwPG4Yk2vyPVLjsfZ/Iz8g==
+
 "@sideway/address@^4.1.5":
   version "4.1.5"
   resolved "https://registry.yarnpkg.com/@sideway/address/-/address-4.1.5.tgz#4bc149a0076623ced99ca8208ba780d65a99b9d5"

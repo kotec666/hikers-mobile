@@ -13,6 +13,7 @@ import NavBarAccountSvg from '@/components/svg/NavBarAccountSvg'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
 import { Colors } from '@/constants/Colors'
 import { RelativePathString, useRouter } from 'expo-router'
+import { BlurView } from '@sbaiahmed1/react-native-blur'
 
 type AnimatedButtonProps = {
 	isActive: boolean
@@ -63,6 +64,12 @@ const NavBar = () => {
 	return (
 		<View style={[styles.NavBarContainer, { bottom: insets.bottom }]} pointerEvents="box-none">
 			<View style={styles.NavBarButtonsContainer}>
+				<BlurView
+					reducedTransparencyFallbackColor="transparent"
+					blurType="dark"
+					blurAmount={10}
+					style={[StyleSheet.absoluteFill, { overflow: 'hidden', backgroundColor: 'transparent' }]}
+				/>
 				{links.map((link) => (
 					<AnimatedButton
 						key={link.id}
@@ -99,12 +106,12 @@ const styles = StyleSheet.create({
 		alignItems: 'center',
 		borderWidth: 1,
 		height: 63,
-		borderColor: Colors.white,
+		borderColor: 'rgba(255, 255, 255, 0.2)',
 		gap: 15,
 		flexDirection: 'row',
-		backgroundColor: 'rgba(0, 0, 0, 0.2)',
 		borderRadius: 100,
-		padding: 16
+		padding: 16,
+		overflow: 'hidden'
 	},
 	NavBarButton: {
 		justifyContent: 'center',

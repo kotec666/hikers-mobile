@@ -5,9 +5,10 @@ import Animated, { interpolate, useAnimatedStyle, useSharedValue, withSpring } f
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
 import { Gesture, GestureDetector } from 'react-native-gesture-handler'
 import { Colors } from '@/constants/Colors'
+import { BlurView } from '@sbaiahmed1/react-native-blur'
 
 const BottomSheet = forwardRef<BottomSheetHandle, BottomSheetProps>(
-	({ activeHeight, backDropColor = 'rgba(0,0,0,0.5)', backgroundColor = 'rgba(0, 0, 0, 0.2)', children }, ref) => {
+	({ activeHeight, backDropColor = 'rgba(0,0,0,0.5)', backgroundColor = 'rgba(0, 0, 0, 0.5)', children }, ref) => {
 		const safeAreaInsets = useSafeAreaInsets()
 		const { height: screenHeight } = Dimensions.get('screen')
 		const closedPositionY = screenHeight
@@ -88,13 +89,23 @@ const BottomSheet = forwardRef<BottomSheetHandle, BottomSheetProps>(
 						style={[
 							styles.container,
 							sheetStyle,
-							{ height: activeHeight, backgroundColor, paddingBottom: safeAreaInsets.bottom }
+							{
+								height: activeHeight,
+								// backgroundColor,
+								paddingBottom: safeAreaInsets.bottom
+							}
 						]}
 					>
+						<BlurView
+							reducedTransparencyFallbackColor="transparent"
+							blurType="dark"
+							blurAmount={10}
+							style={[StyleSheet.absoluteFill, { overflow: 'hidden', backgroundColor: 'transparent' }]}
+						/>
 						<Pressable style={styles.lineContainer}>
 							<View style={styles.line} />
 						</Pressable>
-						{children}
+						<View style={styles.contentContainer}>{children}</View>
 					</Animated.View>
 				</GestureDetector>
 			</>
@@ -112,12 +123,17 @@ const styles = StyleSheet.create({
 		left: 0,
 		right: 0,
 		bottom: 0,
-		zIndex: 2
+		zIndex: 2,
+		overflow: 'hidden'
+	},
+	contentContainer: {
+		flex: 1
 	},
 	lineContainer: {
 		height: 20,
-		paddingVertical: 10,
-		alignItems: 'center'
+		paddingVertical: 20,
+		alignItems: 'center',
+		justifyContent: 'flex-start'
 	},
 	line: {
 		width: 36,
@@ -130,6 +146,7 @@ const styles = StyleSheet.create({
 		bottom: 0,
 		left: 0,
 		right: 0,
-		position: 'absolute'
+		position: 'absolute',
+		zIndex: 1
 	}
 })

@@ -20,7 +20,10 @@ export default function NewTraining() {
 				</Container>
 				<MapComponent />
 				<View
-					style={{ bottom: insets.bottom + 35 }}
+					style={{
+						bottom: insets.bottom + 35,
+						zIndex: 1000
+					}}
 					pointerEvents="box-none"
 					className="-translate-x-[50%] left-[50%] absolute flex-row justify-around items-center w-full"
 				>

@@ -13,8 +13,8 @@ import PeopleListItem from '@/components/find-people/PeopleListItem'
 import EyeSvg from '@/components/svg/EyeSvg'
 import { Colors } from '@/constants/Colors'
 import { Input } from '@/components/ui/Input'
-import CrossSvg from '@/components/svg/CrossSvg'
 import LineChartComponent from '@/components/LineChart/LineChart'
+import CloseCross from '@/components/ui/CloseCross'
 
 export default function ViewWorkout() {
 	const router = useRouter()
@@ -134,9 +134,9 @@ export default function ViewWorkout() {
 								source={require('@/assets/images/carousel/carousel-1.webp')}
 								resizeMode="cover"
 							/>
-							<Pressable className="absolute right-[12px] top-[12px] rounded-full w-[28px] h-[28px] bg-black/20 items-center justify-center">
-								<CrossSvg />
-							</Pressable>
+							<View className="absolute right-[12px] top-[12px] rounded-full w-[28px] h-[28px] bg-black/20 items-center justify-center overflow-hidden">
+								<CloseCross />
+							</View>
 						</View>
 						<View className="flex-1 h-[150px] ">
 							<Image
@@ -144,9 +144,9 @@ export default function ViewWorkout() {
 								source={require('@/assets/images/carousel/carousel-1.webp')}
 								resizeMode="cover"
 							/>
-							<Pressable className="absolute right-[12px] top-[12px] rounded-full w-[28px] h-[28px] bg-black/20 items-center justify-center">
-								<CrossSvg />
-							</Pressable>
+							<View className="absolute right-[12px] top-[12px] rounded-full w-[28px] h-[28px] bg-black/20 items-center justify-center overflow-hidden">
+								<CloseCross />
+							</View>
 						</View>
 					</View>
 					<View className="gap-[10px] mt-[15px]">

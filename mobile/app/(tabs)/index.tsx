@@ -1,4 +1,4 @@
-import { Dimensions, Text, View, StyleSheet, SafeAreaView, FlatList, ScrollView } from 'react-native'
+import { Dimensions, Text, View, StyleSheet, SafeAreaView, FlatList } from 'react-native'
 import { Button } from '@/components/ui/Button'
 import { useRouter } from 'expo-router'
 import React, { useCallback, useRef, useState } from 'react'
@@ -20,6 +20,7 @@ import { Notification, NotificationInAppType } from '@/components/Notification'
 import NavBar from '@/components/ui/NavBar'
 import AchievementsMedalSvg from '@/components/svg/AchievementsMedalSvg'
 import { Colors } from '@/constants/Colors'
+import AsyncStorage from '@react-native-async-storage/async-storage'
 
 const { height: screenHeight } = Dimensions.get('screen')
 
@@ -248,6 +249,9 @@ export default function HomeScreen() {
 					>
 						Example 4
 					</Button>
+					<Button variant="black" onPress={async () => await AsyncStorage.removeItem('@liveLocations')}>
+						clear points
+					</Button>
 					<Button variant="black" onPress={toggleResizableSheet}>
 						Example 5
 					</Button>
@@ -256,14 +260,14 @@ export default function HomeScreen() {
 						onPress={() =>
 							openBottomSheet(
 								<View className="flex-1 items-center justify-start p-[16px] gap-[40px] w-full">
-									<View className="items-center gap-[20px]">
+									<View className="items-center gap-[20px]]">
 										<View
 											className="p-[16px]"
 											style={{ backgroundColor: Colors['purple-87'], borderRadius: 16 }}
 										>
 											<AchievementsMedalSvg width={43} height={43} />
 										</View>
-										<View className="items-center">
+										<View className="items-center mt-[15px]">
 											<Text
 												style={{ fontFamily: fontFamily.bold }}
 												className="text-white text-lg"

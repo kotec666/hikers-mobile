@@ -1,17 +1,45 @@
 import React, { PropsWithChildren } from 'react'
-import { View } from 'react-native'
+import { View, StyleSheet } from 'react-native'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
+import { BlurView } from '@sbaiahmed1/react-native-blur'
 
 const Popup = (props: PropsWithChildren) => {
 	const insets = useSafeAreaInsets()
 	return (
-		<View
-			className="absolute border-[1px] border-white/20 rounded-[25px] right-0 gap-[15px] bg-black/20"
-			style={{ padding: 20, top: insets.top + 35, zIndex: 5 }}
-		>
-			{props.children}
+		<View style={[styles.container, { top: insets.top + 35 }]}>
+			<BlurView
+				style={styles.blurView}
+				blurType="dark"
+				blurAmount={15}
+				reducedTransparencyFallbackColor="transparent"
+			>
+				<View style={styles.content}>{props.children}</View>
+			</BlurView>
 		</View>
 	)
 }
+
+const styles = StyleSheet.create({
+	container: {
+		position: 'absolute',
+		right: 0,
+		zIndex: 5,
+		borderRadius: 25,
+		borderWidth: 1,
+		borderColor: 'rgba(255, 255, 255, 0.2)',
+		overflow: 'hidden',
+		minWidth: 150
+	},
+	blurView: {
+		width: '100%',
+		height: '100%',
+		overflow: 'hidden',
+		backgroundColor: 'transparent'
+	},
+	content: {
+		padding: 20,
+		gap: 15
+	}
+})
 
 export default Popup
