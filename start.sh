@@ -1,5 +1,4 @@
-﻿#!/bin/bash
-set -e
+﻿set -e
 
 echo Останавливаем контейнер
 docker-compose down || true

@@ -1,0 +1,1 @@
+ALTER TABLE "training_routes" ADD COLUMN "points" jsonb DEFAULT '[]'::jsonb;
