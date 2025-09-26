@@ -43,6 +43,7 @@ export default function RootLayout() {
 				}
 			}}
 		>
+			<Stack.Screen name="(tabs)/index" options={{ headerShown: false }} />
 			<Stack.Screen name="hello-screen" options={{ headerShown: false }} />
 			<Stack.Screen name="auth" options={{ headerShown: false }} />
 			<Stack.Screen name="document" options={{ headerShown: false }} />

@@ -101,17 +101,17 @@ export default function HomeScreen() {
 						text={'Нельзя начать тренировку без предоставления разрешений'}
 						type={NotificationInAppType.SUCCESS}
 					/>
-					<Button variant="black" onPress={() => router.navigate('/hello-screen')}>
+					<Button variant="black" onPress={() => router.navigate('/')}>
 						To hello screen
-					</Button>
-					<Button variant="black" onPress={() => router.navigate('/news-feed')}>
-						Страница постов
 					</Button>
 					<Button variant="black" onPress={() => router.navigate('/friends/search')}>
 						Страница поиска друга
 					</Button>
 					<Button variant="black" onPress={() => router.navigate('/friends/my-friends')}>
 						Страница списка друзей
+					</Button>
+					<Button variant="black" onPress={() => router.navigate('/news-feed')}>
+						Страница постов
 					</Button>
 					<Button variant="black" onPress={() => router.navigate('/friends/friend-requests')}>
 						Страница запросов в друзья

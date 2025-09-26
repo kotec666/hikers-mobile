@@ -11,12 +11,16 @@ interface IProps {
 
 const EndTrainingModal = (props: IProps) => {
 	return (
-		<Modal open={props.open} handleClose={props.handleClose} label="Вы действительно хотите завершить тренировку?">
+		<Modal
+			isOpen={props.open}
+			handleClose={props.handleClose}
+			label="Вы действительно хотите завершить тренировку?"
+		>
 			<View className="gap-[20px]">
 				<Text className="text-white text-sm" style={{ fontFamily: fontFamily.bold }}>
 					Это действие нельзя отменить
 				</Text>
-				<View className="flex-row gap-[10px] flex-1">
+				<View className="flex-row gap-[10px]">
 					<Button onPress={props.handleClose} variant="white" buttonContainerClassName="flex-1">
 						Да
 					</Button>

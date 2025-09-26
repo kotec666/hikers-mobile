@@ -14,17 +14,17 @@ export function MapActionButton(props: Props & PressableProps) {
 		<Pressable
 			{...props}
 			className={cn(
-				'w-[58px] h-[58px] rounded-[18px] flex items-center justify-center relative overflow-hidden',
+				'w-[58px] h-[58px] rounded-[18px] flex items-center bg-black/20 justify-center relative overflow-hidden',
 				className
 			)}
 		>
 			<BlurView
-				reducedTransparencyFallbackColor="transparent"
 				blurType="dark"
 				blurAmount={10}
 				style={[
-					StyleSheet.absoluteFill,
 					{
+						width: 100,
+						height: 100,
 						justifyContent: 'center',
 						alignItems: 'center',
 						overflow: 'hidden',
