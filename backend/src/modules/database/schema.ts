@@ -284,22 +284,3 @@ export const notifications = pgTable(
 	},
 	(table) => [index('ntf_usr_idx').on(table.toUserId)],
 );
-
-/**
- * TESTING MODELS
- */
-
-// Feedback
-export const feedback = pgTable('feedback', {
-	id: uuid('id').primaryKey().defaultRandom(),
-	email: varchar('email', { length: 255 }).notNull().unique(),
-	text: text('text'),
-	createdAt: timestamp('created_at').defaultNow().notNull(),
-});
-
-// Testing
-export const testing = pgTable('testing', {
-	id: uuid('id').primaryKey().defaultRandom(),
-	text: text('text'),
-	createdAt: timestamp('created_at').defaultNow().notNull(),
-});
