@@ -10,6 +10,7 @@ import { S3Module } from './modules/s3/s3.module';
 import { TokenModule } from './modules/token/token.module';
 import { AuthModule } from './modules/auth/auth.module';
 import { UserModule } from './modules/user/user.module';
+import { AchievementsModule } from './modules/achievements/achievements.module';
 
 @Module({
 	imports: [
@@ -59,6 +60,7 @@ import { UserModule } from './modules/user/user.module';
 		TokenModule,
 		AuthModule,
 		UserModule,
+		AchievementsModule,
 	],
 })
 export class AppModule {}
