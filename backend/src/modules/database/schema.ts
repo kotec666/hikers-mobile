@@ -122,7 +122,7 @@ export const achievements = pgTable('achievements', {
 	colorHex: varchar('color_hex', { length: 7 }),
 	title: varchar('title', { length: 255 }).notNull(),
 	description: text('description'),
-	claimedPercent: decimal('claimed_percent', { precision: 5, scale: 2 }),
+	claimedPercent: decimal('claimed_percent', { precision: 5, scale: 2 }).default('0.00').notNull(),
 });
 
 // User Achievements (many-to-many)
