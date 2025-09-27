@@ -1,7 +1,7 @@
 import React from 'react'
 import { View, Text, StyleSheet, Modal as RNModal, ModalProps, KeyboardAvoidingView, Platform } from 'react-native'
-import { BlurView } from '@sbaiahmed1/react-native-blur'
 import CloseCross from '@/components/ui/CloseCross'
+import {BlurView} from "expo-blur";
 
 type PROPS = ModalProps & {
 	label?: string
@@ -19,9 +19,9 @@ const Modal = ({ isOpen, withInput, handleClose, label, children, ...rest }: PRO
 			<View className="w-full p-4 border-[1px] border-white/20 rounded-[25px] overflow-hidden">
 				<BlurView
 					style={StyleSheet.absoluteFill}
-					blurType="extraDark"
-					blurAmount={10}
-					reducedTransparencyFallbackColor="transparent"
+                    tint="dark"
+                    intensity={10}
+                    experimentalBlurMethod="dimezisBlurView"
 				/>
 				<View className="flex-row items-center justify-between mb-[20px]">
 					<Text className="text-white">{label}</Text>
@@ -35,9 +35,9 @@ const Modal = ({ isOpen, withInput, handleClose, label, children, ...rest }: PRO
 			<View className="w-full p-4 border-[1px] border-white/20 rounded-[25px] overflow-hidden">
 				<BlurView
 					style={StyleSheet.absoluteFill}
-					blurType="extraDark"
-					blurAmount={10}
-					reducedTransparencyFallbackColor="transparent"
+                    tint="dark"
+                    intensity={10}
+                    experimentalBlurMethod="dimezisBlurView"
 				/>
 				<View className="flex-row items-center justify-between mb-[20px]">
 					<Text className="text-white">{label}</Text>

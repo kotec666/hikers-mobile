@@ -1,7 +1,7 @@
 import React, { PropsWithChildren } from 'react'
 import { View, StyleSheet } from 'react-native'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
-import { BlurView } from '@sbaiahmed1/react-native-blur'
+import {BlurView} from "expo-blur";
 
 const Popup = (props: PropsWithChildren) => {
 	const insets = useSafeAreaInsets()
@@ -9,9 +9,9 @@ const Popup = (props: PropsWithChildren) => {
 		<View style={[styles.container, { top: insets.top + 35 }]}>
 			<BlurView
 				style={styles.blurView}
-				blurType="dark"
-				blurAmount={15}
-				reducedTransparencyFallbackColor="transparent"
+                tint="dark"
+                intensity={15}
+                experimentalBlurMethod="dimezisBlurView"
 			>
 				<View style={styles.content}>{props.children}</View>
 			</BlurView>

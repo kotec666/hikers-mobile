@@ -5,7 +5,7 @@ import Animated, { interpolate, useAnimatedStyle, useSharedValue, withSpring } f
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
 import { Gesture, GestureDetector } from 'react-native-gesture-handler'
 import { Colors } from '@/constants/Colors'
-import { BlurView } from '@sbaiahmed1/react-native-blur'
+import {BlurView} from "expo-blur";
 
 const BottomSheet = forwardRef<BottomSheetHandle, BottomSheetProps>(
 	({ activeHeight, backDropColor = 'rgba(0,0,0,0.5)', backgroundColor = 'rgba(0, 0, 0, 0.5)', children }, ref) => {
@@ -97,9 +97,9 @@ const BottomSheet = forwardRef<BottomSheetHandle, BottomSheetProps>(
 						]}
 					>
 						<BlurView
-							reducedTransparencyFallbackColor="transparent"
-							blurType="dark"
-							blurAmount={10}
+                            tint="dark"
+                            intensity={10}
+                            experimentalBlurMethod="dimezisBlurView"
 							style={[StyleSheet.absoluteFill, { overflow: 'hidden', backgroundColor: 'transparent' }]}
 						/>
 						<Pressable style={styles.lineContainer}>

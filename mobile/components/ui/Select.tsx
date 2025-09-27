@@ -7,7 +7,7 @@ import { Container } from '@/components/ui/Container'
 import ArrowDownSvg from '@/components/svg/ArrowDownSvg'
 import { FlatList, GestureHandlerRootView } from 'react-native-gesture-handler'
 import PeopleRunningSvg from '@/components/svg/PeopleRunningSvg'
-import { BlurView } from '@sbaiahmed1/react-native-blur'
+import {BlurView} from "expo-blur";
 
 export interface SelectOption {
 	value: string
@@ -73,9 +73,9 @@ export function Select(props: SelectProps) {
 					style={{ top: 60, zIndex: 2 }}
 				>
 					<BlurView
-						blurType="dark"
-						blurAmount={15}
-						reducedTransparencyFallbackColor="transparent"
+                        tint="dark"
+                        intensity={10}
+                        experimentalBlurMethod="dimezisBlurView"
 						style={{ overflow: 'hidden', backgroundColor: 'transparent' }}
 					>
 						<GestureHandlerRootView style={{ flex: 1, maxHeight: height / 4 }}>

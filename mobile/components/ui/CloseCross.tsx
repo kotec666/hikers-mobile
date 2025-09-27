@@ -1,16 +1,16 @@
 import React from 'react'
-import { BlurView } from '@sbaiahmed1/react-native-blur'
 import { Pressable, View, StyleSheet } from 'react-native'
 import CloseSvg from '@/components/svg/CloseSvg'
+import {BlurView} from "expo-blur";
 
 const CloseCross = (props: { handleClose?: () => void }) => {
 	return (
 		<Pressable onPress={props.handleClose} className="bg-black/20 rounded-full">
 			<BlurView
 				style={styles.closeButtonBlur}
-				blurType="extraDark"
-				blurAmount={10}
-				reducedTransparencyFallbackColor="transparent"
+                tint="dark"
+                intensity={10}
+                experimentalBlurMethod="dimezisBlurView"
 			>
 				<View style={styles.closeButton}>
 					<CloseSvg />

@@ -1,6 +1,6 @@
 import { View, Text } from 'react-native'
-import { BlurView } from '@sbaiahmed1/react-native-blur'
 import { fontFamily } from '@/constants/Fonts'
+import {BlurView} from "expo-blur";
 
 const Blurpage = () => {
 	return (
@@ -24,8 +24,8 @@ const Blurpage = () => {
 				lorem lorem lorem lorem lorem lorem{' '}
 			</Text>
 			<BlurView
-				blurType="light"
-				blurAmount={1}
+                tint="dark"
+                intensity={10}
 				style={{
 					position: 'absolute',
 					top: 100,
@@ -37,9 +37,11 @@ const Blurpage = () => {
 					justifyContent: 'center'
 				}}
 			>
-				<Text className="text-white text-xl" style={{ fontFamily: fontFamily.bold }}>
-					Content with blur background
-				</Text>
+                <View style={{ backgroundColor: 'rgba(0,0,0,0)', borderWidth: 2, borderColor: 'red', zIndex: 1, elevation: 1 }}>
+                    <Text className="text-white text-xl" style={{ fontFamily: fontFamily.bold }}>
+                        Content with blur background
+                    </Text>
+                </View>
 			</BlurView>
 		</View>
 	)

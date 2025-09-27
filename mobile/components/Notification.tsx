@@ -2,7 +2,7 @@ import { useEffect, useState, useRef } from 'react'
 import { Text, StyleSheet, Dimensions, Animated, PanResponder, View } from 'react-native'
 import { fontFamily } from '@/constants/Fonts'
 import { cn } from '@/helpers/cn'
-import { BlurView } from '@sbaiahmed1/react-native-blur'
+import {BlurView} from "expo-blur";
 
 export enum NotificationInAppType {
 	ERROR = 'error',
@@ -114,9 +114,9 @@ export function Notification({ text, type }: IProps) {
 		>
 			<View style={styles.blurContainer}>
 				<BlurView
-					reducedTransparencyFallbackColor="transparent"
-					blurType="dark"
-					blurAmount={10}
+                    tint="dark"
+                    intensity={10}
+                    experimentalBlurMethod="dimezisBlurView"
 					style={styles.blurView}
 				>
 					<View
