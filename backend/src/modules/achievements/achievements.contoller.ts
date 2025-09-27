@@ -13,26 +13,6 @@ export class AchievementsContoller {
 
 	/**
 	 * @tag Achievements
-	 * @summary Получить все достижения (пока без пагинации)
-	 * @security token
-	 */
-	@TypedRoute.Get()
-	public async getAll(@User() user: TokenDto.Payload): Promise<AchievementDto.Entity[]> {
-		return this.service.getAll(user.id);
-	}
-
-	/**
-	 * @tag Achievements
-	 * @summary Получить достижение по id
-	 * @security token
-	 */
-	@TypedRoute.Get('/:id')
-	public async getById(@TypedParam('id') id: string, @User() user: TokenDto.Payload): Promise<AchievementDto.Entity> {
-		return await this.service.getById(id, user.id);
-	}
-
-	/**
-	 * @tag Achievements
 	 * @summary Получить полученные достижения
 	 * @security token
 	 */
@@ -49,5 +29,25 @@ export class AchievementsContoller {
 	@TypedRoute.Get('unclaimed')
 	public async getUnclaimed(@User() user: TokenDto.Payload): Promise<AchievementDto.Entity[]> {
 		return this.service.getUnclaimed(user.id);
+	}
+
+	/**
+	 * @tag Achievements
+	 * @summary Получить все достижения (пока без пагинации)
+	 * @security token
+	 */
+	@TypedRoute.Get()
+	public async getAll(@User() user: TokenDto.Payload): Promise<AchievementDto.Entity[]> {
+		return this.service.getAll(user.id);
+	}
+
+	/**
+	 * @tag Achievements
+	 * @summary Получить достижение по id
+	 * @security token
+	 */
+	@TypedRoute.Get('/:id')
+	public async getById(@TypedParam('id') id: string, @User() user: TokenDto.Payload): Promise<AchievementDto.Entity> {
+		return await this.service.getById(id, user.id);
 	}
 }
