@@ -1,6 +1,6 @@
 import type { ExecutionContext } from '@nestjs/common';
 import { createParamDecorator } from '@nestjs/common';
-import { UserDto } from 'src/modules/user/user.dto';
+import { UserDto } from '../../modules/user/user.dto';
 
 export class UserDataResponse {
 	id: string;
