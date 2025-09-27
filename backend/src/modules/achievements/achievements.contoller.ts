@@ -2,9 +2,9 @@
 import { AchievementsService } from './achievements.service';
 import { AchievementDto } from './achievements.dto';
 import { TypedParam, TypedRoute } from '@nestia/core';
-import { User } from 'src/common/decorators/user.decorator';
+import { User } from '../../common/decorators/user.decorator';
 import { TokenDto } from '../token/token.dto';
-import { UserInterceptor } from 'src/common/interceptors/user.interceptor';
+import { UserInterceptor } from '../../common/interceptors/user.interceptor';
 
 @Controller('achievements')
 @UseInterceptors(UserInterceptor)
