@@ -4,6 +4,7 @@ import { Colors } from '@/constants/Colors'
 import './../global.css'
 import { fontFamily } from '@/constants/Fonts'
 import { YamapInstance } from 'react-native-yamap-plus-lite'
+import Blurpage from '@/app/blurpage'
 
 YamapInstance.setLocale('ru_RU')
 	.then(() => {
@@ -43,6 +44,7 @@ export default function RootLayout() {
 				}
 			}}
 		>
+			<Stack.Screen name="blurpage" options={{ headerShown: false }} />
 			<Stack.Screen name="(tabs)/index" options={{ headerShown: false }} />
 			<Stack.Screen name="hello-screen" options={{ headerShown: false }} />
 			<Stack.Screen name="auth" options={{ headerShown: false }} />
