@@ -38,7 +38,8 @@ export class AchievementsService {
 			})
 			.from(achievements)
 			.where(eq(achievements.id, id))
-			.leftJoin(userAchievements, eq(userAchievements.achievementId, achievements.id));
+			.leftJoin(userAchievements, eq(userAchievements.achievementId, achievements.id))
+			.limit(1);
 
 		if (!achievement) {
 			throw new NotFoundException('Achievement not found');
