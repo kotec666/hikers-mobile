@@ -2,7 +2,7 @@ import { Injectable, OnModuleInit } from '@nestjs/common';
 import { drizzle, NodePgQueryResultHKT } from 'drizzle-orm/node-postgres';
 import { Pool } from 'pg';
 import * as schema from './schema';
-import { EnvService } from 'src/modules/env/env.service';
+import { EnvService } from '../env/env.service';
 import { PgTransaction } from 'drizzle-orm/pg-core';
 import { ExtractTablesWithRelations } from 'drizzle-orm';
 

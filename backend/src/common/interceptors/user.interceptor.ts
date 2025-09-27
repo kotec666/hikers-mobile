@@ -10,9 +10,9 @@ import {
 import type { Observable } from 'rxjs';
 import { JwtService } from '@nestjs/jwt';
 import { Token } from '../../modules/token/token.dto';
-import { DatabaseService } from 'src/modules/database/database.service';
+import { DatabaseService } from '../../modules/database/database.service';
 import { eq } from 'drizzle-orm';
-import { users } from 'src/modules/database/schema';
+import { users } from '../../modules/database/schema';
 
 @Injectable()
 export class UserInterceptor implements NestInterceptor {
