@@ -1,7 +1,7 @@
 import { BadRequestException, Injectable, UnauthorizedException } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
 import * as crypto from 'crypto';
-import { Token } from './token.dto';
+import { TokenDto } from './token.dto';
 import { EnvService } from '../../modules/env/env.service';
 import { DatabaseService } from '../database/database.service';
 import { tokens, users } from '../database/schema';
@@ -26,7 +26,7 @@ export class TokenService {
 	 *
 	 * @throws Error при внутренней ошибке
 	 */
-	public async generatePairAndGetAccess(userId: string): Promise<Token.TokenResponse> {
+	public async generatePairAndGetAccess(userId: string): Promise<TokenDto.TokenResponse> {
 		// рандомный сид для идентификации будущей пары access & refresh токенов
 		const seed = crypto.randomBytes(16);
 
@@ -36,7 +36,7 @@ export class TokenService {
 		const hashedSeed = this.hashSeed(seed);
 
 		try {
-			const [payload]: Token.Payload[] = await this.db.db
+			const [payload]: TokenDto.Payload[] = await this.db.db
 				.select({ id: users.id })
 				.from(users)
 				.where(eq(users.id, userId))
@@ -87,7 +87,7 @@ export class TokenService {
 	 * @throws UnauthorizedException если соотв. refresh-токен не найден в бд (юзер не прошел регистрацию)
 	 * @throws Error при внутренней ошибке
 	 */
-	public async generateAccessTokenByUserId(userId: string): Promise<Token.TokenResponse> {
+	public async generateAccessTokenByUserId(userId: string): Promise<TokenDto.TokenResponse> {
 		const [existingRefreshToken] = await this.db.db
 			.select({ refreshToken: tokens.refreshToken })
 			.from(tokens)
@@ -101,7 +101,7 @@ export class TokenService {
 		try {
 			const decodedRefreshToken = this.jwtService.verify(existingRefreshToken.refreshToken);
 
-			const [payload]: Token.Payload[] = await this.db.db
+			const [payload]: TokenDto.Payload[] = await this.db.db
 				.select({ id: users.id })
 				.from(users)
 				.where(eq(users.id, userId))
@@ -139,8 +139,8 @@ export class TokenService {
 	 *
 	 * @throws UnauthorizedException если соотв. refresh-токен не валидный, или не составляет пару
 	 */
-	public async refreshAccessToken(accessToken: string): Promise<Token.TokenResponse> {
-		const decodedAccessToken: Token.Access = this.jwtService.decode(accessToken);
+	public async refreshAccessToken(accessToken: string): Promise<TokenDto.TokenResponse> {
+		const decodedAccessToken: TokenDto.Access = this.jwtService.decode(accessToken);
 
 		if (!decodedAccessToken || !('hs' in decodedAccessToken)) {
 			throw new BadRequestException('Bad token format');
@@ -160,7 +160,7 @@ export class TokenService {
 				throw new UnauthorizedException('Token not found');
 			}
 
-			const decodedRefreshToken: Token.Refresh = this.jwtService.verify(token.refreshToken);
+			const decodedRefreshToken: TokenDto.Refresh = this.jwtService.verify(token.refreshToken);
 			hashedSeedFromRefreshToken = this.hashSeed(Buffer.from(decodedRefreshToken.s, 'hex'));
 		} catch (e) {
 			throw new UnauthorizedException();

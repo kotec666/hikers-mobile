@@ -2,7 +2,7 @@ import { Injectable, UnauthorizedException } from '@nestjs/common';
 import { UserDto } from '../user/user.dto';
 import { UserService } from '../user/user.service';
 import { TokenService } from '../token/token.service';
-import { Token } from '../token/token.dto';
+import { TokenDto } from '../token/token.dto';
 import { DatabaseService } from '../database/database.service';
 
 @Injectable()
@@ -16,7 +16,7 @@ export class AuthService {
 	/** Регистрирует нового пользователя.
 	 * @returns - {@link Token.TokenResponse | access-токен}
 	 */
-	public async registration(dto: UserDto.Creation): Promise<Token.TokenResponse> {
+	public async registration(dto: UserDto.Creation): Promise<TokenDto.TokenResponse> {
 		try {
 			await this.userService.checkEmailAvailable(dto.email);
 
@@ -30,7 +30,7 @@ export class AuthService {
 	/** Аутентицикация нового пользователя.
 	 * @returns - {@link Token.TokenResponse | access-токен}
 	 */
-	public async login(dto: UserDto.Login): Promise<Token.TokenResponse> {
+	public async login(dto: UserDto.Login): Promise<TokenDto.TokenResponse> {
 		await this.userService.checkLogin(dto);
 
 		const user = await this.userService.getUserByEmail(dto.email);
@@ -41,7 +41,7 @@ export class AuthService {
 	 * @throws - {@link UnauthorizedException} если токен не валидный
 	 * @returns - {@link Token.TokenResponse | свежий access-токен}
 	 */
-	public async refresh(expiredAccessToken: Token.TokenResponse) {
+	public async refresh(expiredAccessToken: TokenDto.TokenResponse) {
 		try {
 			return await this.tokenService.refreshAccessToken(expiredAccessToken.token);
 		} catch (e) {

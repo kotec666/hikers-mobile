@@ -9,7 +9,7 @@ import {
 } from '@nestjs/common';
 import type { Observable } from 'rxjs';
 import { JwtService } from '@nestjs/jwt';
-import { Token } from '../../modules/token/token.dto';
+import { TokenDto } from '../../modules/token/token.dto';
 import { DatabaseService } from '../../modules/database/database.service';
 import { eq } from 'drizzle-orm';
 import { users } from '../../modules/database/schema';
@@ -40,7 +40,7 @@ export class UserInterceptor implements NestInterceptor {
 		const token = authHeader.split(' ')[1];
 
 		try {
-			const tokenData: Token.Access = await this.jwtService.verify(token);
+			const tokenData: TokenDto.Access = await this.jwtService.verify(token);
 			const [user] = await this.db.db
 				.select({ id: users.id })
 				.from(users)
