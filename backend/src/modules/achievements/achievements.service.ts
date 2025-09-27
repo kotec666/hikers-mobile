@@ -2,13 +2,13 @@
 import { DatabaseService } from '../database/database.service';
 import { AchievementDto } from './achievements.dto';
 import { achievements, userAchievements } from '../database/schema';
-import { eq, notInArray, sql } from 'drizzle-orm';
+import { eq, notInArray, sql, and } from 'drizzle-orm';
 
 @Injectable()
 export class AchievementsService {
 	constructor(private readonly db: DatabaseService) {}
 
-	public async getAll(): Promise<AchievementDto.Entity[]> {
+	public async getAll(userId: string): Promise<AchievementDto.Entity[]> {
 		// @TODO пагинация
 
 		return await this.db.db
@@ -22,10 +22,13 @@ export class AchievementsService {
 				claimedAt: userAchievements.createdAt,
 			})
 			.from(achievements)
-			.leftJoin(userAchievements, eq(userAchievements.achievementId, achievements.id));
+			.leftJoin(
+				userAchievements,
+				and(eq(userAchievements.achievementId, achievements.id), eq(userAchievements.userId, userId)),
+			);
 	}
 
-	public async getById(id: string): Promise<AchievementDto.Entity> {
+	public async getById(id: string, userId: string): Promise<AchievementDto.Entity> {
 		const [achievement] = await this.db.db
 			.select({
 				id: achievements.id,
@@ -38,7 +41,10 @@ export class AchievementsService {
 			})
 			.from(achievements)
 			.where(eq(achievements.id, id))
-			.leftJoin(userAchievements, eq(userAchievements.achievementId, achievements.id))
+			.leftJoin(
+				userAchievements,
+				and(eq(userAchievements.achievementId, achievements.id), eq(userAchievements.userId, userId)),
+			)
 			.limit(1);
 
 		if (!achievement) {

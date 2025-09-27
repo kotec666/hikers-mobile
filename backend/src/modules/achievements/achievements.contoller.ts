@@ -17,8 +17,8 @@ export class AchievementsContoller {
 	 * @security token
 	 */
 	@TypedRoute.Get()
-	public async getAll(): Promise<AchievementDto.Entity[]> {
-		return this.service.getAll();
+	public async getAll(@User() user: TokenDto.Payload): Promise<AchievementDto.Entity[]> {
+		return this.service.getAll(user.id);
 	}
 
 	/**
@@ -27,8 +27,8 @@ export class AchievementsContoller {
 	 * @security token
 	 */
 	@TypedRoute.Get('/:id')
-	public async getById(@TypedParam('id') id: string): Promise<AchievementDto.Entity> {
-		return await this.service.getById(id);
+	public async getById(@TypedParam('id') id: string, @User() user: TokenDto.Payload): Promise<AchievementDto.Entity> {
+		return await this.service.getById(id, user.id);
 	}
 
 	/**
