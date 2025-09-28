@@ -1,14 +1,14 @@
 import React, { forwardRef, useCallback, useImperativeHandle } from 'react'
-import { View, StyleSheet, TouchableWithoutFeedback, Dimensions, Pressable } from 'react-native'
+import { View, StyleSheet, TouchableWithoutFeedback, Dimensions, Pressable, Platform } from 'react-native'
 import { BottomSheetHandle, BottomSheetProps } from '@/components/ui/BottomSheet/types'
 import Animated, { interpolate, useAnimatedStyle, useSharedValue, withSpring } from 'react-native-reanimated'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
 import { Gesture, GestureDetector } from 'react-native-gesture-handler'
 import { Colors } from '@/constants/Colors'
-import {BlurView} from "expo-blur";
+import { BlurView } from 'expo-blur'
 
 const BottomSheet = forwardRef<BottomSheetHandle, BottomSheetProps>(
-	({ activeHeight, backDropColor = 'rgba(0,0,0,0.5)', backgroundColor = 'rgba(0, 0, 0, 0.5)', children }, ref) => {
+	({ activeHeight, backDropColor = 'rgba(0,0,0,0.5)', backgroundColor = 'rgba(0, 0, 0, 1)', children }, ref) => {
 		const safeAreaInsets = useSafeAreaInsets()
 		const { height: screenHeight } = Dimensions.get('screen')
 		const closedPositionY = screenHeight
@@ -79,29 +79,43 @@ const BottomSheet = forwardRef<BottomSheetHandle, BottomSheetProps>(
 				}
 			})
 
+		const platformStyles =
+			Platform.OS === 'ios'
+				? [
+						styles.container,
+						sheetStyle,
+						{
+							height: activeHeight,
+							paddingBottom: safeAreaInsets.bottom
+						}
+					]
+				: [
+						styles.container,
+						sheetStyle,
+						{
+							height: activeHeight,
+							paddingBottom: safeAreaInsets.bottom,
+							backgroundColor
+						}
+					]
+
 		return (
 			<>
 				<TouchableWithoutFeedback onPress={closeSheet}>
 					<Animated.View style={[styles.backdrop, backdropStyle, { backgroundColor: backDropColor }]} />
 				</TouchableWithoutFeedback>
 				<GestureDetector gesture={panGestureHandler}>
-					<Animated.View
-						style={[
-							styles.container,
-							sheetStyle,
-							{
-								height: activeHeight,
-								// backgroundColor,
-								paddingBottom: safeAreaInsets.bottom
-							}
-						]}
-					>
-						<BlurView
-                            tint="dark"
-                            intensity={10}
-                            experimentalBlurMethod="dimezisBlurView"
-							style={[StyleSheet.absoluteFill, { overflow: 'hidden', backgroundColor: 'transparent' }]}
-						/>
+					<Animated.View style={platformStyles}>
+						{Platform.OS === 'ios' && (
+							<BlurView
+								tint="dark"
+								intensity={10}
+								style={[
+									StyleSheet.absoluteFill,
+									{ overflow: 'hidden', backgroundColor: 'transparent' }
+								]}
+							/>
+						)}
 						<Pressable style={styles.lineContainer}>
 							<View style={styles.line} />
 						</Pressable>

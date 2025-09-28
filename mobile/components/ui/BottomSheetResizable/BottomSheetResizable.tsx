@@ -1,6 +1,6 @@
 import React, { forwardRef, ReactNode, useCallback, useImperativeHandle } from 'react'
-import { Dimensions, StyleSheet, View } from 'react-native'
-import { Gesture, GestureDetector } from 'react-native-gesture-handler'
+import { Dimensions, Platform, StyleSheet, View } from 'react-native'
+import { Gesture, GestureDetector, PanGesture } from 'react-native-gesture-handler'
 import Animated, {
 	Extrapolation,
 	interpolate,
@@ -11,7 +11,7 @@ import Animated, {
 	withTiming
 } from 'react-native-reanimated'
 import { Colors } from '@/constants/Colors'
-import {BlurView} from "expo-blur";
+import { BlurView } from 'expo-blur'
 
 const { height: SCREEN_HEIGHT } = Dimensions.get('window')
 const MAX_SHEET_TRANSLATION = -SCREEN_HEIGHT + 50
@@ -114,6 +114,11 @@ const BottomSheetResizable = forwardRef<BottomSheetResizableRef, BottomSheetResi
 		}
 	})
 
+	const platformStyles =
+		Platform.OS === 'ios'
+			? [styles.container, animatedSheetStyle]
+			: [styles.container, animatedSheetStyle, { backgroundColor: 'rgba(0,0,0,0.9)' }]
+
 	return (
 		<>
 			<Animated.View
@@ -122,27 +127,56 @@ const BottomSheetResizable = forwardRef<BottomSheetResizableRef, BottomSheetResi
 				animatedProps={animatedBackdropProps}
 			/>
 
-			<Animated.View style={[styles.container, animatedSheetStyle]}>
-				<BlurView
-                    tint="dark"
-                    intensity={10}
-                    experimentalBlurMethod="dimezisBlurView"
-					style={{ overflow: 'hidden', backgroundColor: 'transparent' }}
-				>
-					<GestureDetector gesture={handleGesture}>
-						<View style={styles.handleWrap}>
-							<Animated.View style={[styles.handle, animatedHandleStyle]} />
-						</View>
-					</GestureDetector>
-
-					<Animated.View style={[styles.contentWrapper, animatedContentStyle]}>
-						<View style={styles.contentInner}>{children}</View>
-					</Animated.View>
-				</BlurView>
+			<Animated.View style={platformStyles}>
+				{Platform.OS === 'ios' ? (
+					<BlurView tint="dark" intensity={10} style={{ overflow: 'hidden', backgroundColor: 'transparent' }}>
+						<BottomSheetResizableContent
+							animatedContentStyle={animatedContentStyle}
+							animatedHandleStyle={animatedHandleStyle}
+							handleGesture={handleGesture}
+						>
+							{children}
+						</BottomSheetResizableContent>
+					</BlurView>
+				) : (
+					<BottomSheetResizableContent
+						animatedContentStyle={animatedContentStyle}
+						animatedHandleStyle={animatedHandleStyle}
+						handleGesture={handleGesture}
+					>
+						{children}
+					</BottomSheetResizableContent>
+				)}
 			</Animated.View>
 		</>
 	)
 })
+
+const BottomSheetResizableContent = ({
+	handleGesture,
+	animatedHandleStyle,
+	animatedContentStyle,
+	children
+}: {
+	handleGesture: PanGesture
+	animatedHandleStyle: { opacity: 1 | 0.5; transform: { scale: number }[] }
+	animatedContentStyle: { height: number }
+	children?: ReactNode
+}) => {
+	return (
+		<>
+			<GestureDetector gesture={handleGesture}>
+				<View style={styles.handleWrap}>
+					<Animated.View style={[styles.handle, animatedHandleStyle]} />
+				</View>
+			</GestureDetector>
+
+			<Animated.View style={[styles.contentWrapper, animatedContentStyle]}>
+				<View style={styles.contentInner}>{children}</View>
+			</Animated.View>
+		</>
+	)
+}
 
 export default BottomSheetResizable
 

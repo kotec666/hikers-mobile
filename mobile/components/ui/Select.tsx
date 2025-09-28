@@ -1,5 +1,5 @@
 import { cn } from '@/helpers/cn'
-import { Dimensions, StyleSheet, Text, TouchableOpacity, View } from 'react-native'
+import { Dimensions, Platform, StyleSheet, Text, TouchableOpacity, View } from 'react-native'
 import { fontFamily } from '@/constants/Fonts'
 import { Colors } from '@/constants/Colors'
 import React, { useState } from 'react'
@@ -7,7 +7,7 @@ import { Container } from '@/components/ui/Container'
 import ArrowDownSvg from '@/components/svg/ArrowDownSvg'
 import { FlatList, GestureHandlerRootView } from 'react-native-gesture-handler'
 import PeopleRunningSvg from '@/components/svg/PeopleRunningSvg'
-import {BlurView} from "expo-blur";
+import { BlurView } from 'expo-blur'
 
 export interface SelectOption {
 	value: string
@@ -69,42 +69,30 @@ export function Select(props: SelectProps) {
 
 			{isOpen && (
 				<View
-					className="absolute border-[1px] border-white/20 rounded-[25px] left-0 gap-[15px] bg-black/20 w-full overflow-hidden"
-					style={{ top: 60, zIndex: 2 }}
+					className="absolute border-[1px] border-white/20 rounded-[25px] left-0 gap-[15px] w-full overflow-hidden"
+					style={{ top: 60, backgroundColor: Platform.OS === 'ios' ? 'none' : 'black', zIndex: 2 }}
 				>
-					<BlurView
-                        tint="dark"
-                        intensity={10}
-                        experimentalBlurMethod="dimezisBlurView"
-						style={{ overflow: 'hidden', backgroundColor: 'transparent' }}
-					>
-						<GestureHandlerRootView style={{ flex: 1, maxHeight: height / 4 }}>
-							<FlatList
-								data={options}
-								keyExtractor={(item) => item.value}
-								renderItem={({ item }) => (
-									<TouchableOpacity
-										style={[styles.option, item.value === value && styles.selectedOption]}
-										onPress={() => handleSelect(item.value)}
-									>
-										<View className="w-[50px] h-[50px] rounded-[15px] bg-white items-center justify-center">
-											<PeopleRunningSvg />
-										</View>
-										<Text style={styles.optionText}>{item.label}</Text>
-									</TouchableOpacity>
-								)}
-								showsVerticalScrollIndicator={false}
+					{Platform.OS === 'ios' ? (
+						<BlurView
+							tint="dark"
+							intensity={10}
+							style={{ overflow: 'hidden', backgroundColor: 'transparent' }}
+						>
+							<SelectContainer
+								options={options}
+								handleSelect={handleSelect}
+								value={value}
+								handleClose={() => setIsOpen(false)}
 							/>
-						</GestureHandlerRootView>
-						<TouchableOpacity onPress={() => setIsOpen(false)}>
-							<View
-								className="w-full border-[1px] border-white/20 rounded-[25px] h-[50px] items-center justify-center"
-								style={{ transform: [{ rotate: '180deg' }] }}
-							>
-								<ArrowDownSvg />
-							</View>
-						</TouchableOpacity>
-					</BlurView>
+						</BlurView>
+					) : (
+						<SelectContainer
+							options={options}
+							handleSelect={handleSelect}
+							value={value}
+							handleClose={() => setIsOpen(false)}
+						/>
+					)}
 				</View>
 			)}
 
@@ -116,6 +104,49 @@ export function Select(props: SelectProps) {
 				</Container>
 			)}
 		</View>
+	)
+}
+
+const SelectContainer = ({
+	options,
+	handleSelect,
+	value,
+	handleClose
+}: {
+	options: SelectOption[]
+	handleSelect: (optionValue: string) => void
+	value: string | undefined
+	handleClose: () => void
+}) => {
+	return (
+		<>
+			<GestureHandlerRootView style={{ flex: 1, maxHeight: height / 4 }}>
+				<FlatList
+					data={options}
+					keyExtractor={(item) => item.value}
+					renderItem={({ item }) => (
+						<TouchableOpacity
+							style={[styles.option, item.value === value && styles.selectedOption]}
+							onPress={() => handleSelect(item.value)}
+						>
+							<View className="w-[50px] h-[50px] rounded-[15px] bg-white items-center justify-center">
+								<PeopleRunningSvg />
+							</View>
+							<Text style={styles.optionText}>{item.label}</Text>
+						</TouchableOpacity>
+					)}
+					showsVerticalScrollIndicator={false}
+				/>
+			</GestureHandlerRootView>
+			<TouchableOpacity onPress={handleClose}>
+				<View
+					className="w-full border-[1px] border-white/20 rounded-[25px] h-[50px] items-center justify-center"
+					style={{ transform: [{ rotate: '180deg' }] }}
+				>
+					<ArrowDownSvg />
+				</View>
+			</TouchableOpacity>
+		</>
 	)
 }
 

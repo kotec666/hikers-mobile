@@ -21,7 +21,6 @@ import NavBar from '@/components/ui/NavBar'
 import AchievementsMedalSvg from '@/components/svg/AchievementsMedalSvg'
 import { Colors } from '@/constants/Colors'
 import AsyncStorage from '@react-native-async-storage/async-storage'
-import Blurpage from '@/app/blurpage'
 
 const { height: screenHeight } = Dimensions.get('screen')
 
@@ -110,9 +109,6 @@ export default function HomeScreen() {
 					</Button>
 					<Button variant="black" onPress={() => router.navigate('/friends/my-friends')}>
 						Страница списка друзей
-					</Button>
-					<Button variant="black" onPress={() => router.navigate('/blurpage')}>
-						Страница Blurpage
 					</Button>
 					<Button variant="black" onPress={() => router.navigate('/news-feed')}>
 						Страница постов

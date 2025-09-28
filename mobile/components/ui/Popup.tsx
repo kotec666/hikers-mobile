@@ -1,20 +1,21 @@
 import React, { PropsWithChildren } from 'react'
-import { View, StyleSheet } from 'react-native'
+import { View, StyleSheet, Platform } from 'react-native'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
-import {BlurView} from "expo-blur";
+import { BlurView } from 'expo-blur'
 
 const Popup = (props: PropsWithChildren) => {
 	const insets = useSafeAreaInsets()
 	return (
 		<View style={[styles.container, { top: insets.top + 35 }]}>
-			<BlurView
-				style={styles.blurView}
-                tint="dark"
-                intensity={15}
-                experimentalBlurMethod="dimezisBlurView"
-			>
-				<View style={styles.content}>{props.children}</View>
-			</BlurView>
+			{Platform.OS === 'ios' ? (
+				<BlurView style={styles.blurView} tint="dark" intensity={15}>
+					<View style={styles.content}>{props.children}</View>
+				</BlurView>
+			) : (
+				<View style={styles.content} className="bg-black/20">
+					{props.children}
+				</View>
+			)}
 		</View>
 	)
 }

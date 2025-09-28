@@ -1,8 +1,8 @@
 import { useEffect, useState, useRef } from 'react'
-import { Text, StyleSheet, Dimensions, Animated, PanResponder, View } from 'react-native'
+import { Text, StyleSheet, Dimensions, Animated, PanResponder, View, Platform } from 'react-native'
 import { fontFamily } from '@/constants/Fonts'
 import { cn } from '@/helpers/cn'
-import {BlurView} from "expo-blur";
+import { BlurView } from 'expo-blur'
 
 export enum NotificationInAppType {
 	ERROR = 'error',
@@ -13,6 +13,29 @@ export enum NotificationInAppType {
 interface IProps {
 	text?: string
 	type: NotificationInAppType
+}
+
+const NotificationContainer = ({ type, text }: { type: NotificationInAppType; text?: string }) => {
+	return (
+		<View
+			className={cn('rounded-[25px] py-[18px] px-[15px]', {
+				'bg-green-main/20': type === NotificationInAppType.SUCCESS,
+				'bg-red-ff/20': type === NotificationInAppType.ERROR,
+				'bg-black/20': type === NotificationInAppType.INFO
+			})}
+		>
+			<Text
+				style={[styles.text]}
+				className={cn('', {
+					'text-green-main': type === NotificationInAppType.SUCCESS,
+					'text-red-ff': type === NotificationInAppType.ERROR,
+					'text-white': type === NotificationInAppType.INFO
+				})}
+			>
+				{text}
+			</Text>
+		</View>
+	)
 }
 
 export function Notification({ text, type }: IProps) {
@@ -113,31 +136,13 @@ export function Notification({ text, type }: IProps) {
 			]}
 		>
 			<View style={styles.blurContainer}>
-				<BlurView
-                    tint="dark"
-                    intensity={10}
-                    experimentalBlurMethod="dimezisBlurView"
-					style={styles.blurView}
-				>
-					<View
-						className={cn('rounded-[25px] py-[18px] px-[15px]', {
-							'bg-green-main/20': type === NotificationInAppType.SUCCESS,
-							'bg-red-ff/20': type === NotificationInAppType.ERROR,
-							'bg-black/20': type === NotificationInAppType.INFO
-						})}
-					>
-						<Text
-							style={[styles.text]}
-							className={cn('', {
-								'text-green-main': type === NotificationInAppType.SUCCESS,
-								'text-red-ff': type === NotificationInAppType.ERROR,
-								'text-white': type === NotificationInAppType.INFO
-							})}
-						>
-							{text}
-						</Text>
-					</View>
-				</BlurView>
+				{Platform.OS === 'ios' ? (
+					<BlurView tint="dark" intensity={10} style={styles.blurView}>
+						<NotificationContainer type={type} text={text} />
+					</BlurView>
+				) : (
+					<NotificationContainer type={type} text={text} />
+				)}
 			</View>
 		</Animated.View>
 	)

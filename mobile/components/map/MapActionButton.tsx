@@ -1,7 +1,7 @@
 import React, { PropsWithChildren } from 'react'
 import { cn } from '@/helpers/cn'
-import { Pressable, PressableProps } from 'react-native'
-import {BlurView} from "expo-blur";
+import { Platform, Pressable, PressableProps } from 'react-native'
+import { BlurView } from 'expo-blur'
 
 export interface Props extends PropsWithChildren {
 	className?: string
@@ -18,23 +18,26 @@ export function MapActionButton(props: Props & PressableProps) {
 				className
 			)}
 		>
-			<BlurView
-                tint="dark"
-				intensity={10}
-                experimentalBlurMethod="dimezisBlurView"
-				style={[
-					{
-						width: 100,
-						height: 100,
-						justifyContent: 'center',
-						alignItems: 'center',
-						overflow: 'hidden',
-						backgroundColor: 'transparent'
-					}
-				]}
-			>
-				{children}
-			</BlurView>
+			{Platform.OS === 'ios' ? (
+				<BlurView
+					tint="dark"
+					intensity={10}
+					style={[
+						{
+							width: 100,
+							height: 100,
+							justifyContent: 'center',
+							alignItems: 'center',
+							overflow: 'hidden',
+							backgroundColor: 'transparent'
+						}
+					]}
+				>
+					{children}
+				</BlurView>
+			) : (
+				children
+			)}
 		</Pressable>
 	)
 }

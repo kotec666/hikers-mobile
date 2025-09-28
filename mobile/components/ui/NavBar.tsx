@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react'
-import { StyleSheet, View, Pressable } from 'react-native'
+import { StyleSheet, View, Pressable, Platform } from 'react-native'
 import Animated, {
 	useSharedValue,
 	useAnimatedStyle,
@@ -13,7 +13,8 @@ import NavBarAccountSvg from '@/components/svg/NavBarAccountSvg'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
 import { Colors } from '@/constants/Colors'
 import { RelativePathString, useRouter } from 'expo-router'
-import {BlurView} from "expo-blur";
+import { BlurView } from 'expo-blur'
+import { cn } from '@/helpers/cn'
 
 type AnimatedButtonProps = {
 	isActive: boolean
@@ -63,13 +64,19 @@ const NavBar = () => {
 
 	return (
 		<View style={[styles.NavBarContainer, { bottom: insets.bottom }]} pointerEvents="box-none">
-			<View style={styles.NavBarButtonsContainer}>
-				<BlurView
-                    tint="dark"
-                    intensity={10}
-                    experimentalBlurMethod="dimezisBlurView"
-					style={[StyleSheet.absoluteFill, { overflow: 'hidden', backgroundColor: 'transparent' }]}
-				/>
+			<View
+				style={styles.NavBarButtonsContainer}
+				className={cn('', {
+					'bg-black/20': Platform.OS === 'android'
+				})}
+			>
+				{Platform.OS === 'ios' && (
+					<BlurView
+						tint="dark"
+						intensity={10}
+						style={[StyleSheet.absoluteFill, { overflow: 'hidden', backgroundColor: 'transparent' }]}
+					/>
+				)}
 				{links.map((link) => (
 					<AnimatedButton
 						key={link.id}

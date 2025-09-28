@@ -1,21 +1,24 @@
 import React from 'react'
-import { Pressable, View, StyleSheet } from 'react-native'
+import { Pressable, View, StyleSheet, Platform } from 'react-native'
 import CloseSvg from '@/components/svg/CloseSvg'
-import {BlurView} from "expo-blur";
+import { BlurView } from 'expo-blur'
 
 const CloseCross = (props: { handleClose?: () => void }) => {
 	return (
 		<Pressable onPress={props.handleClose} className="bg-black/20 rounded-full">
-			<BlurView
-				style={styles.closeButtonBlur}
-                tint="dark"
-                intensity={10}
-                experimentalBlurMethod="dimezisBlurView"
-			>
-				<View style={styles.closeButton}>
-					<CloseSvg />
+			{Platform.OS === 'ios' ? (
+				<BlurView style={styles.closeButtonBlur} tint="dark" intensity={10}>
+					<View style={styles.closeButton}>
+						<CloseSvg />
+					</View>
+				</BlurView>
+			) : (
+				<View className="w-[28px] h-[28px] rounded-full overflow-hidden bg-black-25">
+					<View style={styles.closeButton}>
+						<CloseSvg />
+					</View>
 				</View>
-			</BlurView>
+			)}
 		</Pressable>
 	)
 }
