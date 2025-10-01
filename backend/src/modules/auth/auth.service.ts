@@ -3,18 +3,16 @@ import { UserDto } from '../user/user.dto';
 import { UserService } from '../user/user.service';
 import { TokenService } from '../token/token.service';
 import { TokenDto } from '../token/token.dto';
-import { DatabaseService } from '../database/database.service';
 
 @Injectable()
 export class AuthService {
 	constructor(
 		private readonly userService: UserService,
 		private readonly tokenService: TokenService,
-		private readonly db: DatabaseService,
 	) {}
 
 	/** Регистрирует нового пользователя.
-	 * @returns - {@link Token.TokenResponse | access-токен}
+	 * @returns - {@link TokenDto.TokenResponse | access-токен}
 	 */
 	public async registration(dto: UserDto.Creation): Promise<TokenDto.TokenResponse> {
 		try {
@@ -28,7 +26,7 @@ export class AuthService {
 	}
 
 	/** Аутентицикация нового пользователя.
-	 * @returns - {@link Token.TokenResponse | access-токен}
+	 * @returns - {@link TokenDto.TokenResponse | access-токен}
 	 */
 	public async login(dto: UserDto.Login): Promise<TokenDto.TokenResponse> {
 		await this.userService.checkLogin(dto);
@@ -39,7 +37,7 @@ export class AuthService {
 
 	/** Перевыдает истекший access-токен.
 	 * @throws - {@link UnauthorizedException} если токен не валидный
-	 * @returns - {@link Token.TokenResponse | свежий access-токен}
+	 * @returns - {@link TokenDto.TokenResponse | свежий access-токен}
 	 */
 	public async refresh(expiredAccessToken: TokenDto.TokenResponse) {
 		try {

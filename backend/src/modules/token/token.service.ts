@@ -170,7 +170,9 @@ export class TokenService {
 		if (hashedSeedFromRefreshToken === hashedSeedFromAccessToken) {
 			// хэши совпадают, значит токены составляют пару
 			// т.е. access токен соответствует текущему лайфтайму refresh токена
-			const { ...decodedTokenData } = decodedAccessToken;
+
+			// eslint-disable-next-line @typescript-eslint/no-unused-vars
+			const { iat, exp, ...decodedTokenData } = decodedAccessToken;
 			return {
 				token: this.jwtService.sign(decodedTokenData, {
 					expiresIn: this.envService.get('ACCESS_TOKEN_EXPIRATION_TIME'),
