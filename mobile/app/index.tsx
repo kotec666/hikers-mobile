@@ -20,6 +20,9 @@ const HelloPage = () => {
 					<Button variant="white" onPress={() => router.navigate('/(tabs)')}>
 						tabs index
 					</Button>
+					<Button variant="white" onPress={() => router.navigate('/testauth')}>
+						test auth 401
+					</Button>
 				</Slider>
 				<StatusBar style="light" />
 			</SafeAreaView>

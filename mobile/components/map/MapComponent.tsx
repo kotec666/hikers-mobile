@@ -1,6 +1,5 @@
-import { Polyline, Yamap } from 'react-native-yamap-plus-lite'
+import { Marker, Polyline, Yamap } from 'react-native-yamap-plus-lite'
 import UserLocationMarker from '@/components/ui/UserLocationMarker'
-import DefaultMarker from '@/components/ui/DefaultMarker'
 import { useEffect, useState } from 'react'
 import AsyncStorage from '@react-native-async-storage/async-storage'
 import * as Location from 'expo-location'
@@ -148,27 +147,29 @@ const MapComponent = (props: { maxMapHeight?: number; minMapHeight?: number; rou
 		<View className="flex-1" style={{ overflow: 'hidden', borderRadius: props.rounded || 0 }}>
 			<Yamap
 				nightMode
+				// initialRegion={{ lat: 53.422506, lon: 49.4781051, zoom: 12 }}
 				initialRegion={{ lat: 53.422506, lon: 49.4781051, zoom: 12 }}
 				style={{ flex: 1, maxHeight: props.maxMapHeight, minHeight: props.minMapHeight }}
 				logoPosition={{ horizontal: 'right', vertical: 'top' }}
 				followUser
 				showUserPosition={false}
+				tiltGesturesEnabled={false}
 			>
-				{lastLocation?.latitude && lastLocation?.longitude && (
-					<UserLocationMarker
-						position={{ lat: lastLocation?.latitude, lon: lastLocation?.longitude }}
-						accuracy={5}
-					/>
-				)}
+				{/*{lastLocation?.latitude && lastLocation?.longitude && (*/}
+				{/*	<UserLocationMarker*/}
+				{/*		position={{ lat: lastLocation?.latitude, lon: lastLocation?.longitude }}*/}
+				{/*		accuracy={5}*/}
+				{/*	/>*/}
+				{/*)}*/}
 
-				{liveLocations?.length &&
-					liveLocations.map((location, idx) => (
-						<DefaultMarker
-							key={JSON.stringify(`${location}${idx}`)}
-							lat={location.coords.latitude}
-							lon={location.coords.longitude}
-						/>
-					))}
+				{/*{liveLocations?.length &&*/}
+				{/*	liveLocations.map((location, idx) => (*/}
+				{/*		<DefaultMarker*/}
+				{/*			key={JSON.stringify(`${location}${idx}`)}*/}
+				{/*			lat={location.coords.latitude}*/}
+				{/*			lon={location.coords.longitude}*/}
+				{/*		/>*/}
+				{/*	))}*/}
 
 				<UserLocationMarker position={{ lat: 53.422506, lon: 49.4781051 }} />
 

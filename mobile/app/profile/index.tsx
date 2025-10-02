@@ -12,6 +12,7 @@ import ActivityInfo from '@/components/ui/Profile/ActivityInfo'
 import RedirectAchievementsInfo from '@/components/ui/Profile/RedirectAchievementsInfo'
 import PostListItem from '@/components/ui/Post/PostListItem'
 import { useRouter } from 'expo-router'
+import { useAuthStore } from '@/store/authStore'
 
 /**
  *
@@ -22,9 +23,22 @@ import { useRouter } from 'expo-router'
 const Profile = () => {
 	const insets = useSafeAreaInsets()
 	const router = useRouter()
+	const { logout, user } = useAuthStore()
 
-	const handleClick = () => {
+	const handleClickEdit = () => {
 		router.push('/profile/edit')
+	}
+
+	const handleClickDocs = () => {
+		router.push('/document')
+	}
+
+	const handleClickTestAuth = () => {
+		router.push('/testauth')
+	}
+
+	const handleClickExit = () => {
+		logout()
 	}
 
 	const posts = [
@@ -46,14 +60,23 @@ const Profile = () => {
 									iconSize={{ width: 60, height: 60 }}
 									avatar={false}
 								/>
-								<MoreOptionsButton action={handleClick} icon={<SettingsSvg />} />
+								<MoreOptionsButton
+									icon={<SettingsSvg />}
+									params={[
+										{ label: 'Редактировать профиль', action: handleClickEdit },
+										{ label: 'Политика конфиденциальности', action: handleClickDocs },
+										{ label: 'Политика обработки персональных данных', action: handleClickDocs },
+										{ label: 'test auth', action: handleClickTestAuth },
+										{ label: 'Выход', action: handleClickExit }
+									]}
+								/>
 							</View>
 							<View>
 								<Text className="text-[19px] text-white" style={{ fontFamily: fontFamily.bold }}>
-									Сергей Авдотьев
+									{user?.name}
 								</Text>
 								<Text className="text-base text-gray-ab" style={{ fontFamily: fontFamily.medium }}>
-									@oxxysergey
+									@{user?.username}
 								</Text>
 							</View>
 						</View>

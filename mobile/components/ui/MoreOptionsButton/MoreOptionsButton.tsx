@@ -4,7 +4,7 @@ import Popup from '@/components/ui/Popup'
 import MoreOptionsListItem from '@/components/ui/MoreOptionsButton/MoreOptionsListItem'
 
 interface IMoreOptionsButtonProps {
-	action: () => void
+	params: { label: string; action: () => void }[]
 	icon: ReactElement
 }
 
@@ -27,8 +27,9 @@ const MoreOptionsButton = (props: IMoreOptionsButtonProps) => {
 			</Pressable>
 			{state.isVisible && (
 				<Popup>
-					<MoreOptionsListItem action={props.action} label="Редактировать" />
-					<MoreOptionsListItem action={props.action} label="Удалить" />
+					{props.params.map((param) => (
+						<MoreOptionsListItem key={param.label} action={param.action} label={param.label} />
+					))}
 				</Popup>
 			)}
 		</>

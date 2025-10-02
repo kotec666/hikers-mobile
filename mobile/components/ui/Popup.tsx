@@ -12,7 +12,7 @@ const Popup = (props: PropsWithChildren) => {
 					<View style={styles.content}>{props.children}</View>
 				</BlurView>
 			) : (
-				<View style={styles.content} className="bg-black/20">
+				<View style={styles.content} className="bg-black">
 					{props.children}
 				</View>
 			)}

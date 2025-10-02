@@ -37,19 +37,22 @@
 		"expo-splash-screen": "~0.30.10",
 		"expo-status-bar": "~2.2.3",
 		"expo-task-manager": "~13.1.6",
+		"ky": "^1.11.0",
 		"nativewind": "^4.1.23",
 		"react": "19.0.0",
 		"react-dom": "19.0.0",
 		"react-native": "0.79.5",
 		"react-native-gesture-handler": "~2.24.0",
 		"react-native-gifted-charts": "^1.4.64",
+		"react-native-mmkv": "^3.3.3",
 		"react-native-reanimated": "~3.17.4",
 		"react-native-safe-area-context": "5.4.0",
 		"react-native-screens": "~4.11.1",
 		"react-native-svg": "15.11.2",
 		"react-native-web": "~0.20.0",
 		"react-native-yamap-plus-lite": "^4.17.1",
-		"tailwind-merge": "^3.3.1"
+		"tailwind-merge": "^3.3.1",
+		"zustand": "^5.0.8"
 	},
 	"devDependencies": {
 		"@babel/core": "^7.25.2",

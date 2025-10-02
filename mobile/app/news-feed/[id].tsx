@@ -40,7 +40,15 @@ const Post = () => {
 				<Container className="gap-[20px]">
 					<View className="flex-row justify-between items-center">
 						<HeaderBack>Просмотр поста</HeaderBack>
-						<MoreOptionsButton action={handleClickDelete} icon={<MoreOptionsSvg />} />
+						<MoreOptionsButton
+							icon={<MoreOptionsSvg />}
+							params={[
+								{ label: 'Редактировать профиль', action: () => {} },
+								{ label: 'Политика конфиденциальности', action: () => {} },
+								{ label: 'Политика обработки персональных данных', action: () => {} },
+								{ label: 'Выход', action: () => {} }
+							]}
+						/>
 					</View>
 					<ScrollView style={{ flex: 1, width: '100%' }}>
 						<View className="gap-[15px]">

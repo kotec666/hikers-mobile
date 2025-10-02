@@ -21,8 +21,6 @@ import MoreOptionsSvg from '@/components/svg/MoreOptionsSvg'
 const UserProfilePage = () => {
 	const insets = useSafeAreaInsets()
 
-	const handleClick = () => {}
-
 	const posts = [
 		{ id: 1, authorName: 'Сергей Авдотьев', date: 'Вчера' },
 		{ id: 2, authorName: 'Сергей Авдотьев', date: 'Вчера' },
@@ -42,7 +40,15 @@ const UserProfilePage = () => {
 									iconSize={{ width: 60, height: 60 }}
 									avatar={false}
 								/>
-								<MoreOptionsButton action={handleClick} icon={<MoreOptionsSvg />} />
+								<MoreOptionsButton
+									icon={<MoreOptionsSvg />}
+									params={[
+										{ label: 'Редактировать профиль', action: () => {} },
+										{ label: 'Политика конфиденциальности', action: () => {} },
+										{ label: 'Политика обработки персональных данных', action: () => {} },
+										{ label: 'Выход', action: () => {} }
+									]}
+								/>
 							</View>
 							<View>
 								<Text className="text-[19px] text-white" style={{ fontFamily: fontFamily.bold }}>

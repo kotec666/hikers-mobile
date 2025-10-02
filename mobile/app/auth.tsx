@@ -1,6 +1,7 @@
 import { SafeAreaProvider, useSafeAreaInsets } from 'react-native-safe-area-context'
 import { StatusBar } from 'expo-status-bar'
 import {
+	Alert,
 	Keyboard,
 	KeyboardAvoidingView,
 	Platform,
@@ -18,7 +19,8 @@ import PasswordSvg from '@/components/svg/PasswordSvg'
 import { useState } from 'react'
 import Checkbox from '@/components/ui/Checkbox'
 import { LinkCustom } from '@/components/ui/LinkCustom'
-import { useRouter } from 'expo-router'
+import { useAuthStore } from '@/store/authStore'
+import { Notification, NotificationInAppType } from '@/components/Notification'
 
 enum AUTH_MODE {
 	AUTH = 'auth',
@@ -27,17 +29,46 @@ enum AUTH_MODE {
 
 const AuthPage = () => {
 	const insets = useSafeAreaInsets()
-	const router = useRouter()
 	const [data, setData] = useState<{
 		isChecked: boolean
 		mode: AUTH_MODE
+		email: string
+		password: string
+		notificationText?: string
+		isLoading: boolean
 	}>({
 		isChecked: false,
-		mode: AUTH_MODE.AUTH
+		mode: AUTH_MODE.AUTH,
+		email: '',
+		password: '',
+		notificationText: undefined,
+		isLoading: false
 	})
 
-	const handleClickAction = () => {
-		return router.navigate('/training/newTraining')
+	const { login, register } = useAuthStore()
+
+	const handleClickAction = async () => {
+		setData((s) => ({ ...s, isLoading: true }))
+
+		if (data.mode === AUTH_MODE.AUTH) {
+			const success = await login(data.email, data.password)
+
+			if (!success) {
+				setData((s) => ({ ...s, notificationText: 'Неверные учетные данные' }))
+				// Alert.alert('Ошибка', 'Неверные учетные данные')
+			}
+		}
+
+		if (data.mode === AUTH_MODE.REGISTRATION) {
+			const success = await register(data.email, data.password)
+
+			if (!success) {
+				setData((s) => ({ ...s, notificationText: 'Неверные учетные данные' }))
+				// Alert.alert('Ошибка', 'Неверные учетные данные')
+			}
+		}
+
+		return setData((s) => ({ ...s, isLoading: false }))
 	}
 
 	const handleClickRedirect = () => {
@@ -47,6 +78,11 @@ const AuthPage = () => {
 	return (
 		<SafeAreaProvider style={{ paddingTop: insets.top, paddingBottom: insets.bottom }}>
 			<KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : 'height'} style={styles.container}>
+				<Notification
+					type={NotificationInAppType.ERROR}
+					text={data.notificationText}
+					clearErrorCallback={() => setData((s) => ({ ...s, notificationText: undefined }))}
+				/>
 				<Container className="flex-1 mb-[10px]">
 					<TouchableWithoutFeedback onPress={Keyboard.dismiss}>
 						<View className="flex-grow mt-[20px]">
@@ -60,11 +96,17 @@ const AuthPage = () => {
 									placeholder="Введите email"
 									error={true}
 									svg={<EmailSvg error={true} />}
+									value={data.email}
+									onChangeText={(text) => setData((s) => ({ ...s, email: text }))}
+									autoCapitalize="none"
 								/>
 								<InputIcon
 									isPassword
+									autoCapitalize="none"
 									placeholder="Введите пароль"
 									svg={<PasswordSvg error={false} />}
+									value={data.password}
+									onChangeText={(text) => setData((s) => ({ ...s, password: text }))}
 								/>
 							</View>
 						</View>
@@ -94,11 +136,7 @@ const AuthPage = () => {
 							</View>
 						</TouchableWithoutFeedback>
 					)}
-					<Button
-						variant="white"
-						onPress={handleClickAction}
-						// isLoading
-					>
+					<Button variant="white" onPress={handleClickAction} isLoading={data.isLoading}>
 						{data.mode === AUTH_MODE.AUTH ? 'Войти' : 'Зарегистрироваться'}
 					</Button>
 				</Container>

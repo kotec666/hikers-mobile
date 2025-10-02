@@ -13,23 +13,31 @@ export enum NotificationInAppType {
 interface IProps {
 	text?: string
 	type: NotificationInAppType
+	clearErrorCallback?: () => void
 }
 
 const NotificationContainer = ({ type, text }: { type: NotificationInAppType; text?: string }) => {
 	return (
 		<View
 			className={cn('rounded-[25px] py-[18px] px-[15px]', {
-				'bg-green-main/20': type === NotificationInAppType.SUCCESS,
-				'bg-red-ff/20': type === NotificationInAppType.ERROR,
-				'bg-black/20': type === NotificationInAppType.INFO
+				'bg-green-main/20': type === NotificationInAppType.SUCCESS && Platform.OS === 'ios',
+				'bg-red-ff/20': type === NotificationInAppType.ERROR && Platform.OS === 'ios',
+				'bg-black/20': type === NotificationInAppType.INFO && Platform.OS === 'ios',
+				'bg-green-main/90': type === NotificationInAppType.SUCCESS && Platform.OS === 'android',
+				'bg-red-ff/90': type === NotificationInAppType.ERROR && Platform.OS === 'android',
+				'bg-black/90': type === NotificationInAppType.INFO && Platform.OS === 'android'
 			})}
 		>
 			<Text
 				style={[styles.text]}
 				className={cn('', {
-					'text-green-main': type === NotificationInAppType.SUCCESS,
-					'text-red-ff': type === NotificationInAppType.ERROR,
-					'text-white': type === NotificationInAppType.INFO
+					'text-green-main': type === NotificationInAppType.SUCCESS && Platform.OS === 'ios',
+					'text-red-ff': type === NotificationInAppType.ERROR && Platform.OS === 'ios',
+					'text-white':
+						(type === NotificationInAppType.INFO && Platform.OS === 'ios') ||
+						(type === NotificationInAppType.SUCCESS && Platform.OS === 'android') ||
+						(type === NotificationInAppType.ERROR && Platform.OS === 'android') ||
+						(type === NotificationInAppType.INFO && Platform.OS === 'android')
 				})}
 			>
 				{text}
@@ -38,7 +46,7 @@ const NotificationContainer = ({ type, text }: { type: NotificationInAppType; te
 	)
 }
 
-export function Notification({ text, type }: IProps) {
+export function Notification({ text, type, clearErrorCallback }: IProps) {
 	const [isShown, setIsShown] = useState<boolean>(false)
 	const isDismissingRef = useRef<boolean>(false)
 	const animatedValue = useRef(new Animated.Value(-100)).current
@@ -54,7 +62,7 @@ export function Notification({ text, type }: IProps) {
 		}).start()
 	}
 
-	const onExit = (velocity = 0) => {
+	const onExit = () => {
 		isDismissingRef.current = true
 		Animated.timing(animatedValue, {
 			toValue: -100,
@@ -64,6 +72,9 @@ export function Notification({ text, type }: IProps) {
 
 		Animated.spring(pan, { toValue: { x: 0, y: 0 }, useNativeDriver: true }).start()
 		direction.current = null
+		setTimeout(() => {
+			clearErrorCallback?.()
+		}, 300)
 	}
 
 	const panResponder = useRef(

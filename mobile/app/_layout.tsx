@@ -4,6 +4,9 @@ import { Colors } from '@/constants/Colors'
 import './../global.css'
 import { fontFamily } from '@/constants/Fonts'
 import { YamapInstance } from 'react-native-yamap-plus-lite'
+import { useAuthStore } from '@/store/authStore'
+import { useEffect, useState } from 'react'
+import { ActivityIndicator, View } from 'react-native'
 
 YamapInstance.setLocale('ru_RU')
 	.then(() => {
@@ -16,25 +19,56 @@ YamapInstance.setLocale('ru_RU')
 	.catch(console.warn)
 
 export default function RootLayout() {
+	const [isLoading, setIsLoading] = useState(true)
 	const [loaded] = useFonts({
 		[fontFamily.regular]: require('../assets/fonts/Manrope-Regular-400.otf'),
 		[fontFamily.medium]: require('../assets/fonts/Manrope-Medium-500.otf'),
 		[fontFamily.bold]: require('../assets/fonts/Manrope-Bold-700.otf')
 	})
+	const { isAuthenticated, checkAuth } = useAuthStore()
+
+	useEffect(() => {
+		const init = async () => {
+			await checkAuth()
+			setIsLoading(false)
+		}
+		init()
+	}, [])
 
 	if (!loaded) {
 		// Async font loading only occurs in development.
 		return null
 	}
 
+	if (isLoading) {
+		return (
+			<View className="flex-1 items-center justify-center">
+				<ActivityIndicator size="large" />
+			</View>
+		)
+	}
+
+	const authenticatedRoutes = [
+		'profile/index',
+		'find-people',
+		'news-feed',
+		'news-feed/1',
+		'workout-history',
+		'friends/search',
+		'friends/my-friends',
+		'friends/friend-requests',
+		'subscribers/my-subscriptions',
+		'notifications',
+		'training/viewWorkout'
+	]
+	const baseRoutes = ['(tabs)/index', 'document', 'testauth']
+	const notAuthenticatedRoutes = [
+		'index',
+		'auth',
+		'training/newTraining' // @TODO move back to authenticatedRoutes
+	]
+
 	return (
-		// <ThemeProvider value={colorScheme === 'dark' ? DarkTheme : DefaultTheme}>
-		//   <Stack>
-		//     <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
-		//     <Stack.Screen name="+not-found" />
-		//   </Stack>
-		//   <StatusBar style="auto" />
-		// </ThemeProvider>
 		<Stack
 			screenOptions={{
 				headerShown: false,
@@ -43,22 +77,19 @@ export default function RootLayout() {
 				}
 			}}
 		>
-			<Stack.Screen name="(tabs)/index" options={{ headerShown: false }} />
-			<Stack.Screen name="hello-screen" options={{ headerShown: false }} />
-			<Stack.Screen name="auth" options={{ headerShown: false }} />
-			<Stack.Screen name="document" options={{ headerShown: false }} />
-			<Stack.Screen name="training/newTraining" options={{ headerShown: false }} />
-			<Stack.Screen name="find-people" options={{ headerShown: false }} />
-			<Stack.Screen name="news-feed" options={{ headerShown: false }} />
-			<Stack.Screen name="news-feed/1" options={{ headerShown: false }} />
-			<Stack.Screen name="workout-history" options={{ headerShown: false }} />
-			<Stack.Screen name="friends/search" options={{ headerShown: false }} />
-			<Stack.Screen name="friends/my-friends" options={{ headerShown: false }} />
-			<Stack.Screen name="friends/friend-requests" options={{ headerShown: false }} />
-			<Stack.Screen name="subscribers/my-subscriptions" options={{ headerShown: false }} />
-			<Stack.Screen name="subscribers/my-subscribers" options={{ headerShown: false }} />
-			<Stack.Screen name="notifications" options={{ headerShown: false }} />
-			<Stack.Screen name="training/viewWorkout" options={{ headerShown: false }} />
+			<Stack.Protected guard={isAuthenticated}>
+				{authenticatedRoutes.map((route) => (
+					<Stack.Screen key={route} name={route} options={{ headerShown: false }} />
+				))}
+			</Stack.Protected>
+			<Stack.Protected guard={!isAuthenticated}>
+				{notAuthenticatedRoutes.map((route) => (
+					<Stack.Screen key={route} name={route} options={{ headerShown: false }} />
+				))}
+			</Stack.Protected>
+			{baseRoutes.map((route) => (
+				<Stack.Screen key={route} name={route} options={{ headerShown: false }} />
+			))}
 		</Stack>
 	)
 }
