@@ -1,11 +1,12 @@
-import { Marker, Polyline, Yamap } from 'react-native-yamap-plus-lite'
+import { MarkerRef, Polyline, Yamap } from 'react-native-yamap-plus-lite'
 import UserLocationMarker from '@/components/ui/UserLocationMarker'
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import AsyncStorage from '@react-native-async-storage/async-storage'
 import * as Location from 'expo-location'
 import * as TaskManager from 'expo-task-manager'
 import { LocationObject } from 'expo-location'
 import { View } from 'react-native'
+import { Button } from '@/components/ui/Button'
 
 enum LOCATION_TYPE {
 	BACKGROUND = 'background',
@@ -143,11 +144,66 @@ const MapComponent = (props: { maxMapHeight?: number; minMapHeight?: number; rou
 	// 	await AsyncStorage.removeItem('@liveLocations')
 	// }
 
+	const userMarkerRef = useRef<MarkerRef | null>(null)
+
+	const [accuracy, setAccuracy] = useState(5)
+	const [markerPosition, setMarkerPosition] = useState({ lat: 53.422506, lon: 49.4781051 })
+	const [circlePosition, setCirclePosition] = useState({ lat: 53.422506, lon: 49.4781051 })
+	const [isAnimating, setIsAnimating] = useState(false)
+
+	const animateToPosition = (targetPosition: { lat: number; lon: number }, duration: number = 500) => {
+		if (isAnimating) return
+
+		setIsAnimating(true)
+		const startPosition = markerPosition
+		const startTime = Date.now()
+
+		const animateFrame = () => {
+			const currentTime = Date.now()
+			const progress = Math.min((currentTime - startTime) / duration, 1)
+
+			// Эффект easing для более плавной анимации
+			const easeOutQuart = 1 - Math.pow(1 - progress, 4)
+
+			const newLat = startPosition.lat + (targetPosition.lat - startPosition.lat) * easeOutQuart
+			const newLon = startPosition.lon + (targetPosition.lon - startPosition.lon) * easeOutQuart
+
+			const newPosition = { lat: newLat, lon: newLon }
+
+			// Обновляем обе позиции синхронно
+			setMarkerPosition(newPosition)
+			setCirclePosition(newPosition)
+
+			if (progress < 1) {
+				requestAnimationFrame(animateFrame)
+			} else {
+				setIsAnimating(false)
+			}
+		}
+
+		requestAnimationFrame(animateFrame)
+	}
+
+	const onClickMove = () => {
+		animateToPosition({ lat: 53.4229, lon: 49.4782 }, 500)
+	}
+
+	const onClickAccuracy = () => {
+		setAccuracy(15)
+	}
+
 	return (
 		<View className="flex-1" style={{ overflow: 'hidden', borderRadius: props.rounded || 0 }}>
+			<View>
+				<Button variant="white" onPress={onClickMove}>
+					передвинуть
+				</Button>
+				<Button variant="white" onPress={onClickAccuracy}>
+					onClickAccuracy
+				</Button>
+			</View>
 			<Yamap
 				nightMode
-				// initialRegion={{ lat: 53.422506, lon: 49.4781051, zoom: 12 }}
 				initialRegion={{ lat: 53.422506, lon: 49.4781051, zoom: 12 }}
 				style={{ flex: 1, maxHeight: props.maxMapHeight, minHeight: props.minMapHeight }}
 				logoPosition={{ horizontal: 'right', vertical: 'top' }}
@@ -171,7 +227,7 @@ const MapComponent = (props: { maxMapHeight?: number; minMapHeight?: number; rou
 				{/*		/>*/}
 				{/*	))}*/}
 
-				<UserLocationMarker position={{ lat: 53.422506, lon: 49.4781051 }} />
+				<UserLocationMarker userMarkerRef={userMarkerRef} position={markerPosition} accuracy={accuracy} />
 
 				{foregroundLocations?.length && (
 					<Polyline

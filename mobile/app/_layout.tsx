@@ -10,7 +10,7 @@ import { ActivityIndicator, View } from 'react-native'
 
 YamapInstance.setLocale('ru_RU')
 	.then(() => {
-		YamapInstance.init('8e479a05-0cbd-4e42-8cbe-83a993ca66c9')
+		YamapInstance.init(process.env.EXPO_PUBLIC_YAMAP_KEY || '')
 			.then(() => {
 				console.log('init')
 			})
