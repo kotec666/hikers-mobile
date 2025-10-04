@@ -148,7 +148,6 @@ const MapComponent = (props: { maxMapHeight?: number; minMapHeight?: number; rou
 
 	const [accuracy, setAccuracy] = useState(5)
 	const [markerPosition, setMarkerPosition] = useState({ lat: 53.422506, lon: 49.4781051 })
-	const [circlePosition, setCirclePosition] = useState({ lat: 53.422506, lon: 49.4781051 })
 	const [isAnimating, setIsAnimating] = useState(false)
 
 	const animateToPosition = (targetPosition: { lat: number; lon: number }, duration: number = 500) => {
@@ -172,7 +171,6 @@ const MapComponent = (props: { maxMapHeight?: number; minMapHeight?: number; rou
 
 			// Обновляем обе позиции синхронно
 			setMarkerPosition(newPosition)
-			setCirclePosition(newPosition)
 
 			if (progress < 1) {
 				requestAnimationFrame(animateFrame)

@@ -21,14 +21,18 @@ import Checkbox from '@/components/ui/Checkbox'
 import { LinkCustom } from '@/components/ui/LinkCustom'
 import { useAuthStore } from '@/store/authStore'
 import { Notification, NotificationInAppType } from '@/components/Notification'
+import { setItem } from '@/store/storage'
+import { useLocalSearchParams } from 'expo-router'
 
-enum AUTH_MODE {
+export enum AUTH_MODE {
 	AUTH = 'auth',
 	REGISTRATION = 'registration'
 }
 
 const AuthPage = () => {
 	const insets = useSafeAreaInsets()
+	const { mode } = useLocalSearchParams<{ mode: AUTH_MODE }>()
+
 	const [data, setData] = useState<{
 		isChecked: boolean
 		mode: AUTH_MODE
@@ -38,7 +42,7 @@ const AuthPage = () => {
 		isLoading: boolean
 	}>({
 		isChecked: false,
-		mode: AUTH_MODE.AUTH,
+		mode: mode || AUTH_MODE.REGISTRATION,
 		email: '',
 		password: '',
 		notificationText: undefined,
@@ -66,6 +70,7 @@ const AuthPage = () => {
 				setData((s) => ({ ...s, notificationText: 'Неверные учетные данные' }))
 				// Alert.alert('Ошибка', 'Неверные учетные данные')
 			}
+			setItem('isAccountExist', { accountExist: true })
 		}
 
 		return setData((s) => ({ ...s, isLoading: false }))
