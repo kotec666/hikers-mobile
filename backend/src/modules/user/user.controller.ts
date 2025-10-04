@@ -1,6 +1,5 @@
-import { Controller, UseInterceptors } from '@nestjs/common';
+import { Controller, Get, UseInterceptors } from '@nestjs/common';
 import { UserService } from './user.service';
-import { TypedRoute } from '@nestia/core';
 import { UserInterceptor } from '../../common/interceptors/user.interceptor';
 import { User } from '../../common/decorators/user.decorator';
 import { TokenDto } from '../token/token.dto';
@@ -15,7 +14,7 @@ export class UserController {
 	 * @summary Get current user
 	 * @security token
 	 */
-	@TypedRoute.Get('me')
+	@Get('me')
 	public async getMe(@User() user: TokenDto.Payload) {
 		return this.userService.getUser(user.id);
 	}

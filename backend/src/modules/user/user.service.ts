@@ -4,6 +4,7 @@ import { UserDto } from './user.dto';
 import { users } from '../database/schema';
 import { eq } from 'drizzle-orm';
 import { comparePassword, hashPassword } from './user.helpers';
+import { ERRORS } from '@helpers/errors';
 
 @Injectable()
 export class UserService {
@@ -16,16 +17,16 @@ export class UserService {
 			.where(eq(users.email, dto.email))
 			.limit(1);
 		if (!user) {
-			throw new NotFoundException('User not found');
+			throw new NotFoundException();
 		}
 
 		const isPasswordCorrect = await comparePassword(dto.password, user.password);
 		if (!isPasswordCorrect) {
-			throw new UnauthorizedException('Bad credentials');
+			throw new UnauthorizedException();
 		}
 	}
 
-	public async createUser(dto: UserDto.Creation): Promise<UserDto.Entity> {
+	public async createUser(dto: UserDto.Registration): Promise<UserDto.Entity> {
 		const hashedPassword = await hashPassword(dto.password);
 
 		const [user] = await this.db.db
@@ -42,7 +43,7 @@ export class UserService {
 				avatarFilename: users.avatarFilename,
 			});
 		if (!user) {
-			throw new NotFoundException('User not found');
+			throw new NotFoundException();
 		}
 
 		return user;
@@ -61,7 +62,7 @@ export class UserService {
 			.where(eq(users.email, email))
 			.limit(1);
 		if (!user) {
-			throw new NotFoundException('User not found');
+			throw new NotFoundException();
 		}
 
 		return user;
@@ -80,7 +81,7 @@ export class UserService {
 			.where(eq(users.id, id))
 			.limit(1);
 		if (!user) {
-			throw new NotFoundException('User not found');
+			throw new NotFoundException();
 		}
 
 		return user;
@@ -94,7 +95,7 @@ export class UserService {
 			.limit(1);
 
 		if (existingUser) {
-			throw new BadRequestException('User with this email already exists');
+			throw new BadRequestException(ERRORS.ALREADY_EXISTS);
 		}
 	}
 }

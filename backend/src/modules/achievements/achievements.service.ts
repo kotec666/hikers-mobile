@@ -48,7 +48,7 @@ export class AchievementsService {
 			.limit(1);
 
 		if (!achievement) {
-			throw new NotFoundException('Achievement not found');
+			throw new NotFoundException();
 		}
 
 		return achievement;

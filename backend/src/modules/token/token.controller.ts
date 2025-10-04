@@ -1,5 +1,4 @@
-import { Controller } from '@nestjs/common';
-import { TypedRoute, TypedParam } from '@nestia/core';
+import { Controller, Param, Patch, Post } from '@nestjs/common';
 import { TokenService } from './token.service';
 
 @Controller('tokens')
@@ -10,8 +9,8 @@ export class TokenController {
 	 * @tag Tokens
 	 * @summary Generate new Pair (Access+Refresh) and get Access
 	 */
-	@TypedRoute.Post('/ar/:uid')
-	async generatePair(@TypedParam('uid') userId: string) {
+	@Post('/ar/:uid')
+	async generatePair(@Param('uid') userId: string) {
 		return this.service.generatePairAndGetAccess(userId);
 	}
 
@@ -19,8 +18,8 @@ export class TokenController {
 	 * @tag Tokens
 	 * @summary Generate only Access token (by userId) and returns it
 	 */
-	@TypedRoute.Post('/a/:uid')
-	async generateAccess(@TypedParam('uid') userId: string) {
+	@Post('/a/:uid')
+	async generateAccess(@Param('uid') userId: string) {
 		return this.service.generateAccessTokenByUserId(userId);
 	}
 
@@ -28,8 +27,8 @@ export class TokenController {
 	 * @tag Tokens
 	 * @summary Refreshes access token and returns a valid back. Error means user not authorized
 	 */
-	@TypedRoute.Patch('refresh/:token')
-	async refreshAccess(@TypedParam('token') token: string) {
+	@Patch('refresh/:token')
+	async refreshAccess(@Param('token') token: string) {
 		return this.service.refreshAccessToken(token);
 	}
 }

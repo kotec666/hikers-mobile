@@ -6,6 +6,7 @@ import { EnvService } from '../../modules/env/env.service';
 import { DatabaseService } from '../database/database.service';
 import { tokens, users } from '../database/schema';
 import { eq, sql } from 'drizzle-orm';
+import { ERRORS } from '@helpers/errors';
 
 @Injectable()
 export class TokenService {
@@ -95,7 +96,7 @@ export class TokenService {
 			.limit(1);
 
 		if (!existingRefreshToken) {
-			throw new UnauthorizedException('User not found');
+			throw new UnauthorizedException(ERRORS.NOT_FOUND);
 		}
 
 		try {
@@ -108,7 +109,7 @@ export class TokenService {
 				.limit(1);
 
 			if (!payload) {
-				throw new UnauthorizedException('User not found');
+				throw new UnauthorizedException(ERRORS.NOT_FOUND);
 			}
 
 			const accessToken = this.jwtService.sign(
@@ -143,7 +144,7 @@ export class TokenService {
 		const decodedAccessToken: TokenDto.Access = this.jwtService.decode(accessToken);
 
 		if (!decodedAccessToken || !('hs' in decodedAccessToken)) {
-			throw new BadRequestException('Bad token format');
+			throw new BadRequestException();
 		}
 
 		const hashedSeedFromAccessToken = decodedAccessToken.hs; // хэш сида из публичного токена
@@ -157,7 +158,7 @@ export class TokenService {
 				.limit(1);
 
 			if (!token) {
-				throw new UnauthorizedException('Token not found');
+				throw new UnauthorizedException(ERRORS.NOT_FOUND);
 			}
 
 			const decodedRefreshToken: TokenDto.Refresh = this.jwtService.verify(token.refreshToken);

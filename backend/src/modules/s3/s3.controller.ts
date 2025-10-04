@@ -1,5 +1,5 @@
-import { Controller } from '@nestjs/common';
-import { TypedRoute, TypedFormData, TypedParam } from '@nestia/core';
+import { Controller, Delete, Get, Param, Post } from '@nestjs/common';
+import { TypedFormData } from '@nestia/core';
 import { upload } from '../../common/global/multer.instance';
 import { S3Service } from './s3.service';
 import { S3 } from './s3.dto';
@@ -12,7 +12,7 @@ export class S3Controller {
 	 * @tag S3Testing
 	 * @summary Upload files to S3
 	 */
-	@TypedRoute.Post('files')
+	@Post('files')
 	async uploadFile(@TypedFormData.Body(() => upload) body: { files: File[] }): Promise<S3.UploadedFiles> {
 		return this.service.uploadFiles(body.files);
 	}
@@ -21,8 +21,8 @@ export class S3Controller {
 	 * @tag S3Testing
 	 * @summary Get file url by key
 	 */
-	@TypedRoute.Get(':key')
-	async getFileUrl(@TypedParam('key') key: string): Promise<S3.UploadedFileUrl> {
+	@Get(':key')
+	async getFileUrl(@Param('key') key: string): Promise<S3.UploadedFileUrl> {
 		return { url: this.service.getFileUrl(key) };
 	}
 
@@ -30,7 +30,7 @@ export class S3Controller {
 	 * @tag S3Testing
 	 * @summary Clear bucket
 	 */
-	@TypedRoute.Delete()
+	@Delete()
 	async clearBucket() {
 		return this.service.clearBucket();
 	}
