@@ -11,17 +11,17 @@ export namespace UserDto {
 		avatarFilename: string | null;
 	};
 
+	export type Login = {
+		email: string;
+		password: string;
+	};
+
 	export class Registration {
 		@IsEmail(undefined, { message: `email:${ERRORS.INVALID_EMAIL}` })
 		email: string;
 
 		@Length(8, 63, { message: `password:${ERRORS.INVALID_LENGTH}` })
 		@HasDigit()
-		password: string;
-	}
-
-	export class Login {
-		email: string;
 		password: string;
 	}
 }

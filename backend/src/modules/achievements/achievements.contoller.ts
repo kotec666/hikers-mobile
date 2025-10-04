@@ -1,7 +1,6 @@
-﻿import { Controller, UseInterceptors } from '@nestjs/common';
+﻿import { Controller, Get, Param, UseInterceptors } from '@nestjs/common';
 import { AchievementsService } from './achievements.service';
 import { AchievementDto } from './achievements.dto';
-import { TypedParam, TypedRoute } from '@nestia/core';
 import { User } from '../../common/decorators/user.decorator';
 import { TokenDto } from '../token/token.dto';
 import { UserInterceptor } from '../../common/interceptors/user.interceptor';
@@ -16,7 +15,7 @@ export class AchievementsContoller {
 	 * @summary Получить полученные достижения
 	 * @security token
 	 */
-	@TypedRoute.Get('claimed')
+	@Get('claimed')
 	public async getClaimed(@User() user: TokenDto.Payload): Promise<AchievementDto.Entity[]> {
 		return this.service.getClaimed(user.id);
 	}
@@ -26,7 +25,7 @@ export class AchievementsContoller {
 	 * @summary Получить НЕполученные достижения
 	 * @security token
 	 */
-	@TypedRoute.Get('unclaimed')
+	@Get('unclaimed')
 	public async getUnclaimed(@User() user: TokenDto.Payload): Promise<AchievementDto.Entity[]> {
 		return this.service.getUnclaimed(user.id);
 	}
@@ -36,7 +35,7 @@ export class AchievementsContoller {
 	 * @summary Получить все достижения (пока без пагинации)
 	 * @security token
 	 */
-	@TypedRoute.Get()
+	@Get()
 	public async getAll(@User() user: TokenDto.Payload): Promise<AchievementDto.Entity[]> {
 		return this.service.getAll(user.id);
 	}
@@ -46,8 +45,8 @@ export class AchievementsContoller {
 	 * @summary Получить достижение по id
 	 * @security token
 	 */
-	@TypedRoute.Get('/:id')
-	public async getById(@TypedParam('id') id: string, @User() user: TokenDto.Payload): Promise<AchievementDto.Entity> {
+	@Get('/:id')
+	public async getById(@Param('id') id: string, @User() user: TokenDto.Payload): Promise<AchievementDto.Entity> {
 		return await this.service.getById(id, user.id);
 	}
 }
