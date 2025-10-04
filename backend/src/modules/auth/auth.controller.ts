@@ -1,7 +1,7 @@
-import { Controller, Res, UnauthorizedException, Req } from '@nestjs/common';
+import { Controller, Res, UnauthorizedException, Req, Body } from '@nestjs/common';
 import { AuthService } from './auth.service';
 import { UserDto } from '../user/user.dto';
-import { TypedRoute, TypedBody } from '@nestia/core';
+import { TypedRoute } from '@nestia/core';
 
 @Controller('auth')
 export class AuthController {
@@ -13,7 +13,7 @@ export class AuthController {
 	 * @description Creates a new user and returns an access token
 	 */
 	@TypedRoute.Post('registration')
-	public async registration(@TypedBody() dto: UserDto.Creation, @Res({ passthrough: true }) res) {
+	public async registration(@Body() dto: UserDto.Registration, @Res({ passthrough: true }) res) {
 		const accessToken = await this.authService.registration(dto);
 
 		res.status(201);
@@ -25,7 +25,7 @@ export class AuthController {
 	 * @summary Authenticates a user and returns an access token
 	 */
 	@TypedRoute.Post('login')
-	public async login(@TypedBody() dto: UserDto.Login, @Res({ passthrough: true }) res) {
+	public async login(@Body() dto: UserDto.Login, @Res({ passthrough: true }) res) {
 		const accessToken = await this.authService.login(dto);
 
 		res.status(200);

@@ -14,7 +14,7 @@ export class AuthService {
 	/** Регистрирует нового пользователя.
 	 * @returns - {@link TokenDto.TokenResponse | access-токен}
 	 */
-	public async registration(dto: UserDto.Creation): Promise<TokenDto.TokenResponse> {
+	public async registration(dto: UserDto.Registration): Promise<TokenDto.TokenResponse> {
 		try {
 			await this.userService.checkEmailAvailable(dto.email);
 

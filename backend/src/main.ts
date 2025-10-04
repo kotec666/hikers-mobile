@@ -1,16 +1,20 @@
 import { NestFactory } from '@nestjs/core';
-import { INestApplication } from '@nestjs/common';
+import { INestApplication, ValidationPipe } from '@nestjs/common';
 import { AppModule } from './app.module';
 import { NestiaSwaggerComposer } from '@nestia/sdk';
 import { SwaggerModule } from '@nestjs/swagger';
 import { SwaggerTheme, SwaggerThemeNameEnum } from 'swagger-themes';
 import { Logger } from 'nestjs-pino';
+import { HttpExceptionFilter } from './common/filters/exceptions.filter';
 
 async function bootstrap() {
 	const app: INestApplication = await NestFactory.create(AppModule, {
 		bufferLogs: true,
 		logger: false,
 	});
+
+	app.useGlobalPipes(new ValidationPipe());
+	app.useGlobalFilters(new HttpExceptionFilter());
 
 	app.useLogger(app.get(Logger));
 	app.enableCors({
