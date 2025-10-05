@@ -1,4 +1,4 @@
-﻿import { ERRORS } from '@helpers/errors';
+﻿import { ERRORS } from '@shared/errors';
 import { registerDecorator, ValidationOptions } from 'class-validator';
 
 export function HasDigit(validationOptions?: ValidationOptions) {

@@ -1,4 +1,4 @@
-﻿import { ERRORS } from '@helpers/errors';
+﻿import { ERRORS } from '@shared/errors';
 import { ExceptionFilter, Catch, ArgumentsHost, HttpException } from '@nestjs/common';
 import { Response } from 'express';
 

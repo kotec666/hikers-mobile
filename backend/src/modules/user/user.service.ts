@@ -4,7 +4,7 @@ import { UserDto } from './user.dto';
 import { users } from '../database/schema';
 import { eq } from 'drizzle-orm';
 import { comparePassword, hashPassword } from './user.helpers';
-import { ERRORS } from '@helpers/errors';
+import { ERRORS } from '@shared/errors';
 
 @Injectable()
 export class UserService {

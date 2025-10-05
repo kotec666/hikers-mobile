@@ -1,5 +1,4 @@
-﻿// import ERRORS from '@shared/enums'; @TODO подружить шаред и докер
-export enum ERRORS {
+﻿export enum ERRORS {
 	INVALID_LENGTH = 'INVALID_LENGTH',
 	INVALID_EMAIL = 'INVALID_EMAIL',
 	DIGIT_REQUIRED = 'DIGIT_REQUIRED',

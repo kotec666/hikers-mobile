@@ -6,7 +6,7 @@ import { EnvService } from '../../modules/env/env.service';
 import { DatabaseService } from '../database/database.service';
 import { tokens, users } from '../database/schema';
 import { eq, sql } from 'drizzle-orm';
-import { ERRORS } from '@helpers/errors';
+import { ERRORS } from '@shared/errors';
 
 @Injectable()
 export class TokenService {
