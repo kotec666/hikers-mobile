@@ -21,6 +21,9 @@ jobs:
             - name: '[backend] Install dependencies'
               run: cd backend && yarn install
 
+            - name: '[backend] Symlink to shared'
+              run: cd backend/src && ln -s ../../shared ./shared
+
             - name: '[backend] Run lint'
               run: cd backend && yarn lint
 
@@ -29,6 +32,9 @@ jobs:
 
             - name: '[frontend] Install dependencies'
               run: cd frontend && yarn install
+
+            - name: '[frontend] Symlink to shared'
+              run: cd frontend/src && ln -s ../../shared ./shared
 
             - name: '[frontend] Run lint'
               run: cd frontend && yarn next lint
