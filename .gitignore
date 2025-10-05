@@ -6,6 +6,10 @@
 /build
 */build
 
+# Symlinks
+backend/src/shared/
+frontend/src/shared/
+
 # Enviroment
 *.env
 # SEO
