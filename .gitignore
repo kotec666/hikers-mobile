@@ -9,6 +9,7 @@
 # Symlinks
 backend/src/shared/
 frontend/src/shared/
+mobile/shared/
 
 # Enviroment
 *.env
