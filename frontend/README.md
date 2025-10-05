@@ -2,7 +2,12 @@ This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-
 
 ## Getting Started
 
-First, run the development server:
+Сначала создать симлинк на shared
+
+1. Для Windows: `cd frontend && mklink /J "./src/shared" "../shared"`
+2. Для Unix(Linux/Mac): `cd frontend && ln -s ../shared ./src/shared`
+
+А потом запустить:
 
 ```bash
 npm run dev

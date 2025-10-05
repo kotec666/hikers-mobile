@@ -1,6 +1,6 @@
 import { IsEmail, Length } from 'class-validator';
 import { HasDigit } from '@validation/decorators';
-import { ERRORS } from '@helpers/errors';
+import { ERRORS } from '@shared/errors';
 
 export namespace UserDto {
 	export type Entity = {
