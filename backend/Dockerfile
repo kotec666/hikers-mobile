@@ -7,9 +7,10 @@ RUN apt install -y openssl
 
 RUN npm install -g @nestjs/cli
 
-COPY . .
-
+COPY ./package.json .
 RUN yarn install --force
+
+COPY . .
 
 RUN yarn db:push
 

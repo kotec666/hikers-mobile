@@ -1,4 +1,4 @@
-export namespace Token {
+export namespace TokenDto {
 	export type TokenResponse = {
 		token: string;
 	};

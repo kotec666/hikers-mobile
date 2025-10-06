@@ -1,5 +1,6 @@
-import { tags } from 'typia';
-import { CustomTags } from '../../common/validation/typia.tags';
+import { IsEmail, Length } from 'class-validator';
+import { HasDigit } from '@validation/decorators';
+import { ERRORS } from '@shared/errors';
 
 export namespace UserDto {
 	export type Entity = {
@@ -10,18 +11,17 @@ export namespace UserDto {
 		avatarFilename: string | null;
 	};
 
-	export type Creation = {
-		email: string & tags.MinLength<3> & tags.MaxLength<128> & tags.Format<'email'>;
-		password: string &
-			tags.MinLength<8> &
-			tags.MaxLength<64> &
-			CustomTags.ContainsDigit &
-			CustomTags.ContainsLowercase &
-			CustomTags.ContainsUppercase;
-	};
-
 	export type Login = {
 		email: string;
 		password: string;
 	};
+
+	export class Registration {
+		@IsEmail(undefined, { message: `email:${ERRORS.INVALID_EMAIL}` })
+		email: string;
+
+		@Length(8, 63, { message: `password:${ERRORS.INVALID_LENGTH}` })
+		@HasDigit()
+		password: string;
+	}
 }

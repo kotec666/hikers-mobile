@@ -11,7 +11,8 @@
 		"outDir": "./dist",
 		"baseUrl": "./",
 		"paths": {
-			"@helpers/*": ["src/common/helpers/*"]
+			"@validation/*": ["./src/common/validation/*"],
+			"@shared/*": ["./src/shared/*"]
 		},
 		"incremental": true,
 		"skipLibCheck": true,
