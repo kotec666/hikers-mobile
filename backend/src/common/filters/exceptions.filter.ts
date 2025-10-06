@@ -7,9 +7,17 @@ type PropertyError = {
 	message: ERRORS[];
 };
 
+const statusCodeToError = {
+	400: ERRORS.BAD_REQUEST,
+	401: ERRORS.UNAUTHORIZED,
+	403: ERRORS.FORBIDDEN,
+	404: ERRORS.NOT_FOUND,
+	500: ERRORS.INTERNAL,
+};
+
 function parsePropertyMessage(message: string): PropertyError {
 	const getPropertyFromMessage = (message: string): string => {
-		return message.includes(':') ? message.split(':')[0] : 'unknown';
+		return message.includes(':') ? message.split(':')[0].slice(1) : 'unknown';
 	};
 	const getErrorFromMessage = (message: string): ERRORS => {
 		const possiblyError: string = message.includes(':') ? message.split(':')[1] : ERRORS.UNKNOWN_ERROR;
@@ -46,11 +54,20 @@ export class HttpExceptionFilter implements ExceptionFilter {
 		const exceptionStatus = exception.getStatus();
 		const exceptionResponse = exception.getResponse() as object;
 
-		response.status(exceptionStatus).json({
-			statusCode: exception.getStatus(),
-			message: Array.isArray(exceptionResponse['message'])
-				? parsePropertyMessages(exceptionResponse['message'])
-				: exceptionResponse['message'],
-		});
+		if (Array.isArray(exceptionResponse['message'])) {
+			response.status(exceptionStatus).json({
+				statusCode: exception.getStatus(),
+				message: parsePropertyMessages(exceptionResponse['message']),
+			});
+		} else {
+			const message: string = exceptionResponse['message'];
+
+			response.status(exceptionStatus).json({
+				statusCode: exception.getStatus(),
+				message: message.startsWith('_')
+					? parsePropertyMessage(message)
+					: (statusCodeToError[exceptionStatus] ?? ERRORS.UNKNOWN_ERROR),
+			});
+		}
 	}
 }
