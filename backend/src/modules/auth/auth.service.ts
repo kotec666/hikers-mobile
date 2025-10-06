@@ -1,8 +1,9 @@
-import { Injectable, UnauthorizedException } from '@nestjs/common';
+import { BadRequestException, Injectable, UnauthorizedException } from '@nestjs/common';
 import { UserDto } from '../user/user.dto';
 import { UserService } from '../user/user.service';
 import { TokenService } from '../token/token.service';
 import { TokenDto } from '../token/token.dto';
+import { ERRORS } from '@shared/errors';
 
 @Injectable()
 export class AuthService {
@@ -21,6 +22,9 @@ export class AuthService {
 			const user = await this.userService.createUser(dto);
 			return await this.tokenService.generatePairAndGetAccess(user.id);
 		} catch (e) {
+			if (e.message === ERRORS.ALREADY_EXISTS) {
+				throw new BadRequestException(`_email:${ERRORS.ALREADY_EXISTS}`);
+			}
 			throw e;
 		}
 	}
