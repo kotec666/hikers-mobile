@@ -18,7 +18,7 @@ export function HasDigit(validationOptions?: ValidationOptions) {
 					return hasDigitRegex.test(value);
 				},
 				defaultMessage() {
-					return `${propertyName}:${ERRORS.DIGIT_REQUIRED}`;
+					return `_${propertyName}:${ERRORS.DIGIT_REQUIRED}`;
 				},
 			},
 		});

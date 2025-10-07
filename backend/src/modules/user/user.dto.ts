@@ -17,10 +17,10 @@ export namespace UserDto {
 	};
 
 	export class Registration {
-		@IsEmail(undefined, { message: `email:${ERRORS.INVALID_EMAIL}` })
+		@IsEmail(undefined, { message: `_email:${ERRORS.INVALID_EMAIL}` })
 		email: string;
 
-		@Length(8, 63, { message: `password:${ERRORS.INVALID_LENGTH}` })
+		@Length(8, 63, { message: `_password:${ERRORS.INVALID_LENGTH}` })
 		@HasDigit()
 		password: string;
 	}
