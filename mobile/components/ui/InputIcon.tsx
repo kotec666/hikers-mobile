@@ -1,15 +1,15 @@
 import { cn } from '@/helpers/cn'
-import { Pressable, TextInput, TextInputProps, View, Text } from 'react-native'
+import { Pressable, TextInput, TextInputProps, View } from 'react-native'
 import { fontFamily } from '@/constants/Fonts'
 import { Colors } from '@/constants/Colors'
-import { ReactNode, useState } from 'react'
+import React, { ReactNode, useState } from 'react'
 import EyeSvg from '@/components/svg/EyeSvg'
-import { Container } from '@/components/ui/Container'
+import ErrorMessage from '@/components/ErrorMessage'
 
 export interface Props extends TextInputProps {
 	className?: string
 	svg?: ReactNode
-	error?: boolean
+	error?: string | boolean
 	isPassword?: boolean
 }
 
@@ -62,11 +62,7 @@ export function InputIcon(props: Props) {
 					</View>
 				)}
 			</View>
-			<Container className="mt-[10px]">
-				<Text className="text-white text-sm" style={{ fontFamily: fontFamily.regular }}>
-					Такой email уже используется
-				</Text>
-			</Container>
+			<ErrorMessage error={error} />
 		</View>
 	)
 }

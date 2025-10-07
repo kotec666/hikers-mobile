@@ -30,8 +30,6 @@ const fetcher = baseFetcher.extend({
 		beforeRequest: [
 			async (request) => {
 				if (request.url.includes('auth/refresh')) return
-				console.log('req::::', request)
-				// console.log('Старый токен', getItem('authData')?.accessToken)
 				request.headers.set('Authorization', `Bearer ${getItem('authData')?.accessToken}`)
 			}
 		],

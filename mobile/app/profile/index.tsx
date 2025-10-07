@@ -33,10 +33,6 @@ const Profile = () => {
 		router.push('/document')
 	}
 
-	const handleClickTestAuth = () => {
-		router.push('/testauth')
-	}
-
 	const handleClickExit = () => {
 		logout()
 	}
@@ -66,7 +62,6 @@ const Profile = () => {
 										{ label: 'Редактировать профиль', action: handleClickEdit },
 										{ label: 'Политика конфиденциальности', action: handleClickDocs },
 										{ label: 'Политика обработки персональных данных', action: handleClickDocs },
-										{ label: 'test auth', action: handleClickTestAuth },
 										{ label: 'Выход', action: handleClickExit }
 									]}
 								/>

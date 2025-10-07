@@ -11,12 +11,12 @@ export enum NotificationInAppType {
 }
 
 interface IProps {
-	text?: string
+	text?: string | boolean
 	type: NotificationInAppType
 	clearErrorCallback?: () => void
 }
 
-const NotificationContainer = ({ type, text }: { type: NotificationInAppType; text?: string }) => {
+const NotificationContainer = ({ type, text }: { type: NotificationInAppType; text?: string | boolean }) => {
 	return (
 		<View
 			className={cn('rounded-[25px] py-[18px] px-[15px]', {

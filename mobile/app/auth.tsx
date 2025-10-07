@@ -1,7 +1,6 @@
 import { SafeAreaProvider, useSafeAreaInsets } from 'react-native-safe-area-context'
 import { StatusBar } from 'expo-status-bar'
 import {
-	Alert,
 	Keyboard,
 	KeyboardAvoidingView,
 	Platform,
@@ -20,74 +19,93 @@ import { useState } from 'react'
 import Checkbox from '@/components/ui/Checkbox'
 import { LinkCustom } from '@/components/ui/LinkCustom'
 import { useAuthStore } from '@/store/authStore'
-import { Notification, NotificationInAppType } from '@/components/Notification'
 import { setItem } from '@/store/storage'
 import { useLocalSearchParams } from 'expo-router'
+import { Controller, useForm } from 'react-hook-form'
+import { useErrorMessage } from '@/hooks/useErrorMessage'
+import { getFieldsErrors } from '@/helpers/getFieldsErrors'
+import { loginUser, registrationUser } from '@/api/auth'
+import { cn } from '@/helpers/cn'
+import { lengths } from '@shared/lengths'
 
 export enum AUTH_MODE {
 	AUTH = 'auth',
 	REGISTRATION = 'registration'
 }
 
+interface IAuthFormState {
+	email: string
+	password: string
+	agree?: boolean
+}
+
 const AuthPage = () => {
 	const insets = useSafeAreaInsets()
 	const { mode } = useLocalSearchParams<{ mode: AUTH_MODE }>()
+	const {
+		handleSubmit,
+		control,
+		formState: { errors }
+	} = useForm<IAuthFormState>()
+	const { ErrorMessages } = useErrorMessage()
 
 	const [data, setData] = useState<{
-		isChecked: boolean
 		mode: AUTH_MODE
-		email: string
-		password: string
-		notificationText?: string
+		notificationText?: string | boolean
 		isLoading: boolean
+		errors?: { [key: string]: string | boolean | undefined }
 	}>({
-		isChecked: false,
 		mode: mode || AUTH_MODE.REGISTRATION,
-		email: '',
-		password: '',
 		notificationText: undefined,
-		isLoading: false
+		isLoading: false,
+		errors: {} as { [key: string]: string | boolean | undefined }
 	})
 
-	const { login, register } = useAuthStore()
-
-	const handleClickAction = async () => {
-		setData((s) => ({ ...s, isLoading: true }))
-
-		if (data.mode === AUTH_MODE.AUTH) {
-			const success = await login(data.email, data.password)
-
-			if (!success) {
-				setData((s) => ({ ...s, notificationText: 'Неверные учетные данные' }))
-				// Alert.alert('Ошибка', 'Неверные учетные данные')
-			}
-		}
-
-		if (data.mode === AUTH_MODE.REGISTRATION) {
-			const success = await register(data.email, data.password)
-
-			if (!success) {
-				setData((s) => ({ ...s, notificationText: 'Неверные учетные данные' }))
-				// Alert.alert('Ошибка', 'Неверные учетные данные')
-			}
-			setItem('isAccountExist', { accountExist: true })
-		}
-
-		return setData((s) => ({ ...s, isLoading: false }))
-	}
+	const { login } = useAuthStore()
 
 	const handleClickRedirect = () => {
 		return setData((s) => ({ ...s, mode: s.mode === AUTH_MODE.AUTH ? AUTH_MODE.REGISTRATION : AUTH_MODE.AUTH }))
 	}
 
+	const onSubmit = async (authFormState: IAuthFormState) => {
+		setData((s) => ({ ...s, isLoading: true, errors: undefined }))
+
+		if (data.mode === AUTH_MODE.AUTH) {
+			try {
+				const loginData = await loginUser({ email: authFormState.email, password: authFormState.password })
+				login(loginData.token, { id: 1, username: 'oxxxysergey', name: 'cерёга', email: authFormState.email })
+			} catch (e) {
+				const errors = await e.response.json()
+				console.log(errors)
+				const formattedErrors = getFieldsErrors(errors)
+				setData((s) => ({ ...s, errors: formattedErrors }))
+				// Alert.alert('Ошибка', 'Неверные учетные данные')
+			} finally {
+				setData((s) => ({ ...s, isLoading: false }))
+			}
+		}
+
+		if (data.mode === AUTH_MODE.REGISTRATION) {
+			try {
+				const regData = await registrationUser({ email: authFormState.email, password: authFormState.password })
+				login(regData.token, { id: 1, username: 'oxxxysergey', name: 'cерёга', email: authFormState.email })
+				setItem('isAccountExist', { accountExist: true })
+			} catch (e) {
+				console.log(e)
+				const errors = await e.response.json()
+				console.log(JSON.stringify(errors))
+				const formattedErrors = getFieldsErrors(errors)
+				setData((s) => ({ ...s, errors: formattedErrors }))
+				// Alert.alert('Ошибка', 'Неверные учетные данные')
+			} finally {
+				setData((s) => ({ ...s, isLoading: false }))
+			}
+		}
+	}
+
 	return (
 		<SafeAreaProvider style={{ paddingTop: insets.top, paddingBottom: insets.bottom }}>
 			<KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : 'height'} style={styles.container}>
-				<Notification
-					type={NotificationInAppType.ERROR}
-					text={data.notificationText}
-					clearErrorCallback={() => setData((s) => ({ ...s, notificationText: undefined }))}
-				/>
 				<Container className="flex-1 mb-[10px]">
 					<TouchableWithoutFeedback onPress={Keyboard.dismiss}>
 						<View className="flex-grow mt-[20px]">
@@ -95,23 +113,79 @@ const AuthPage = () => {
 								{data.mode === AUTH_MODE.AUTH ? 'Авторизация' : 'Регистрация'}
 							</Text>
 							<View className="gap-[10px] mt-[65px]">
-								<InputIcon
-									textContentType="emailAddress"
-									keyboardType="email-address"
-									placeholder="Введите email"
-									error={true}
-									svg={<EmailSvg error={true} />}
-									value={data.email}
-									onChangeText={(text) => setData((s) => ({ ...s, email: text }))}
-									autoCapitalize="none"
+								<Controller
+									name="email"
+									control={control}
+									rules={{
+										required: {
+											value: true,
+											message: ErrorMessages.required
+										},
+										pattern: {
+											value: /^[a-zA-Z0-9.!#$%&'*+/=?^_`{|}~-]+@[a-zA-Z0-9-]+(?:\.[a-zA-Z0-9-]+)*$/,
+											message: ErrorMessages.email
+										},
+										minLength: {
+											value: lengths.user.email.min,
+											message: ErrorMessages.optionalMin(lengths.user.email.min)
+										},
+										maxLength: {
+											value: lengths.user.email.max,
+											message: ErrorMessages.optionalMax(lengths.user.email.max)
+										}
+									}}
+									render={({ field: { onChange, onBlur, value }, fieldState: { error } }) => (
+										<InputIcon
+											textContentType="emailAddress"
+											keyboardType="email-address"
+											placeholder="Введите email"
+											error={error?.message || data.errors?.email}
+											svg={
+												<EmailSvg
+													error={Boolean(error?.message?.length || data.errors?.email)}
+												/>
+											}
+											autoCapitalize="none"
+											onChangeText={onChange}
+											value={value}
+											onBlur={onBlur}
+										/>
+									)}
 								/>
-								<InputIcon
-									isPassword
-									autoCapitalize="none"
-									placeholder="Введите пароль"
-									svg={<PasswordSvg error={false} />}
-									value={data.password}
-									onChangeText={(text) => setData((s) => ({ ...s, password: text }))}
+
+								<Controller
+									name="password"
+									control={control}
+									rules={{
+										required: {
+											value: true,
+											message: ErrorMessages.required
+										},
+										minLength: {
+											value: lengths.user.password.min,
+											message: ErrorMessages.optionalMin(lengths.user.password.min)
+										},
+										maxLength: {
+											value: lengths.user.password.max,
+											message: ErrorMessages.optionalMax(lengths.user.password.max)
+										}
+									}}
+									render={({ field: { onChange, onBlur, value }, fieldState: { error } }) => (
+										<InputIcon
+											isPassword
+											autoCapitalize="none"
+											placeholder="Введите пароль"
+											svg={
+												<PasswordSvg
+													error={Boolean(error?.message?.length || data.errors?.password)}
+												/>
+											}
+											error={error?.message || data.errors?.password}
+											onChangeText={onChange}
+											value={value}
+											onBlur={onBlur}
+										/>
+									)}
 								/>
 							</View>
 						</View>
@@ -120,28 +194,50 @@ const AuthPage = () => {
 						<TouchableWithoutFeedback onPress={Keyboard.dismiss}>
 							<View className="flex-row gap-[10px]">
 								<View className="pt-[3px]">
-									<Checkbox
-										value={data.isChecked}
-										onValueChange={() => setData((s) => ({ ...s, isChecked: !s.isChecked }))}
+									<Controller
+										name="agree"
+										control={control}
+										rules={{
+											required: {
+												value: true,
+												message: ErrorMessages.required
+											}
+										}}
+										render={({ field: { onChange, onBlur, value }, fieldState: { error } }) => (
+											<Checkbox value={value} error={Boolean(error)} onValueChange={onChange} />
+										)}
 									/>
 								</View>
 								<Text
-									className="flex-shrink mb-[37px] text-gray-ab text-[11px]"
+									className={cn('flex-shrink mb-[37px] text-[11px]', {
+										'text-gray-ab': !errors.agree?.message,
+										'text-red-500': errors.agree?.message
+									})}
 									style={{ fontFamily: fontFamily.regular }}
 								>
 									Согласен с{' '}
-									<LinkCustom href="/document" text="условиями обработки" className="text-blue-3d" />{' '}
+									<LinkCustom
+										href="/document"
+										text="условиями обработки"
+										className={cn('', {
+											'text-blue-3d': !errors.agree?.message,
+											'text-red-500': errors.agree?.message
+										})}
+									/>{' '}
 									персональных данных и{' '}
 									<LinkCustom
 										href="/document"
 										text="политикой конфиденциальности"
-										className="text-blue-3d"
+										className={cn('', {
+											'text-blue-3d': !errors.agree?.message,
+											'text-red-500': errors.agree?.message
+										})}
 									/>
 								</Text>
 							</View>
 						</TouchableWithoutFeedback>
 					)}
-					<Button variant="white" onPress={handleClickAction} isLoading={data.isLoading}>
+					<Button variant="white" onPress={handleSubmit(onSubmit)} isLoading={data.isLoading}>
 						{data.mode === AUTH_MODE.AUTH ? 'Войти' : 'Зарегистрироваться'}
 					</Button>
 				</Container>

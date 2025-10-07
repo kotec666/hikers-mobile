@@ -7,6 +7,7 @@ import { YamapInstance } from 'react-native-yamap-plus-lite'
 import { useAuthStore } from '@/store/authStore'
 import { useEffect, useState } from 'react'
 import { ActivityIndicator, View } from 'react-native'
+import { NotificationProvider } from '@/components/providers/NotificationProvider'
 
 YamapInstance.setLocale('ru_RU')
 	.then(() => {
@@ -59,37 +60,37 @@ export default function RootLayout() {
 		'friends/friend-requests',
 		'subscribers/my-subscriptions',
 		'notifications',
-		'training/viewWorkout'
+		'training/viewWorkout',
+		'training/newTraining'
 	]
-	const baseRoutes = ['(tabs)/index', 'document', 'testauth']
-	const notAuthenticatedRoutes = [
-		'index',
-		'auth',
-		'training/newTraining' // @TODO move back to authenticatedRoutes
-	]
+	const baseRoutes = ['(tabs)/index', 'document']
+	const notAuthenticatedRoutes = ['index', 'auth']
 
 	return (
-		<Stack
-			screenOptions={{
-				headerShown: false,
-				contentStyle: {
-					backgroundColor: Colors['black-0d']
-				}
-			}}
-		>
-			<Stack.Protected guard={isAuthenticated}>
-				{authenticatedRoutes.map((route) => (
+		<>
+			<Stack
+				screenOptions={{
+					headerShown: false,
+					contentStyle: {
+						backgroundColor: Colors['black-0d']
+					}
+				}}
+			>
+				<Stack.Protected guard={isAuthenticated}>
+					{authenticatedRoutes.map((route) => (
+						<Stack.Screen key={route} name={route} options={{ headerShown: false }} />
+					))}
+				</Stack.Protected>
+				<Stack.Protected guard={!isAuthenticated}>
+					{notAuthenticatedRoutes.map((route) => (
+						<Stack.Screen key={route} name={route} options={{ headerShown: false }} />
+					))}
+				</Stack.Protected>
+				{baseRoutes.map((route) => (
 					<Stack.Screen key={route} name={route} options={{ headerShown: false }} />
 				))}
-			</Stack.Protected>
-			<Stack.Protected guard={!isAuthenticated}>
-				{notAuthenticatedRoutes.map((route) => (
-					<Stack.Screen key={route} name={route} options={{ headerShown: false }} />
-				))}
-			</Stack.Protected>
-			{baseRoutes.map((route) => (
-				<Stack.Screen key={route} name={route} options={{ headerShown: false }} />
-			))}
-		</Stack>
+			</Stack>
+			<NotificationProvider />
+		</>
 	)
 }

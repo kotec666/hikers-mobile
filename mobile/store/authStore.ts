@@ -1,12 +1,13 @@
 import { create } from 'zustand'
 import { getItem, removeItem, setItem } from '@/store/storage'
-import { loginUser, refreshAccessTokenRequest, registrationUser } from '@/api/auth'
+import { refreshAccessTokenRequest, registrationUser } from '@/api/auth'
+import { getFieldsErrors } from '@/helpers/getFieldsErrors'
 
 interface IUser {
 	id: number
-	name: string
+	name?: string
 	email: string
-	username: string
+	username?: string
 }
 
 interface AuthStore {
@@ -15,8 +16,7 @@ interface AuthStore {
 	user: IUser | null
 	accessTokenExpiration: number | null
 
-	login: (email: string, password: string) => Promise<boolean>
-	register: (email: string, password: string) => Promise<boolean>
+	login: (token: string, user: { email: string; username?: string; name?: string; id: number }) => void
 	logout: () => void
 	refreshAccessToken: () => Promise<boolean>
 	checkAuth: () => Promise<boolean>
@@ -28,62 +28,24 @@ export const useAuthStore = create<AuthStore>((set, get) => ({
 	user: null,
 	accessTokenExpiration: null,
 
-	login: async (email: string, password: string) => {
-		try {
-			const data = await loginUser({ email, password })
-
-			const authData = {
-				accessToken: data.token,
-				user: {
-					// firstName: data.firstName,
-					// lastName: data.lastName,
-					// email: data.email,
-					// username: data.username
-					id: 1,
-					name: 'Сергей Авдотьев',
-					email: email,
-					username: 'oxxxysergey'
-				},
-				isAuthenticated: true,
-				accessTokenExpiration: Date.now() + 30 * 60 * 1000 // 30 min
-			}
-			setItem('authData', authData)
-			set(authData)
-
-			return true
-		} catch (e) {
-			console.log(e)
-			return false
+	login: (token: string, user: { email: string; username?: string; name?: string; id: number }) => {
+		const authData = {
+			accessToken: token,
+			user: {
+				// firstName: data.firstName,
+				// lastName: data.lastName,
+				// email: data.email,
+				// username: data.username
+				id: user.id,
+				name: user.name,
+				email: user.email,
+				username: user.username
+			},
+			isAuthenticated: true,
+			accessTokenExpiration: Date.now() + 30 * 60 * 1000 // 30 min
 		}
-	},
-	register: async (email: string, password: string) => {
-		try {
-			const data = await registrationUser({ email, password })
-
-			const authData = {
-				accessToken: data.token,
-				user: {
-					// firstName: data.firstName,
-					// lastName: data.lastName,
-					// email: data.email,
-					// username: data.username
-					id: 1,
-					name: 'Сергей Авдотьев',
-					email: email,
-					username: 'oxxxysergey'
-				},
-				isAuthenticated: true,
-				accessTokenExpiration: Date.now() + 30 * 60 * 1000 // 30 min
-			}
-
-			setItem('authData', authData)
-			set(authData)
-
-			return true
-		} catch (e) {
-			console.log(e)
-			return false
-		}
+		setItem('authData', authData)
+		set(authData)
 	},
 	logout: () => {
 		removeItem('authData')
