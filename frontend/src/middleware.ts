@@ -1,12 +1,12 @@
-import { NextResponse } from 'next/server';
-import type { NextRequest } from 'next/server';
-import { env } from '@/consts/env';
+import { NextResponse } from 'next/server'
+import type { NextRequest } from 'next/server'
+import { env } from '@/consts/env'
 
 const redirectInstance: Record<string, string> = {
 	'/reg': '/',
 	'/auth': '/',
-	bebra: '',
-};
+	bebra: ''
+}
 
 /**
  *
@@ -32,12 +32,12 @@ const redirectInstance: Record<string, string> = {
 const securityHeaders = [
 	{
 		key: 'Strict-Transport-Security', // Принудительное использование HTTPS вместо HTTP
-		value: 'max-age=31536000; includeSubDomains; preload',
+		value: 'max-age=31536000; includeSubDomains; preload'
 	},
 	{ key: 'Access-Control-Allow-Origin', value: `${env.api}` }, // Разрешенные домены для CORS
 	{
 		key: 'Access-Control-Allow-Methods', // Разрешенные HTTP-методы
-		value: 'GET, POST, PUT, DELETE, OPTIONS',
+		value: 'GET, POST, PUT, DELETE, OPTIONS'
 	},
 	{ key: 'Access-Control-Allow-Headers', value: 'Content-Type, Authorization' }, // Разрешает браузеру отправлять заголовки `Content-Type` и `Authorization` в CORS-запросах
 	{ key: 'X-DNS-Prefetch-Control', value: 'on' }, // Управление предварительным разрешением DNS
@@ -52,27 +52,27 @@ const securityHeaders = [
 	{ key: 'Cross-Origin-Resource-Policy', value: 'same-site' }, // Предотвращает загрузку ваших ресурсов (например, изображений, PDF) на чужих сайтах через <img>, <iframe>, <script> и т. д.
 	{
 		key: 'Permissions-Policy', // Контроль доступа к API браузера и функций
-		value: 'camera=(), microphone=(), geolocation=(), accelerometer=(), autoplay=(), fullscreen=(), gyroscope=(), magnetometer=(), payment=(), sync-xhr=self',
-	}, // () - none
-];
+		value: 'camera=(), microphone=(), geolocation=(), accelerometer=(), autoplay=(), fullscreen=(), gyroscope=(), magnetometer=(), payment=(), sync-xhr=self'
+	} // () - none
+]
 
 export function middleware(request: NextRequest) {
-	const { nextUrl } = request;
-	const token = request.cookies.get('token')?.value;
-	const isDev = env.NODE_ENV === 'development';
-	const host = request.nextUrl.host;
-	const protocol = request.nextUrl.protocol;
+	const { nextUrl } = request
+	const token = request.cookies.get('token')?.value
+	const isDev = env.NODE_ENV === 'development'
+	const host = request.nextUrl.host
+	const protocol = request.nextUrl.protocol
 
-	const nonce = Buffer.from(crypto.randomUUID()).toString('base64');
+	const nonce = Buffer.from(crypto.randomUUID()).toString('base64')
 	const scriptSrc = [
 		"'self'",
 		`'nonce-${nonce}'`,
 		isDev ? "'unsafe-eval'" : '',
 		"'strict-dynamic'",
-		`${protocol}//${host}`,
+		`${protocol}//${host}`
 	]
 		.filter(Boolean)
-		.join(' ');
+		.join(' ')
 
 	// child-src https://youtube.com для iframe
 
@@ -93,29 +93,29 @@ export function middleware(request: NextRequest) {
     ${isDev ? '' : 'upgrade-insecure-requests;'}
   `
 		.replace(/\s+/g, ' ')
-		.trim();
+		.trim()
 
-	const requestHeaders = new Headers(request.headers);
-	requestHeaders.set('x-nonce', nonce);
-	requestHeaders.set('Content-Security-Policy', cspHeader);
+	const requestHeaders = new Headers(request.headers)
+	requestHeaders.set('x-nonce', nonce)
+	requestHeaders.set('Content-Security-Policy', cspHeader)
 
 	if (token && nextUrl.pathname in redirectInstance) {
-		return NextResponse.redirect(new URL(redirectInstance[nextUrl.pathname], nextUrl));
+		return NextResponse.redirect(new URL(redirectInstance[nextUrl.pathname], nextUrl))
 	}
 
 	const response = NextResponse.next({
 		request: {
-			headers: requestHeaders,
-		},
-	});
+			headers: requestHeaders
+		}
+	})
 
-	response.headers.set('Content-Security-Policy', cspHeader);
+	response.headers.set('Content-Security-Policy', cspHeader)
 
 	/* etc. заголовки */
-	securityHeaders.map((secureHeader) => response.headers.set(secureHeader.key, secureHeader.value));
+	securityHeaders.map((secureHeader) => response.headers.set(secureHeader.key, secureHeader.value))
 	/* etc. заголовки */
 
-	return response;
+	return response
 }
 
 export const config = {
@@ -131,8 +131,8 @@ export const config = {
 			source: '/((?!api|_next/static|_next/image|favicon.ico).*)',
 			missing: [
 				{ type: 'header', key: 'next-router-prefetch' },
-				{ type: 'header', key: 'purpose', value: 'prefetch' },
-			],
-		},
-	],
-};
+				{ type: 'header', key: 'purpose', value: 'prefetch' }
+			]
+		}
+	]
+}
