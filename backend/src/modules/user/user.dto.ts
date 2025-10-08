@@ -1,6 +1,7 @@
 import { IsEmail, Length } from 'class-validator';
 import { HasDigit, UniqueEmail } from '@validation/decorators';
 import { ERRORS } from '@shared/errors';
+import { lengths } from '@shared/lengths';
 
 export namespace UserDto {
 	export type Entity = {
@@ -19,9 +20,10 @@ export namespace UserDto {
 	export class Registration {
 		@UniqueEmail()
 		@IsEmail(undefined, { message: `_email:${ERRORS.INVALID_EMAIL}` })
+		@Length(lengths.user.email.min, lengths.user.email.max, { message: `_email:${ERRORS.INVALID_LENGTH}` })
 		email: string;
 
-		@Length(8, 63, { message: `_password:${ERRORS.INVALID_LENGTH}` })
+		@Length(lengths.user.password.min, lengths.user.password.max, { message: `_password:${ERRORS.INVALID_LENGTH}` })
 		@HasDigit()
 		password: string;
 	}

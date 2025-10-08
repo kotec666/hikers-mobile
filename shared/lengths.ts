@@ -1,12 +1,12 @@
 export const lengths = {
-    user: {
-        password: {
-            min: 6,
-            max: 124
-        },
-        email: {
-            min: 5,
-            max: 124
-        }
-    }
-}
+	user: {
+		password: {
+			min: 8,
+			max: 63,
+		},
+		email: {
+			min: 5,
+			max: 124,
+		},
+	},
+};
