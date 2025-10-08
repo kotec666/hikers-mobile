@@ -15,12 +15,13 @@ export class AuthService {
 	/** Регистрирует нового пользователя.
 	 * @returns - {@link TokenDto.TokenResponse | access-токен}
 	 */
-	public async registration(dto: UserDto.Registration): Promise<TokenDto.TokenResponse> {
+	public async registration(dto: UserDto.Registration): Promise<TokenDto.TokenResponse & UserDto.Entity> {
 		try {
 			await this.userService.checkEmailAvailable(dto.email);
 
 			const user = await this.userService.createUser(dto);
-			return await this.tokenService.generatePairAndGetAccess(user.id);
+			const { token } = await this.tokenService.generatePairAndGetAccess(user.id);
+			return { ...user, token };
 		} catch (e) {
 			if (e.message === ERRORS.ALREADY_EXISTS) {
 				throw new BadRequestException(`_email:${ERRORS.ALREADY_EXISTS}`);
@@ -32,11 +33,13 @@ export class AuthService {
 	/** Аутентицикация нового пользователя.
 	 * @returns - {@link TokenDto.TokenResponse | access-токен}
 	 */
-	public async login(dto: UserDto.Login): Promise<TokenDto.TokenResponse> {
+	public async login(dto: UserDto.Login): Promise<TokenDto.TokenResponse & UserDto.Entity> {
 		await this.userService.checkLogin(dto);
 
 		const user = await this.userService.getUserByEmail(dto.email);
-		return await this.tokenService.generateAccessTokenByUserId(user.id);
+		const { token } = await this.tokenService.generateAccessTokenByUserId(user.id);
+
+		return { ...user, token };
 	}
 
 	/** Перевыдает истекший access-токен.
