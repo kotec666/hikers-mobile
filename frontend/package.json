@@ -7,7 +7,7 @@
 		"build": "next build",
 		"start": "next start -p 4173",
 		"lint": "next lint",
-		"format": "prettier --write \"src/**/*.ts\""
+		"format": "prettier --write \"src/**/*.{ts,tsx}\""
 	},
 	"dependencies": {
 		"autoprefixer": "10.4.17",

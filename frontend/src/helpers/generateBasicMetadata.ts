@@ -1,46 +1,46 @@
-import { Metadata } from 'next';
-import { env } from '@/consts/env';
+import { Metadata } from 'next'
+import { env } from '@/consts/env'
 
 interface IMetaEnter {
-	title?: string;
-	description?: string;
-	keywords?: string;
-	robots?: string;
+	title?: string
+	description?: string
+	keywords?: string
+	robots?: string
 	alternates?: {
-		canonical?: string;
+		canonical?: string
 		languages?: {
-			[key: string]: string;
-		};
-	};
+			[key: string]: string
+		}
+	}
 	openGraph?: {
-		url?: string;
-		image_url?: string;
-		width?: number;
-		height?: number;
-		type?: 'website' | 'article' | 'profile';
-		publishedTime?: string;
-		modifiedTime?: string;
-		authors?: string[];
-	};
+		url?: string
+		image_url?: string
+		width?: number
+		height?: number
+		type?: 'website' | 'article' | 'profile'
+		publishedTime?: string
+		modifiedTime?: string
+		authors?: string[]
+	}
 	twitter?: {
-		card?: 'summary' | 'summary_large_image' | 'app' | 'player';
-		site?: string;
-		creator?: string;
-		title?: string;
-		description?: string;
-		image?: string;
+		card?: 'summary' | 'summary_large_image' | 'app' | 'player'
+		site?: string
+		creator?: string
+		title?: string
+		description?: string
+		image?: string
 		app?: {
-			name: string;
-			id: string;
-			url: string;
-		};
-	};
+			name: string
+			id: string
+			url: string
+		}
+	}
 }
 
 export const generateBasicMetadata = (meta: IMetaEnter): Metadata => {
-	const siteName = 'Hikers';
-	const defaultImage = `${env.web_url}/opengraph-image.png`;
-	const defaultTwitterImage = `${env.web_url}/opengraph-image.png`;
+	const siteName = 'Hikers'
+	const defaultImage = `${env.web_url}/opengraph-image.png`
+	const defaultTwitterImage = `${env.web_url}/opengraph-image.png`
 
 	// Basic metadata
 	const metadata: Metadata = {
@@ -55,7 +55,7 @@ export const generateBasicMetadata = (meta: IMetaEnter): Metadata => {
 		formatDetection: {
 			email: false,
 			address: false,
-			telephone: false,
+			telephone: false
 		},
 		// verification: {
 		//     google: env.google_verification,
@@ -63,13 +63,13 @@ export const generateBasicMetadata = (meta: IMetaEnter): Metadata => {
 		// },
 		category: 'technology',
 		alternates: {
-			canonical: meta?.alternates?.canonical ? `${env.web_url}${meta.alternates.canonical}` : env.web_url,
+			canonical: meta?.alternates?.canonical ? `${env.web_url}${meta.alternates.canonical}` : env.web_url
 			// languages: meta?.alternates?.languages || {
 			//   "en-US": "/",
 			//   // "ru-RU": "/ru-RU",
 			// },
-		},
-	};
+		}
+	}
 
 	// OpenGraph metadata
 	metadata.openGraph = {
@@ -83,18 +83,18 @@ export const generateBasicMetadata = (meta: IMetaEnter): Metadata => {
 				url: meta.openGraph?.image_url || defaultImage,
 				width: meta.openGraph?.width || 1200,
 				height: meta.openGraph?.height || 630,
-				alt: meta.title || 'Hikers website',
-			},
+				alt: meta.title || 'Hikers website'
+			}
 		],
 		locale: 'ru_RU',
 		...(meta.openGraph?.type === 'article' && {
 			article: {
 				publishedTime: meta.openGraph.publishedTime,
 				modifiedTime: meta.openGraph.modifiedTime,
-				authors: meta.openGraph.authors,
-			},
-		}),
-	};
+				authors: meta.openGraph.authors
+			}
+		})
+	}
 
 	// Twitter Cards metadata
 	metadata.twitter = {
@@ -108,10 +108,10 @@ export const generateBasicMetadata = (meta: IMetaEnter): Metadata => {
 			app: {
 				id: meta.twitter.app.id,
 				url: meta.twitter.app.url,
-				name: meta.twitter.app.name,
-			},
-		}),
-	};
+				name: meta.twitter.app.name
+			}
+		})
+	}
 
-	return metadata;
-};
+	return metadata
+}
