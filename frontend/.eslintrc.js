@@ -2,15 +2,15 @@ module.exports = {
 	parser: '@typescript-eslint/parser',
 	parserOptions: {
 		tsconfigRootDir: __dirname,
-		sourceType: 'module',
+		sourceType: 'module'
 	},
 	plugins: ['@typescript-eslint/eslint-plugin'],
 	extends: ['plugin:@typescript-eslint/recommended', 'plugin:prettier/recommended'],
 	root: true,
-	ignorePatterns: ['node_modules/*', '.eslint.config.js', '*.spec.ts', 'tsconfig.json'],
+	ignorePatterns: ['node_modules/*', '.eslintrc.js', '*.spec.ts', 'tsconfig.json', 'src/shared/*'],
 	env: {
 		node: true,
-		jest: false,
+		jest: false
 	},
 	rules: {
 		'@typescript-eslint/interface-name-prefix': 'off',
@@ -19,6 +19,6 @@ module.exports = {
 		'@typescript-eslint/no-explicit-any': 'off',
 		'@typescript-eslint/no-namespace': 'off',
 		'no-var': 'off',
-		'max-len': ['error', 220],
-	},
-};
+		'max-len': ['error', 220]
+	}
+}
