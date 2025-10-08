@@ -1,5 +1,5 @@
 import { IsEmail, Length } from 'class-validator';
-import { HasDigit } from '@validation/decorators';
+import { HasDigit, UniqueEmail } from '@validation/decorators';
 import { ERRORS } from '@shared/errors';
 
 export namespace UserDto {
@@ -17,6 +17,7 @@ export namespace UserDto {
 	};
 
 	export class Registration {
+		@UniqueEmail()
 		@IsEmail(undefined, { message: `_email:${ERRORS.INVALID_EMAIL}` })
 		email: string;
 

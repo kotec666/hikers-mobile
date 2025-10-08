@@ -11,6 +11,7 @@ import { TokenModule } from './modules/token/token.module';
 import { AuthModule } from './modules/auth/auth.module';
 import { UserModule } from './modules/user/user.module';
 import { AchievementsModule } from './modules/achievements/achievements.module';
+import { UniqueEmailValidator } from '@validation/unique-email.validator';
 
 @Module({
 	imports: [
@@ -62,5 +63,6 @@ import { AchievementsModule } from './modules/achievements/achievements.module';
 		UserModule,
 		AchievementsModule,
 	],
+	providers: [UniqueEmailValidator],
 })
 export class AppModule {}

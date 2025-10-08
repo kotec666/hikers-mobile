@@ -6,6 +6,7 @@ import { SwaggerModule } from '@nestjs/swagger';
 import { SwaggerTheme, SwaggerThemeNameEnum } from 'swagger-themes';
 import { Logger } from 'nestjs-pino';
 import { HttpExceptionFilter } from './common/filters/exceptions.filter';
+import { useContainer } from 'class-validator';
 
 async function bootstrap() {
 	const app: INestApplication = await NestFactory.create(AppModule, {
@@ -22,6 +23,8 @@ async function bootstrap() {
 		credentials: true,
 		methods: '*',
 	});
+
+	useContainer(app.select(AppModule), { fallbackOnErrors: true });
 
 	const logger = app.get(Logger);
 	const port = parseInt(process.env.PORT ?? '3000');
