@@ -19,7 +19,7 @@ import { useState } from 'react'
 import Checkbox from '@/components/ui/Checkbox'
 import { LinkCustom } from '@/components/ui/LinkCustom'
 import { useAuthStore } from '@/store/authStore'
-import { setItem } from '@/store/storage'
+import {getItem, setItem} from '@/store/storage'
 import { useLocalSearchParams } from 'expo-router'
 import { Controller, useForm } from 'react-hook-form'
 import { useErrorMessage } from '@/hooks/useErrorMessage'
@@ -73,7 +73,12 @@ const AuthPage = () => {
 		if (data.mode === AUTH_MODE.AUTH) {
 			try {
 				const loginData = await loginUser({ email: authFormState.email, password: authFormState.password })
-				login(loginData.token, { id: 1, username: 'oxxxysergey', name: 'cерёга', email: authFormState.email })
+                const {token, ...restParameters} = loginData
+
+				login(loginData.token, restParameters)
+                if(!getItem('isAccountExist')?.accountExist) {
+                    setItem('isAccountExist', { accountExist: true })
+                }
 			} catch (e) {
 				const errors = await e.response.json()
 				console.log(errors)
@@ -88,7 +93,9 @@ const AuthPage = () => {
 		if (data.mode === AUTH_MODE.REGISTRATION) {
 			try {
 				const regData = await registrationUser({ email: authFormState.email, password: authFormState.password })
-				login(regData.token, { id: 1, username: 'oxxxysergey', name: 'cерёга', email: authFormState.email })
+                const {token, ...restParameters} = regData
+
+				login(regData.token, restParameters)
 				setItem('isAccountExist', { accountExist: true })
 			} catch (e) {
 				console.log(e)
