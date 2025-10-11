@@ -34,17 +34,19 @@ export class AuthService {
 	 * @returns - {@link TokenDto.TokenResponse | access-токен}
 	 */
 	public async login(dto: UserDto.Login): Promise<TokenDto.TokenResponse & UserDto.Entity> {
-		await this.userService.checkLogin(dto);
-
 		try {
-			const user = await this.userService.getUserByEmail(dto.email);
+			const user = await this.userService.getUserByEmailAndPassword(dto);
 			const { token } = await this.tokenService.generateAccessTokenByUserId(user.id);
 
 			return { ...user, token };
 		} catch (e) {
-			if (e.message === ERRORS.ALREADY_EXISTS) {
+			if (e.message === ERRORS.NOT_FOUND) {
 				throw new NotFoundException(`_email:${ERRORS.NOT_FOUND}`);
 			}
+			if (e.message === ERRORS.MISMATCH) {
+				throw new BadRequestException(`_password:${ERRORS.MISMATCH}`);
+			}
+
 			throw e;
 		}
 	}
