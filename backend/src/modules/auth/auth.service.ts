@@ -1,4 +1,4 @@
-import { BadRequestException, Injectable, UnauthorizedException } from '@nestjs/common';
+import { BadRequestException, Injectable, NotFoundException, UnauthorizedException } from '@nestjs/common';
 import { UserDto } from '../user/user.dto';
 import { UserService } from '../user/user.service';
 import { TokenService } from '../token/token.service';
@@ -36,10 +36,17 @@ export class AuthService {
 	public async login(dto: UserDto.Login): Promise<TokenDto.TokenResponse & UserDto.Entity> {
 		await this.userService.checkLogin(dto);
 
-		const user = await this.userService.getUserByEmail(dto.email);
-		const { token } = await this.tokenService.generateAccessTokenByUserId(user.id);
+		try {
+			const user = await this.userService.getUserByEmail(dto.email);
+			const { token } = await this.tokenService.generateAccessTokenByUserId(user.id);
 
-		return { ...user, token };
+			return { ...user, token };
+		} catch (e) {
+			if (e.message === ERRORS.ALREADY_EXISTS) {
+				throw new NotFoundException(`_email:${ERRORS.NOT_FOUND}`);
+			}
+			throw e;
+		}
 	}
 
 	/** Перевыдает истекший access-токен.
