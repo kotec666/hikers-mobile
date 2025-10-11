@@ -55,7 +55,13 @@ export class UserService {
 			throw new BadRequestException(ERRORS.MISMATCH);
 		}
 
-		return user;
+		return {
+			id: user.id,
+			name: user.name,
+			username: user.username,
+			email: user.email,
+			avatarFilename: user.avatarFilename,
+		};
 	}
 
 	public async getUserByEmail(email: string): Promise<UserDto.Entity> {
