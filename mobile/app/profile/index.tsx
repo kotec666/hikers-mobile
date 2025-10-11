@@ -13,7 +13,7 @@ import RedirectAchievementsInfo from '@/components/ui/Profile/RedirectAchievemen
 import PostListItem from '@/components/ui/Post/PostListItem'
 import { useRouter } from 'expo-router'
 import { useAuthStore } from '@/store/authStore'
-import NavBar from "@/components/ui/NavBar";
+import NavBar from '@/components/ui/NavBar'
 
 /**
  *
@@ -45,65 +45,76 @@ const Profile = () => {
 	]
 
 	return (
-		<SafeAreaProvider style={{ paddingTop: insets.top, paddingBottom: insets.bottom }}>
-            <NavBar />
-			<ScrollView>
-				<Container className="gap-[20px]">
-					<View className="gap-[20px]">
-						<View className="gap-[16px]">
-							<View className="flex-row justify-between w-full">
-								<UserAvatar
-									bordered
-									className="w-[117px] h-[117px]"
-									iconSize={{ width: 60, height: 60 }}
-									avatar={false}
-								/>
-								<MoreOptionsButton
-									icon={<SettingsSvg />}
-									params={[
-										{ label: 'Редактировать профиль', action: handleClickEdit },
-										{ label: 'Политика конфиденциальности', action: handleClickDocs },
-										{ label: 'Политика обработки персональных данных', action: handleClickDocs },
-										{ label: 'Выход', action: handleClickExit }
-									]}
-								/>
+		<>
+			<NavBar />
+			<SafeAreaProvider style={{ paddingTop: insets.top, paddingBottom: insets.bottom }}>
+				<ScrollView>
+					<Container className="gap-[20px]">
+						<View className="gap-[20px]">
+							<View className="gap-[16px]">
+								<View className="flex-row justify-between w-full">
+									<UserAvatar
+										bordered
+										className="w-[117px] h-[117px]"
+										iconSize={{ width: 60, height: 60 }}
+										avatar={false}
+									/>
+									<MoreOptionsButton
+										icon={<SettingsSvg />}
+										params={[
+											{ label: 'Редактировать профиль', action: handleClickEdit },
+											{ label: 'Политика конфиденциальности', action: handleClickDocs },
+											{
+												label: 'Политика обработки персональных данных',
+												action: handleClickDocs
+											},
+											{ label: 'Выход', action: handleClickExit }
+										]}
+									/>
+								</View>
+								<View>
+									{user?.name && (
+										<Text
+											className="text-[19px] text-white"
+											style={{ fontFamily: fontFamily.bold }}
+										>
+											{user?.name}
+										</Text>
+									)}
+									{user?.username && (
+										<Text
+											className="text-base text-gray-ab"
+											style={{ fontFamily: fontFamily.medium }}
+										>
+											@{user?.username}
+										</Text>
+									)}
+								</View>
 							</View>
-							<View>
-                                {user?.name && (
-                                    <Text className="text-[19px] text-white" style={{ fontFamily: fontFamily.bold }}>
-                                        {user?.name}
-                                    </Text>
-                                )}
-                                {user?.username && (
-                                    <Text className="text-base text-gray-ab" style={{ fontFamily: fontFamily.medium }}>
-                                        @{user?.username}
-                                    </Text>
-                                )}
+							<View className="flex-row justify-between gap-[10px]">
+								<SocialStats />
+								<SocialStats />
+								<SocialStats />
 							</View>
+							<Button variant="white">История тренировок</Button>
+							<RedirectAchievementsInfo />
+							<ActivityInfo label="Активности" />
 						</View>
-						<View className="flex-row justify-between gap-[10px]">
-							<SocialStats />
-							<SocialStats />
-							<SocialStats />
-						</View>
-						<Button variant="white">История тренировок</Button>
-						<RedirectAchievementsInfo />
-						<ActivityInfo label="Активности" />
-					</View>
-				</Container>
-				<Container className="gap-[15px]">
-					<Text
-						className="text-base text-white border-b-[1px] border-b-black-44 py-[20px]"
-						style={{ fontFamily: fontFamily.bold }}
-					>
-						Лента
-					</Text>
-					{posts.map((post) => (
-						<PostListItem key={post.id} {...post} isMyPost />
-					))}
-				</Container>
-			</ScrollView>
-		</SafeAreaProvider>
+					</Container>
+					<Container className="gap-[15px]">
+						<Text
+							className="text-base text-white border-b-[1px] border-b-black-44 py-[20px]"
+							style={{ fontFamily: fontFamily.bold }}
+						>
+							Лента
+						</Text>
+						{posts.map((post) => (
+							<PostListItem key={post.id} {...post} isMyPost />
+						))}
+					</Container>
+				</ScrollView>
+			</SafeAreaProvider>
+		</>
 	)
 }
 

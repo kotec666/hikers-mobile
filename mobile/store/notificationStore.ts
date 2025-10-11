@@ -26,7 +26,7 @@ export const useNotificationStore = create<NotificationStore>((set, get) => ({
 
 		setTimeout(() => {
 			get().hideNotification(id)
-		}, 3000)
+		}, 3500)
 	},
 
 	hideNotification: (id: string) => {

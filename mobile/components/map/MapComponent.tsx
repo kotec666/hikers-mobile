@@ -1,6 +1,6 @@
 import { MarkerRef, Polyline, Yamap } from 'react-native-yamap-plus-lite'
 import UserLocationMarker from '@/components/ui/UserLocationMarker'
-import { useEffect, useRef, useState } from 'react'
+import React, { useEffect, useRef, useState } from 'react'
 import AsyncStorage from '@react-native-async-storage/async-storage'
 import * as Location from 'expo-location'
 import * as TaskManager from 'expo-task-manager'

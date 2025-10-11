@@ -27,6 +27,7 @@ import { getFieldsErrors } from '@/helpers/getFieldsErrors'
 import { loginUser, registrationUser } from '@/api/auth'
 import { cn } from '@/helpers/cn'
 import { lengths } from '@shared/lengths'
+import { useToast } from '@/hooks/useToast'
 
 export enum AUTH_MODE {
 	AUTH = 'auth',
@@ -48,6 +49,7 @@ const AuthPage = () => {
 		formState: { errors }
 	} = useForm<IAuthFormState>()
 	const { ErrorMessages } = useErrorMessage()
+	const { error: sendError } = useToast()
 
 	const [data, setData] = useState<{
 		mode: AUTH_MODE
