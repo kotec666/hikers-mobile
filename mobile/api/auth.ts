@@ -1,11 +1,11 @@
 import fetcher from '@/api/fetcher'
+import {IUser} from "@/store/authStore";
 
 export const loginUser = async (data: {
 	email: string
 	password: string
-}): Promise<{
+}): Promise<IUser & {
 	token: string
-	// user: User
 }> => {
 	return (
 		await fetcher.post('auth/login', {
@@ -17,9 +17,8 @@ export const loginUser = async (data: {
 export const registrationUser = async (data: {
 	email: string
 	password: string
-}): Promise<{
-	token: string
-	// user: User
+}): Promise<IUser & {
+    token: string
 }> => {
 	return (
 		await fetcher.post('auth/registration', {

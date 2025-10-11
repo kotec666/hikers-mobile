@@ -13,6 +13,7 @@ import RedirectAchievementsInfo from '@/components/ui/Profile/RedirectAchievemen
 import PostListItem from '@/components/ui/Post/PostListItem'
 import { useRouter } from 'expo-router'
 import { useAuthStore } from '@/store/authStore'
+import NavBar from "@/components/ui/NavBar";
 
 /**
  *
@@ -45,6 +46,7 @@ const Profile = () => {
 
 	return (
 		<SafeAreaProvider style={{ paddingTop: insets.top, paddingBottom: insets.bottom }}>
+            <NavBar />
 			<ScrollView>
 				<Container className="gap-[20px]">
 					<View className="gap-[20px]">
@@ -67,12 +69,16 @@ const Profile = () => {
 								/>
 							</View>
 							<View>
-								<Text className="text-[19px] text-white" style={{ fontFamily: fontFamily.bold }}>
-									{user?.name}
-								</Text>
-								<Text className="text-base text-gray-ab" style={{ fontFamily: fontFamily.medium }}>
-									@{user?.username}
-								</Text>
+                                {user?.name && (
+                                    <Text className="text-[19px] text-white" style={{ fontFamily: fontFamily.bold }}>
+                                        {user?.name}
+                                    </Text>
+                                )}
+                                {user?.username && (
+                                    <Text className="text-base text-gray-ab" style={{ fontFamily: fontFamily.medium }}>
+                                        @{user?.username}
+                                    </Text>
+                                )}
 							</View>
 						</View>
 						<View className="flex-row justify-between gap-[10px]">

@@ -3,11 +3,12 @@ import { getItem, removeItem, setItem } from '@/store/storage'
 import { refreshAccessTokenRequest, registrationUser } from '@/api/auth'
 import { getFieldsErrors } from '@/helpers/getFieldsErrors'
 
-interface IUser {
-	id: number
-	name?: string
+export interface IUser {
+	id: string
+	name: null | string
 	email: string
-	username?: string
+	username: string
+    avatarFilename: null | string
 }
 
 interface AuthStore {
@@ -16,7 +17,7 @@ interface AuthStore {
 	user: IUser | null
 	accessTokenExpiration: number | null
 
-	login: (token: string, user: { email: string; username?: string; name?: string; id: number }) => void
+	login: (token: string, user: IUser) => void
 	logout: () => void
 	refreshAccessToken: () => Promise<boolean>
 	checkAuth: () => Promise<boolean>
@@ -28,19 +29,10 @@ export const useAuthStore = create<AuthStore>((set, get) => ({
 	user: null,
 	accessTokenExpiration: null,
 
-	login: (token: string, user: { email: string; username?: string; name?: string; id: number }) => {
+	login: (token: string, user: IUser) => {
 		const authData = {
 			accessToken: token,
-			user: {
-				// firstName: data.firstName,
-				// lastName: data.lastName,
-				// email: data.email,
-				// username: data.username
-				id: user.id,
-				name: user.name,
-				email: user.email,
-				username: user.username
-			},
+			user,
 			isAuthenticated: true,
 			accessTokenExpiration: Date.now() + 30 * 60 * 1000 // 30 min
 		}

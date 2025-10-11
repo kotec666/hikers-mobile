@@ -45,7 +45,7 @@ const fetcher = baseFetcher.extend({
 				const originalRequest = request
 
 				// Если это запрос на обновление токена, не обрабатываем его
-				if (originalRequest.url.includes('auth/refresh')) {
+				if (originalRequest.url.includes('auth/refresh') || originalRequest.url.includes('auth/login')) {
 					return response
 				}
 

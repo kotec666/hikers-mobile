@@ -14,6 +14,8 @@ type ErrorFields = {
  * */
 
 const errorFields: ErrorFields = {
+    [ERRORS.BAD_REQUEST]: { field: 'field_name', message: 'bad request' },
+    [ERRORS.INTERNAL]: { field: 'field_name', message: 'internal' },
     [ERRORS.MISMATCH]: { field: 'password', message: 'Неверный пароль' },
     [ERRORS.DIGIT_REQUIRED]: { field: 'password', message: 'Поле должно содержать цифры' },
     [ERRORS.ALREADY_CREATED]: {
@@ -68,7 +70,8 @@ const personalErrorFields: PersonalErrorFields = {
 		[ERRORS.ALREADY_EXISTS]: 'Такой email уже зарегистрирован'
 	},
 	password: {
-		[ERRORS.DIGIT_REQUIRED]: 'Поле должно содержать цифры'
+		[ERRORS.DIGIT_REQUIRED]: 'Поле должно содержать цифры',
+        [ERRORS.MISMATCH]: 'Неверный пароль'
 	}
 }
 /* prettier-ignore */
