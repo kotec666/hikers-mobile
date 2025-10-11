@@ -65,7 +65,7 @@ export class HttpExceptionFilter implements ExceptionFilter {
 			response.status(exceptionStatus).json({
 				statusCode: exception.getStatus(),
 				message: message.startsWith('_')
-					? parsePropertyMessage(message)
+					? [parsePropertyMessage(message)]
 					: (statusCodeToError[exceptionStatus] ?? ERRORS.UNKNOWN_ERROR),
 			});
 		}
