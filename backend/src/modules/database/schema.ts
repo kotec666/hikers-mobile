@@ -105,15 +105,19 @@ export const userFriends = pgTable(
 );
 
 // User Friends Invites
-export const userFriendsInvites = pgTable('user_friends_invites', {
-	id: uuid('id').primaryKey().defaultRandom(),
-	userId: uuid('user_id')
-		.notNull()
-		.references(() => users.id),
-	invitedUserId: uuid('invited_user_id')
-		.notNull()
-		.references(() => users.id),
-});
+export const userFriendsInvites = pgTable(
+	'user_friends_invites',
+	{
+		id: uuid('id').primaryKey().defaultRandom(),
+		userId: uuid('user_id')
+			.notNull()
+			.references(() => users.id),
+		invitedUserId: uuid('invited_user_id')
+			.notNull()
+			.references(() => users.id),
+	},
+	(table) => [uniqueIndex('friends_invites_idx').on(table.userId, table.invitedUserId)],
+);
 
 // Achievements
 export const achievements = pgTable('achievements', {
