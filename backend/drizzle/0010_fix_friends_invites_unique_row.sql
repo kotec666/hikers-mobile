@@ -1,0 +1,1 @@
+CREATE UNIQUE INDEX "friends_invites_idx" ON "user_friends_invites" USING btree ("user_id","invited_user_id");
