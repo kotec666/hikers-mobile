@@ -27,7 +27,7 @@ export class UserService {
 				avatarFilename: users.avatarFilename,
 			});
 		if (!user) {
-			throw new NotFoundException();
+			throw new NotFoundException(ERRORS.NOT_FOUND);
 		}
 
 		return user;
@@ -77,7 +77,7 @@ export class UserService {
 			.where(eq(users.email, email))
 			.limit(1);
 		if (!user) {
-			throw new NotFoundException();
+			throw new NotFoundException(ERRORS.NOT_FOUND);
 		}
 
 		return user;
@@ -96,7 +96,7 @@ export class UserService {
 			.where(eq(users.id, id))
 			.limit(1);
 		if (!user) {
-			throw new NotFoundException();
+			throw new NotFoundException(ERRORS.NOT_FOUND);
 		}
 
 		return user;

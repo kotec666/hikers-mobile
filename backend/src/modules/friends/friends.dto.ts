@@ -1,13 +1,15 @@
-﻿export namespace FriendDto {
+﻿import { UserDto } from '../user/user.dto';
+
+export namespace FriendDto {
 	export type Entity = {
-		/** Айди друга для пользователя, отправившего запрос */
-		userId: string;
+		/** Друк для текущего пользователя */
+		user: UserDto.Entity;
 		/** Дата когда стали друзьями */
 		createdAt: Date;
 	};
 
 	export type InviteEntity = {
-		userId: string;
-		invitedUserId: string;
+		user: UserDto.Entity;
+		invitedUser: UserDto.Entity;
 	};
 }
