@@ -1,4 +1,4 @@
-export namespace S3 {
+export namespace StaticDto {
 	export type UploadedFiles = Record<string, string>;
 
 	export type UploadedFile = {
