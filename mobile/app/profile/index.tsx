@@ -11,7 +11,7 @@ import { Button } from '@/components/ui/Button'
 import ActivityInfo from '@/components/ui/Profile/ActivityInfo'
 import RedirectAchievementsInfo from '@/components/ui/Profile/RedirectAchievementsInfo'
 import PostListItem from '@/components/ui/Post/PostListItem'
-import { useRouter } from 'expo-router'
+import { RelativePathString, useRouter } from 'expo-router'
 import { useAuthStore } from '@/store/authStore'
 import NavBar from '@/components/ui/NavBar'
 
@@ -21,17 +21,21 @@ import NavBar from '@/components/ui/NavBar'
  *
  * */
 
+const ALLOWED_ROUTES = {
+	EDIT_PROFILE: '/profile/edit' as RelativePathString,
+	DOCUMENT: '/document' as RelativePathString,
+	TABS: '/(tabs)' as RelativePathString
+} as const satisfies Record<string, RelativePathString>
+
+type AllowedRoute = (typeof ALLOWED_ROUTES)[keyof typeof ALLOWED_ROUTES]
+
 const Profile = () => {
 	const insets = useSafeAreaInsets()
 	const router = useRouter()
 	const { logout, user } = useAuthStore()
 
-	const handleClickEdit = () => {
-		router.push('/profile/edit')
-	}
-
-	const handleClickDocs = () => {
-		router.push('/document')
+	const handleClickRedirect = (page: AllowedRoute) => {
+		router.push(page)
 	}
 
 	const handleClickExit = () => {
@@ -62,11 +66,21 @@ const Profile = () => {
 									<MoreOptionsButton
 										icon={<SettingsSvg />}
 										params={[
-											{ label: 'Редактировать профиль', action: handleClickEdit },
-											{ label: 'Политика конфиденциальности', action: handleClickDocs },
+											{
+												label: 'Редактировать профиль',
+												action: () => handleClickRedirect(ALLOWED_ROUTES.EDIT_PROFILE)
+											},
+											{
+												label: 'Политика конфиденциальности',
+												action: () => handleClickRedirect(ALLOWED_ROUTES.DOCUMENT)
+											},
 											{
 												label: 'Политика обработки персональных данных',
-												action: handleClickDocs
+												action: () => handleClickRedirect(ALLOWED_ROUTES.DOCUMENT)
+											},
+											{
+												label: 'Tabs (index)',
+												action: () => handleClickRedirect(ALLOWED_ROUTES.TABS)
 											},
 											{ label: 'Выход', action: handleClickExit }
 										]}

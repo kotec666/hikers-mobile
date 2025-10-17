@@ -1,26 +1,30 @@
 import React from 'react'
-import { View, Text, StyleSheet, ColorValue } from 'react-native'
+import { View, Text, StyleSheet, ColorValue, Image } from 'react-native'
 import AchievementsMedalSvg from '@/components/svg/AchievementsMedalSvg'
 import { fontFamily } from '@/constants/Fonts'
 import { LinearGradient } from 'expo-linear-gradient'
 import { cn } from '@/helpers/cn'
+import { hexToRgba } from '@/helpers/hexToRgba'
 
 interface AchievementsListItemProps {
 	progress?: number
+	title?: string
+	iconFilename: string | null
+	colorHex: string | null
 }
 
-const AchievementsListItem = ({ progress = 0 }: AchievementsListItemProps) => {
+const AchievementsListItem = ({ progress = 0, title, colorHex, iconFilename }: AchievementsListItemProps) => {
 	const progressWidth = Math.min(Math.max(progress, 0), 100)
 	const transparentColors: readonly [ColorValue, ColorValue, ...ColorValue[]] = [
-		'rgba(79, 125, 249, 1)',
-		'rgba(79, 125, 249, 0.8)',
-		'rgba(79, 125, 249, 0.3)',
+		hexToRgba(colorHex, 1),
+		hexToRgba(colorHex, 0.8),
+		hexToRgba(colorHex, 0.3),
 		'transparent'
 	]
 	const notTransparentColors: readonly [ColorValue, ColorValue, ...ColorValue[]] = [
-		'rgba(79, 125, 249, 1)',
-		'rgba(79, 125, 249, 1)',
-		'rgba(79, 125, 249, 1)',
+		hexToRgba(colorHex, 1),
+		hexToRgba(colorHex, 1),
+		hexToRgba(colorHex, 1),
 		'transparent'
 	]
 	const transparentLocations: readonly [number, number, ...number[]] | null | undefined = [0, 0.7, 0.9, 1]
@@ -42,9 +46,10 @@ const AchievementsListItem = ({ progress = 0 }: AchievementsListItemProps) => {
 			/>
 			{progressWidth === 100 && <View style={{ backgroundColor: '#4F7DF9' }} />}
 			<View className="px-[10px] py-[16px] flex-row gap-[6px] items-center">
-				<AchievementsMedalSvg />
+				{/*<AchievementsMedalSvg />*/}
+				{/*<Image className="w-full h-full" source={{ uri: `hikers.su/api/${iconFilename}` }} resizeMode="cover" />*/}
 				<Text className="text-white text-base" style={{ fontFamily: fontFamily.bold }}>
-					Бегал
+					{title}
 				</Text>
 			</View>
 		</View>

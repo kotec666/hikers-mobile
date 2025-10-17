@@ -1,15 +1,19 @@
 import fetcher from '@/api/fetcher'
 
-interface IAchievement {
-	id: 'string'
-	iconFilename: null
-	colorHex: null
-	title: 'string'
-	description: null
-	claimedPercent: 'string'
-	claimedAt: null
+export interface IAchievement {
+	id: string
+	iconFilename: null | string
+	colorHex: null | string
+	title: string
+	description: null | string
+	claimedPercent: string
+	claimedAt: null | string
 }
 
 export const getClaimedAchievements = async (): Promise<IAchievement[]> => {
 	return (await fetcher.get(`achievements/claimed`)).json()
+}
+
+export const getUnclaimedAchievements = async (): Promise<IAchievement[]> => {
+	return (await fetcher.get(`achievements/unclaimed`)).json()
 }

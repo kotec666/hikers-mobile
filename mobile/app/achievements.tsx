@@ -2,13 +2,41 @@ import { SafeAreaProvider, useSafeAreaInsets } from 'react-native-safe-area-cont
 import { SafeAreaView, ScrollView, Text, View } from 'react-native'
 import { Container } from '@/components/ui/Container'
 import HeaderBack from '@/components/ui/HeaderBack'
-import React from 'react'
+import React, { useEffect, useState } from 'react'
 import AchievementsListItem from '@/components/ui/Achievements/AchievementsListItem'
 import { fontFamily } from '@/constants/Fonts'
+import { getClaimedAchievements, getUnclaimedAchievements, IAchievement } from '@/api/achievements'
+import { getFieldsErrors } from '@/helpers/getFieldsErrors'
 
 const AchievementsPage = () => {
 	const insets = useSafeAreaInsets()
+	const [state, setState] = useState<{
+		claimedAchievements: IAchievement[]
+		unClaimedAchievements: IAchievement[]
+	}>({
+		claimedAchievements: [],
+		unClaimedAchievements: []
+	})
 
+	useEffect(() => {
+		;(async () => {
+			try {
+				const [unClaimedAchievements, claimedAchievements] = await Promise.all([
+					getUnclaimedAchievements(),
+					getClaimedAchievements()
+				])
+
+				setState((s) => ({ ...s, claimedAchievements, unClaimedAchievements }))
+			} catch (e) {
+				const errors = await e.response.json()
+				console.log(errors)
+				/* const formattedErrors = */ getFieldsErrors(errors)
+				// setState((s) => ({ ...s, errors: formattedErrors }))
+			}
+		})()
+	}, [])
+
+	console.log(state.claimedAchievements[0].iconFilename)
 	return (
 		<SafeAreaProvider style={{ paddingTop: insets.top, paddingBottom: insets.bottom + 20 }}>
 			<SafeAreaView style={{ flex: 1 }}>
@@ -16,55 +44,27 @@ const AchievementsPage = () => {
 					<HeaderBack>Мои достижения</HeaderBack>
 					<ScrollView style={{ flex: 1, width: '100%' }}>
 						<View className="gap-[10px]">
-							<AchievementsListItem progress={1} />
-							<AchievementsListItem progress={2} />
-							<AchievementsListItem progress={3} />
-							<AchievementsListItem progress={4} />
-							<AchievementsListItem progress={5} />
-							<AchievementsListItem progress={6} />
-							<AchievementsListItem progress={7} />
-							<AchievementsListItem progress={8} />
-							<AchievementsListItem progress={9} />
-							<AchievementsListItem progress={10} />
-							<AchievementsListItem progress={11} />
-							<AchievementsListItem progress={12} />
-							<AchievementsListItem progress={13} />
-							<AchievementsListItem progress={14} />
-							<AchievementsListItem progress={15} />
-							<AchievementsListItem progress={16} />
-							<AchievementsListItem progress={17} />
-							<AchievementsListItem progress={18} />
-							<AchievementsListItem progress={19} />
-							<AchievementsListItem progress={20} />
-							<AchievementsListItem progress={21} />
-							<AchievementsListItem progress={22} />
-							<AchievementsListItem progress={23} />
+							{state.claimedAchievements.map((achievement) => (
+								<AchievementsListItem
+									key={achievement.id}
+									progress={+achievement.claimedPercent}
+									title={achievement.title}
+									colorHex={achievement.colorHex}
+									iconFilename={achievement.iconFilename}
+								/>
+							))}
 							<Text className="text-base text-white" style={{ fontFamily: fontFamily.bold }}>
 								Неполученные
 							</Text>
-							<AchievementsListItem progress={24} />
-							<AchievementsListItem progress={25} />
-							<AchievementsListItem progress={26} />
-							<AchievementsListItem progress={27} />
-							<AchievementsListItem progress={28} />
-							<AchievementsListItem progress={29} />
-							<AchievementsListItem progress={30} />
-							<AchievementsListItem progress={31} />
-							<AchievementsListItem progress={32} />
-							<AchievementsListItem progress={33} />
-							<AchievementsListItem progress={34} />
-							<AchievementsListItem progress={35} />
-							<AchievementsListItem progress={36} />
-							<AchievementsListItem progress={37} />
-							<AchievementsListItem progress={38} />
-							<AchievementsListItem progress={39} />
-							<AchievementsListItem progress={40} />
-							<AchievementsListItem progress={41} />
-							<AchievementsListItem progress={42} />
-							<AchievementsListItem progress={43} />
-							<AchievementsListItem progress={44} />
-							<AchievementsListItem progress={45} />
-							<AchievementsListItem progress={100} />
+							{state.unClaimedAchievements.map((achievement) => (
+								<AchievementsListItem
+									key={achievement.id}
+									progress={+achievement.claimedPercent}
+									title={achievement.title}
+									colorHex={achievement.colorHex}
+									iconFilename={achievement.iconFilename}
+								/>
+							))}
 						</View>
 					</ScrollView>
 				</Container>

@@ -149,6 +149,8 @@ const MapComponent = (props: { maxMapHeight?: number; minMapHeight?: number; rou
 	const [accuracy, setAccuracy] = useState(5)
 	const [markerPosition, setMarkerPosition] = useState({ lat: 53.422506, lon: 49.4781051 })
 	const [isAnimating, setIsAnimating] = useState(false)
+	const [isHeadingAnimating, setIsHeadingAnimating] = useState(false)
+	const [heading, setHeading] = useState(0)
 
 	const animateToPosition = (targetPosition: { lat: number; lon: number }, duration: number = 500) => {
 		if (isAnimating) return
@@ -182,12 +184,61 @@ const MapComponent = (props: { maxMapHeight?: number; minMapHeight?: number; rou
 		requestAnimationFrame(animateFrame)
 	}
 
+	const animateHeading = (targetHeading: number, duration: number = 300) => {
+		if (isHeadingAnimating) return
+
+		setIsHeadingAnimating(true)
+		const startHeading = heading
+		const startTime = Date.now()
+
+		// Нормализуем углы для корректного расчета кратчайшего пути
+		const normalizedStart = ((startHeading % 360) + 360) % 360
+		const normalizedTarget = ((targetHeading % 360) + 360) % 360
+
+		// Вычисляем кратчайший путь поворота
+		let diff = normalizedTarget - normalizedStart
+		if (diff > 180) {
+			diff -= 360
+		} else if (diff < -180) {
+			diff += 360
+		}
+
+		const animateFrame = () => {
+			const currentTime = Date.now()
+			const progress = Math.min((currentTime - startTime) / duration, 1)
+
+			// Эффект easing для плавной анимации
+			const easeOutQuart = 1 - Math.pow(1 - progress, 4)
+
+			const newHeading = startHeading + diff * easeOutQuart
+
+			setHeading(newHeading)
+
+			if (progress < 1) {
+				requestAnimationFrame(animateFrame)
+			} else {
+				// Убеждаемся, что конечное значение точно равно целевому
+				setHeading(targetHeading)
+				setIsHeadingAnimating(false)
+			}
+		}
+
+		requestAnimationFrame(animateFrame)
+	}
+
 	const onClickMove = () => {
 		animateToPosition({ lat: 53.4229, lon: 49.4782 }, 500)
 	}
 
 	const onClickAccuracy = () => {
 		setAccuracy(15)
+	}
+
+	const handleChangeHeading = () => {
+		animateHeading(150, 300)
+	}
+	const handleChangeHeadingBack = () => {
+		animateHeading(0, 300)
 	}
 
 	return (
@@ -198,6 +249,12 @@ const MapComponent = (props: { maxMapHeight?: number; minMapHeight?: number; rou
 				</Button>
 				<Button variant="white" onPress={onClickAccuracy}>
 					onClickAccuracy
+				</Button>
+				<Button variant="white" onPress={handleChangeHeading}>
+					onChange heading
+				</Button>
+				<Button variant="white" onPress={handleChangeHeadingBack}>
+					onChange heading (0°)
 				</Button>
 			</View>
 			<Yamap
@@ -225,7 +282,12 @@ const MapComponent = (props: { maxMapHeight?: number; minMapHeight?: number; rou
 				{/*		/>*/}
 				{/*	))}*/}
 
-				<UserLocationMarker userMarkerRef={userMarkerRef} position={markerPosition} accuracy={accuracy} />
+				<UserLocationMarker
+					userMarkerRef={userMarkerRef}
+					position={markerPosition}
+					accuracy={accuracy}
+					heading={heading}
+				/>
 
 				{foregroundLocations?.length && (
 					<Polyline

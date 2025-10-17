@@ -10,7 +10,7 @@ interface IMoreOptionsButtonProps {
 
 const MoreOptionsButton = (props: IMoreOptionsButtonProps) => {
 	const [state, setState] = useState({
-		isVisible: true
+		isVisible: false
 	})
 
 	const handleClickOpen = () => {
