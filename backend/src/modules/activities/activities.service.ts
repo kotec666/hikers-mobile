@@ -1,7 +1,7 @@
 ﻿import { Injectable } from '@nestjs/common';
 import { DatabaseService } from '../database/database.service';
 import { ActivitiyDto } from './activities.dto';
-import { trainingTypes, userActivities } from '../database/schema';
+import { userActivities } from '../database/schema';
 import { asc, eq } from 'drizzle-orm';
 
 @Injectable()
@@ -18,15 +18,12 @@ export class ActivitiesService {
 			.select({
 				place: userActivities.placeForShow,
 				goal: userActivities.goal,
-				trainingType: {
-					name: trainingTypes.name,
-					measuringUnit: trainingTypes.measuringUnit,
-					iconFilename: trainingTypes.iconFilename,
-				},
+				name: userActivities.name,
+				measuringUnit: userActivities.measuringUnit,
 			})
 			.from(userActivities)
-			.innerJoin(trainingTypes, eq(trainingTypes.name, userActivities.type))
-			.where(eq(userActivities.userId, userId));
+			.where(eq(userActivities.userId, userId))
+			.$dynamic();
 
 		if (typeof limit === 'number') {
 			query.limit(limit).orderBy(asc(userActivities.placeForShow));

@@ -16,6 +16,6 @@ export class ActivitiesController {
 	 */
 	@Get()
 	public async getTop(@User() user: UserData, @Query('limit') limit: number): Promise<ActivitiyDto.Entity[]> {
-		return this.service.getAll(user.id, limit);
+		return this.service.getAll(user.id, Number(limit));
 	}
 }

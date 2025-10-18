@@ -1,8 +1,9 @@
-﻿import { TrainingTypeDto } from '../trainings/trainings.dto';
+﻿import { MeasuringUnit, UserActivity } from '@shared/enums';
 
 export namespace ActivitiyDto {
 	export type Entity = {
-		trainingType: TrainingTypeDto.Entity;
+		name: UserActivity;
+		measuringUnit: MeasuringUnit;
 		place: number | null;
 		goal: number;
 	};
