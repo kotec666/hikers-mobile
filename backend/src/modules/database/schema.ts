@@ -12,7 +12,16 @@ import {
 	index,
 	uniqueIndex,
 	jsonb,
+	pgEnum,
 } from 'drizzle-orm/pg-core';
+import { enumToPgEnum } from './helpers';
+import { TrainingType } from '@shared/enums';
+
+/**
+ * ENUMS
+ */
+
+export const trainingTypeEnum = pgEnum('training_type', enumToPgEnum(TrainingType));
 
 /**
  * JSONB TYPES/INTERFACES
@@ -146,7 +155,7 @@ export const userAchievements = pgTable(
 
 // Training Types
 export const trainingTypes = pgTable('training_types', {
-	name: varchar('name', { length: 127 }).primaryKey(),
+	name: trainingTypeEnum().primaryKey(),
 	measuringUnit: varchar('measuring_unit', { length: 31 }).notNull(),
 	iconFilename: varchar('icon_filename', { length: 255 }).references(() => media.filename),
 });
@@ -159,7 +168,7 @@ export const userActivities = pgTable(
 			.notNull()
 			.references(() => users.id),
 		placeForShow: smallint('place_for_show'), // 1, 2, 3
-		type: varchar('type')
+		type: trainingTypeEnum()
 			.notNull()
 			.references(() => trainingTypes.name),
 		goal: integer('goal').notNull(),
@@ -173,7 +182,7 @@ export const training = pgTable('training', {
 	userCreatorId: uuid('user_creator_id')
 		.notNull()
 		.references(() => users.id),
-	type: varchar('type')
+	type: trainingTypeEnum()
 		.notNull()
 		.references(() => trainingTypes.name),
 	createdAt: timestamp('created_at').defaultNow().notNull(),

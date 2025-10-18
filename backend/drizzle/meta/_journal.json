@@ -78,6 +78,13 @@
       "when": 1760385473838,
       "tag": "0010_fix_friends_invites_unique_row",
       "breakpoints": true
+    },
+    {
+      "idx": 11,
+      "version": "7",
+      "when": 1760813576817,
+      "tag": "0011_training_type_enum",
+      "breakpoints": true
     }
   ]
 }
