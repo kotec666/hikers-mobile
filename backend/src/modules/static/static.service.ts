@@ -3,10 +3,11 @@
 	ListObjectsV2Command,
 	DeleteObjectsCommand,
 	S3Client as AWSClient,
+	GetObjectCommand,
 } from '@aws-sdk/client-s3';
 import { v4 as uuidv4 } from 'uuid';
 import { EnvService } from '../env/env.service';
-import { Injectable } from '@nestjs/common';
+import { Injectable, InternalServerErrorException } from '@nestjs/common';
 
 interface S3Config {
 	readonly bucketName: string;
@@ -17,7 +18,7 @@ interface S3Config {
 }
 
 @Injectable()
-export class S3Service {
+export class StaticService {
 	private config: S3Config;
 	private client: AWSClient;
 
@@ -100,9 +101,57 @@ export class S3Service {
 		throw Error(errorMessage);
 	}
 
-	/** Получить урл для доступа к файлу по ключу */
-	public getFileUrl(key: string): string {
-		return `${this.config.endpoint}/${this.config.bucketName}/${key}`;
+	async getFile(key: string): Promise<{
+		body: Buffer;
+		contentType: string | undefined;
+		contentLength: number | undefined;
+		originalName: string | undefined;
+		metadata: Record<string, string> | undefined;
+	}> {
+		try {
+			const command = new GetObjectCommand({
+				Bucket: this.config.bucketName,
+				Key: key,
+			});
+
+			const response = await this.client.send(command);
+
+			// Проверяем, что response.Body является потоком
+			if (!response.Body || typeof response.Body !== 'object') {
+				throw new Error('Response body is not a valid stream');
+			}
+
+			// Конвертируем поток в Buffer
+			const chunks: Buffer[] = [];
+			const stream = response.Body as NodeJS.ReadableStream;
+
+			stream.on('data', (chunk) => {
+				chunks.push(chunk);
+			});
+
+			stream.on('error', (err) => {
+				console.error('Stream error:', err);
+				throw new InternalServerErrorException('Error reading stream');
+			});
+
+			// Используем Promise для ожидания завершения потока
+			await new Promise<void>((resolve, reject) => {
+				stream.on('end', resolve);
+				stream.on('error', reject);
+			});
+
+			const body = Buffer.concat(chunks);
+
+			return {
+				body,
+				contentType: response.ContentType,
+				contentLength: response.ContentLength,
+				originalName: response.Metadata?.originalname || response.Metadata?.originalName,
+				metadata: response.Metadata,
+			};
+		} catch (error) {
+			throw new InternalServerErrorException(`S3 error: ${error.message}`);
+		}
 	}
 
 	public getFileExtension(originalName: string): string {
@@ -112,7 +161,6 @@ export class S3Service {
 		return splittedFilename[splittedFilename.length - 1];
 	}
 
-	/** Очистить бакет */
 	async clearBucket() {
 		const { bucketName } = this.config;
 
