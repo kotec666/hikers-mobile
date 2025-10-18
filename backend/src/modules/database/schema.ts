@@ -15,13 +15,14 @@ import {
 	pgEnum,
 } from 'drizzle-orm/pg-core';
 import { enumToPgEnum } from './helpers';
-import { TrainingType } from '@shared/enums';
+import { MeasuringUnit, TrainingType, UserActivity } from '@shared/enums';
 
 /**
  * ENUMS
  */
-
 export const trainingTypeEnum = pgEnum('training_type', enumToPgEnum(TrainingType));
+export const userActivityEnum = pgEnum('user_activity', enumToPgEnum(UserActivity));
+export const measuringUnitEnum = pgEnum('measuring_unit', enumToPgEnum(MeasuringUnit));
 
 /**
  * JSONB TYPES/INTERFACES
@@ -156,7 +157,7 @@ export const userAchievements = pgTable(
 // Training Types
 export const trainingTypes = pgTable('training_types', {
 	name: trainingTypeEnum().primaryKey(),
-	measuringUnit: varchar('measuring_unit', { length: 31 }).notNull(),
+	measuringUnit: measuringUnitEnum('measuring_unit').notNull(),
 	iconFilename: varchar('icon_filename', { length: 255 }).references(() => media.filename),
 });
 
@@ -168,12 +169,11 @@ export const userActivities = pgTable(
 			.notNull()
 			.references(() => users.id),
 		placeForShow: smallint('place_for_show'), // 1, 2, 3
-		type: trainingTypeEnum()
-			.notNull()
-			.references(() => trainingTypes.name),
+		name: userActivityEnum().notNull(),
+		measuringUnit: measuringUnitEnum('measuring_unit').notNull(),
 		goal: integer('goal').notNull(),
 	},
-	(table) => [primaryKey({ columns: [table.userId, table.type] })],
+	(table) => [primaryKey({ columns: [table.userId, table.name] })],
 );
 
 // Training
