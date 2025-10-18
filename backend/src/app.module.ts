@@ -14,6 +14,7 @@ import { AchievementsModule } from './modules/achievements/achievements.module';
 import { UniqueEmailValidator } from '@validation/unique-email.validator';
 import { FriendsModule } from './modules/friends/friends.module';
 import { SubscribersModule } from './modules/subscribers/subscribers.module';
+import { ActivitiesModule } from './modules/activities/activities.module';
 
 @Module({
 	imports: [
@@ -66,6 +67,7 @@ import { SubscribersModule } from './modules/subscribers/subscribers.module';
 		AchievementsModule,
 		FriendsModule,
 		SubscribersModule,
+		ActivitiesModule,
 	],
 	providers: [UniqueEmailValidator],
 })
