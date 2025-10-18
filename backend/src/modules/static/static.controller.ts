@@ -1,4 +1,4 @@
-import { Controller, Delete, Get, Param, Post } from '@nestjs/common';
+import { Controller, Delete, Get, Param, Post, Res } from '@nestjs/common';
 import { TypedFormData } from '@nestia/core';
 import { upload } from '../../common/global/multer.instance';
 import { StaticService } from './static.service';
@@ -13,8 +13,9 @@ export class StaticController {
 	 * @summary Получить файл по его ключу
 	 */
 	@Get(':key')
-	async serveStatic(@Param('key') key: string) {
-		return await this.service.getFile(key);
+	async serveStatic(@Param('key') key: string, @Res() res) {
+		const file = await this.service.getFile(key);
+		return file.pipe(res);
 	}
 
 	/**

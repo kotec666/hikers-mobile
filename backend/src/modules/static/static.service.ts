@@ -8,6 +8,7 @@
 import { v4 as uuidv4 } from 'uuid';
 import { EnvService } from '../env/env.service';
 import { Injectable, InternalServerErrorException } from '@nestjs/common';
+import * as stream from 'stream';
 
 interface S3Config {
 	readonly bucketName: string;
@@ -101,13 +102,7 @@ export class StaticService {
 		throw Error(errorMessage);
 	}
 
-	async getFile(key: string): Promise<{
-		body: Buffer;
-		contentType: string | undefined;
-		contentLength: number | undefined;
-		originalName: string | undefined;
-		metadata: Record<string, string> | undefined;
-	}> {
+	async getFile(key: string): Promise<stream.Readable> {
 		try {
 			const command = new GetObjectCommand({
 				Bucket: this.config.bucketName,
@@ -121,34 +116,7 @@ export class StaticService {
 				throw new Error('Response body is not a valid stream');
 			}
 
-			// Конвертируем поток в Buffer
-			const chunks: Buffer[] = [];
-			const stream = response.Body as NodeJS.ReadableStream;
-
-			stream.on('data', (chunk) => {
-				chunks.push(chunk);
-			});
-
-			stream.on('error', (err) => {
-				console.error('Stream error:', err);
-				throw new InternalServerErrorException('Error reading stream');
-			});
-
-			// Используем Promise для ожидания завершения потока
-			await new Promise<void>((resolve, reject) => {
-				stream.on('end', resolve);
-				stream.on('error', reject);
-			});
-
-			const body = Buffer.concat(chunks);
-
-			return {
-				body,
-				contentType: response.ContentType,
-				contentLength: response.ContentLength,
-				originalName: response.Metadata?.originalname || response.Metadata?.originalName,
-				metadata: response.Metadata,
-			};
+			return response.Body as stream.Readable;
 		} catch (error) {
 			throw new InternalServerErrorException(`S3 error: ${error.message}`);
 		}
