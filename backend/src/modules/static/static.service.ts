@@ -115,7 +115,6 @@ export class StaticService {
 			});
 
 			const response = await this.client.send(command);
-			console.log('Response:', response);
 
 			// Проверяем, что response.Body является потоком
 			if (!response.Body || typeof response.Body !== 'object') {
@@ -127,12 +126,7 @@ export class StaticService {
 			const stream = response.Body as NodeJS.ReadableStream;
 
 			stream.on('data', (chunk) => {
-				console.log('Chunk received:', chunk);
 				chunks.push(chunk);
-			});
-
-			stream.on('end', () => {
-				console.log('Stream ended');
 			});
 
 			stream.on('error', (err) => {
@@ -147,7 +141,6 @@ export class StaticService {
 			});
 
 			const body = Buffer.concat(chunks);
-			console.log('Body:', body);
 
 			return {
 				body,
