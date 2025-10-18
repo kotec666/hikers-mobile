@@ -8,4 +8,6 @@ export const IsUUID = createParamDecorator((data: string, ctx: ExecutionContext)
 	if (!validate(paramValue)) {
 		throw new BadRequestException();
 	}
+
+	return paramValue;
 });

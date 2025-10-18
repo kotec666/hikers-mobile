@@ -11,7 +11,7 @@ export class UserController {
 
 	/**
 	 * @tag User
-	 * @summary Get current user
+	 * @summary Получить текущего юзера
 	 * @security token
 	 */
 	@Get('me')
