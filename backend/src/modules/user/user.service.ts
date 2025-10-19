@@ -113,4 +113,16 @@ export class UserService {
 			throw new BadRequestException(ERRORS.ALREADY_EXISTS);
 		}
 	}
+
+	public async getAll(): Promise<UserDto.Entity[]> {
+		return await this.db.db
+			.select({
+				id: users.id,
+				name: users.name,
+				username: users.username,
+				email: users.email,
+				avatarFilename: users.avatarFilename,
+			})
+			.from(users);
+	}
 }
