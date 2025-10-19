@@ -10,7 +10,7 @@ export type UserData = Pick<UserDto.Entity, 'id'>;
 
 /**
  * Получения пользователя в контроллере.
- * @example async method(@UserData() user: UserData) {}
+ * @example async method(@User() user: UserData) {}
  * */
 export const User = createParamDecorator((data: unknown, ctx: ExecutionContext): UserData => {
 	const request = ctx.switchToHttp().getRequest();

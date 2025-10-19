@@ -71,6 +71,27 @@
       "when": 1758977740380,
       "tag": "0009_fix_default_val_claimed_percent",
       "breakpoints": true
+    },
+    {
+      "idx": 10,
+      "version": "7",
+      "when": 1760385473838,
+      "tag": "0010_fix_friends_invites_unique_row",
+      "breakpoints": true
+    },
+    {
+      "idx": 11,
+      "version": "7",
+      "when": 1760813576817,
+      "tag": "0011_training_type_enum",
+      "breakpoints": true
+    },
+    {
+      "idx": 12,
+      "version": "7",
+      "when": 1760818656304,
+      "tag": "0012_training_types_and_units_to_enums",
+      "breakpoints": true
     }
   ]
 }
