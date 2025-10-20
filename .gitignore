@@ -11,6 +11,10 @@ backend/src/shared/
 frontend/src/shared/
 mobile/shared/
 
+# Meta
+backend/drizzle/meta/*
+!backend/drizzle/meta/_journal.json
+
 # Enviroment
 *.env
 # SEO
