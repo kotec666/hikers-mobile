@@ -149,7 +149,8 @@ export const userAchievements = pgTable(
 		achievementId: uuid('achievment_id')
 			.notNull()
 			.references(() => achievements.id),
-		createdAt: timestamp('created_at').defaultNow().notNull(),
+		progress: smallint('progress').default(0).notNull(),
+		claimedAt: timestamp('claimed_at'),
 	},
 	(table) => [primaryKey({ columns: [table.userId, table.achievementId] })],
 );

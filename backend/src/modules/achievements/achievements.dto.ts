@@ -7,6 +7,8 @@
 		description: string | null;
 		/** У какого процента юзеров уже есть эта ачивка? (от 0.00 до 100.00) */
 		claimedPercent: string;
+		/** Процент выполнения ачивки (целое число от 0 до 100) */
+		progress: number | null;
 		/** Метка времени. Если null - значит ещё не получено */
 		claimedAt: Date | null;
 	};

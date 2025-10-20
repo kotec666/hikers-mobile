@@ -19,7 +19,8 @@ export class AchievementsService {
 				title: achievements.title,
 				description: achievements.description,
 				claimedPercent: achievements.claimedPercent,
-				claimedAt: userAchievements.createdAt,
+				progress: userAchievements.progress,
+				claimedAt: userAchievements.claimedAt,
 			})
 			.from(achievements)
 			.leftJoin(
@@ -37,7 +38,8 @@ export class AchievementsService {
 				title: achievements.title,
 				description: achievements.description,
 				claimedPercent: achievements.claimedPercent,
-				claimedAt: userAchievements.createdAt,
+				progress: userAchievements.progress,
+				claimedAt: userAchievements.claimedAt,
 			})
 			.from(achievements)
 			.where(eq(achievements.id, id))
@@ -65,11 +67,12 @@ export class AchievementsService {
 				title: achievements.title,
 				description: achievements.description,
 				claimedPercent: achievements.claimedPercent,
-				claimedAt: userAchievements.createdAt,
+				progress: userAchievements.progress,
+				claimedAt: userAchievements.claimedAt,
 			})
 			.from(userAchievements)
 			.where(eq(userAchievements.userId, userId))
-			.rightJoin(achievements, eq(achievements.id, userAchievements.achievementId));
+			.innerJoin(achievements, eq(achievements.id, userAchievements.achievementId));
 	}
 
 	public async getUnclaimed(userId: string): Promise<AchievementDto.Entity[]> {
@@ -84,6 +87,7 @@ export class AchievementsService {
 				title: achievements.title,
 				description: achievements.description,
 				claimedPercent: achievements.claimedPercent,
+				progress: sql<null>`NULL`,
 				claimedAt: sql<null>`NULL`,
 			})
 			.from(achievements)

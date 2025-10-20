@@ -92,6 +92,13 @@
       "when": 1760818656304,
       "tag": "0012_training_types_and_units_to_enums",
       "breakpoints": true
+    },
+    {
+      "idx": 13,
+      "version": "7",
+      "when": 1760988994522,
+      "tag": "0013_fix_achievements_progress",
+      "breakpoints": true
     }
   ]
 }
