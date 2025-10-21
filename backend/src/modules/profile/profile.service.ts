@@ -7,6 +7,7 @@ import { AchievementsService } from '../achievements/achievements.service';
 import { ActivitiesService } from '../activities/activities.service';
 
 const PROFILE_TOP_ACTIVITIES_COUNT = 3;
+const PROFILE_TOP_ACHIEVEMENTS_COUNT = 3;
 
 @Injectable()
 export class ProfileService {
@@ -26,7 +27,7 @@ export class ProfileService {
 
 		const friends = await this.friends.getFriends(userId);
 
-		const achievements = await this.achievements.getClaimed(userId);
+		const achievements = await this.achievements.getClaimed(userId, PROFILE_TOP_ACHIEVEMENTS_COUNT);
 		const activities = await this.activities.getAll(userId, PROFILE_TOP_ACTIVITIES_COUNT);
 		const posts = [];
 

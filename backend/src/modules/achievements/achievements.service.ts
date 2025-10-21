@@ -58,10 +58,10 @@ export class AchievementsService {
 		return achievement;
 	}
 
-	public async getClaimed(userId: string): Promise<AchievementDto.Entity[]> {
+	public async getClaimed(userId: string, limit?: number): Promise<AchievementDto.Entity[]> {
 		// @TODO подвязать систему друзей. Аля: есть у Васи, Коли, Пети
 
-		return await this.db.db
+		const query = this.db.db
 			.select({
 				id: achievements.id,
 				iconFilename: achievements.iconFilename,
@@ -75,7 +75,14 @@ export class AchievementsService {
 			})
 			.from(userAchievements)
 			.where(eq(userAchievements.userId, userId))
-			.innerJoin(achievements, eq(achievements.id, userAchievements.achievementId));
+			.innerJoin(achievements, eq(achievements.id, userAchievements.achievementId))
+			.$dynamic();
+
+		if (typeof limit === 'number') {
+			query.limit(limit);
+		}
+
+		return query;
 	}
 
 	public async getUnclaimed(userId: string): Promise<AchievementDto.Entity[]> {
