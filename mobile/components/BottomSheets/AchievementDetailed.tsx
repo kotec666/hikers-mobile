@@ -1,11 +1,11 @@
 import React from 'react'
 import { Image, Text, View, StyleSheet } from 'react-native'
-import AchievementsMedalSvg from '@/components/svg/AchievementsMedalSvg'
 import { fontFamily } from '@/constants/Fonts'
 import { IAchievement } from '@/api/achievements'
 import { PATH_TO_IMAGE } from '@/constants/PATH_TO_FILES'
 import { hexToRgba } from '@/helpers/hexToRgba'
 import { LinearGradient } from 'expo-linear-gradient'
+// import AchievementsMedalSvg from '@/components/svg/AchievementsMedalSvg'
 
 interface IProps {
 	achievement: IAchievement

@@ -19,7 +19,7 @@ import { useState } from 'react'
 import Checkbox from '@/components/ui/Checkbox'
 import { LinkCustom } from '@/components/ui/LinkCustom'
 import { useAuthStore } from '@/store/authStore'
-import {getItem, setItem} from '@/store/storage'
+import { getItem, setItem } from '@/store/storage'
 import { useLocalSearchParams } from 'expo-router'
 import { Controller, useForm } from 'react-hook-form'
 import { useErrorMessage } from '@/hooks/useErrorMessage'
@@ -28,6 +28,7 @@ import { loginUser, registrationUser } from '@/api/auth'
 import { cn } from '@/helpers/cn'
 import { lengths } from '@shared/lengths'
 import { useToast } from '@/hooks/useToast'
+import * as Haptics from 'expo-haptics'
 
 export enum AUTH_MODE {
 	AUTH = 'auth',
@@ -49,7 +50,6 @@ const AuthPage = () => {
 		formState: { errors }
 	} = useForm<IAuthFormState>()
 	const { ErrorMessages } = useErrorMessage()
-	const { error: sendError } = useToast()
 
 	const [data, setData] = useState<{
 		mode: AUTH_MODE
@@ -75,17 +75,18 @@ const AuthPage = () => {
 		if (data.mode === AUTH_MODE.AUTH) {
 			try {
 				const loginData = await loginUser({ email: authFormState.email, password: authFormState.password })
-                const {token, ...restParameters} = loginData
+				const { token, ...restParameters } = loginData
 
 				login(loginData.token, restParameters)
-                if(!getItem('isAccountExist')?.accountExist) {
-                    setItem('isAccountExist', { accountExist: true })
-                }
+				if (!getItem('isAccountExist')?.accountExist) {
+					setItem('isAccountExist', { accountExist: true })
+				}
 			} catch (e) {
 				const errors = await e.response.json()
 				console.log(errors)
 				const formattedErrors = getFieldsErrors(errors)
 				setData((s) => ({ ...s, errors: formattedErrors }))
+				Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error)
 				// Alert.alert('Ошибка', 'Неверные учетные данные')
 			} finally {
 				setData((s) => ({ ...s, isLoading: false }))
@@ -95,7 +96,7 @@ const AuthPage = () => {
 		if (data.mode === AUTH_MODE.REGISTRATION) {
 			try {
 				const regData = await registrationUser({ email: authFormState.email, password: authFormState.password })
-                const {token, ...restParameters} = regData
+				const { token, ...restParameters } = regData
 
 				login(regData.token, restParameters)
 				setItem('isAccountExist', { accountExist: true })
@@ -105,6 +106,7 @@ const AuthPage = () => {
 				console.log(JSON.stringify(errors))
 				const formattedErrors = getFieldsErrors(errors)
 				setData((s) => ({ ...s, errors: formattedErrors }))
+				Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error)
 				// Alert.alert('Ошибка', 'Неверные учетные данные')
 			} finally {
 				setData((s) => ({ ...s, isLoading: false }))

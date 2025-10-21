@@ -78,7 +78,7 @@ const AchievementsPage = () => {
 									<AchievementsListItem
 										key={achievement.id}
 										id={achievement.id}
-										progress={+achievement.claimedPercent}
+										progress={achievement.progress}
 										title={achievement.title}
 										colorHex={achievement.colorHex}
 										iconFilename={achievement.iconFilename}
@@ -94,7 +94,7 @@ const AchievementsPage = () => {
 									<AchievementsListItem
 										key={achievement.id}
 										id={achievement.id}
-										progress={+achievement.claimedPercent}
+										progress={achievement.progress}
 										title={achievement.title}
 										colorHex={achievement.colorHex}
 										iconFilename={achievement.iconFilename}

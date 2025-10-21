@@ -6,7 +6,8 @@ export interface IAchievement {
 	colorHex: null | string
 	title: string
 	description: null | string
-	claimedPercent: string
+	claimedPercent: string // % от общего числа пользователей у кого есть эта ачивка
+	progress: number // % получения ачивки
 	claimedAt: null | string
 }
 

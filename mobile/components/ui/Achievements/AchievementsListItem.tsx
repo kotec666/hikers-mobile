@@ -1,11 +1,11 @@
 import React from 'react'
 import { View, Text, StyleSheet, ColorValue, Image, TouchableOpacity } from 'react-native'
-import AchievementsMedalSvg from '@/components/svg/AchievementsMedalSvg'
 import { fontFamily } from '@/constants/Fonts'
 import { LinearGradient } from 'expo-linear-gradient'
 import { cn } from '@/helpers/cn'
 import { hexToRgba } from '@/helpers/hexToRgba'
 import { PATH_TO_IMAGE } from '@/constants/PATH_TO_FILES'
+// import AchievementsMedalSvg from '@/components/svg/AchievementsMedalSvg'
 
 interface AchievementsListItemProps {
 	progress?: number
