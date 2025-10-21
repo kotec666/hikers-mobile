@@ -1,8 +1,5 @@
-import { Controller, Delete, Get, Param, Post, Res } from '@nestjs/common';
-import { TypedFormData } from '@nestia/core';
-import { upload } from '../../common/global/multer.instance';
+import { Controller, Delete, Get, Param, Res } from '@nestjs/common';
 import { StaticService } from './static.service';
-import { StaticDto } from './static.dto';
 
 @Controller('static')
 export class StaticController {
@@ -16,15 +13,6 @@ export class StaticController {
 	async serveStatic(@Param('key') key: string, @Res() res) {
 		const file = await this.service.getFile(key);
 		return file.pipe(res);
-	}
-
-	/**
-	 * @tag Static
-	 * @summary Загрузить файл(-ы)
-	 */
-	@Post('files')
-	async uploadFile(@TypedFormData.Body(() => upload) body: { files: File[] }): Promise<StaticDto.UploadedFiles> {
-		return this.service.uploadFiles(body.files);
 	}
 
 	/**

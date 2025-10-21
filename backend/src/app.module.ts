@@ -6,7 +6,7 @@ import { DatabaseModule } from './modules/database/database.module';
 import { defaultEnv } from './modules/env/env.validation';
 import { EnvService } from './modules/env/env.service';
 import { EnvModule } from './modules/env/env.module';
-import { S3Module } from './modules/static/static.module';
+import { StaticModule } from './modules/static/static.module';
 import { TokenModule } from './modules/token/token.module';
 import { AuthModule } from './modules/auth/auth.module';
 import { UserModule } from './modules/user/user.module';
@@ -61,7 +61,7 @@ import { ProfileModule } from './modules/profile/profile.module';
 			},
 		}),
 		DatabaseModule,
-		S3Module,
+		StaticModule,
 		TokenModule,
 		AuthModule,
 		UserModule,

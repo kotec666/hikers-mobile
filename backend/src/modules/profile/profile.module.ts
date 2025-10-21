@@ -6,11 +6,12 @@ import { SubscribersModule } from '../subscribers/subscribers.module';
 import { FriendsModule } from '../friends/friends.module';
 import { AchievementsModule } from '../achievements/achievements.module';
 import { ActivitiesModule } from '../activities/activities.module';
+import { StaticModule } from '../static/static.module';
 
 @Module({
 	controllers: [ProfileController],
 	exports: [],
-	imports: [UserModule, SubscribersModule, FriendsModule, AchievementsModule, ActivitiesModule],
+	imports: [UserModule, SubscribersModule, FriendsModule, AchievementsModule, ActivitiesModule, StaticModule],
 	providers: [ProfileService],
 })
 export class ProfileModule {}

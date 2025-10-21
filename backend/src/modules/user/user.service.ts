@@ -33,6 +33,21 @@ export class UserService {
 		return user;
 	}
 
+	public async updateUser(id: string, dto: Partial<Omit<UserDto.Entity, 'id'>>): Promise<UserDto.Entity> {
+		const [user] = await this.db.db.update(users).set(dto).returning({
+			id: users.id,
+			name: users.name,
+			username: users.username,
+			email: users.email,
+			avatarFilename: users.avatarFilename,
+		});
+		if (!user) {
+			throw new NotFoundException(ERRORS.NOT_FOUND);
+		}
+
+		return user;
+	}
+
 	public async getUserByEmailAndPassword(dto: UserDto.Login): Promise<UserDto.Entity> {
 		const [user] = await this.db.db
 			.select({

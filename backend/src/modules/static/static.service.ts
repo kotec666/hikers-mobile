@@ -9,6 +9,8 @@ import { v4 as uuidv4 } from 'uuid';
 import { EnvService } from '../env/env.service';
 import { Injectable, InternalServerErrorException } from '@nestjs/common';
 import * as stream from 'stream';
+import { DatabaseService } from '../database/database.service';
+import { media } from '../database/schema';
 
 interface S3Config {
 	readonly bucketName: string;
@@ -23,7 +25,10 @@ export class StaticService {
 	private config: S3Config;
 	private client: AWSClient;
 
-	constructor(envService: EnvService) {
+	constructor(
+		envService: EnvService,
+		private readonly db: DatabaseService,
+	) {
 		this.config = {
 			bucketName: envService.get('S3_BUCKET_NAME'),
 			region: envService.get('S3_REGION'),
@@ -46,10 +51,10 @@ export class StaticService {
 	/** Загрузить несколько файлов в хранилище.
 	 * @returns мапа вида { старое_имя_файла: имя_файла_из_хранилища }
 	 */
-	async uploadFiles(files: File[]): Promise<Record<string, string>> {
+	async uploadFiles(files: Express.Multer.File[]): Promise<Record<string, string>> {
 		const keys: Record<string, string> = {};
 		for (const file of files) {
-			keys[file.name] = await this.uploadFile(file.name, file.type, await file.arrayBuffer());
+			keys[file.originalname] = await this.uploadFile(file);
 		}
 
 		return keys;
@@ -62,29 +67,27 @@ export class StaticService {
 	 *
 	 * @returns ключ, по которому сохранён файл в хранилище
 	 */
-	async uploadFile(
-		originalName: string,
-		contentType: string = 'image/jpeg',
-		arrayBuffer: ArrayBuffer,
-	): Promise<string> {
+	async uploadFile(file: Express.Multer.File): Promise<string> {
+		const bufferOriginalName = Buffer.from(file.originalname).toString('base64');
 		const maxRetries = 3;
+
 		let attempt = 0;
 		let errorMessage = '';
 		for (; attempt < maxRetries; attempt++) {
 			try {
-				const fileExtension = this.getFileExtension(originalName);
+				const fileExtension = this.getFileExtension(file.originalname);
 				const key = `${uuidv4()}.${fileExtension}`;
 
 				const uploadParams = {
 					Bucket: this.config.bucketName,
 					Key: key,
-					Body: Buffer.from(arrayBuffer),
-					ContentType: contentType,
+					Body: Buffer.from(file.buffer),
+					ContentType: file.mimetype,
 					// ACL: isPublic ? 'public-read' : 'private',
 
 					Metadata: {
-						originalName: originalName,
-						mimeType: contentType,
+						originalName: bufferOriginalName,
+						mimeType: file.mimetype,
 						extension: fileExtension,
 					},
 				};
@@ -92,6 +95,11 @@ export class StaticService {
 				const command = new PutObjectCommand(uploadParams);
 				await this.client.send(command);
 
+				await this.db.db.insert(media).values({
+					filename: key,
+					originalName: bufferOriginalName,
+					fileType: file.mimetype,
+				});
 				return key;
 			} catch (error: any) {
 				console.error(`Error uploading file to S3:`, String(error));
@@ -117,6 +125,21 @@ export class StaticService {
 			}
 
 			return response.Body as stream.Readable;
+		} catch (error) {
+			throw new InternalServerErrorException(`S3 error: ${error.message}`);
+		}
+	}
+
+	async deleteFile(key: string): Promise<void> {
+		try {
+			const command = new DeleteObjectsCommand({
+				Bucket: this.config.bucketName,
+				Delete: {
+					Objects: [{ Key: key }],
+				},
+			});
+
+			await this.client.send(command);
 		} catch (error) {
 			throw new InternalServerErrorException(`S3 error: ${error.message}`);
 		}

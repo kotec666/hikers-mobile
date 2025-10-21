@@ -1,10 +1,12 @@
-﻿import { Injectable } from '@nestjs/common';
+﻿import { BadRequestException, Injectable } from '@nestjs/common';
 import { ProfileDto } from './profile.dto';
 import { UserService } from '../user/user.service';
 import { SubscribersService } from '../subscribers/subscribers.service';
 import { FriendsService } from '../friends/friends.service';
 import { AchievementsService } from '../achievements/achievements.service';
 import { ActivitiesService } from '../activities/activities.service';
+import { StaticService } from '../static/static.service';
+import { CommonDto } from 'src/common/dto/common.dto';
 
 const PROFILE_TOP_ACTIVITIES_COUNT = 3;
 const PROFILE_TOP_ACHIEVEMENTS_COUNT = 3;
@@ -17,6 +19,7 @@ export class ProfileService {
 		private readonly friends: FriendsService,
 		private readonly achievements: AchievementsService,
 		private readonly activities: ActivitiesService,
+		private readonly files: StaticService,
 	) {}
 
 	public async getMe(userId: string): Promise<ProfileDto.Entity> {
@@ -40,5 +43,33 @@ export class ProfileService {
 			activities,
 			posts,
 		};
+	}
+
+	public async edit(userId: string, dto: ProfileDto.Edit): Promise<CommonDto.BooleanResponse> {
+		if (Object.values(dto).filter((val) => typeof val !== 'undefined').length === 0) {
+			throw new BadRequestException();
+		}
+
+		const user = await this.users.getUser(userId);
+
+		let avatarFilename: string | null | undefined = undefined;
+		if (typeof dto.avatar !== 'undefined') {
+			// Не храним историю аватаров
+			if (user.avatarFilename) {
+				await this.files.deleteFile(user.avatarFilename);
+				avatarFilename = null;
+			}
+
+			if (dto.avatar) {
+				avatarFilename = await this.files.uploadFile(dto.avatar);
+			}
+		}
+
+		await this.users.updateUser(userId, {
+			name: dto.name,
+			username: dto.username,
+			avatarFilename,
+		});
+		return { success: true };
 	}
 }
