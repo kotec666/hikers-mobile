@@ -99,6 +99,13 @@
       "when": 1760988994522,
       "tag": "0013_fix_achievements_progress",
       "breakpoints": true
+    },
+    {
+      "idx": 14,
+      "version": "7",
+      "when": 1761072091029,
+      "tag": "0014_achievements_place_for_show",
+      "breakpoints": true
     }
   ]
 }

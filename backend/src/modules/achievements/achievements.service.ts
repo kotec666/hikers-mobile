@@ -20,6 +20,7 @@ export class AchievementsService {
 				description: achievements.description,
 				claimedPercent: achievements.claimedPercent,
 				progress: userAchievements.progress,
+				place: userAchievements.placeForShow,
 				claimedAt: userAchievements.claimedAt,
 			})
 			.from(achievements)
@@ -39,6 +40,7 @@ export class AchievementsService {
 				description: achievements.description,
 				claimedPercent: achievements.claimedPercent,
 				progress: userAchievements.progress,
+				place: userAchievements.placeForShow,
 				claimedAt: userAchievements.claimedAt,
 			})
 			.from(achievements)
@@ -68,6 +70,7 @@ export class AchievementsService {
 				description: achievements.description,
 				claimedPercent: achievements.claimedPercent,
 				progress: userAchievements.progress,
+				place: userAchievements.placeForShow,
 				claimedAt: userAchievements.claimedAt,
 			})
 			.from(userAchievements)
@@ -88,6 +91,7 @@ export class AchievementsService {
 				description: achievements.description,
 				claimedPercent: achievements.claimedPercent,
 				progress: sql<null>`NULL`,
+				place: sql<null>`NULL`,
 				claimedAt: sql<null>`NULL`,
 			})
 			.from(achievements)

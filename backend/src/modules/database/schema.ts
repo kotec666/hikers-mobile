@@ -149,6 +149,7 @@ export const userAchievements = pgTable(
 		achievementId: uuid('achievment_id')
 			.notNull()
 			.references(() => achievements.id),
+		placeForShow: smallint('place_for_show'), // 1, 2, 3
 		progress: smallint('progress').default(0).notNull(),
 		claimedAt: timestamp('claimed_at'),
 	},
