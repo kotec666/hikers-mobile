@@ -8,5 +8,13 @@ export const lengths = {
 			min: 5,
 			max: 124,
 		},
+		username: {
+			min: 3,
+			max: 63,
+		},
+		name: {
+			min: 3,
+			max: 127,
+		},
 	},
 };

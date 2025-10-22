@@ -3,8 +3,8 @@ import { ProfileService } from './profile.service';
 import { UserInterceptor } from 'src/common/interceptors/user.interceptor';
 import { User, UserData } from 'src/common/decorators/user.decorator';
 import { ProfileDto } from './profile.dto';
-import { CommonDto } from 'src/common/dto/common.dto';
 import { FileInterceptor } from '@nestjs/platform-express';
+
 @Controller('profile')
 @UseInterceptors(UserInterceptor)
 export class ProfileController {
@@ -31,7 +31,7 @@ export class ProfileController {
 		@User() user: UserData,
 		@Body() body: ProfileDto.Edit,
 		@UploadedFile() avatar?: Express.Multer.File,
-	): Promise<CommonDto.BooleanResponse> {
+	): Promise<ProfileDto.Entity> {
 		return await this.service.edit(user.id, { ...body, avatar: body.avatar === null ? body.avatar : avatar });
 	}
 }

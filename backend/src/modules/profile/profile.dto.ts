@@ -6,6 +6,8 @@ import { SubscriberDto, SubscribtionDto } from '../subscribers/subscribers.dto';
 import { UserDto } from '../user/user.dto';
 import { lengths } from '@shared/lengths';
 import { ERRORS } from '@shared/errors';
+import { UserActivity } from '@shared/enums';
+import { isUserActivityEnumValue, isUUID, TypedArray } from '@validation/decorators';
 
 export namespace ProfileDto {
 	export type Entity = {
@@ -27,13 +29,36 @@ export namespace ProfileDto {
 		@Length(lengths.user.name.min, lengths.user.name.max, { message: `_name:${ERRORS.INVALID_LENGTH}` })
 		name?: string;
 
+		/**
+		 * @summary Смена аватара
+		 * @description Изменение аватарки работает так:
+		 * Если хотим заменить аву - передаем файл в это поле.
+		 * Если хотим очистить аву - передаем null в это поле.
+		 * Если ава не менялась - само собой не передаем это поле.
+		 */
 		@IsOptional()
 		avatar?: Express.Multer.File | null;
 
+		/**
+		 * @summary Активности на показ
+		 * @description Выставление активностей на показ.
+		 * Ближе к началу списка - первее в топе.
+		 * Ожидает массив значений из енама активностей (см. шаред).
+		 * Сколько элементов в массиве - столько и мест в топе будет сохранено
+		 */
 		@IsOptional()
-		activities?: string; //UserActivity[];
+		@TypedArray(isUserActivityEnumValue)
+		activities?: UserActivity[];
 
+		/**
+		 * @summary Ачивки на показ
+		 * @description Выставление ачивок на показ.
+		 * Ближе к началу списка - первее в топе.
+		 * Ожидает массив id ачивок.
+		 * Сколько элементов в массиве - столько и мест в топе будет сохранено
+		 */
 		@IsOptional()
-		achievements?: string; //string[];
+		@TypedArray(isUUID)
+		achievements?: string[];
 	}
 }

@@ -6,7 +6,6 @@ import { FriendsService } from '../friends/friends.service';
 import { AchievementsService } from '../achievements/achievements.service';
 import { ActivitiesService } from '../activities/activities.service';
 import { StaticService } from '../static/static.service';
-import { CommonDto } from 'src/common/dto/common.dto';
 
 const PROFILE_TOP_ACTIVITIES_COUNT = 3;
 const PROFILE_TOP_ACHIEVEMENTS_COUNT = 3;
@@ -45,7 +44,7 @@ export class ProfileService {
 		};
 	}
 
-	public async edit(userId: string, dto: ProfileDto.Edit): Promise<CommonDto.BooleanResponse> {
+	public async edit(userId: string, dto: ProfileDto.Edit): Promise<ProfileDto.Entity> {
 		if (Object.values(dto).filter((val) => typeof val !== 'undefined').length === 0) {
 			throw new BadRequestException();
 		}
@@ -65,11 +64,22 @@ export class ProfileService {
 			}
 		}
 
-		await this.users.updateUser(userId, {
+		const userDto = {
 			name: dto.name,
 			username: dto.username,
 			avatarFilename,
-		});
-		return { success: true };
+		};
+		if (Object.values(userDto).filter((val) => !!val).length > 0) {
+			await this.users.updateUser(userId, userDto);
+		}
+
+		if (dto.achievements) {
+			await this.achievements.updatePlaces(userId, dto.achievements);
+		}
+		if (dto.activities) {
+			await this.activities.updatePlaces(userId, dto.activities);
+		}
+
+		return this.getMe(userId);
 	}
 }
