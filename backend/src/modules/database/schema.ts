@@ -12,7 +12,17 @@ import {
 	index,
 	uniqueIndex,
 	jsonb,
+	pgEnum,
 } from 'drizzle-orm/pg-core';
+import { enumToPgEnum } from './helpers';
+import { MeasuringUnit, TrainingType, UserActivity } from '@shared/enums';
+
+/**
+ * ENUMS
+ */
+export const trainingTypeEnum = pgEnum('training_type', enumToPgEnum(TrainingType));
+export const userActivityEnum = pgEnum('user_activity', enumToPgEnum(UserActivity));
+export const measuringUnitEnum = pgEnum('measuring_unit', enumToPgEnum(MeasuringUnit));
 
 /**
  * JSONB TYPES/INTERFACES
@@ -105,15 +115,19 @@ export const userFriends = pgTable(
 );
 
 // User Friends Invites
-export const userFriendsInvites = pgTable('user_friends_invites', {
-	id: uuid('id').primaryKey().defaultRandom(),
-	userId: uuid('user_id')
-		.notNull()
-		.references(() => users.id),
-	invitedUserId: uuid('invited_user_id')
-		.notNull()
-		.references(() => users.id),
-});
+export const userFriendsInvites = pgTable(
+	'user_friends_invites',
+	{
+		id: uuid('id').primaryKey().defaultRandom(),
+		userId: uuid('user_id')
+			.notNull()
+			.references(() => users.id),
+		invitedUserId: uuid('invited_user_id')
+			.notNull()
+			.references(() => users.id),
+	},
+	(table) => [uniqueIndex('friends_invites_idx').on(table.userId, table.invitedUserId)],
+);
 
 // Achievements
 export const achievements = pgTable('achievements', {
@@ -135,15 +149,17 @@ export const userAchievements = pgTable(
 		achievementId: uuid('achievment_id')
 			.notNull()
 			.references(() => achievements.id),
-		createdAt: timestamp('created_at').defaultNow().notNull(),
+		placeForShow: smallint('place_for_show'), // 1, 2, 3
+		progress: smallint('progress').default(0).notNull(),
+		claimedAt: timestamp('claimed_at'),
 	},
 	(table) => [primaryKey({ columns: [table.userId, table.achievementId] })],
 );
 
 // Training Types
 export const trainingTypes = pgTable('training_types', {
-	name: varchar('name', { length: 127 }).primaryKey(),
-	measuringUnit: varchar('measuring_unit', { length: 31 }).notNull(),
+	name: trainingTypeEnum().primaryKey(),
+	measuringUnit: measuringUnitEnum('measuring_unit').notNull(),
 	iconFilename: varchar('icon_filename', { length: 255 }).references(() => media.filename),
 });
 
@@ -155,12 +171,11 @@ export const userActivities = pgTable(
 			.notNull()
 			.references(() => users.id),
 		placeForShow: smallint('place_for_show'), // 1, 2, 3
-		type: varchar('type')
-			.notNull()
-			.references(() => trainingTypes.name),
+		name: userActivityEnum().notNull(),
+		measuringUnit: measuringUnitEnum('measuring_unit').notNull(),
 		goal: integer('goal').notNull(),
 	},
-	(table) => [primaryKey({ columns: [table.userId, table.type] })],
+	(table) => [primaryKey({ columns: [table.userId, table.name] })],
 );
 
 // Training
@@ -169,7 +184,7 @@ export const training = pgTable('training', {
 	userCreatorId: uuid('user_creator_id')
 		.notNull()
 		.references(() => users.id),
-	type: varchar('type')
+	type: trainingTypeEnum()
 		.notNull()
 		.references(() => trainingTypes.name),
 	createdAt: timestamp('created_at').defaultNow().notNull(),

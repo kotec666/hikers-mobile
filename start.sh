@@ -1,5 +1,8 @@
 ﻿set -e
 
+echo Очищаемся
+docker system prune -a --volumes -f
+
 echo Останавливаем контейнер
 docker-compose down || true
 

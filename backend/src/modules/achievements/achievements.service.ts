@@ -3,10 +3,37 @@ import { DatabaseService } from '../database/database.service';
 import { AchievementDto } from './achievements.dto';
 import { achievements, userAchievements } from '../database/schema';
 import { eq, notInArray, sql, and } from 'drizzle-orm';
+import { asc } from '../database/extensions';
 
 @Injectable()
 export class AchievementsService {
 	constructor(private readonly db: DatabaseService) {}
+
+	/** Обновление расстановки мест ачивок. Ближе к началу списка - выше в топе, остальные ачивки обнуляют место */
+	public async updatePlaces(userId: string, ids: string[]): Promise<void> {
+		// Сначала сбрасываем все другие места в топе
+		await this.db.db
+			.update(userAchievements)
+			.set({
+				placeForShow: null,
+			})
+			.where(eq(userAchievements.userId, userId));
+
+		// Потом перезаписываем места в топе
+		let place = 1;
+		for (const id of ids) {
+			const [exists] = await this.db.db
+				.update(userAchievements)
+				.set({
+					placeForShow: place,
+				})
+				.where(and(eq(userAchievements.achievementId, id), eq(userAchievements.userId, userId)))
+				.returning({ achievementId: userAchievements.achievementId });
+
+			// Не инкрементируем если ачивки у юзера нет
+			if (exists) place++;
+		}
+	}
 
 	public async getAll(userId: string): Promise<AchievementDto.Entity[]> {
 		// @TODO пагинация
@@ -19,7 +46,9 @@ export class AchievementsService {
 				title: achievements.title,
 				description: achievements.description,
 				claimedPercent: achievements.claimedPercent,
-				claimedAt: userAchievements.createdAt,
+				progress: userAchievements.progress,
+				place: userAchievements.placeForShow,
+				claimedAt: userAchievements.claimedAt,
 			})
 			.from(achievements)
 			.leftJoin(
@@ -37,7 +66,9 @@ export class AchievementsService {
 				title: achievements.title,
 				description: achievements.description,
 				claimedPercent: achievements.claimedPercent,
-				claimedAt: userAchievements.createdAt,
+				progress: userAchievements.progress,
+				place: userAchievements.placeForShow,
+				claimedAt: userAchievements.claimedAt,
 			})
 			.from(achievements)
 			.where(eq(achievements.id, id))
@@ -54,10 +85,10 @@ export class AchievementsService {
 		return achievement;
 	}
 
-	public async getClaimed(userId: string): Promise<AchievementDto.Entity[]> {
+	public async getClaimed(userId: string, limit?: number): Promise<AchievementDto.Entity[]> {
 		// @TODO подвязать систему друзей. Аля: есть у Васи, Коли, Пети
 
-		return await this.db.db
+		const query = this.db.db
 			.select({
 				id: achievements.id,
 				iconFilename: achievements.iconFilename,
@@ -65,11 +96,20 @@ export class AchievementsService {
 				title: achievements.title,
 				description: achievements.description,
 				claimedPercent: achievements.claimedPercent,
-				claimedAt: userAchievements.createdAt,
+				progress: userAchievements.progress,
+				place: userAchievements.placeForShow,
+				claimedAt: userAchievements.claimedAt,
 			})
 			.from(userAchievements)
 			.where(eq(userAchievements.userId, userId))
-			.rightJoin(achievements, eq(achievements.id, userAchievements.achievementId));
+			.innerJoin(achievements, eq(achievements.id, userAchievements.achievementId))
+			.$dynamic();
+
+		if (typeof limit === 'number') {
+			query.limit(limit).orderBy(asc(userAchievements.placeForShow, 'last'));
+		}
+
+		return query;
 	}
 
 	public async getUnclaimed(userId: string): Promise<AchievementDto.Entity[]> {
@@ -84,6 +124,8 @@ export class AchievementsService {
 				title: achievements.title,
 				description: achievements.description,
 				claimedPercent: achievements.claimedPercent,
+				progress: sql<null>`NULL`,
+				place: sql<null>`NULL`,
 				claimedAt: sql<null>`NULL`,
 			})
 			.from(achievements)

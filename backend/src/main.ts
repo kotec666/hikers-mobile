@@ -14,7 +14,13 @@ async function bootstrap() {
 		logger: false,
 	});
 
-	app.useGlobalPipes(new ValidationPipe());
+	app.useGlobalPipes(
+		new ValidationPipe({
+			whitelist: true,
+			forbidNonWhitelisted: true,
+			transform: true,
+		}),
+	);
 	app.useGlobalFilters(new HttpExceptionFilter());
 
 	app.useLogger(app.get(Logger));

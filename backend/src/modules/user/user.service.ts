@@ -1,4 +1,4 @@
-import { BadRequestException, Injectable, NotFoundException, UnauthorizedException } from '@nestjs/common';
+import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common';
 import { DatabaseService } from '../database/database.service';
 import { UserDto } from './user.dto';
 import { users } from '../database/schema';
@@ -9,22 +9,6 @@ import { ERRORS } from '@shared/errors';
 @Injectable()
 export class UserService {
 	constructor(private readonly db: DatabaseService) {}
-
-	public async checkLogin(dto: UserDto.Login): Promise<void> {
-		const [user] = await this.db.db
-			.select({ password: users.password })
-			.from(users)
-			.where(eq(users.email, dto.email))
-			.limit(1);
-		if (!user) {
-			throw new NotFoundException();
-		}
-
-		const isPasswordCorrect = await comparePassword(dto.password, user.password);
-		if (!isPasswordCorrect) {
-			throw new UnauthorizedException();
-		}
-	}
 
 	public async createUser(dto: UserDto.Registration): Promise<UserDto.Entity> {
 		const hashedPassword = await hashPassword(dto.password);
@@ -43,10 +27,56 @@ export class UserService {
 				avatarFilename: users.avatarFilename,
 			});
 		if (!user) {
-			throw new NotFoundException();
+			throw new NotFoundException(ERRORS.NOT_FOUND);
 		}
 
 		return user;
+	}
+
+	public async updateUser(id: string, dto: Partial<Omit<UserDto.Entity, 'id'>>): Promise<UserDto.Entity> {
+		const [user] = await this.db.db.update(users).set(dto).returning({
+			id: users.id,
+			name: users.name,
+			username: users.username,
+			email: users.email,
+			avatarFilename: users.avatarFilename,
+		});
+		if (!user) {
+			throw new NotFoundException(ERRORS.NOT_FOUND);
+		}
+
+		return user;
+	}
+
+	public async getUserByEmailAndPassword(dto: UserDto.Login): Promise<UserDto.Entity> {
+		const [user] = await this.db.db
+			.select({
+				id: users.id,
+				name: users.name,
+				username: users.username,
+				email: users.email,
+				avatarFilename: users.avatarFilename,
+				password: users.password,
+			})
+			.from(users)
+			.where(eq(users.email, dto.email))
+			.limit(1);
+		if (!user) {
+			throw new NotFoundException(ERRORS.NOT_FOUND);
+		}
+
+		const isPasswordCorrect = await comparePassword(dto.password, user.password);
+		if (!isPasswordCorrect) {
+			throw new BadRequestException(ERRORS.MISMATCH);
+		}
+
+		return {
+			id: user.id,
+			name: user.name,
+			username: user.username,
+			email: user.email,
+			avatarFilename: user.avatarFilename,
+		};
 	}
 
 	public async getUserByEmail(email: string): Promise<UserDto.Entity> {
@@ -62,7 +92,7 @@ export class UserService {
 			.where(eq(users.email, email))
 			.limit(1);
 		if (!user) {
-			throw new NotFoundException();
+			throw new NotFoundException(ERRORS.NOT_FOUND);
 		}
 
 		return user;
@@ -81,7 +111,7 @@ export class UserService {
 			.where(eq(users.id, id))
 			.limit(1);
 		if (!user) {
-			throw new NotFoundException();
+			throw new NotFoundException(ERRORS.NOT_FOUND);
 		}
 
 		return user;
@@ -97,5 +127,17 @@ export class UserService {
 		if (existingUser) {
 			throw new BadRequestException(ERRORS.ALREADY_EXISTS);
 		}
+	}
+
+	public async getAll(): Promise<UserDto.Entity[]> {
+		return await this.db.db
+			.select({
+				id: users.id,
+				name: users.name,
+				username: users.username,
+				email: users.email,
+				avatarFilename: users.avatarFilename,
+			})
+			.from(users);
 	}
 }
