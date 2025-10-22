@@ -2,7 +2,9 @@
 import { DatabaseService } from '../database/database.service';
 import { ActivitiyDto } from './activities.dto';
 import { userActivities } from '../database/schema';
-import { asc, eq } from 'drizzle-orm';
+import { and, eq } from 'drizzle-orm';
+import { UserActivity } from '@shared/enums';
+import { asc } from '../database/extensions';
 
 @Injectable()
 export class ActivitiesService {
@@ -10,7 +12,32 @@ export class ActivitiesService {
 
 	// @TODO создание своих активностей?
 	// public async create(userId: string) {}
-	// public async setPlaceForShow(userId: string, trainingTypeId: string) {}
+
+	/** Обновление расстановки мест активностей. Ближе к началу списка - выше в топе, остальные активности обнуляют место */
+	public async updatePlaces(userId: string, names: UserActivity[]): Promise<void> {
+		// Сначала сбрасываем все другие места в топе
+		await this.db.db
+			.update(userActivities)
+			.set({
+				placeForShow: null,
+			})
+			.where(eq(userActivities.userId, userId));
+
+		// Потом перезаписываем места в топе
+		let place = 1;
+		for (const name of names) {
+			const [exists] = await this.db.db
+				.update(userActivities)
+				.set({
+					placeForShow: place,
+				})
+				.where(and(eq(userActivities.name, name), eq(userActivities.userId, userId)))
+				.returning({ name: userActivities.name });
+
+			// Не инкрементируем если ачивки у юзера нет
+			if (exists) place++;
+		}
+	}
 
 	public async getAll(userId: string, limit?: number): Promise<ActivitiyDto.Entity[]> {
 		// @TODO пагинация?
@@ -26,7 +53,7 @@ export class ActivitiesService {
 			.$dynamic();
 
 		if (typeof limit === 'number') {
-			query.limit(limit).orderBy(asc(userActivities.placeForShow));
+			query.limit(limit).orderBy(asc(userActivities.placeForShow, 'last'));
 		}
 
 		return query;

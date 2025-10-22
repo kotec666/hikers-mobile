@@ -1,0 +1,1 @@
+ALTER TABLE "user_achievments" ADD COLUMN "place_for_show" smallint;

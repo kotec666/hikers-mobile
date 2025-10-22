@@ -1,0 +1,85 @@
+﻿import { BadRequestException, Injectable } from '@nestjs/common';
+import { ProfileDto } from './profile.dto';
+import { UserService } from '../user/user.service';
+import { SubscribersService } from '../subscribers/subscribers.service';
+import { FriendsService } from '../friends/friends.service';
+import { AchievementsService } from '../achievements/achievements.service';
+import { ActivitiesService } from '../activities/activities.service';
+import { StaticService } from '../static/static.service';
+
+const PROFILE_TOP_ACTIVITIES_COUNT = 3;
+const PROFILE_TOP_ACHIEVEMENTS_COUNT = 3;
+
+@Injectable()
+export class ProfileService {
+	constructor(
+		private readonly users: UserService,
+		private readonly subs: SubscribersService,
+		private readonly friends: FriendsService,
+		private readonly achievements: AchievementsService,
+		private readonly activities: ActivitiesService,
+		private readonly files: StaticService,
+	) {}
+
+	public async getMe(userId: string): Promise<ProfileDto.Entity> {
+		const user = await this.users.getUser(userId);
+
+		const subscribers = await this.subs.getSubscribers(userId);
+		const subscribtions = await this.subs.getSubscribtions(userId);
+
+		const friends = await this.friends.getFriends(userId);
+
+		const achievements = await this.achievements.getClaimed(userId, PROFILE_TOP_ACHIEVEMENTS_COUNT);
+		const activities = await this.activities.getAll(userId, PROFILE_TOP_ACTIVITIES_COUNT);
+		const posts = [];
+
+		return {
+			user,
+			subscribers,
+			subscribtions,
+			friends,
+			achievements,
+			activities,
+			posts,
+		};
+	}
+
+	public async edit(userId: string, dto: ProfileDto.Edit): Promise<ProfileDto.Entity> {
+		if (Object.values(dto).filter((val) => typeof val !== 'undefined').length === 0) {
+			throw new BadRequestException();
+		}
+
+		const user = await this.users.getUser(userId);
+
+		let avatarFilename: string | null | undefined = undefined;
+		if (typeof dto.avatar !== 'undefined') {
+			// Не храним историю аватаров
+			if (user.avatarFilename) {
+				await this.files.deleteFile(user.avatarFilename);
+				avatarFilename = null;
+			}
+
+			if (dto.avatar) {
+				avatarFilename = await this.files.uploadFile(dto.avatar);
+			}
+		}
+
+		const userDto = {
+			name: dto.name,
+			username: dto.username,
+			avatarFilename,
+		};
+		if (Object.values(userDto).filter((val) => !!val).length > 0) {
+			await this.users.updateUser(userId, userDto);
+		}
+
+		if (dto.achievements) {
+			await this.achievements.updatePlaces(userId, dto.achievements);
+		}
+		if (dto.activities) {
+			await this.activities.updatePlaces(userId, dto.activities);
+		}
+
+		return this.getMe(userId);
+	}
+}

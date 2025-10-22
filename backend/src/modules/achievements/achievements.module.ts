@@ -8,6 +8,6 @@ import { UserModule } from '../user/user.module';
 	controllers: [AchievementsContoller],
 	imports: [DatabaseModule, UserModule],
 	providers: [AchievementsService],
-	exports: [],
+	exports: [AchievementsService],
 })
 export class AchievementsModule {}
