@@ -24,10 +24,10 @@ export class ProfileService {
 	public async getMe(userId: string): Promise<ProfileDto.Entity> {
 		const user = await this.users.getUser(userId);
 
-		const subscribers = await this.subs.getSubscribers(userId);
-		const subscribtions = await this.subs.getSubscribtions(userId);
+		const subscribers = await this.subs.getSubscribersCount(userId);
+		const subscriptions = await this.subs.getSubscriptionsCount(userId);
 
-		const friends = await this.friends.getFriends(userId);
+		const friends = await this.friends.getFriendsCount(userId);
 
 		const achievements = await this.achievements.getClaimed(userId, PROFILE_TOP_ACHIEVEMENTS_COUNT);
 		const activities = await this.activities.getAll(userId, PROFILE_TOP_ACTIVITIES_COUNT);
@@ -36,7 +36,7 @@ export class ProfileService {
 		return {
 			user,
 			subscribers,
-			subscribtions,
+			subscriptions,
 			friends,
 			achievements,
 			activities,

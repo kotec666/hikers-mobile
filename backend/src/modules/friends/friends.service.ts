@@ -2,7 +2,7 @@
 import { DatabaseService } from '../database/database.service';
 import { FriendDto } from './friends.dto';
 import { userFriends, userFriendsInvites } from '../database/schema';
-import { eq, and, or } from 'drizzle-orm';
+import { eq, and, or, count } from 'drizzle-orm';
 import { ERRORS } from '@shared/errors';
 import { UserService } from '../user/user.service';
 
@@ -77,6 +77,17 @@ export class FriendsService {
 				return friend;
 			}),
 		);
+	}
+
+	public async getFriendsCount(userId: string): Promise<number> {
+		const [friends] = await this.db.db
+			.select({
+				count: count(),
+			})
+			.from(userFriends)
+			.where(or(eq(userFriends.userId, userId), eq(userFriends.userFriendId, userId)));
+
+		return friends.count;
 	}
 
 	public async removeFriend(userId: string, userFriendId: string): Promise<FriendDto.Entity> {

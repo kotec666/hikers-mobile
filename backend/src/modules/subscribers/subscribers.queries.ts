@@ -1,6 +1,6 @@
 ﻿import { sql } from 'drizzle-orm';
 
-export const getSubscribtionsQuery = (userId: string) =>
+export const getSubscriptionsQuery = (userId: string) =>
 	sql`
 SELECT 
   json_build_object(

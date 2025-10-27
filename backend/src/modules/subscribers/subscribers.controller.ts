@@ -1,7 +1,7 @@
 ﻿import { Controller, Delete, Get, Param, Post, UseInterceptors } from '@nestjs/common';
 import { SubscribersService } from './subscribers.service';
 import { UserInterceptor } from 'src/common/interceptors/user.interceptor';
-import { SubscriberDto, SubscribtionDto } from './subscribers.dto';
+import { SubscriberDto, SubscriptionDto } from './subscribers.dto';
 import { CommonDto } from 'src/common/dto/common.dto';
 import { User, UserData } from 'src/common/decorators/user.decorator';
 import { IsUUID } from '@validation/uuid.validatior';
@@ -45,8 +45,8 @@ export class SubscribersController {
 	 * @security token
 	 */
 	@Get('me')
-	public async getSubscribtions(@User() user: UserData): Promise<SubscribtionDto.Entity[]> {
-		return await this.service.getSubscribtions(user.id);
+	public async getSubscriptions(@User() user: UserData): Promise<SubscriptionDto.Entity[]> {
+		return await this.service.getSubscriptions(user.id);
 	}
 
 	/**

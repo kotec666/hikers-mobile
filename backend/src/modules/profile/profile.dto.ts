@@ -1,8 +1,6 @@
 ﻿import { IsOptional, Length } from 'class-validator';
 import { AchievementDto } from '../achievements/achievements.dto';
 import { ActivitiyDto } from '../activities/activities.dto';
-import { FriendDto } from '../friends/friends.dto';
-import { SubscriberDto, SubscribtionDto } from '../subscribers/subscribers.dto';
 import { UserDto } from '../user/user.dto';
 import { lengths } from '@shared/lengths';
 import { ERRORS } from '@shared/errors';
@@ -12,9 +10,9 @@ import { isUserActivityEnumValue, isUUID, TypedArray } from '@validation/decorat
 export namespace ProfileDto {
 	export type Entity = {
 		user: UserDto.Entity;
-		subscribers: SubscriberDto.Entity[];
-		subscribtions: SubscribtionDto.Entity[];
-		friends: FriendDto.Entity[];
+		subscribers: number;
+		subscriptions: number;
+		friends: number;
 		achievements: AchievementDto.Entity[];
 		activities: ActivitiyDto.Entity[];
 		posts: any[]; // @TODO
