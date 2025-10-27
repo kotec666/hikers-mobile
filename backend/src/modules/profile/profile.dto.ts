@@ -31,11 +31,11 @@ export namespace ProfileDto {
 		 * @summary Смена аватара
 		 * @description Изменение аватарки работает так:
 		 * Если хотим заменить аву - передаем файл в это поле.
-		 * Если хотим очистить аву - передаем null в это поле.
+		 * Если хотим очистить аву - передаем строку в это поле.
 		 * Если ава не менялась - само собой не передаем это поле.
 		 */
 		@IsOptional()
-		avatar?: Express.Multer.File | null;
+		avatarFilename?: Express.Multer.File | string;
 
 		/**
 		 * @summary Активности на показ

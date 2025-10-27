@@ -32,6 +32,9 @@ export class ProfileController {
 		@Body() body: ProfileDto.Edit,
 		@UploadedFile() avatar?: Express.Multer.File,
 	): Promise<ProfileDto.Entity> {
-		return await this.service.edit(user.id, { ...body, avatar: body.avatar === null ? body.avatar : avatar });
+		return await this.service.edit(user.id, {
+			...body,
+			avatarFilename: typeof body.avatarFilename === 'string' ? body.avatarFilename : avatar,
+		});
 	}
 }

@@ -6,6 +6,7 @@ import { FriendsService } from '../friends/friends.service';
 import { AchievementsService } from '../achievements/achievements.service';
 import { ActivitiesService } from '../activities/activities.service';
 import { StaticService } from '../static/static.service';
+import { UserDto } from '../user/user.dto';
 
 const PROFILE_TOP_ACTIVITIES_COUNT = 3;
 const PROFILE_TOP_ACHIEVEMENTS_COUNT = 3;
@@ -50,25 +51,23 @@ export class ProfileService {
 		}
 
 		const user = await this.users.getUser(userId);
+		const userDto: Partial<UserDto.Entity> = {
+			name: dto.name,
+			username: dto.username,
+		};
 
-		let avatarFilename: string | null | undefined = undefined;
-		if (typeof dto.avatar !== 'undefined') {
+		if (typeof dto.avatarFilename !== 'string') {
 			// Не храним историю аватаров
 			if (user.avatarFilename) {
 				await this.files.deleteFile(user.avatarFilename);
-				avatarFilename = null;
+				userDto.avatarFilename = null;
 			}
 
-			if (dto.avatar) {
-				avatarFilename = await this.files.uploadFile(dto.avatar);
+			if (dto.avatarFilename) {
+				userDto.avatarFilename = await this.files.uploadFile(dto.avatarFilename);
 			}
 		}
 
-		const userDto = {
-			name: dto.name,
-			username: dto.username,
-			avatarFilename,
-		};
 		if (Object.values(userDto).filter((val) => !!val).length > 0) {
 			await this.users.updateUser(userId, userDto);
 		}
