@@ -46,7 +46,9 @@ export class ProfileService {
 	}
 
 	public async edit(userId: string, dto: ProfileDto.Edit): Promise<ProfileDto.Entity> {
-		if (Object.values(dto).filter((val) => typeof val !== 'undefined').length === 0) {
+		dto = Object.fromEntries(Object.entries(dto).filter(([, val]) => typeof val !== 'undefined'));
+
+		if (Object.values(dto).length === 0) {
 			throw new BadRequestException();
 		}
 

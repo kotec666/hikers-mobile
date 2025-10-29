@@ -26,15 +26,15 @@ export class ProfileController {
 	 * @security token
 	 */
 	@Patch()
-	@UseInterceptors(FileInterceptor('avatar'))
+	@UseInterceptors(FileInterceptor('avatarFilename'))
 	public async edit(
 		@User() user: UserData,
 		@Body() body: ProfileDto.Edit,
-		@UploadedFile() avatar?: Express.Multer.File,
+		@UploadedFile() avatarFilename?: Express.Multer.File,
 	): Promise<ProfileDto.Entity> {
 		return await this.service.edit(user.id, {
 			...body,
-			avatarFilename: typeof body.avatarFilename === 'string' ? body.avatarFilename : avatar,
+			avatarFilename: typeof body.avatarFilename === 'string' ? body.avatarFilename : avatarFilename,
 		});
 	}
 }
