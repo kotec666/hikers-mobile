@@ -1,6 +1,9 @@
 ﻿import { ERRORS } from '@shared/errors';
 import { ExceptionFilter, Catch, ArgumentsHost, HttpException } from '@nestjs/common';
 import { Response } from 'express';
+import { DatabaseError } from 'pg';
+
+// Пример формата ошибки на поле _email:${ERRORS.INVALID_EMAIL}
 
 type PropertyError = {
 	property: string;
@@ -44,40 +47,67 @@ function parsePropertyMessages(messages: string[]): PropertyError[] {
 	return errors;
 }
 
-@Catch(HttpException, Error)
+@Catch(HttpException, DatabaseError, Error)
 export class HttpExceptionFilter implements ExceptionFilter {
 	catch(exception: HttpException | Error, host: ArgumentsHost) {
 		const ctx = host.switchToHttp();
 		const response = ctx.getResponse<Response>();
 		// const request = ctx.getRequest<Request>();
 
-		// Случай если ошибка внутреняя (не отловленная заранее)
-		if (!(exception instanceof HttpException)) {
-			response.status(500).json({
-				statusCode: 500,
-				message: ERRORS.INTERNAL,
-			});
+		if (exception instanceof DatabaseError) {
+			// Случай ошибки из бд
+			switch (exception.code) {
+				case '23505': {
+					// 23505 Это ошибка дубликата значения поля. Пример: detail: 'Key (username)=(example123) already exists.'
 
-			return;
+					const regexWithGroups = /\(([^)]+)\)=\(([^)]+)\)/;
+					const match = exception.detail?.match(regexWithGroups);
+					if (!match) break;
+
+					const message: string = `_${match[1]}:${ERRORS.ALREADY_EXISTS}`;
+					const statusCode = 400;
+
+					return response.status(statusCode).json({
+						statusCode,
+						message: message.startsWith('_')
+							? [parsePropertyMessage(message)]
+							: statusCodeToError[statusCode] ?? ERRORS.UNKNOWN_ERROR,
+					});
+				}
+
+				default: {
+					return response.status(500).json({
+						statusCode: 500,
+						message: ERRORS.INTERNAL,
+					});
+				}
+			}
+		} else if (exception instanceof HttpException) {
+			// Случай если ошибка была отловлена и подготовлена заранее
+
+			const exceptionStatus = exception.getStatus();
+			const exceptionResponse = exception.getResponse() as object;
+
+			if (Array.isArray(exceptionResponse['message'])) {
+				return response.status(exceptionStatus).json({
+					statusCode: exception.getStatus(),
+					message: parsePropertyMessages(exceptionResponse['message']),
+				});
+			} else {
+				const message: string = exceptionResponse['message'];
+
+				return response.status(exceptionStatus).json({
+					statusCode: exception.getStatus(),
+					message: message.startsWith('_')
+						? [parsePropertyMessage(message)]
+						: statusCodeToError[exceptionStatus] ?? ERRORS.UNKNOWN_ERROR,
+				});
+			}
 		}
 
-		const exceptionStatus = exception.getStatus();
-		const exceptionResponse = exception.getResponse() as object;
-
-		if (Array.isArray(exceptionResponse['message'])) {
-			response.status(exceptionStatus).json({
-				statusCode: exception.getStatus(),
-				message: parsePropertyMessages(exceptionResponse['message']),
-			});
-		} else {
-			const message: string = exceptionResponse['message'];
-
-			response.status(exceptionStatus).json({
-				statusCode: exception.getStatus(),
-				message: message.startsWith('_')
-					? [parsePropertyMessage(message)]
-					: (statusCodeToError[exceptionStatus] ?? ERRORS.UNKNOWN_ERROR),
-			});
-		}
+		response.status(500).json({
+			statusCode: 500,
+			message: ERRORS.INTERNAL,
+		});
 	}
 }
