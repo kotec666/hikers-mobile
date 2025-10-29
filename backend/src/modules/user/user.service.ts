@@ -34,7 +34,9 @@ export class UserService {
 	}
 
 	public async updateUser(id: string, dto: Partial<Omit<UserDto.Entity, 'id'>>): Promise<UserDto.Entity> {
-		const [user] = await this.db.db.update(users).set(dto).returning({
+		if (dto['id']) delete dto['id'];
+
+		const [user] = await this.db.db.update(users).set(dto).where(eq(users.id, id)).returning({
 			id: users.id,
 			name: users.name,
 			username: users.username,
