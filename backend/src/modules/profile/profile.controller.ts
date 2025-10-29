@@ -1,4 +1,4 @@
-﻿import { Body, Controller, Get, Patch, UploadedFile, UseInterceptors } from '@nestjs/common';
+﻿import { Body, Controller, Get, Param, Patch, UploadedFile, UseInterceptors } from '@nestjs/common';
 import { ProfileService } from './profile.service';
 import { UserInterceptor } from 'src/common/interceptors/user.interceptor';
 import { User, UserData } from 'src/common/decorators/user.decorator';
@@ -17,7 +17,17 @@ export class ProfileController {
 	 */
 	@Get()
 	public async getMe(@User() user: UserData): Promise<ProfileDto.Entity> {
-		return await this.service.getMe(user.id);
+		return await this.service.getProfile(user.id);
+	}
+
+	/**
+	 * @tag Profile
+	 * @summary Чужой профиль
+	 * @security token
+	 */
+	@Get(':userId')
+	public async getSomeone(@Param('userId') userId: string): Promise<ProfileDto.Entity> {
+		return await this.service.getProfile(userId);
 	}
 
 	/**

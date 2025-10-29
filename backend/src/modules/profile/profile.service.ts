@@ -22,7 +22,7 @@ export class ProfileService {
 		private readonly files: StaticService,
 	) {}
 
-	public async getMe(userId: string): Promise<ProfileDto.Entity> {
+	public async getProfile(userId: string): Promise<ProfileDto.Entity> {
 		const user = await this.users.getUser(userId);
 
 		const subscribers = await this.subs.getSubscribersCount(userId);
@@ -81,6 +81,6 @@ export class ProfileService {
 			await this.activities.updatePlaces(userId, dto.activities);
 		}
 
-		return this.getMe(userId);
+		return this.getProfile(userId);
 	}
 }
