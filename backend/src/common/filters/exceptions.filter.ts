@@ -44,12 +44,22 @@ function parsePropertyMessages(messages: string[]): PropertyError[] {
 	return errors;
 }
 
-@Catch(HttpException)
+@Catch(HttpException, Error)
 export class HttpExceptionFilter implements ExceptionFilter {
-	catch(exception: HttpException, host: ArgumentsHost) {
+	catch(exception: HttpException | Error, host: ArgumentsHost) {
 		const ctx = host.switchToHttp();
 		const response = ctx.getResponse<Response>();
 		// const request = ctx.getRequest<Request>();
+
+		// Случай если ошибка внутреняя (не отловленная заранее)
+		if (!(exception instanceof HttpException)) {
+			response.status(500).json({
+				statusCode: 500,
+				message: ERRORS.INTERNAL,
+			});
+
+			return;
+		}
 
 		const exceptionStatus = exception.getStatus();
 		const exceptionResponse = exception.getResponse() as object;
