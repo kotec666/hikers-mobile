@@ -29,14 +29,19 @@ export const measuringUnitEnum = pgEnum('measuring_unit', enumToPgEnum(Measuring
  */
 
 export interface TrainingRouteNode {
-	/** Метка времени */
-	ts: number; // @TODO Таймзона??
+	/** Метка времени относительно даты СТАРТА (started_at) тренировки */
+	rel_ts: number;
 	/** Высота */
 	alt: number;
 	/** Скорость км/ч */
 	speed_kmh: number;
 	/** Пройденное расстояние (в метрах) */
 	distance: number;
+
+	paused: boolean;
+
+	lat: number;
+	lng: number;
 }
 
 /**
