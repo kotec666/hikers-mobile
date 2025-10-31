@@ -15,7 +15,6 @@ export namespace ProfileDto {
 		friends: number;
 		achievements: AchievementDto.Entity[];
 		activities: ActivitiyDto.Entity[];
-		posts: any[]; // @TODO
 	};
 
 	export class Edit {
