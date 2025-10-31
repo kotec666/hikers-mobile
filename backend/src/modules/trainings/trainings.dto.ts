@@ -1,15 +1,33 @@
-﻿import { TrainingType } from '@shared/enums';
+﻿import { MeasuringUnit, TrainingType } from '@shared/enums';
+import { UserDto } from '../user/user.dto';
 
 export namespace TrainingDto {
+	export type Entity = {
+		id: string;
+		creator: UserDto.Entity;
+		type: TrainingTypeDto.Entity;
+		createdAt: Date;
+		startedAt: Date | null;
+		finishedAt: Date | null;
+
+		participants: TrainingParticipantDto.Entity[];
+	};
+
 	// @TODO
-	// export type Entity ={
-	// }
+	// export type ExtendedEntity = {}
 }
 
 export namespace TrainingTypeDto {
 	export type Entity = {
 		name: TrainingType;
-		measuringUnit: string; // @TODO enum?
+		measuringUnit: MeasuringUnit;
 		iconFilename: string | null;
+	};
+}
+
+export namespace TrainingParticipantDto {
+	export type Entity = {
+		user: UserDto.Entity;
+		colorHex: string | null;
 	};
 }
