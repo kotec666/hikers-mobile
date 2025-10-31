@@ -1,4 +1,5 @@
 ﻿import { IsOptional, Length } from 'class-validator';
+import { Transform } from 'class-transformer';
 import { AchievementDto } from '../achievements/achievements.dto';
 import { ActivitiyDto } from '../activities/activities.dto';
 import { UserDto } from '../user/user.dto';
@@ -18,6 +19,7 @@ export namespace ProfileDto {
 		posts: any[]; // @TODO
 	};
 
+	/** Form-Data запрос */
 	export class Edit {
 		@IsOptional()
 		@Length(lengths.user.username.min, lengths.user.username.max, { message: `_username:${ERRORS.INVALID_LENGTH}` })
@@ -46,6 +48,12 @@ export namespace ProfileDto {
 		 */
 		@IsOptional()
 		@TypedArray(isUserActivityEnumValue)
+		@Transform(({ value }) => {
+			if (typeof value === 'string') {
+				return value.split(',').map((v) => v.trim());
+			}
+			return value;
+		})
 		activities?: UserActivity[];
 
 		/**
@@ -57,6 +65,12 @@ export namespace ProfileDto {
 		 */
 		@IsOptional()
 		@TypedArray(isUUID)
+		@Transform(({ value }) => {
+			if (typeof value === 'string') {
+				return value.split(',').map((v) => v.trim());
+			}
+			return value;
+		})
 		achievements?: string[];
 	}
 }
