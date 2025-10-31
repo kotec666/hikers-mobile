@@ -4,17 +4,26 @@ import { UserDto } from '../user/user.dto';
 export namespace TrainingDto {
 	export type Entity = {
 		id: string;
-		creator: UserDto.Entity;
-		type: TrainingTypeDto.Entity;
+		type: TrainingType;
+		/** Момент создания тренировки - как только отправился первый инвайт, или юзер начал соло тренировку */
 		createdAt: Date;
-		startedAt: Date | null;
-		finishedAt: Date | null;
 
-		participants: TrainingParticipantDto.Entity[];
+		/** Момент старта тренировки - как только создатель начал тренировку */
+		startedAt: Date | null;
+		/** Момент финиша тренировки - как только создатель закончил тренировку */
+		finishedAt: Date | null;
 	};
 
-	// @TODO
-	// export type ExtendedEntity = {}
+	export class Start {
+		type: TrainingType;
+		now: boolean = false;
+	}
+
+	export type ExtendedEntity = Omit<TrainingDto.Entity, 'type'> & {
+		creator: UserDto.Entity;
+		participants: TrainingParticipantDto.Entity[];
+		type: TrainingTypeDto.Entity;
+	};
 }
 
 export namespace TrainingTypeDto {
