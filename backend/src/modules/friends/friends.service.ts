@@ -191,7 +191,7 @@ export class FriendsService {
 
 	public async sendInvite(fromUserId: string, toUserId: string): Promise<FriendDto.InviteEntity> {
 		const [existingInvite] = await this.db.db
-			.select({ id: userFriendsInvites.id })
+			.select({ userId: userFriendsInvites.userId })
 			.from(userFriendsInvites)
 			.where(and(eq(userFriendsInvites.userId, fromUserId), eq(userFriendsInvites.invitedUserId, toUserId)))
 			.limit(1);
