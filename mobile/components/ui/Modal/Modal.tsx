@@ -5,12 +5,13 @@ import { BlurView } from 'expo-blur'
 
 type PROPS = ModalProps & {
 	label?: string
+	labelSize?: number
 	isOpen: boolean
 	withInput?: boolean
 	handleClose: () => void
 }
 
-const Modal = ({ isOpen, withInput, handleClose, label, children, ...rest }: PROPS) => {
+const Modal = ({ isOpen, withInput, handleClose, label, labelSize, children, ...rest }: PROPS) => {
 	const content = withInput ? (
 		<KeyboardAvoidingView
 			className="items-center justify-center flex-1 px-3 bg-black/30"
@@ -22,7 +23,9 @@ const Modal = ({ isOpen, withInput, handleClose, label, children, ...rest }: PRO
 			>
 				{Platform.OS === 'ios' && <BlurView style={StyleSheet.absoluteFill} tint="dark" intensity={10} />}
 				<View className="flex-row items-center justify-between mb-[20px]">
-					<Text className="text-white">{label}</Text>
+					<Text className="text-white" style={{ fontSize: labelSize || 12 }}>
+						{label}
+					</Text>
 					<CloseCross handleClose={handleClose} />
 				</View>
 				{children}
@@ -36,7 +39,9 @@ const Modal = ({ isOpen, withInput, handleClose, label, children, ...rest }: PRO
 			>
 				{Platform.OS === 'ios' && <BlurView style={StyleSheet.absoluteFill} tint="dark" intensity={10} />}
 				<View className="flex-row items-center justify-between mb-[20px]">
-					<Text className="text-white">{label}</Text>
+					<Text className="text-white" style={{ fontSize: labelSize || 12 }}>
+						{label}
+					</Text>
 					<CloseCross handleClose={handleClose} />
 				</View>
 				{children}

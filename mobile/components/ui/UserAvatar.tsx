@@ -5,7 +5,7 @@ import { cn } from '@/helpers/cn'
 import PenSvg from '@/components/svg/PenSvg'
 
 export interface IProps {
-	avatar: boolean
+	avatar?: string | null
 	className?: string
 	style?: StyleProp<ViewStyle | ImageStyle>
 	iconSize?: { width: number; height: number }
@@ -14,7 +14,7 @@ export interface IProps {
 }
 
 export function UserAvatar(props: IProps) {
-	if (props.avatar) {
+	if (typeof props.avatar === 'string' && !props.avatar.includes('undefined') && !props.avatar.includes('null')) {
 		return (
 			<View
 				className={cn('relative rounded-full', {
@@ -22,7 +22,7 @@ export function UserAvatar(props: IProps) {
 				})}
 			>
 				<Image
-					source={require('@/assets/images/carousel/carousel-2.webp')}
+					source={{ uri: props.avatar }}
 					className={cn('h-[50px] w-[50px] rounded-full', props.className)}
 					style={props.style as StyleProp<ImageStyle>}
 				/>
@@ -39,12 +39,10 @@ export function UserAvatar(props: IProps) {
 	}
 	return (
 		<View
-			className={cn(
-				'relative h-[50px] w-[50px] justify-center items-center bg-blue-98 rounded-full',
-				props.className
-			)}
+			className={cn('relative h-[50px] w-[50px] justify-center items-center bg-blue-98', props.className)}
 			style={[
 				props.style as StyleProp<ViewStyle>,
+				{ borderRadius: 999 },
 				props.bordered && { borderWidth: 1, borderColor: 'rgba(255, 255, 255, 0.4)' }
 			]}
 		>

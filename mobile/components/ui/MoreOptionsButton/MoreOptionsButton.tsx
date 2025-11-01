@@ -17,6 +17,11 @@ const MoreOptionsButton = (props: IMoreOptionsButtonProps) => {
 		return setState((s) => ({ ...s, isVisible: !s.isVisible }))
 	}
 
+	const handleClickAction = (cb?: () => void) => {
+		cb?.()
+		return setState((s) => ({ ...s, isVisible: false }))
+	}
+
 	return (
 		<>
 			<Pressable
@@ -28,7 +33,11 @@ const MoreOptionsButton = (props: IMoreOptionsButtonProps) => {
 			{state.isVisible && (
 				<Popup>
 					{props.params.map((param) => (
-						<MoreOptionsListItem key={param.label} action={param.action} label={param.label} />
+						<MoreOptionsListItem
+							key={param.label}
+							action={() => handleClickAction(param.action)}
+							label={param.label}
+						/>
 					))}
 				</Popup>
 			)}

@@ -1,5 +1,5 @@
-import React from 'react'
-import { FlatList, SafeAreaView, View, Text } from 'react-native'
+import React, { useEffect, useState } from 'react'
+import { FlatList, SafeAreaView, View, Text, RefreshControl } from 'react-native'
 import { Container } from '@/components/ui/Container'
 import HeaderBack from '@/components/ui/HeaderBack'
 import PeopleListItem from '@/components/find-people/PeopleListItem'
@@ -7,157 +7,111 @@ import { SafeAreaProvider, useSafeAreaInsets } from 'react-native-safe-area-cont
 import { fontFamily } from '@/constants/Fonts'
 import RoundedPlusSvg from '@/components/svg/RoundedPlusSvg'
 import RoundedMinusSvg from '@/components/svg/RoundedMinusSvg'
+import { acceptFriendRequest, getPendingInvitesList, IInvite, rejectFriendRequest } from '@/api/friends'
+import { getFieldsErrors } from '@/helpers/getFieldsErrors'
+import { useToast } from '@/hooks/useToast'
 
 const FriendRequestsPage = () => {
 	const insets = useSafeAreaInsets()
+	const toast = useToast()
+	const [data, setData] = useState<{
+		friendRequests: IInvite[]
+		refreshing: boolean
+	}>({
+		friendRequests: [],
+		refreshing: false
+	})
 
-	const data = [
-		{
-			id: 1,
-			name: 'Стив Джобс first',
-			avatar: true,
-			icon: [<RoundedPlusSvg key="plus1" />, <RoundedMinusSvg key="plus2" />]
-		},
-		{
-			id: 2,
-			name: 'Джефф Безос',
-			avatar: false,
-			icon: [<RoundedPlusSvg key="plus1" />, <RoundedMinusSvg key="plus2" />]
-		},
-		{
-			id: 3,
-			name: 'Джефф Безос',
-			avatar: false,
-			icon: [<RoundedPlusSvg key="plus1" />, <RoundedMinusSvg key="plus2" />]
-		},
-		{
-			id: 4,
-			name: 'Джефф Безос',
-			avatar: false,
-			icon: [<RoundedPlusSvg key="plus1" />, <RoundedMinusSvg key="plus2" />]
-		},
-		{
-			id: 5,
-			name: 'Джефф Безос',
-			avatar: false,
-			icon: [<RoundedPlusSvg key="plus1" />, <RoundedMinusSvg key="plus2" />]
-		},
-		{
-			id: 6,
-			name: 'Джефф Безос',
-			avatar: false,
-			icon: [<RoundedPlusSvg key="plus1" />, <RoundedMinusSvg key="plus2" />]
-		},
-		{
-			id: 7,
-			name: 'Джефф Безос',
-			avatar: false,
-			icon: [<RoundedPlusSvg key="plus1" />, <RoundedMinusSvg key="plus2" />]
-		},
-		{
-			id: 8,
-			name: 'Джефф Безос',
-			avatar: false,
-			icon: [<RoundedPlusSvg key="plus1" />, <RoundedMinusSvg key="plus2" />]
-		},
-		{
-			id: 9,
-			name: 'Джефф Безос',
-			avatar: false,
-			icon: [<RoundedPlusSvg key="plus1" />, <RoundedMinusSvg key="plus2" />]
-		},
-		{
-			id: 10,
-			name: 'Джефф Безос',
-			avatar: false,
-			icon: [<RoundedPlusSvg key="plus1" />, <RoundedMinusSvg key="plus2" />]
-		},
-		{
-			id: 11,
-			name: 'Джефф Безос',
-			avatar: false,
-			icon: [<RoundedPlusSvg key="plus1" />, <RoundedMinusSvg key="plus2" />]
-		},
-		{
-			id: 12,
-			name: 'Джефф Безос',
-			avatar: false,
-			icon: [<RoundedPlusSvg key="plus1" />, <RoundedMinusSvg key="plus2" />]
-		},
-		{
-			id: 13,
-			name: 'Джефф Безос',
-			avatar: false,
-			icon: [<RoundedPlusSvg key="plus1" />, <RoundedMinusSvg key="plus2" />]
-		},
-		{
-			id: 14,
-			name: 'Джефф Безос',
-			avatar: false,
-			icon: [<RoundedPlusSvg key="plus1" />, <RoundedMinusSvg key="plus2" />]
-		},
-		{
-			id: 15,
-			name: 'Джефф Безос',
-			avatar: false,
-			icon: [<RoundedPlusSvg key="plus1" />, <RoundedMinusSvg key="plus2" />]
-		},
-		{
-			id: 16,
-			name: 'Джефф Безос',
-			avatar: false,
-			icon: [<RoundedPlusSvg key="plus1" />, <RoundedMinusSvg key="plus2" />]
-		},
-		{
-			id: 17,
-			name: 'Джефф Безос',
-			avatar: false,
-			icon: [<RoundedPlusSvg key="plus1" />, <RoundedMinusSvg key="plus2" />]
-		},
-		{
-			id: 18,
-			name: 'Джефф Безос',
-			avatar: false,
-			icon: [<RoundedPlusSvg key="plus1" />, <RoundedMinusSvg key="plus2" />]
-		},
-		{
-			id: 19,
-			name: 'Джефф Безос',
-			avatar: false,
-			icon: [<RoundedPlusSvg key="plus1" />, <RoundedMinusSvg key="plus2" />]
-		},
-		{
-			id: 20,
-			name: 'Джефф Безос last',
-			avatar: false,
-			icon: [<RoundedPlusSvg key="plus1" />, <RoundedMinusSvg key="plus2" />]
+	const handleAddFriend = async (newFriendId: string) => {
+		try {
+			await acceptFriendRequest(newFriendId)
+			const withoutAddedUser = data.friendRequests.filter(
+				(friendRequest) => friendRequest.invitedUser.id !== newFriendId
+			)
+			setData((s) => ({ ...s, friendRequests: withoutAddedUser }))
+		} catch (e) {
+			toast.error('Произошла ошибка, повторите попытку позже')
 		}
-	]
+	}
+
+	const handleDeleteFriendRequest = async (rejectUserId: string) => {
+		try {
+			await rejectFriendRequest(rejectUserId)
+			const withoutRejectedUser = data.friendRequests.filter(
+				(friendRequest) => friendRequest.invitedUser.id !== rejectUserId
+			)
+			setData((s) => ({ ...s, friendRequests: withoutRejectedUser }))
+		} catch (e) {
+			toast.error('Произошла ошибка, повторите попытку позже')
+		}
+	}
+
+	const handleGetAndSetData = async () => {
+		try {
+			const friendRequests = await getPendingInvitesList()
+			setData((s) => ({ ...s, friendRequests: friendRequests }))
+		} catch (e) {
+			const errors = await e.response.json()
+			console.log(errors)
+			getFieldsErrors(errors)
+		} finally {
+			setData((s) => ({ ...s, refreshing: false }))
+		}
+	}
+
+	const onRefresh = React.useCallback(async () => {
+		setData((s) => ({ ...s, refreshing: true }))
+		await handleGetAndSetData()
+	}, [])
+
+	useEffect(() => {
+		handleGetAndSetData()
+	}, [])
+
+	const EmptyListComponent = () => (
+		<View style={{ flex: 1 }} className="items-center justify-center">
+			<Text style={{ fontFamily: fontFamily.regular }} className="text-gray-ab text-base">
+				У вас нет заявок в друзья
+			</Text>
+		</View>
+	)
 
 	return (
 		<SafeAreaProvider style={{ paddingTop: insets.top }}>
 			<SafeAreaView style={{ flex: 1 }}>
 				<Container className="gap-[20px] mt-[20px] flex-1">
 					<HeaderBack>Запросы в друзья</HeaderBack>
-					{!data.length ? (
-						<View style={{ flex: 1 }} className="items-center justify-center">
-							<Text style={{ fontFamily: fontFamily.regular }} className="text-gray-ab text-base">
-								У вас нет заявок в друзья
-							</Text>
-						</View>
-					) : (
-						<FlatList
-							data={data}
-							renderItem={({ item }) => <PeopleListItem {...item} />}
-							keyExtractor={(item) => item.id.toString()}
-							ItemSeparatorComponent={() => <View style={{ height: 15 }} />}
-							contentContainerStyle={{
-								paddingBottom: insets.bottom + 20,
-								paddingTop: 10
-							}}
-							showsVerticalScrollIndicator={false}
-						/>
-					)}
+					<FlatList
+						data={data.friendRequests}
+						renderItem={({ item }) => (
+							<PeopleListItem
+								id={item.invitedUser.id}
+								username={item.invitedUser.username}
+								name={item.invitedUser.name}
+								avatar={item.invitedUser.avatarFilename}
+								icon={[
+									{
+										iconSvg: <RoundedPlusSvg />,
+										iconCb: () => handleAddFriend(item.invitedUser.id)
+									},
+									{
+										iconSvg: <RoundedMinusSvg />,
+										iconCb: () => handleDeleteFriendRequest(item.invitedUser.id)
+									}
+								]}
+							/>
+						)}
+						keyExtractor={(item) => item.invitedUser.id}
+						ItemSeparatorComponent={() => <View style={{ height: 15 }} />}
+						contentContainerStyle={{
+							paddingBottom: insets.bottom + 20,
+							paddingTop: 10,
+							flex: data.friendRequests.length === 0 ? 1 : undefined
+						}}
+						showsVerticalScrollIndicator={false}
+						refreshControl={<RefreshControl refreshing={data.refreshing} onRefresh={onRefresh} />}
+						ListEmptyComponent={EmptyListComponent}
+					/>
 				</Container>
 			</SafeAreaView>
 		</SafeAreaProvider>

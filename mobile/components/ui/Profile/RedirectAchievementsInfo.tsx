@@ -4,8 +4,9 @@ import { fontFamily } from '@/constants/Fonts'
 import ArrowBackSvg from '@/components/svg/ArrowBackSvg'
 import AchievementsStats from '@/components/ui/Profile/AchievementsStats'
 import { useRouter } from 'expo-router'
+import { IProfileAchievement } from '@/api/profile'
 
-const RedirectAchievementsInfo = () => {
+const RedirectAchievementsInfo = (props: { achievements?: IProfileAchievement[] }) => {
 	const router = useRouter()
 
 	return (
@@ -19,9 +20,10 @@ const RedirectAchievementsInfo = () => {
 				</View>
 			</TouchableOpacity>
 			<View className="flex-row justify-between gap-[10px]">
-				<AchievementsStats />
-				<AchievementsStats />
-				<AchievementsStats />
+				{Boolean(props.achievements?.length) &&
+					props.achievements?.map((achievement) => (
+						<AchievementsStats key={achievement.id} title={achievement.title} />
+					))}
 			</View>
 		</View>
 	)

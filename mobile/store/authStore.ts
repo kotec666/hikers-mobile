@@ -1,14 +1,13 @@
 import { create } from 'zustand'
 import { getItem, removeItem, setItem } from '@/store/storage'
-import { refreshAccessTokenRequest, registrationUser } from '@/api/auth'
-import { getFieldsErrors } from '@/helpers/getFieldsErrors'
+import { refreshAccessTokenRequest } from '@/api/auth'
 
 export interface IUser {
 	id: string
 	name: null | string
 	email: string
 	username: string
-    avatarFilename: null | string
+	avatarFilename: null | string
 }
 
 interface AuthStore {
@@ -21,6 +20,7 @@ interface AuthStore {
 	logout: () => void
 	refreshAccessToken: () => Promise<boolean>
 	checkAuth: () => Promise<boolean>
+	setUser: (user: IUser) => void
 }
 
 export const useAuthStore = create<AuthStore>((set, get) => ({
@@ -38,6 +38,11 @@ export const useAuthStore = create<AuthStore>((set, get) => ({
 		}
 		setItem('authData', authData)
 		set(authData)
+	},
+	setUser: (user: IUser) => {
+		set({
+			user
+		})
 	},
 	logout: () => {
 		removeItem('authData')

@@ -1,29 +1,58 @@
-import React from 'react'
+import React, { useState } from 'react'
 import { FlatList, Text, View } from 'react-native'
 import { fontFamily } from '@/constants/Fonts'
 import WorkoutStats from '@/components/ui/Profile/WorkoutStats'
+import Draggable from '@/components/Draggable'
+import { useSharedValue } from 'react-native-reanimated'
+import { CELL_W, CELL_H } from '@/helpers/drag'
+import { cn } from '@/helpers/cn'
+import { IActivity } from '@/api/activities'
+import { UserActivity } from '../../../../shared/enums'
+import { useEditActivitiesStore } from '@/store/editActivitiesStore'
 
 interface IProps {
 	label?: string
 	isChooseMode?: boolean
 	isEditMode?: boolean
+	activities: IActivity[]
 }
 
 const ActivityInfo = (props: IProps) => {
-	const data = [
-		{ id: 1, label: 'Бег' },
-		{ id: 2, label: 'Велосипед' },
-		{ id: 3, label: 'Трек' },
-		{ id: 4, label: 'Шаги' },
-		{ id: 5, label: 'Прыгнул' },
-		{ id: 6, label: 'Спал' },
-		{ id: 7, label: 'Шаги' },
-		{ id: 8, label: 'Прыгнул' },
-		{ id: 9, label: 'Спал' }
-	]
+	const { setNewActivitiesOrder } = useEditActivitiesStore()
+	const names = {
+		[UserActivity.RUN]: 'Бег',
+		[UserActivity.TRACK]: 'Трек',
+		[UserActivity.BICYCLE]: 'Велосипед',
+		[UserActivity.STEPS]: 'Шаги'
+	}
+
+	const positions = useSharedValue(Object.assign({}, ...props.activities.map((item, index) => ({ [index]: index }))))
+	const [orderMap, setOrderMap] = useState<Record<number, IActivity>>( // { index -> itemUniqueName }
+		Object.assign({}, ...props.activities.map((item, index) => ({ [index]: item })))
+	)
+
+	const handleDragEnd = ({ oldOrder, newOrder }: { oldOrder: number; newOrder: number }) => {
+		setOrderMap((prev) => {
+			const next = { ...prev }
+			// prev: { index -> itemUniqueName }
+			const draggedItemId = prev[oldOrder]
+			const targetItemId = prev[newOrder]
+			// ставим перетаскиваемый элемент на новую позицию
+			next[newOrder] = draggedItemId
+			// а на старую позицию возвращаем того, кто был на новой
+			if (typeof targetItemId !== 'undefined') next[oldOrder] = targetItemId
+
+			setNewActivitiesOrder(Object.values(next)) //  next activities order [{"goal": 100, "measuringUnit": "m", "name": "run", "place": 1}, {"goal": 200, "measuringUnit": "m", "name": "track", "place": 2}, {"goal": 10000, "measuringUnit": "cnt", "name": "steps", "place": 4}, {"goal": 300, "measuringUnit": "km", "name": "bicycle", "place": 3}]
+			return next // {"0": {"goal": 300, "measuringUnit": "km", "name": "bicycle", "place": 3}, "1": {"goal": 200, "measuringUnit": "m", "name": "track", "place": 2}, "2": {"goal": 10000, "measuringUnit": "cnt", "name": "steps", "place": 4}, "3": {"goal": 100, "measuringUnit": "m", "name": "run", "place": 1}}
+		})
+	}
 
 	return (
-		<View className="gap-[15px]">
+		<View
+			className={cn('', {
+				'gap-[15px]': !props.isChooseMode
+			})}
+		>
 			{props.label && (
 				<View className="flex-row justify-between">
 					<Text className="text-base text-white" style={{ fontFamily: fontFamily.bold }}>
@@ -31,19 +60,46 @@ const ActivityInfo = (props: IProps) => {
 					</Text>
 				</View>
 			)}
-			<FlatList
-				scrollEnabled={false}
-				nestedScrollEnabled={true}
-				removeClippedSubviews={false}
-				initialNumToRender={data.length}
-				windowSize={data.length}
-				data={data}
-				numColumns={3}
-				renderItem={() => <WorkoutStats isEditMode={props.isEditMode} isChooseMode={props.isChooseMode} />}
-				contentContainerStyle={{ paddingHorizontal: 5 }}
-				columnWrapperStyle={{ gap: 10, marginBottom: 10 }}
-				keyExtractor={(item) => item.id.toString()}
-			/>
+			{props.isChooseMode
+				? props.activities.map((item, index) => (
+						<Draggable key={item.name} positions={positions} id={index} onDragEnd={handleDragEnd}>
+							<WorkoutStats
+								style={{
+									width: CELL_W,
+									height: CELL_H
+								}}
+								label={names[item.name]}
+								goal={item.goal}
+								measuringUnit={item.measuringUnit}
+								isCheckmarkExist={[orderMap[0].name, orderMap[1].name, orderMap[2].name].includes(
+									item.name
+								)}
+							/>
+						</Draggable>
+					))
+				: Boolean(props.activities.length) && (
+						<FlatList
+							scrollEnabled={false}
+							nestedScrollEnabled={true}
+							removeClippedSubviews={false}
+							initialNumToRender={props.activities.length}
+							windowSize={props.activities.length}
+							data={props.activities}
+							numColumns={3}
+							renderItem={(activityItem) => (
+								<WorkoutStats
+									className="flex-1"
+									label={names[activityItem.item.name]}
+									goal={activityItem.item.goal}
+									measuringUnit={activityItem.item.measuringUnit}
+									isEditMode={props.isEditMode}
+								/>
+							)}
+							contentContainerStyle={{ paddingHorizontal: 5 }}
+							columnWrapperStyle={{ gap: 10, marginBottom: 10 }}
+							keyExtractor={(item) => item.name}
+						/>
+					)}
 		</View>
 	)
 }

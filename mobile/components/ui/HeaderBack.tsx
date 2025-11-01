@@ -7,14 +7,20 @@ import { cn } from '@/helpers/cn'
 
 interface IProps extends PropsWithChildren {
 	className?: string
+	returnCallback?: () => void
 }
 
 const HeaderBack = (props: IProps) => {
 	const router = useRouter()
 
+	const handleClickBack = () => {
+		router.back()
+		props.returnCallback?.()
+	}
+
 	return (
 		<View className={cn('flex-row gap-x-[16px]', props.className)}>
-			<Pressable onPress={() => router.back()}>
+			<Pressable onPress={handleClickBack}>
 				<ArrowBackSvg />
 			</Pressable>
 			<Text className="text-[20px] text-white" style={{ fontFamily: fontFamily.bold }}>

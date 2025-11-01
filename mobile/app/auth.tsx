@@ -27,7 +27,6 @@ import { getFieldsErrors } from '@/helpers/getFieldsErrors'
 import { loginUser, registrationUser } from '@/api/auth'
 import { cn } from '@/helpers/cn'
 import { lengths } from '@shared/lengths'
-import { useToast } from '@/hooks/useToast'
 import * as Haptics from 'expo-haptics'
 
 export enum AUTH_MODE {
