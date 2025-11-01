@@ -50,7 +50,6 @@ const FriendRequestsPage = () => {
 	const handleGetAndSetData = async () => {
 		try {
 			const friendRequests = await getPendingInvitesList()
-            console.log(friendRequests[0].user.avatarFilename)
 			setData((s) => ({ ...s, friendRequests: friendRequests }))
 		} catch (e) {
 			const errors = await e.response.json()
