@@ -13,6 +13,7 @@ import { useRouter } from 'expo-router'
 import Modal from '@/components/ui/Modal/Modal'
 import { useToast } from '@/hooks/useToast'
 import { IUser } from '@/store/authStore'
+import {PATH_TO_IMAGE} from "@/constants/PATH_TO_FILES";
 
 const MyFriendsPage = () => {
 	const insets = useSafeAreaInsets()
@@ -118,7 +119,7 @@ const MyFriendsPage = () => {
 								id={item.user.id}
 								name={item.user.name}
 								username={item.user.username}
-								avatar={item.user.avatarFilename}
+                                avatar={item.user.avatarFilename ? `${PATH_TO_IMAGE}${item.user.avatarFilename}` : null}
 								icon={{
 									iconSvg: <PeopleRemoveSvg />,
 									iconCb: () => handleOpenDeleteModal(item.user)
@@ -133,7 +134,7 @@ const MyFriendsPage = () => {
 							flex: data.friends.length === 0 ? 1 : undefined
 						}}
 						showsVerticalScrollIndicator={false}
-						refreshControl={<RefreshControl refreshing={data.refreshing} onRefresh={onRefresh} />}
+						refreshControl={<RefreshControl refreshing={data.refreshing} onRefresh={onRefresh} tintColor="#22CB5A" />}
 						ListEmptyComponent={EmptyListComponent}
 					/>
 

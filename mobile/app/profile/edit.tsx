@@ -87,7 +87,7 @@ const ProfileEdit = () => {
 	}, [])
 
 	const onSubmit = async (editProfileFormState: IEditProfileFormState) => {
-		setData((s) => ({ ...s, isLoading: true, errors: undefined }))
+		setData((s) => ({ ...s, isLoading: true, errors: undefined, isSaved: false }))
 
 		const formData = new FormData()
 		if (editProfileFormState.name) {
@@ -120,6 +120,7 @@ const ProfileEdit = () => {
 			const editResponse = await editProfileDataWithAvatar(formData)
 			setUser(editResponse.user)
 			Keyboard.dismiss()
+            setData(s => ({...s, isSaved: true }))
 			toast.success('Данные успешно сохранены')
 		} catch (e) {
 			const errors = await e.response.json()

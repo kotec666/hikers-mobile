@@ -83,13 +83,15 @@ const Profile = () => {
 		await handleGetAndSetData()
 	}, [])
 
-	const activitiesToRender = newActivitiesOrder.length ? newActivitiesOrder : data.profileData?.activities
+
+    const sourceArray = newActivitiesOrder?.length ? newActivitiesOrder : data.profileData?.activities || []
+    const activitiesToRender = sourceArray?.length >= 3 ? sourceArray?.slice(0, 3) : []
 
 	return (
 		<>
 			<NavBar />
 			<SafeAreaProvider style={{ paddingTop: insets.top, paddingBottom: insets.bottom }}>
-				<ScrollView refreshControl={<RefreshControl refreshing={data.refreshing} onRefresh={onRefresh} />}>
+				<ScrollView refreshControl={<RefreshControl refreshing={data.refreshing} onRefresh={onRefresh} tintColor="#22CB5A" />}>
 					<Container className="gap-[20px]">
 						<View className="gap-[20px]">
 							<View className="gap-[16px]">

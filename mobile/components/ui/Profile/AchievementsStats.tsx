@@ -8,7 +8,7 @@ const AchievementsStats = (props: { title: string }) => {
 			className="bg-black-25 rounded-[15px] flex-1 justify-center items-center py-[20px] min-h-[63px]"
 			style={{ paddingVertical: 20 }}
 		>
-			<Text className="text-[12px] text-white" style={{ fontFamily: fontFamily.bold }}>
+			<Text className="text-center text-[12px] text-white" style={{ fontFamily: fontFamily.bold }}>
 				{props.title}
 			</Text>
 		</View>

@@ -10,6 +10,7 @@ import RoundedMinusSvg from '@/components/svg/RoundedMinusSvg'
 import { acceptFriendRequest, getPendingInvitesList, IInvite, rejectFriendRequest } from '@/api/friends'
 import { getFieldsErrors } from '@/helpers/getFieldsErrors'
 import { useToast } from '@/hooks/useToast'
+import {PATH_TO_IMAGE} from "@/constants/PATH_TO_FILES";
 
 const FriendRequestsPage = () => {
 	const insets = useSafeAreaInsets()
@@ -26,7 +27,7 @@ const FriendRequestsPage = () => {
 		try {
 			await acceptFriendRequest(newFriendId)
 			const withoutAddedUser = data.friendRequests.filter(
-				(friendRequest) => friendRequest.invitedUser.id !== newFriendId
+				(friendRequest) => friendRequest.user.id !== newFriendId
 			)
 			setData((s) => ({ ...s, friendRequests: withoutAddedUser }))
 		} catch (e) {
@@ -38,7 +39,7 @@ const FriendRequestsPage = () => {
 		try {
 			await rejectFriendRequest(rejectUserId)
 			const withoutRejectedUser = data.friendRequests.filter(
-				(friendRequest) => friendRequest.invitedUser.id !== rejectUserId
+				(friendRequest) => friendRequest.user.id !== rejectUserId
 			)
 			setData((s) => ({ ...s, friendRequests: withoutRejectedUser }))
 		} catch (e) {
@@ -49,6 +50,7 @@ const FriendRequestsPage = () => {
 	const handleGetAndSetData = async () => {
 		try {
 			const friendRequests = await getPendingInvitesList()
+            console.log(friendRequests[0].user.avatarFilename)
 			setData((s) => ({ ...s, friendRequests: friendRequests }))
 		} catch (e) {
 			const errors = await e.response.json()
@@ -85,23 +87,23 @@ const FriendRequestsPage = () => {
 						data={data.friendRequests}
 						renderItem={({ item }) => (
 							<PeopleListItem
-								id={item.invitedUser.id}
-								username={item.invitedUser.username}
-								name={item.invitedUser.name}
-								avatar={item.invitedUser.avatarFilename}
+								id={item.user.id}
+								username={item.user.username}
+								name={item.user.name}
+								avatar={item.user.avatarFilename ? `${PATH_TO_IMAGE}${item.user.avatarFilename}` : null}
 								icon={[
 									{
 										iconSvg: <RoundedPlusSvg />,
-										iconCb: () => handleAddFriend(item.invitedUser.id)
+										iconCb: () => handleAddFriend(item.user.id)
 									},
 									{
 										iconSvg: <RoundedMinusSvg />,
-										iconCb: () => handleDeleteFriendRequest(item.invitedUser.id)
+										iconCb: () => handleDeleteFriendRequest(item.user.id)
 									}
 								]}
 							/>
 						)}
-						keyExtractor={(item) => item.invitedUser.id}
+						keyExtractor={(item) => item.user.id}
 						ItemSeparatorComponent={() => <View style={{ height: 15 }} />}
 						contentContainerStyle={{
 							paddingBottom: insets.bottom + 20,
@@ -109,7 +111,7 @@ const FriendRequestsPage = () => {
 							flex: data.friendRequests.length === 0 ? 1 : undefined
 						}}
 						showsVerticalScrollIndicator={false}
-						refreshControl={<RefreshControl refreshing={data.refreshing} onRefresh={onRefresh} />}
+						refreshControl={<RefreshControl refreshing={data.refreshing} onRefresh={onRefresh} tintColor="#22CB5A" />}
 						ListEmptyComponent={EmptyListComponent}
 					/>
 				</Container>

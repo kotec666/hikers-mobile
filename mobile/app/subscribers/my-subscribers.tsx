@@ -7,6 +7,7 @@ import { SafeAreaProvider, useSafeAreaInsets } from 'react-native-safe-area-cont
 import { fontFamily } from '@/constants/Fonts'
 import { getFieldsErrors } from '@/helpers/getFieldsErrors'
 import { getSubscribersList, getSubscriptionsList, ISubscribe } from '@/api/subscribers'
+import {PATH_TO_IMAGE} from "@/constants/PATH_TO_FILES";
 
 /**
  * Мои подписчики, кто подписан на меня
@@ -63,7 +64,7 @@ const MySubscribersPage = () => {
 								id={item.user.id}
 								username={item.user.username}
 								name={item.user.name}
-								avatar={item.user.avatarFilename}
+                                avatar={item.user.avatarFilename ? `${PATH_TO_IMAGE}${item.user.avatarFilename}` : null}
 							/>
 						)}
 						ItemSeparatorComponent={() => <View style={{ height: 15 }} />}
@@ -74,7 +75,7 @@ const MySubscribersPage = () => {
 						}}
 						showsVerticalScrollIndicator={false}
 						keyExtractor={(item) => item.user.id}
-						refreshControl={<RefreshControl refreshing={data.refreshing} onRefresh={onRefresh} />}
+						refreshControl={<RefreshControl refreshing={data.refreshing} onRefresh={onRefresh} tintColor="#22CB5A" />}
 						ListEmptyComponent={EmptyListComponent}
 					/>
 				</Container>
