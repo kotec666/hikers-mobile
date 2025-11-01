@@ -4,6 +4,7 @@ import { FriendsService } from './friends.service';
 import { User, UserData } from 'src/common/decorators/user.decorator';
 import { FriendDto } from './friends.dto';
 import { IsUUID } from '@validation/uuid.validatior';
+import { CommonDto } from 'src/common/dto/common.dto';
 
 @Controller('friends')
 @UseInterceptors(UserInterceptor)
@@ -39,7 +40,10 @@ export class FriendsController {
 	 * @security token
 	 */
 	@Delete(':friendId')
-	public async removeFriend(@User() user: UserData, @Param('friendId') friendId: string): Promise<FriendDto.Entity> {
+	public async removeFriend(
+		@User() user: UserData,
+		@Param('friendId') friendId: string,
+	): Promise<CommonDto.BooleanResponse> {
 		return this.service.removeFriend(user.id, friendId);
 	}
 
@@ -72,7 +76,7 @@ export class FriendsController {
 	public async sendInvite(
 		@User() user: UserData,
 		@Param('userId') toUserId: string,
-	): Promise<FriendDto.InviteEntity> {
+	): Promise<CommonDto.BooleanResponse> {
 		return this.service.sendInvite(user.id, toUserId);
 	}
 
@@ -82,7 +86,10 @@ export class FriendsController {
 	 * @security token
 	 */
 	@Patch('invites/accept/:userId')
-	public async acceptInvite(@User() user: UserData, @Param('userId') fromUserId: string): Promise<FriendDto.Entity> {
+	public async acceptInvite(
+		@User() user: UserData,
+		@Param('userId') fromUserId: string,
+	): Promise<CommonDto.BooleanResponse> {
 		return this.service.acceptInvite(fromUserId, user.id);
 	}
 
@@ -95,7 +102,7 @@ export class FriendsController {
 	public async rejectInvite(
 		@User() user: UserData,
 		@Param('userId') fromUserId: string,
-	): Promise<FriendDto.InviteEntity> {
+	): Promise<CommonDto.BooleanResponse> {
 		return this.service.rejectInvite(fromUserId, user.id);
 	}
 
@@ -108,7 +115,7 @@ export class FriendsController {
 	public async revokeInvite(
 		@User() user: UserData,
 		@Param('userId') toUserId: string,
-	): Promise<FriendDto.InviteEntity> {
+	): Promise<CommonDto.BooleanResponse> {
 		return this.service.revokeInvite(user.id, toUserId);
 	}
 }
