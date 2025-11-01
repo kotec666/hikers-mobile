@@ -21,8 +21,6 @@ export class SubscribersController {
 		@User() user: UserData,
 		@IsUUID('userId') @Param('userId') toUserId: string,
 	): Promise<CommonDto.BooleanResponse> {
-		console.log('c', toUserId);
-
 		return await this.service.subscribe(user.id, toUserId);
 	}
 

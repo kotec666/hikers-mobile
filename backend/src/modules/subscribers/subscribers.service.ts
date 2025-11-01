@@ -1,11 +1,10 @@
 ﻿import { BadRequestException, Injectable } from '@nestjs/common';
 import { DatabaseService } from '../database/database.service';
-import { userSubscribers } from '../database/schema';
+import { users, userSubscribers } from '../database/schema';
 import { SubscriberDto, SubscriptionDto } from './subscribers.dto';
 import { and, count, eq } from 'drizzle-orm';
 import { CommonDto } from 'src/common/dto/common.dto';
 import { ERRORS } from '@shared/errors';
-import { getSubscribersQuery, getSubscriptionsQuery } from './subscribers.queries';
 
 @Injectable()
 export class SubscribersService {
@@ -14,13 +13,37 @@ export class SubscribersService {
 	/** Получить подписки */
 	public async getSubscriptions(userId: string): Promise<SubscriptionDto.Entity[]> {
 		// @TODO пагинация
-		return (await this.db.db.execute(getSubscriptionsQuery(userId))).rows as SubscriptionDto.Entity[];
+		return await this.db.db
+			.select({
+				user: {
+					id: users.id,
+					email: users.email,
+					name: users.name,
+					username: users.username,
+					avatarFilename: users.avatarFilename,
+				},
+			})
+			.from(userSubscribers)
+			.where(eq(userSubscribers.userSubscriberId, userId))
+			.innerJoin(users, eq(users.id, userSubscribers.userId));
 	}
 
 	/** Получить подписчиков */
 	public async getSubscribers(userId: string): Promise<SubscriberDto.Entity[]> {
 		// @TODO пагинация
-		return (await this.db.db.execute(getSubscribersQuery(userId))).rows as SubscriberDto.Entity[];
+		return await this.db.db
+			.select({
+				user: {
+					id: users.id,
+					email: users.email,
+					name: users.name,
+					username: users.username,
+					avatarFilename: users.avatarFilename,
+				},
+			})
+			.from(userSubscribers)
+			.where(eq(userSubscribers.userId, userId))
+			.innerJoin(users, eq(users.id, userSubscribers.userSubscriberId));
 	}
 
 	/** Получить кол-во подписчиков */
@@ -65,9 +88,13 @@ export class SubscribersService {
 	}
 
 	public async unsubscribe(subscriberUserId: string, toUserId: string): Promise<CommonDto.BooleanResponse> {
-		await this.db.db
+		const [existingSubscription] = await this.db.db
 			.delete(userSubscribers)
-			.where(and(eq(userSubscribers.userId, toUserId), eq(userSubscribers.userSubscriberId, subscriberUserId)));
+			.where(and(eq(userSubscribers.userId, toUserId), eq(userSubscribers.userSubscriberId, subscriberUserId)))
+			.returning({ userId: userSubscribers.userId });
+		if (!existingSubscription) {
+			throw new BadRequestException(ERRORS.NOT_FOUND);
+		}
 
 		return { success: true };
 	}
