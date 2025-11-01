@@ -66,6 +66,16 @@ export class SubscribersService {
 		return subscriptions.count;
 	}
 
+	public async isSubscribed(userSubscriberId: string, otherUserId: string): Promise<boolean> {
+		const [subscribed] = await this.db.db
+			.select({ userId: userSubscribers.userId })
+			.from(userSubscribers)
+			.where(and(eq(userSubscribers.userId, otherUserId), eq(userSubscribers.userSubscriberId, userSubscriberId)))
+			.limit(1);
+
+		return !!subscribed;
+	}
+
 	public async subscribe(subscriberUserId: string, toUserId: string): Promise<CommonDto.BooleanResponse> {
 		if (subscriberUserId === toUserId) {
 			throw new BadRequestException(ERRORS.BAD_REQUEST);

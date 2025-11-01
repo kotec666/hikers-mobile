@@ -4,7 +4,7 @@ import { ActivitiyDto } from '../activities/activities.dto';
 import { UserDto } from '../user/user.dto';
 import { lengths } from '@shared/lengths';
 import { ERRORS } from '@shared/errors';
-import { UserActivity } from '@shared/enums';
+import { FriendStatus, UserActivity } from '@shared/enums';
 import { isUserActivityEnumValue, isUUID, TypedArray } from '@validation/decorators';
 
 export namespace ProfileDto {
@@ -13,6 +13,8 @@ export namespace ProfileDto {
 		subscribers: number;
 		subscriptions: number;
 		friends: number;
+		isFriend?: FriendStatus;
+		isSubscribed?: boolean;
 		achievements: AchievementDto.Entity[];
 		activities: ActivitiyDto.Entity[];
 	};

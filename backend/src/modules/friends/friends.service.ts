@@ -6,6 +6,7 @@ import { eq, and, or, count } from 'drizzle-orm';
 import { ERRORS } from '@shared/errors';
 import { UserService } from '../user/user.service';
 import { CommonDto } from 'src/common/dto/common.dto';
+import { FriendStatus } from '@shared/enums';
 
 @Injectable()
 export class FriendsService {
@@ -87,6 +88,36 @@ export class FriendsService {
 			.where(or(eq(userFriends.userId, userId), eq(userFriends.userFriendId, userId)));
 
 		return friends.count;
+	}
+
+	public async getFriendsStatus(user1Id: string, user2Id: string): Promise<FriendStatus> {
+		const [existingFriend] = await this.db.db
+			.select({
+				userId: userFriends.userId,
+			})
+			.from(userFriends)
+			.where(
+				or(
+					and(eq(userFriends.userId, user1Id), eq(userFriends.userFriendId, user2Id)),
+					and(eq(userFriends.userId, user2Id), eq(userFriends.userFriendId, user1Id)),
+				),
+			);
+		if (existingFriend) return FriendStatus.TRUE;
+
+		const [invited] = await this.db.db
+			.select({
+				userId: userFriendsInvites.userId,
+			})
+			.from(userFriendsInvites)
+			.where(
+				or(
+					and(eq(userFriendsInvites.userId, user1Id), eq(userFriendsInvites.invitedUserId, user2Id)),
+					and(eq(userFriendsInvites.userId, user2Id), eq(userFriendsInvites.invitedUserId, user1Id)),
+				),
+			);
+		if (invited) return FriendStatus.INVITED;
+
+		return FriendStatus.FALSE;
 	}
 
 	public async removeFriend(userId: string, userFriendId: string): Promise<CommonDto.BooleanResponse> {

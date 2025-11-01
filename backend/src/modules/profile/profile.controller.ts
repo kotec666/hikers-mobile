@@ -26,8 +26,8 @@ export class ProfileController {
 	 * @security token
 	 */
 	@Get(':userId')
-	public async getSomeone(@Param('userId') userId: string): Promise<ProfileDto.Entity> {
-		return await this.service.getProfile(userId);
+	public async getSomeone(@User() user: UserData, @Param('userId') userId: string): Promise<ProfileDto.Entity> {
+		return await this.service.getOtherProfile(user.id, userId);
 	}
 
 	/**
