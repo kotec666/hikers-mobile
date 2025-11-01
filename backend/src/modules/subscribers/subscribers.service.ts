@@ -1,26 +1,46 @@
 ﻿import { BadRequestException, Injectable } from '@nestjs/common';
 import { DatabaseService } from '../database/database.service';
 import { userSubscribers } from '../database/schema';
-import { SubscriberDto, SubscribtionDto } from './subscribers.dto';
-import { and, eq } from 'drizzle-orm';
+import { SubscriberDto, SubscriptionDto } from './subscribers.dto';
+import { and, count, eq } from 'drizzle-orm';
 import { CommonDto } from 'src/common/dto/common.dto';
 import { ERRORS } from '@shared/errors';
-import { getSubscribersQuery, getSubscribtionsQuery } from './subscribers.queries';
+import { getSubscribersQuery, getSubscriptionsQuery } from './subscribers.queries';
 
 @Injectable()
 export class SubscribersService {
 	constructor(private readonly db: DatabaseService) {}
 
 	/** Получить подписки */
-	public async getSubscribtions(userId: string): Promise<SubscribtionDto.Entity[]> {
+	public async getSubscriptions(userId: string): Promise<SubscriptionDto.Entity[]> {
 		// @TODO пагинация
-		return (await this.db.db.execute(getSubscribtionsQuery(userId))).rows as SubscribtionDto.Entity[];
+		return (await this.db.db.execute(getSubscriptionsQuery(userId))).rows as SubscriptionDto.Entity[];
 	}
 
 	/** Получить подписчиков */
 	public async getSubscribers(userId: string): Promise<SubscriberDto.Entity[]> {
 		// @TODO пагинация
 		return (await this.db.db.execute(getSubscribersQuery(userId))).rows as SubscriberDto.Entity[];
+	}
+
+	/** Получить кол-во подписчиков */
+	public async getSubscribersCount(userId: string): Promise<number> {
+		const [subscribers] = await this.db.db
+			.select({ count: count() })
+			.from(userSubscribers)
+			.where(eq(userSubscribers.userId, userId));
+
+		return subscribers.count;
+	}
+
+	/** Получить кол-во подписок */
+	public async getSubscriptionsCount(userId: string): Promise<number> {
+		const [subscriptions] = await this.db.db
+			.select({ count: count() })
+			.from(userSubscribers)
+			.where(eq(userSubscribers.userSubscriberId, userId));
+
+		return subscriptions.count;
 	}
 
 	public async subscribe(subscriberUserId: string, toUserId: string): Promise<CommonDto.BooleanResponse> {

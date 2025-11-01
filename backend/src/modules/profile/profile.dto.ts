@@ -1,8 +1,7 @@
 ﻿import { IsOptional, Length } from 'class-validator';
+import { Transform } from 'class-transformer';
 import { AchievementDto } from '../achievements/achievements.dto';
 import { ActivitiyDto } from '../activities/activities.dto';
-import { FriendDto } from '../friends/friends.dto';
-import { SubscriberDto, SubscribtionDto } from '../subscribers/subscribers.dto';
 import { UserDto } from '../user/user.dto';
 import { lengths } from '@shared/lengths';
 import { ERRORS } from '@shared/errors';
@@ -12,14 +11,15 @@ import { isUserActivityEnumValue, isUUID, TypedArray } from '@validation/decorat
 export namespace ProfileDto {
 	export type Entity = {
 		user: UserDto.Entity;
-		subscribers: SubscriberDto.Entity[];
-		subscribtions: SubscribtionDto.Entity[];
-		friends: FriendDto.Entity[];
+		subscribers: number;
+		subscriptions: number;
+		friends: number;
 		achievements: AchievementDto.Entity[];
 		activities: ActivitiyDto.Entity[];
 		posts: any[]; // @TODO
 	};
 
+	/** Form-Data запрос */
 	export class Edit {
 		@IsOptional()
 		@Length(lengths.user.username.min, lengths.user.username.max, { message: `_username:${ERRORS.INVALID_LENGTH}` })
@@ -33,11 +33,11 @@ export namespace ProfileDto {
 		 * @summary Смена аватара
 		 * @description Изменение аватарки работает так:
 		 * Если хотим заменить аву - передаем файл в это поле.
-		 * Если хотим очистить аву - передаем null в это поле.
+		 * Если хотим очистить аву - передаем строку в это поле.
 		 * Если ава не менялась - само собой не передаем это поле.
 		 */
 		@IsOptional()
-		avatar?: Express.Multer.File | null;
+		avatarFilename?: Express.Multer.File | string;
 
 		/**
 		 * @summary Активности на показ
@@ -48,6 +48,12 @@ export namespace ProfileDto {
 		 */
 		@IsOptional()
 		@TypedArray(isUserActivityEnumValue)
+		@Transform(({ value }) => {
+			if (typeof value === 'string') {
+				return value.split(',').map((v) => v.trim());
+			}
+			return value;
+		})
 		activities?: UserActivity[];
 
 		/**
@@ -59,6 +65,12 @@ export namespace ProfileDto {
 		 */
 		@IsOptional()
 		@TypedArray(isUUID)
+		@Transform(({ value }) => {
+			if (typeof value === 'string') {
+				return value.split(',').map((v) => v.trim());
+			}
+			return value;
+		})
 		achievements?: string[];
 	}
 }

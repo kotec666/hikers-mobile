@@ -1,4 +1,4 @@
-﻿import { Body, Controller, Get, Patch, UploadedFile, UseInterceptors } from '@nestjs/common';
+﻿import { Body, Controller, Get, Param, Patch, UploadedFile, UseInterceptors } from '@nestjs/common';
 import { ProfileService } from './profile.service';
 import { UserInterceptor } from 'src/common/interceptors/user.interceptor';
 import { User, UserData } from 'src/common/decorators/user.decorator';
@@ -17,7 +17,17 @@ export class ProfileController {
 	 */
 	@Get()
 	public async getMe(@User() user: UserData): Promise<ProfileDto.Entity> {
-		return await this.service.getMe(user.id);
+		return await this.service.getProfile(user.id);
+	}
+
+	/**
+	 * @tag Profile
+	 * @summary Чужой профиль
+	 * @security token
+	 */
+	@Get(':userId')
+	public async getSomeone(@Param('userId') userId: string): Promise<ProfileDto.Entity> {
+		return await this.service.getProfile(userId);
 	}
 
 	/**
@@ -26,12 +36,15 @@ export class ProfileController {
 	 * @security token
 	 */
 	@Patch()
-	@UseInterceptors(FileInterceptor('avatar'))
+	@UseInterceptors(FileInterceptor('avatarFilename'))
 	public async edit(
 		@User() user: UserData,
 		@Body() body: ProfileDto.Edit,
-		@UploadedFile() avatar?: Express.Multer.File,
+		@UploadedFile() avatarFilename?: Express.Multer.File,
 	): Promise<ProfileDto.Entity> {
-		return await this.service.edit(user.id, { ...body, avatar: body.avatar === null ? body.avatar : avatar });
+		return await this.service.edit(user.id, {
+			...body,
+			avatarFilename: typeof body.avatarFilename === 'string' ? body.avatarFilename : avatarFilename,
+		});
 	}
 }

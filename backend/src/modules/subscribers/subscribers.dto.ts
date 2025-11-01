@@ -9,7 +9,7 @@ export namespace SubscriberDto {
 	};
 }
 
-export namespace SubscribtionDto {
+export namespace SubscriptionDto {
 	export type Entity = {
 		/** Тот, на кого подписан текущий пользователь */
 		user: UserDto.Entity;
