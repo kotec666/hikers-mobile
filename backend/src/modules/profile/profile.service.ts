@@ -22,6 +22,19 @@ export class ProfileService {
 		private readonly files: StaticService,
 	) {}
 
+	public async getOtherProfile(currentUserId: string, otherUserId: string): Promise<ProfileDto.Entity> {
+		const profile = await this.getProfile(otherUserId);
+
+		const isFriend = await this.friends.getFriendsStatus(currentUserId, otherUserId);
+		const isSubscribed = await this.subs.isSubscribed(currentUserId, otherUserId);
+
+		return {
+			...profile,
+			isFriend,
+			isSubscribed,
+		};
+	}
+
 	public async getProfile(userId: string): Promise<ProfileDto.Entity> {
 		const user = await this.users.getUser(userId);
 
@@ -32,7 +45,6 @@ export class ProfileService {
 
 		const achievements = await this.achievements.getClaimed(userId, PROFILE_TOP_ACHIEVEMENTS_COUNT);
 		const activities = await this.activities.getAll(userId, PROFILE_TOP_ACTIVITIES_COUNT);
-		const posts = [];
 
 		return {
 			user,
@@ -41,7 +53,6 @@ export class ProfileService {
 			friends,
 			achievements,
 			activities,
-			posts,
 		};
 	}
 

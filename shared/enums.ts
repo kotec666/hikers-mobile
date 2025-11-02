@@ -22,3 +22,10 @@ export enum MeasuringUnit {
 	/** Кол-во повторений. Например - присел 100 **раз** */
 	REPEATS = 'reps',
 }
+
+/** Статус дружбы между пользователями */
+export enum FriendStatus {
+	FALSE = 'false',
+	TRUE = 'true',
+	INVITED = 'invited',
+}
