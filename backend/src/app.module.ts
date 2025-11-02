@@ -16,6 +16,7 @@ import { FriendsModule } from './modules/friends/friends.module';
 import { SubscribersModule } from './modules/subscribers/subscribers.module';
 import { ActivitiesModule } from './modules/activities/activities.module';
 import { ProfileModule } from './modules/profile/profile.module';
+import { TrainingsModule } from './modules/trainings/trainings.module';
 
 @Module({
 	imports: [
@@ -70,6 +71,7 @@ import { ProfileModule } from './modules/profile/profile.module';
 		SubscribersModule,
 		ActivitiesModule,
 		ProfileModule,
+		TrainingsModule,
 	],
 	providers: [UniqueEmailValidator],
 })

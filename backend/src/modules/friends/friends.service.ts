@@ -5,6 +5,8 @@ import { userFriends, userFriendsInvites } from '../database/schema';
 import { eq, and, or, count } from 'drizzle-orm';
 import { ERRORS } from '@shared/errors';
 import { UserService } from '../user/user.service';
+import { CommonDto } from 'src/common/dto/common.dto';
+import { FriendStatus } from '@shared/enums';
 
 @Injectable()
 export class FriendsService {
@@ -36,7 +38,6 @@ export class FriendsService {
 		const friendUser = await this.users.getUser(friendUserId);
 
 		const friend: FriendDto.Entity = {
-			createdAt: friendRow.createdAt,
 			user: {
 				id: friendUser.id,
 				name: friendUser.name,
@@ -65,7 +66,6 @@ export class FriendsService {
 				const friendUser = await this.users.getUser(friendUserId);
 
 				const friend: FriendDto.Entity = {
-					createdAt: friendRow.createdAt,
 					user: {
 						id: friendUser.id,
 						name: friendUser.name,
@@ -90,7 +90,37 @@ export class FriendsService {
 		return friends.count;
 	}
 
-	public async removeFriend(userId: string, userFriendId: string): Promise<FriendDto.Entity> {
+	public async getFriendsStatus(user1Id: string, user2Id: string): Promise<FriendStatus> {
+		const [existingFriend] = await this.db.db
+			.select({
+				userId: userFriends.userId,
+			})
+			.from(userFriends)
+			.where(
+				or(
+					and(eq(userFriends.userId, user1Id), eq(userFriends.userFriendId, user2Id)),
+					and(eq(userFriends.userId, user2Id), eq(userFriends.userFriendId, user1Id)),
+				),
+			);
+		if (existingFriend) return FriendStatus.TRUE;
+
+		const [invited] = await this.db.db
+			.select({
+				userId: userFriendsInvites.userId,
+			})
+			.from(userFriendsInvites)
+			.where(
+				or(
+					and(eq(userFriendsInvites.userId, user1Id), eq(userFriendsInvites.invitedUserId, user2Id)),
+					and(eq(userFriendsInvites.userId, user2Id), eq(userFriendsInvites.invitedUserId, user1Id)),
+				),
+			);
+		if (invited) return FriendStatus.INVITED;
+
+		return FriendStatus.FALSE;
+	}
+
+	public async removeFriend(userId: string, userFriendId: string): Promise<CommonDto.BooleanResponse> {
 		const [removedFriend] = await this.db.db
 			.delete(userFriends)
 			.where(
@@ -101,28 +131,12 @@ export class FriendsService {
 			)
 			.returning({
 				userId: userFriends.userId,
-				userFriendId: userFriends.userFriendId,
-				createdAt: userFriends.createdAt,
 			});
 		if (!removedFriend) {
 			throw new NotFoundException(ERRORS.NOT_FOUND);
 		}
 
-		const friendUserId = removedFriend.userId === userId ? removedFriend.userFriendId : removedFriend.userId;
-		const friendUser = await this.users.getUser(friendUserId);
-
-		const friend: FriendDto.Entity = {
-			createdAt: removedFriend.createdAt,
-			user: {
-				id: friendUser.id,
-				name: friendUser.name,
-				username: friendUser.username,
-				avatarFilename: friendUser.avatarFilename,
-				email: friendUser.email,
-			},
-		};
-
-		return friend;
+		return { success: true };
 	}
 
 	public async getSentInvites(userId: string): Promise<FriendDto.InviteEntity[]> {
@@ -133,18 +147,10 @@ export class FriendsService {
 
 		return await Promise.all(
 			invites.map(async (inviteRow) => {
-				const user = await this.users.getUser(inviteRow.userId);
 				const invitedUser = await this.users.getUser(inviteRow.invitedUserId);
 
 				const invite: FriendDto.InviteEntity = {
 					user: {
-						id: user.id,
-						name: user.name,
-						username: user.username,
-						avatarFilename: user.avatarFilename,
-						email: user.email,
-					},
-					invitedUser: {
 						id: invitedUser.id,
 						name: invitedUser.name,
 						username: invitedUser.username,
@@ -166,7 +172,6 @@ export class FriendsService {
 		return await Promise.all(
 			invites.map(async (inviteRow) => {
 				const user = await this.users.getUser(inviteRow.userId);
-				const invitedUser = await this.users.getUser(inviteRow.invitedUserId);
 
 				const invite: FriendDto.InviteEntity = {
 					user: {
@@ -176,22 +181,19 @@ export class FriendsService {
 						avatarFilename: user.avatarFilename,
 						email: user.email,
 					},
-					invitedUser: {
-						id: invitedUser.id,
-						name: invitedUser.name,
-						username: invitedUser.username,
-						avatarFilename: invitedUser.avatarFilename,
-						email: invitedUser.email,
-					},
 				};
 				return invite;
 			}),
 		);
 	}
 
-	public async sendInvite(fromUserId: string, toUserId: string): Promise<FriendDto.InviteEntity> {
+	public async sendInvite(fromUserId: string, toUserId: string): Promise<CommonDto.BooleanResponse> {
+		if (fromUserId === toUserId) {
+			throw new BadRequestException(ERRORS.MISMATCH);
+		}
+
 		const [existingInvite] = await this.db.db
-			.select({ id: userFriendsInvites.id })
+			.select({ userId: userFriendsInvites.userId })
 			.from(userFriendsInvites)
 			.where(and(eq(userFriendsInvites.userId, fromUserId), eq(userFriendsInvites.invitedUserId, toUserId)))
 			.limit(1);
@@ -213,122 +215,37 @@ export class FriendsService {
 			throw new BadRequestException(ERRORS.MISMATCH);
 		}
 
-		const user = await this.users.getUser(fromUserId);
-		const invitedUser = await this.users.getUser(toUserId);
-
 		await this.db.db.insert(userFriendsInvites).values({ userId: fromUserId, invitedUserId: toUserId });
 
-		const invite: FriendDto.InviteEntity = {
-			user: {
-				id: user.id,
-				name: user.name,
-				username: user.username,
-				avatarFilename: user.avatarFilename,
-				email: user.email,
-			},
-			invitedUser: {
-				id: invitedUser.id,
-				name: invitedUser.name,
-				username: invitedUser.username,
-				avatarFilename: invitedUser.avatarFilename,
-				email: invitedUser.email,
-			},
-		};
-		return invite;
+		return { success: true };
 	}
 
-	public async acceptInvite(fromUserId: string, toUserId: string): Promise<FriendDto.Entity> {
-		const [invite] = await this.db.db
-			.delete(userFriendsInvites)
-			.where(and(eq(userFriendsInvites.userId, fromUserId), eq(userFriendsInvites.invitedUserId, toUserId)))
-			.returning({ userId: userFriendsInvites.userId, invitedUserId: userFriendsInvites.invitedUserId });
-		if (!invite) {
-			throw new NotFoundException(ERRORS.NOT_FOUND);
-		}
+	public async acceptInvite(fromUserId: string, toUserId: string): Promise<CommonDto.BooleanResponse> {
+		await this.deleteInvite(fromUserId, toUserId);
+		await this.db.db.insert(userFriends).values({ userId: fromUserId, userFriendId: toUserId });
 
-		const [friendRow] = await this.db.db
-			.insert(userFriends)
-			.values({ userId: invite.userId, userFriendId: invite.invitedUserId })
-			.returning({
-				userId: userFriends.userId,
-				userFriendId: userFriends.userFriendId,
-				createdAt: userFriends.createdAt,
-			});
-
-		const friendUser = await this.users.getUser(invite.userId);
-		const friend: FriendDto.Entity = {
-			createdAt: friendRow.createdAt,
-			user: {
-				id: friendUser.id,
-				name: friendUser.name,
-				username: friendUser.username,
-				avatarFilename: friendUser.avatarFilename,
-				email: friendUser.email,
-			},
-		};
-
-		return friend;
+		return { success: true };
 	}
 
-	public async rejectInvite(fromUserId: string, toUserId: string): Promise<FriendDto.InviteEntity> {
+	/** Отклонить инвайт */
+	public async rejectInvite(fromUserId: string, toUserId: string): Promise<CommonDto.BooleanResponse> {
+		return await this.deleteInvite(fromUserId, toUserId);
+	}
+
+	/** Отозвать инвайт */
+	public async revokeInvite(fromUserId: string, toUserId: string): Promise<CommonDto.BooleanResponse> {
+		return await this.deleteInvite(fromUserId, toUserId);
+	}
+
+	private async deleteInvite(fromUserId: string, toUserId: string): Promise<CommonDto.BooleanResponse> {
 		const [inviteRow] = await this.db.db
 			.delete(userFriendsInvites)
 			.where(and(eq(userFriendsInvites.userId, fromUserId), eq(userFriendsInvites.invitedUserId, toUserId)))
-			.returning({ userId: userFriendsInvites.userId, invitedUserId: userFriendsInvites.invitedUserId });
+			.returning({ userId: userFriendsInvites.userId });
 		if (!inviteRow) {
 			throw new NotFoundException(ERRORS.NOT_FOUND);
 		}
 
-		const user = await this.users.getUser(inviteRow.userId);
-		const invitedUser = await this.users.getUser(inviteRow.invitedUserId);
-
-		const invite: FriendDto.InviteEntity = {
-			user: {
-				id: user.id,
-				name: user.name,
-				username: user.username,
-				avatarFilename: user.avatarFilename,
-				email: user.email,
-			},
-			invitedUser: {
-				id: invitedUser.id,
-				name: invitedUser.name,
-				username: invitedUser.username,
-				avatarFilename: invitedUser.avatarFilename,
-				email: invitedUser.email,
-			},
-		};
-		return invite;
-	}
-
-	public async revokeInvite(fromUserId: string, toUserId: string): Promise<FriendDto.InviteEntity> {
-		const [inviteRow] = await this.db.db
-			.delete(userFriendsInvites)
-			.where(and(eq(userFriendsInvites.userId, fromUserId), eq(userFriendsInvites.invitedUserId, toUserId)))
-			.returning({ userId: userFriendsInvites.userId, invitedUserId: userFriendsInvites.invitedUserId });
-		if (!inviteRow) {
-			throw new NotFoundException(ERRORS.NOT_FOUND);
-		}
-
-		const user = await this.users.getUser(inviteRow.userId);
-		const invitedUser = await this.users.getUser(inviteRow.invitedUserId);
-
-		const invite: FriendDto.InviteEntity = {
-			user: {
-				id: user.id,
-				name: user.name,
-				username: user.username,
-				avatarFilename: user.avatarFilename,
-				email: user.email,
-			},
-			invitedUser: {
-				id: invitedUser.id,
-				name: invitedUser.name,
-				username: invitedUser.username,
-				avatarFilename: invitedUser.avatarFilename,
-				email: invitedUser.email,
-			},
-		};
-		return invite;
+		return { success: true };
 	}
 }

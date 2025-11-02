@@ -12,6 +12,16 @@ export class AchievementsContoller {
 
 	/**
 	 * @tag Achievements
+	 * @summary Получить полученные достижения пользователя по его id
+	 * @security token
+	 */
+	@Get('claimed/:userId')
+	public async getClaimedByUserId(@Param('userId') userId: string): Promise<AchievementDto.Entity[]> {
+		return this.service.getClaimed(userId);
+	}
+
+	/**
+	 * @tag Achievements
 	 * @summary Получить полученные достижения
 	 * @security token
 	 */

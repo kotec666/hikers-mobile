@@ -29,14 +29,19 @@ export const measuringUnitEnum = pgEnum('measuring_unit', enumToPgEnum(Measuring
  */
 
 export interface TrainingRouteNode {
-	/** Метка времени */
-	ts: number; // @TODO Таймзона??
+	/** Метка времени относительно даты СТАРТА (started_at) тренировки */
+	rel_ts: number;
 	/** Высота */
 	alt: number;
 	/** Скорость км/ч */
 	speed_kmh: number;
 	/** Пройденное расстояние (в метрах) */
 	distance: number;
+
+	paused: boolean;
+
+	lat: number;
+	lng: number;
 }
 
 /**
@@ -118,7 +123,6 @@ export const userFriends = pgTable(
 export const userFriendsInvites = pgTable(
 	'user_friends_invites',
 	{
-		id: uuid('id').primaryKey().defaultRandom(),
 		userId: uuid('user_id')
 			.notNull()
 			.references(() => users.id),
@@ -240,7 +244,6 @@ export const trainingMetrics = pgTable(
 
 // Training Invites
 export const trainingInvites = pgTable('training_invites', {
-	id: uuid('id').primaryKey().defaultRandom(),
 	trainingId: uuid('training_id')
 		.notNull()
 		.references(() => training.id),
