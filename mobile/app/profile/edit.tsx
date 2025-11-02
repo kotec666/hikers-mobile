@@ -16,7 +16,7 @@ import ActivityInfo from '@/components/ui/Profile/ActivityInfo'
 import HeaderBack from '@/components/ui/HeaderBack'
 import { Input } from '@/components/ui/Input'
 import { useRouter } from 'expo-router'
-import { editProfileDataWithAvatar, getProfileData } from '@/api/profile'
+import { editProfileData, getProfileData } from '@/api/profile'
 import { getFieldsErrors } from '@/helpers/getFieldsErrors'
 import { Controller, useForm } from 'react-hook-form'
 import { useErrorMessage } from '@/hooks/useErrorMessage'
@@ -117,7 +117,7 @@ const ProfileEdit = () => {
 		}
 
 		try {
-			const editResponse = await editProfileDataWithAvatar(formData)
+			const editResponse = await editProfileData(formData)
 			setUser(editResponse.user)
 			Keyboard.dismiss()
             setData(s => ({...s, isSaved: true }))

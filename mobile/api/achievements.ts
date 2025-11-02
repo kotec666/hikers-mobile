@@ -15,6 +15,10 @@ export const getClaimedAchievements = async (): Promise<IAchievement[]> => {
 	return (await fetcher.get(`achievements/claimed`)).json()
 }
 
+export const getClaimedAchievementsByUserId = async (userId: string): Promise<IAchievement[]> => {
+	return (await fetcher.get(`achievements/claimed/${userId}`)).json()
+}
+
 export const getUnclaimedAchievements = async (): Promise<IAchievement[]> => {
 	return (await fetcher.get(`achievements/unclaimed`)).json()
 }

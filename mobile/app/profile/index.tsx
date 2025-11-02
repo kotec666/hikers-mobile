@@ -83,15 +83,18 @@ const Profile = () => {
 		await handleGetAndSetData()
 	}, [])
 
-
-    const sourceArray = newActivitiesOrder?.length ? newActivitiesOrder : data.profileData?.activities || []
-    const activitiesToRender = sourceArray?.length >= 3 ? sourceArray?.slice(0, 3) : []
+	const sourceArray = newActivitiesOrder?.length ? newActivitiesOrder : data.profileData?.activities || []
+	const activitiesToRender = sourceArray?.length >= 3 ? sourceArray?.slice(0, 3) : []
 
 	return (
 		<>
 			<NavBar />
 			<SafeAreaProvider style={{ paddingTop: insets.top, paddingBottom: insets.bottom }}>
-				<ScrollView refreshControl={<RefreshControl refreshing={data.refreshing} onRefresh={onRefresh} tintColor="#22CB5A" />}>
+				<ScrollView
+					refreshControl={
+						<RefreshControl refreshing={data.refreshing} onRefresh={onRefresh} tintColor="#22CB5A" />
+					}
+				>
 					<Container className="gap-[20px]">
 						<View className="gap-[20px]">
 							<View className="gap-[16px]">
@@ -162,11 +165,11 @@ const Profile = () => {
 								/>
 							</View>
 							<Button variant="white">История тренировок</Button>
-							<RedirectAchievementsInfo achievements={data.profileData?.achievements} />
+							<RedirectAchievementsInfo achievements={data.profileData?.achievements} isMyProfile />
 							<ActivityInfo label="Активности" activities={activitiesToRender || []} />
 						</View>
 					</Container>
-					<Container className="gap-[15px]">
+					<Container className="gap-[15px]" style={{ paddingBottom: 100 }}>
 						<Text
 							className="text-base text-white border-b-[1px] border-b-black-44 py-[20px]"
 							style={{ fontFamily: fontFamily.bold }}

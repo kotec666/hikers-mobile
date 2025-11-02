@@ -20,7 +20,13 @@ interface IProps {
 const PeopleListItem = (props: IProps) => {
 	return (
 		<View className="flex-row justify-between items-center w-full">
-			<Link href={`/user/profile/${props.id}`} className="flex-1">
+			<Link
+				href={{
+					pathname: '/user/profile/[id]',
+					params: { id: props.id }
+				}}
+				className="flex-1"
+			>
 				<View className="flex-row gap-[15px] items-center">
 					<UserAvatar avatar={props.avatar} />
 					<Text style={{ fontFamily: fontFamily.medium }} className="text-gray-ab text-base">

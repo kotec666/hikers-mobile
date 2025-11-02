@@ -5,6 +5,7 @@ import { UserAvatar } from '@/components/ui/UserAvatar'
 import LikeSvg from '@/components/svg/LikeSvg'
 import ShareSvg from '@/components/svg/ShareSvg'
 import { useRouter } from 'expo-router'
+import { Colors } from '@/constants/Colors'
 
 const PostListItemBottom = () => {
 	const participants = [
@@ -24,10 +25,19 @@ const PostListItemBottom = () => {
 								key={p.id}
 								style={{
 									marginLeft: index === 0 ? 0 : -10,
-									zIndex: participants.length - index
+									zIndex: participants.length - index,
+									shadowColor: Colors['green-main'],
+									shadowOffset: {
+										width: 0,
+										height: 1
+									},
+									shadowOpacity: 0.2,
+									shadowRadius: 1.5,
+									elevation: 2
 								}}
+								className="bg-white rounded-full shadow-sm"
 							>
-								<UserAvatar avatar={p.avatar} style={{ width: 35, height: 35 }} />
+								<UserAvatar avatar={p.avatar} style={{ width: 35, height: 35 }} bordered />
 							</View>
 						))}
 					</View>

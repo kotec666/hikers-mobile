@@ -18,7 +18,7 @@ export function UserAvatar(props: IProps) {
 		return (
 			<View
 				className={cn('relative rounded-full', {
-					'border-[1px] border-white/20': props.bordered // @TODO возможно border в постах автор отличается от профиля аватар
+					'border-[1px] border-white/20': props.bordered
 				})}
 			>
 				<Image
