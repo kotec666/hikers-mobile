@@ -1,6 +1,6 @@
 ﻿import { BadRequestException, Injectable } from '@nestjs/common';
 import { DatabaseService } from '../database/database.service';
-import { training, trainingParticipants } from '../database/schema';
+import { training, trainingInvites, trainingMetrics, trainingParticipants, trainingRoutes } from '../database/schema';
 import { TrainingDto } from './trainings.dto';
 import { eq, and, isNull, isNotNull } from 'drizzle-orm';
 import { ERRORS } from '@shared/errors';
@@ -68,6 +68,41 @@ export class TrainingsService {
 	// eslint-disable-next-line @typescript-eslint/no-unused-vars
 	public async finish(userId: string, id: string): Promise<any> {
 		this.trainingsOnPause.delete(id);
+	}
+
+	// eslint-disable-next-line @typescript-eslint/no-unused-vars
+	public async delete(userId: string, id: string): Promise<any> {
+		await this.db.db.delete(training).where(and(eq(training.id, id), eq(training.userCreatorId, userId)));
+		this.trainingsOnPause.delete(id);
+	}
+
+	// eslint-disable-next-line @typescript-eslint/no-unused-vars
+	public async deleteNotFinished(userId: string): Promise<any> {
+		const createdTrainingsIds = (await this.getByStatus(userId, true, 'created')).map((t) => t.id);
+		const activeTrainingsIds = (await this.getByStatus(userId, true, 'started')).map((t) => t.id);
+		const trainingsIdsToDeletion = [...createdTrainingsIds, ...activeTrainingsIds];
+
+		await this.db.db.transaction(async (tx) => {
+			for (const tid of trainingsIdsToDeletion) {
+				this.trainingsOnPause.delete(tid);
+
+				const participants = await tx
+					.select()
+					.from(trainingParticipants)
+					.where(eq(trainingParticipants.trainingId, tid));
+
+				for (const participant of participants) {
+					await tx.delete(trainingMetrics).where(eq(trainingMetrics.participantId, participant.id));
+					await tx.delete(trainingRoutes).where(eq(trainingRoutes.participantId, participant.id));
+				}
+
+				await tx.delete(trainingParticipants).where(eq(trainingParticipants.trainingId, tid));
+				await tx.delete(trainingInvites).where(eq(trainingInvites.trainingId, tid));
+
+				await tx.delete(training).where(eq(training.id, tid));
+				// Посты не чистим, тк у незавершенных тренировок не может быть постов
+			}
+		});
 	}
 
 	public async getFinished(userId: string, isCreator: boolean): Promise<any> {
