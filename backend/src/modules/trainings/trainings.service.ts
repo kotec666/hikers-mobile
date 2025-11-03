@@ -1,8 +1,9 @@
-﻿import { Injectable } from '@nestjs/common';
+﻿import { BadRequestException, Injectable } from '@nestjs/common';
 import { DatabaseService } from '../database/database.service';
 import { training, trainingParticipants } from '../database/schema';
 import { TrainingDto } from './trainings.dto';
 import { eq, and, isNull, isNotNull } from 'drizzle-orm';
+import { ERRORS } from '@shared/errors';
 
 @Injectable()
 export class TrainingsService {
@@ -10,28 +11,47 @@ export class TrainingsService {
 
 	constructor(private readonly db: DatabaseService) {
 		// @TODO интервал на чистку пустых тренировок
+		// @TODO восстановление тренировок на паузе из бд
 	}
 
 	public async start(userId: string, dto: TrainingDto.Start): Promise<TrainingDto.Entity> {
-		const [trainingRow] = await this.db.db
-			.insert(training)
-			.values({
-				type: dto.type,
-				userCreatorId: userId,
-				startedAt: dto.now ? new Date() : undefined,
-			})
-			.returning({
-				id: training.id,
-				type: training.type,
-				createdAt: training.createdAt,
-				startedAt: training.startedAt,
-				finishedAt: training.finishedAt,
-			});
+		const activeTrainings = await this.getActive(userId, false);
+		if (activeTrainings.length > 0) {
+			throw new BadRequestException(ERRORS.ALREADY_CREATED);
+		}
+
+		const upsertQuery = {
+			type: dto.type,
+			userCreatorId: userId,
+			startedAt: dto.now ? new Date() : undefined,
+		};
+		const returningQuery = {
+			id: training.id,
+			type: training.type,
+			createdAt: training.createdAt,
+			startedAt: training.startedAt,
+			finishedAt: training.finishedAt,
+		};
+
+		// Созданная тренировка может быть только в единственном экземпляре. Обновляем её
+		// Нужно для случая, когда сначала были разосланы инвайты, а потом юзер начал саму треню
+		const createdTrainings = await this.getCreated(userId, false);
+		const createdTraining = createdTrainings.length > 0 ? createdTrainings[0] : null;
+
+		// Обновляем существующюю или создаем новую
+		// (просто удалить существующюю нельзя - т.к. на ней могут висеть инвайты)
+		const [trainingRow] = createdTraining
+			? await this.db.db
+					.update(training)
+					.set(upsertQuery)
+					.where(eq(training.id, createdTraining.id))
+					.returning(returningQuery)
+			: await this.db.db.insert(training).values(upsertQuery).returning(returningQuery);
+
+		return trainingRow;
 
 		// @TODO асинхронно, без ожидания
 		// создать записи под метрики трени, роуты для всех участников
-
-		return trainingRow;
 	}
 
 	// eslint-disable-next-line @typescript-eslint/no-unused-vars
@@ -62,6 +82,7 @@ export class TrainingsService {
 		return this.getByStatus(userId, isCreator, 'created');
 	}
 
+	/** Получить все тренировки юзера по статусу. Никогда не выкидывает ошибку - только пустой массив */
 	private async getByStatus(
 		userId: string,
 		isCreator: boolean,
@@ -143,10 +164,14 @@ export class TrainingsService {
 			.limit(1);
 		// @TODO создавать треню если нету, проверять на наличие активной везде и тут!
 	}
+
 	// eslint-disable-next-line @typescript-eslint/no-unused-vars
-	public async revokeInvite(userCreatorId: string, toUserId: string): Promise<any> {}
+	public async leave(userParticipantId: string): Promise<any> {}
 	// eslint-disable-next-line @typescript-eslint/no-unused-vars
 	public async kickParticipant(userCreatorId: string, userParticipantId: string): Promise<any> {}
+
+	// eslint-disable-next-line @typescript-eslint/no-unused-vars
+	public async revokeInvite(userCreatorId: string, toUserId: string): Promise<any> {}
 
 	// eslint-disable-next-line @typescript-eslint/no-unused-vars
 	public async acceptInvite(invitedUserId: string, userCreatorId: string): Promise<any> {

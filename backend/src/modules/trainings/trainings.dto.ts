@@ -1,5 +1,6 @@
 ﻿import { MeasuringUnit, TrainingType } from '@shared/enums';
 import { UserDto } from '../user/user.dto';
+import { IsOptional } from 'class-validator';
 
 export namespace TrainingDto {
 	export type Entity = {
@@ -16,6 +17,9 @@ export namespace TrainingDto {
 
 	export class Start {
 		type: TrainingType;
+
+		/** Старт тренировки будет сразу после отправки запроса? (после старта нельзя приглашать/удалять участников) */
+		@IsOptional()
 		now: boolean = false;
 	}
 
