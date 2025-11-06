@@ -5,8 +5,8 @@ import BottomSheet from '@/components/ui/BottomSheet/BottomSheet'
 import { Alert, AppState, Dimensions, Linking, Platform } from 'react-native'
 import EnableGPS from '@/components/BottomSheets/EnableGPS'
 import AllowBackgroundGeolocation from '@/components/BottomSheets/AllowBackgroundGeolocation'
-import * as Location from 'expo-location'
 import AllowDeniedGeolocation from '@/components/BottomSheets/AllowDeniedGeolocation'
+import * as Location from 'expo-location'
 
 const { height: screenHeight } = Dimensions.get('screen')
 
@@ -20,7 +20,7 @@ const { height: screenHeight } = Dimensions.get('screen')
  *
  */
 
-const AllGeolocationPermissions = () => {
+const AllGeolocationPermissions = (props: { retryPermissions: boolean }) => {
 	const bottomSheetRef = useRef<BottomSheetHandle>(null)
 	const [bottomSheetContent, setBottomSheetContent] = useState<React.ReactNode>(null)
 	const [appState, setAppState] = useState(AppState.currentState)
@@ -126,7 +126,7 @@ const AllGeolocationPermissions = () => {
 
 	useEffect(() => {
 		checkForegroundPermission()
-	}, [])
+	}, [props.retryPermissions])
 
 	return (
 		<BottomSheet ref={bottomSheetRef} activeHeight={screenHeight * 0.5}>

@@ -20,7 +20,6 @@ import { Notification, NotificationInAppType } from '@/components/Notification'
 import NavBar from '@/components/ui/NavBar'
 import AchievementsMedalSvg from '@/components/svg/AchievementsMedalSvg'
 import { Colors } from '@/constants/Colors'
-import AsyncStorage from '@react-native-async-storage/async-storage'
 
 const { height: screenHeight } = Dimensions.get('screen')
 
@@ -248,9 +247,6 @@ export default function HomeScreen() {
 						}
 					>
 						Example 4
-					</Button>
-					<Button variant="black" onPress={async () => await AsyncStorage.removeItem('@liveLocations')}>
-						clear points
 					</Button>
 					<Button variant="black" onPress={toggleResizableSheet}>
 						Example 5

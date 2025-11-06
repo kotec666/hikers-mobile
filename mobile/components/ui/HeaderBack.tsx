@@ -14,8 +14,11 @@ const HeaderBack = (props: IProps) => {
 	const router = useRouter()
 
 	const handleClickBack = () => {
-		router.back()
-		props.returnCallback?.()
+		if (props.returnCallback) {
+			props.returnCallback?.()
+		} else {
+			router.back()
+		}
 	}
 
 	return (

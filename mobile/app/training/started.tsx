@@ -138,7 +138,7 @@ export default function TrainingStarted() {
 						)}
 						<View
 							className={cn('justify-end gap-[10px]', {
-								'flex-row': state.paused
+								'flex-row items-center': state.paused
 							})}
 						>
 							<View className="flex-row gap-[10px]">

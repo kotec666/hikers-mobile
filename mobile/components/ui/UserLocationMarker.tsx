@@ -2,10 +2,11 @@ import React, { useEffect, useRef, useState } from 'react'
 import { Marker, Circle } from 'react-native-yamap-plus-lite'
 import { Animated, Easing } from 'react-native'
 import UserWithCircleSvg from '@/components/svg/UserWithCircleSvg'
+import { ILatLng } from '@/components/map/MapComponent'
 
 interface Props {
-	position: { lat: number; lon: number }
-	accuracy?: number
+	position?: ILatLng | null
+	accuracy?: number | null
 	heading?: number // направление, в градусах 0–360 (0 — север)
 	triangleScale?: number
 }
@@ -38,6 +39,7 @@ const UserLocationMarker = ({ position, accuracy = 10, heading }: Props) => {
 		)
 
 		const listenerId = pulseAnim.addListener(({ value }) => {
+			if (typeof accuracy !== 'number') return
 			const r = accuracy * value
 			const o = MAX_OPACITY * (1 - value)
 			setRadius(r)

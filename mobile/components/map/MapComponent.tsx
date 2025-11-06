@@ -1,162 +1,39 @@
-import { MarkerRef, Polyline, Yamap } from 'react-native-yamap-plus-lite'
+import { Yamap } from 'react-native-yamap-plus-lite'
 import UserLocationMarker from '@/components/ui/UserLocationMarker'
 import React, { useEffect, useRef, useState } from 'react'
-import AsyncStorage from '@react-native-async-storage/async-storage'
-import * as Location from 'expo-location'
-import * as TaskManager from 'expo-task-manager'
-import { LocationObject } from 'expo-location'
 import { View } from 'react-native'
-import { Button } from '@/components/ui/Button'
 
-enum LOCATION_TYPE {
-	BACKGROUND = 'background',
-	FOREGROUND = 'foreground'
+export interface ILatLng {
+	lat: number
+	lon: number
 }
 
-interface myLocationObj extends LocationObject {
-	type: LOCATION_TYPE
+interface IProps {
+	maxMapHeight?: number
+	minMapHeight?: number
+	rounded?: number
+	accuracy?: number | null
+	heading?: number
+	markerPosition?: ILatLng | null
 }
 
-const LOCATION_TASK_NAME = 'background-location-task'
-
-TaskManager.defineTask(LOCATION_TASK_NAME, async ({ data, error }) => {
-	if (error) {
-		console.error('Location task error:', error)
-		return
-	}
-
-	if (data) {
-		const { locations } = data as { locations: LocationObject[] }
-		const savedLocations = await AsyncStorage.getItem('@liveLocations')
-
-		console.log('Received background locations', locations)
-
-		const mappedLocations = locations.map((location) => ({ ...location, type: LOCATION_TYPE.BACKGROUND }))
-		if (savedLocations) {
-			const parsedSavedLocations = JSON.parse(savedLocations)
-			console.log('locations to save', [...parsedSavedLocations, ...mappedLocations])
-			await AsyncStorage.setItem('@liveLocations', JSON.stringify([...parsedSavedLocations, ...mappedLocations]))
-		}
-	}
-})
-
-const MapComponent = (props: { maxMapHeight?: number; minMapHeight?: number; rounded?: number }) => {
-	const [liveLocations, setLiveLocations] = useState<myLocationObj[] | []>([])
-	const [errorMsg, setErrorMsg] = useState<string | null>(null)
-
-	const requestPermissions = async (): Promise<Location.PermissionStatus> => {
-		const { status: foregroundStatus } = await Location.requestForegroundPermissionsAsync()
-		console.log('Foreground status:', foregroundStatus)
-
-		if (foregroundStatus !== 'granted') {
-			return foregroundStatus
-		} else {
-			const { status: backgroundStatus } = await Location.requestBackgroundPermissionsAsync()
-			console.log('Background status:', backgroundStatus)
-
-			return backgroundStatus
-		}
-	}
-
-	const loadSavedLocations = async () => {
-		try {
-			const savedLocations = await AsyncStorage.getItem('@liveLocations')
-			if (savedLocations) {
-				setLiveLocations(JSON.parse(savedLocations))
-			}
-		} catch (e) {
-			console.error('Failed to load saved locations', e)
-		}
-	}
-
-	const saveLocations = async (locations: LocationObject[]) => {
-		try {
-			await AsyncStorage.setItem('@liveLocations', JSON.stringify(locations))
-		} catch (e) {
-			console.error('Failed to save locations', e)
-		}
-	}
-
-	useEffect(() => {
-		loadSavedLocations()
-
-		let subscription: Location.LocationSubscription
-
-		const startTracking = async () => {
-			const status = await requestPermissions()
-
-			console.log('75 status')
-			if (status !== 'granted') {
-				setErrorMsg('Permission to access location was denied')
-				console.log(errorMsg)
-				return
-			}
-
-			const isTaskRegistered = await TaskManager.isTaskRegisteredAsync(LOCATION_TASK_NAME)
-
-			console.log('isTaskRegistered:', isTaskRegistered)
-			if (!isTaskRegistered) {
-				await Location.startLocationUpdatesAsync(LOCATION_TASK_NAME, {
-					accuracy: Location.Accuracy.Balanced,
-					distanceInterval: 1,
-					foregroundService: {
-						notificationTitle: 'Отслеживание местоположения',
-						notificationBody: 'Приложение собирает данные о вашем местоположении',
-						notificationColor: 'rgba(0,0,0,0)',
-						killServiceOnDestroy: false
-					},
-					showsBackgroundLocationIndicator: true,
-					deferredUpdatesDistance: 1
-				})
-			}
-
-			subscription = await Location.watchPositionAsync(
-				{
-					accuracy: Location.Accuracy.Highest,
-					distanceInterval: 1
-				},
-				(location) => {
-					setLiveLocations((prev) => {
-						const newLocations = [...prev, { ...location, type: LOCATION_TYPE.FOREGROUND }]
-						saveLocations(newLocations)
-						return newLocations
-					})
-				}
-			)
-		}
-
-		startTracking()
-
-		return () => {
-			if (subscription) {
-				subscription.remove()
-			}
-		}
-	}, [])
-
-	const lastLocation = liveLocations.at(-1)?.coords
-
-	const foregroundLocations = liveLocations.filter((location) => location.type === LOCATION_TYPE.FOREGROUND)
-	const backgroundLocations = liveLocations.filter((location) => location.type === LOCATION_TYPE.BACKGROUND)
-
-	// const clearLocations = async () => {
-	// 	setLiveLocations([])
-	// 	await AsyncStorage.removeItem('@liveLocations')
-	// }
-
-	const userMarkerRef = useRef<MarkerRef | null>(null)
-
-	const [accuracy, setAccuracy] = useState(5)
-	const [markerPosition, setMarkerPosition] = useState({ lat: 53.422506, lon: 49.4781051 })
+const MapComponent = (props: IProps) => {
+	const isFirstRenderPosition = useRef(false)
+	const oldMarkerPosition = useRef<ILatLng | null | undefined>(null)
+	const oldHeading = useRef(props.heading)
+	const [animatedMarkerPosition, setAnimatedMarkerPosition] = useState<ILatLng | undefined | null>(
+		props.markerPosition
+	)
+	const [animatedHeading, setAnimatedHeading] = useState<number | undefined>(props.heading)
 	const [isAnimating, setIsAnimating] = useState(false)
 	const [isHeadingAnimating, setIsHeadingAnimating] = useState(false)
-	const [heading, setHeading] = useState(0)
 
-	const animateToPosition = (targetPosition: { lat: number; lon: number }, duration: number = 500) => {
+	const animateToPosition = (targetPosition: ILatLng, duration: number = 500) => {
 		if (isAnimating) return
+		if (!oldMarkerPosition.current) return
 
 		setIsAnimating(true)
-		const startPosition = markerPosition
+		const startPosition = oldMarkerPosition.current
 		const startTime = Date.now()
 
 		const animateFrame = () => {
@@ -172,7 +49,8 @@ const MapComponent = (props: { maxMapHeight?: number; minMapHeight?: number; rou
 			const newPosition = { lat: newLat, lon: newLon }
 
 			// Обновляем обе позиции синхронно
-			setMarkerPosition(newPosition)
+			setAnimatedMarkerPosition?.(newPosition)
+			oldMarkerPosition.current = newPosition
 
 			if (progress < 1) {
 				requestAnimationFrame(animateFrame)
@@ -186,9 +64,10 @@ const MapComponent = (props: { maxMapHeight?: number; minMapHeight?: number; rou
 
 	const animateHeading = (targetHeading: number, duration: number = 300) => {
 		if (isHeadingAnimating) return
+		if (typeof oldHeading.current !== 'number') return
 
 		setIsHeadingAnimating(true)
-		const startHeading = heading
+		const startHeading = oldHeading.current
 		const startTime = Date.now()
 
 		// Нормализуем углы для корректного расчета кратчайшего пути
@@ -212,13 +91,14 @@ const MapComponent = (props: { maxMapHeight?: number; minMapHeight?: number; rou
 
 			const newHeading = startHeading + diff * easeOutQuart
 
-			setHeading(newHeading)
+			setAnimatedHeading(newHeading)
+			oldHeading.current = newHeading
 
 			if (progress < 1) {
 				requestAnimationFrame(animateFrame)
 			} else {
 				// Убеждаемся, что конечное значение точно равно целевому
-				setHeading(targetHeading)
+				setAnimatedHeading(targetHeading)
 				setIsHeadingAnimating(false)
 			}
 		}
@@ -226,37 +106,27 @@ const MapComponent = (props: { maxMapHeight?: number; minMapHeight?: number; rou
 		requestAnimationFrame(animateFrame)
 	}
 
-	const onClickMove = () => {
-		animateToPosition({ lat: 53.4229, lon: 49.4782 }, 500)
-	}
+	useEffect(() => {
+		if (typeof oldHeading.current === 'number' && typeof props.heading === 'number') {
+			animateHeading(props.heading, 300)
+		}
+	}, [props.heading])
 
-	const onClickAccuracy = () => {
-		setAccuracy(15)
-	}
+	useEffect(() => {
+		if (props.markerPosition && !isFirstRenderPosition.current) {
+			oldMarkerPosition.current = props.markerPosition
+			isFirstRenderPosition.current = true
+		}
+	}, [props.markerPosition])
 
-	const handleChangeHeading = () => {
-		animateHeading(150, 300)
-	}
-	const handleChangeHeadingBack = () => {
-		animateHeading(0, 300)
-	}
+	useEffect(() => {
+		if (props.markerPosition && oldMarkerPosition.current) {
+			animateToPosition(props.markerPosition, 500)
+		}
+	}, [props.markerPosition])
 
 	return (
 		<View className="flex-1" style={{ overflow: 'hidden', borderRadius: props.rounded || 0 }}>
-			<View>
-				<Button variant="white" onPress={onClickMove}>
-					передвинуть
-				</Button>
-				<Button variant="white" onPress={onClickAccuracy}>
-					onClickAccuracy
-				</Button>
-				<Button variant="white" onPress={handleChangeHeading}>
-					onChange heading
-				</Button>
-				<Button variant="white" onPress={handleChangeHeadingBack}>
-					onChange heading (0°)
-				</Button>
-			</View>
 			<Yamap
 				nightMode
 				initialRegion={{ lat: 53.422506, lon: 49.4781051, zoom: 12 }}
@@ -266,61 +136,27 @@ const MapComponent = (props: { maxMapHeight?: number; minMapHeight?: number; rou
 				showUserPosition={false}
 				tiltGesturesEnabled={false}
 			>
-				{/*{lastLocation?.latitude && lastLocation?.longitude && (*/}
-				{/*	<UserLocationMarker*/}
-				{/*		position={{ lat: lastLocation?.latitude, lon: lastLocation?.longitude }}*/}
-				{/*		accuracy={5}*/}
-				{/*	/>*/}
-				{/*)}*/}
-
-				{/*{liveLocations?.length &&*/}
-				{/*	liveLocations.map((location, idx) => (*/}
-				{/*		<DefaultMarker*/}
-				{/*			key={JSON.stringify(`${location}${idx}`)}*/}
-				{/*			lat={location.coords.latitude}*/}
-				{/*			lon={location.coords.longitude}*/}
-				{/*		/>*/}
-				{/*	))}*/}
-
 				<UserLocationMarker
-					userMarkerRef={userMarkerRef}
-					position={markerPosition}
-					accuracy={accuracy}
-					heading={heading}
+					position={animatedMarkerPosition}
+					accuracy={props.accuracy}
+					heading={animatedHeading}
 				/>
 
-				{foregroundLocations?.length && (
-					<Polyline
-						points={foregroundLocations.map((location) => ({
-							lat: location.coords.latitude,
-							lon: location.coords.longitude
-						}))}
-						strokeWidth={4}
-						strokeColor={'black'}
-						outlineColor={'black'}
-						outlineWidth={2}
-						handled={false}
-						gapLength={5}
-						dashLength={0}
-						onPress={() => console.log('polyline press')}
-					/>
-				)}
-
-				{backgroundLocations?.length && (
-					<Polyline
-						points={backgroundLocations.map((location) => ({
-							lat: location.coords.latitude,
-							lon: location.coords.longitude
-						}))}
-						strokeWidth={4}
-						strokeColor={'blue'}
-						outlineColor={'blue'}
-						outlineWidth={2}
-						handled={false}
-						gapLength={5}
-						dashLength={0}
-					/>
-				)}
+				{/*{foregroundLocations?.length && (*/}
+				{/*	<Polyline*/}
+				{/*		points={foregroundLocations.map((location) => ({*/}
+				{/*			lat: location.coords.latitude,*/}
+				{/*			lon: location.coords.longitude*/}
+				{/*		}))}*/}
+				{/*		strokeWidth={4}*/}
+				{/*		strokeColor={Colors['green-main']}*/}
+				{/*		outlineColor={Colors['green-main']}*/}
+				{/*		outlineWidth={2}*/}
+				{/*		handled={false}*/}
+				{/*		gapLength={5}*/}
+				{/*		dashLength={0}*/}
+				{/*	/>*/}
+				{/*)}*/}
 			</Yamap>
 		</View>
 	)
