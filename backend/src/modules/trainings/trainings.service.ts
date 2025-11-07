@@ -50,20 +50,42 @@ export class TrainingsService {
 			throw new BadRequestException(ERRORS.USER_IN_NOT_FINISHED_TRAINING);
 		}
 
-		// Обновляем существующюю или создаем новую
-		// (просто удалить существующюю нельзя - т.к. на ней могут висеть инвайты)
-		const [trainingRow] = createdTraining
-			? await this.db.db
-					.update(training)
-					.set(upsertQuery)
-					.where(eq(training.id, createdTraining.id))
-					.returning(returningQuery)
-			: await this.db.db.insert(training).values(upsertQuery).returning(returningQuery);
+		return await this.db.db.transaction(async (tx) => {
+			// Обновляем существующюю или создаем новую
+			// (просто удалить существующюю нельзя - т.к. на ней могут висеть инвайты)
+			const [trainingRow] = createdTraining
+				? await tx
+						.update(training)
+						.set(upsertQuery)
+						.where(eq(training.id, createdTraining.id))
+						.returning(returningQuery)
+				: await tx.insert(training).values(upsertQuery).returning(returningQuery);
 
-		return trainingRow;
+			// Объявили юзера как участника
+			const [participant] = await tx
+				.insert(trainingParticipants)
+				.values({
+					trainingId: trainingRow.id,
+					colorHex: dto.colorHex,
+					userId,
+				})
+				.returning({
+					id: trainingParticipants.id,
+				});
 
-		// @TODO асинхронно, без ожидания
-		// создать записи под метрики трени, роуты для всех участников
+			// Объявили маршрут участника
+			await tx.insert(trainingRoutes).values({
+				participantId: participant.id,
+				points: [],
+
+				createdAt: new Date(),
+			});
+
+			// P.S. Для участников таблицы создаются в момент принятия инвайтов (@TODO не забыть),
+			// метрики для всех будут созданы в конце после завершения трени (@TODO не забыть)
+
+			return trainingRow;
+		});
 	}
 
 	public async sync(userId: string, dto: TrainingDto.Sync): Promise<any> {
@@ -82,10 +104,10 @@ export class TrainingsService {
 			}
 		}
 
-		await this.updateRoute(training.participant, dto.metrics);
+		await this.upsertRoute(training.participant, dto.metrics);
 	}
 
-	private async updateRoute(participant: TrainingParticipantDto.Entity, metrics: TrainingRouteNode[]): Promise<void> {
+	private async upsertRoute(participant: TrainingParticipantDto.Entity, metrics: TrainingRouteNode[]): Promise<void> {
 		const [trainingRoute] = await this.db.db
 			.select({
 				id: trainingRoutes.id,

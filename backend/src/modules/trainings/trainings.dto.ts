@@ -2,6 +2,7 @@
 import { UserDto } from '../user/user.dto';
 import { IsOptional } from 'class-validator';
 import { TrainingRouteNode } from '../database/schema';
+import { IsHexColor } from '@validation/decorators';
 
 export namespace TrainingDto {
 	export type Entity = {
@@ -20,6 +21,7 @@ export namespace TrainingDto {
 
 	export type ExtendedEntity = Omit<TrainingDto.Entity, 'type'> & {
 		creator: UserDto.Entity;
+		// @TODO TrainingParticipantDto.Extendedentity[] с маршрутами, метриками итд
 		participants: TrainingParticipantDto.Entity[];
 		type: TrainingTypeDto.Entity;
 	};
@@ -30,6 +32,8 @@ export namespace TrainingDto {
 
 	export class Start {
 		type: TrainingType;
+		@IsHexColor()
+		colorHex: string;
 
 		/** Старт тренировки будет сразу после отправки запроса? (после старта нельзя приглашать/удалять участников) */
 		@IsOptional()
