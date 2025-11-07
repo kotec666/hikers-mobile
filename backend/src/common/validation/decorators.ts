@@ -85,7 +85,7 @@ export function IsHexColor(validationOptions?: ValidationOptions) {
 				},
 
 				defaultMessage(): string {
-					return `_${propertyName}:${ERRORS.BAD_REQUEST}`;
+					return `_${propertyName}:${ERRORS.MISMATCH}`;
 				},
 			},
 		});
