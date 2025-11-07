@@ -120,6 +120,13 @@
       "when": 1762509712762,
       "tag": "0016_fix_tempo_naming",
       "breakpoints": true
+    },
+    {
+      "idx": 17,
+      "version": "7",
+      "when": 1762545679828,
+      "tag": "0017_avg_tempo_to_int_seconds",
+      "breakpoints": true
     }
   ]
 }

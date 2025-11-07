@@ -234,7 +234,7 @@ export const trainingMetrics = pgTable(
 			.references(() => trainingParticipants.id),
 		timeMin: integer('time_min'),
 		avgSpeedKmh: smallint('avg_speed_kmh'),
-		avgTempoPerKm: decimal('avg_tempo_per_km', { precision: 4, scale: 2 }),
+		avgTempoSecondsPerKm: smallint('avg_tempo_seconds_per_km'),
 		distanceM: integer('distance_m'),
 		altitudeGainM: smallint('altitude_gain_m'),
 		kkcal: smallint('kkcal'),
