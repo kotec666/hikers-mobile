@@ -13,8 +13,11 @@ import {
 import { TrainingDto, TrainingParticipantDto } from './trainings.dto';
 import { eq, and, isNull, isNotNull } from 'drizzle-orm';
 import { ERRORS } from '@shared/errors';
+import { CommonDto } from 'src/common/dto/common.dto';
 
 const MAX_TIME_TO_SYNC_AFTER_FINISH_TRAINING = 60 * 1000; // 1 минута
+const MAX_TEMPO_VALUE = 32766; // pg_smallint
+const MIN_TEMPO_VALUE = -32767; // pg_smallint
 
 @Injectable()
 export class TrainingsService {
@@ -32,7 +35,7 @@ export class TrainingsService {
 		const upsertQuery = {
 			type: dto.type,
 			userCreatorId: userId,
-			startedAt: dto.now ? new Date() : undefined,
+			startedAt: new Date(),
 		};
 		const returningQuery = {
 			id: training.id,
@@ -42,7 +45,7 @@ export class TrainingsService {
 			finishedAt: training.finishedAt,
 		};
 
-		// Созданная тренировка может быть только в единственном экземпляре.
+		// Созданная тренировка может быть только в единственном экземпляре
 		const [createdTraining] = await this.getCreated(userId, false);
 
 		// При этом - если юзер не создатель этой трени, то обновить её он не может
@@ -61,7 +64,9 @@ export class TrainingsService {
 						.returning(returningQuery)
 				: await tx.insert(training).values(upsertQuery).returning(returningQuery);
 
-			// Объявили юзера как участника
+			// Если тренировка уже создана, значит участник уже добавлен
+			if (createdTraining) return trainingRow;
+
 			const [participant] = await tx
 				.insert(trainingParticipants)
 				.values({
@@ -73,7 +78,6 @@ export class TrainingsService {
 					id: trainingParticipants.id,
 				});
 
-			// Объявили маршрут участника
 			await tx.insert(trainingRoutes).values({
 				participantId: participant.id,
 				points: [],
@@ -88,14 +92,14 @@ export class TrainingsService {
 		});
 	}
 
-	public async finish(userId: string): Promise<void> {
+	public async finish(userId: string): Promise<CommonDto.BooleanResponse> {
 		// Создатель может завершить только активную треню - находим её
 		const [activeTraining] = await this.getActive(userId, true);
 		if (!activeTraining) {
 			throw new NotFoundException(ERRORS.NOT_FOUND);
 		}
 
-		await this.db.db.transaction(async (tx) => {
+		return await this.db.db.transaction(async (tx) => {
 			await tx
 				.update(training)
 				.set({
@@ -108,28 +112,31 @@ export class TrainingsService {
 
 			// Всем участникам просчитываем метрики
 			const participants = await this.getParticipants(activeTraining.id);
+
 			for (const participant of participants) {
 				// @TODO после тестов переписать на адекватные расчеты
 				const distanceMeters = Date.now() % 3000;
 				const timeMinutes = Date.now() % 2000;
-				const tempo = timeMinutes / (distanceMeters / 1000);
+				const tempo = (timeMinutes * 60) / (distanceMeters / 1000);
 
 				await tx.insert(trainingMetrics).values({
 					participantId: participant.id,
 					timeMin: timeMinutes,
 					avgSpeedKmh: Date.now() % 1000,
-					avgTempoPerKm: tempo.toFixed(2),
+					avgTempoSecondsPerKm: Math.max(Math.min(Math.trunc(tempo), MAX_TEMPO_VALUE), MIN_TEMPO_VALUE),
 					distanceM: distanceMeters,
 					altitudeGainM: Date.now() % 500,
-					kkcal: distanceMeters / 100,
+					kkcal: Math.trunc(distanceMeters / 100),
 				});
 			}
+
+			return { success: true };
 		});
 	}
 
-	public async sync(userId: string, dto: TrainingDto.Sync): Promise<any> {
+	public async sync(userId: string, trainingId: string, dto: TrainingDto.Sync): Promise<CommonDto.BooleanResponse> {
 		// @TODO в будущем проверить проблему - если синхра с фронта придет быстрее, чем в обработается предыдущяя
-		const training = await this.getByIdAndParticipant(dto.id, userId);
+		const training = await this.getByIdAndParticipant(trainingId, userId);
 
 		if (!training.startedAt) {
 			// Нельзя досылать метрики в неначавщуюся тренировку
@@ -144,6 +151,8 @@ export class TrainingsService {
 		}
 
 		await this.upsertRoute(training.participant, dto.metrics);
+
+		return { success: true };
 	}
 
 	private async upsertRoute(participant: TrainingParticipantDto.Entity, metrics: TrainingRouteNode[]): Promise<void> {
@@ -177,12 +186,12 @@ export class TrainingsService {
 	}
 
 	// eslint-disable-next-line @typescript-eslint/no-unused-vars
-	public async deleteAllNotFinished(userId: string): Promise<any> {
+	public async deleteAllNotFinished(userId: string): Promise<CommonDto.BooleanResponse> {
 		const createdTrainingsIds = (await this.getByStatus(userId, true, 'created')).map((t) => t.id);
 		const activeTrainingsIds = (await this.getByStatus(userId, true, 'started')).map((t) => t.id);
 		const trainingsIdsToDeletion = [...createdTrainingsIds, ...activeTrainingsIds];
 
-		await this.db.db.transaction(async (tx) => {
+		return await this.db.db.transaction(async (tx) => {
 			for (const tid of trainingsIdsToDeletion) {
 				const participants = await tx
 					.select()
@@ -200,6 +209,8 @@ export class TrainingsService {
 				await tx.delete(training).where(eq(training.id, tid));
 				// Посты не чистим, тк у незавершенных тренировок не может быть постов
 			}
+
+			return { success: true };
 		});
 	}
 

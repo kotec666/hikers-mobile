@@ -1,8 +1,9 @@
 ﻿import { MeasuringUnit, TrainingType } from '@shared/enums';
 import { UserDto } from '../user/user.dto';
-import { IsOptional } from 'class-validator';
+import { IsEnum } from 'class-validator';
 import { TrainingRouteNode } from '../database/schema';
 import { IsHexColor } from '@validation/decorators';
+import { ERRORS } from '@shared/errors';
 
 export namespace TrainingDto {
 	export type Entity = {
@@ -10,8 +11,8 @@ export namespace TrainingDto {
 		type: TrainingType;
 		creatorId?: string;
 
-		/** Момент создания тренировки - как только отправился первый инвайт, или юзер начал соло тренировку */
-		createdAt: Date;
+		/** Момент создания тренировки - как только отправился первый инвайт */
+		createdAt: Date; // @TODO мб выпилить
 
 		/** Момент старта тренировки - как только создатель начал тренировку */
 		startedAt: Date | null;
@@ -31,17 +32,15 @@ export namespace TrainingDto {
 	};
 
 	export class Start {
+		@IsEnum(TrainingType, { message: `_type:${ERRORS.MISMATCH}` })
 		type: TrainingType;
+
 		@IsHexColor()
 		colorHex: string;
-
-		/** Старт тренировки будет сразу после отправки запроса? (после старта нельзя приглашать/удалять участников) */
-		@IsOptional()
-		now: boolean = false;
 	}
 
 	export class Sync {
-		id: string;
+		// @TODO валидировать
 		metrics: TrainingRouteNode[];
 	}
 }
