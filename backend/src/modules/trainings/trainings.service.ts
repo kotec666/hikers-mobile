@@ -1,14 +1,23 @@
-﻿import { BadRequestException, Injectable } from '@nestjs/common';
+﻿import { BadRequestException, GoneException, Injectable, NotFoundException } from '@nestjs/common';
 import { DatabaseService } from '../database/database.service';
-import { training, trainingInvites, trainingMetrics, trainingParticipants, trainingRoutes } from '../database/schema';
-import { TrainingDto } from './trainings.dto';
+import {
+	training,
+	trainingInvites,
+	trainingMetrics,
+	trainingParticipants,
+	TrainingRouteNode,
+	trainingRoutes,
+	trainingTypes,
+	users,
+} from '../database/schema';
+import { TrainingDto, TrainingParticipantDto } from './trainings.dto';
 import { eq, and, isNull, isNotNull } from 'drizzle-orm';
 import { ERRORS } from '@shared/errors';
 
+const MAX_TIME_TO_SYNC_AFTER_FINISH_TRAINING = 60 * 1000; // 1 минута
+
 @Injectable()
 export class TrainingsService {
-	private readonly trainingsOnPause = new Set<string>();
-
 	constructor(private readonly db: DatabaseService) {
 		// @TODO интервал на чистку пустых тренировок
 		// @TODO восстановление тренировок на паузе из бд
@@ -34,8 +43,7 @@ export class TrainingsService {
 		};
 
 		// Созданная тренировка может быть только в единственном экземпляре.
-		const createdTrainings = await this.getCreated(userId, false);
-		const createdTraining = createdTrainings.length > 0 ? createdTrainings[0] : null;
+		const [createdTraining] = await this.getCreated(userId, false);
 
 		// При этом - если юзер не создатель этой трени, то обновить её он не может
 		if (createdTraining && createdTraining.creatorId !== userId) {
@@ -58,38 +66,66 @@ export class TrainingsService {
 		// создать записи под метрики трени, роуты для всех участников
 	}
 
-	// eslint-disable-next-line @typescript-eslint/no-unused-vars
-	public async pause(userId: string, id: string): Promise<any> {
-		this.trainingsOnPause.add(id);
+	public async sync(userId: string, dto: TrainingDto.Sync): Promise<any> {
+		// @TODO в будущем проверить проблему - если синхра с фронта придет быстрее, чем в обработается предыдущяя
+		const training = await this.getByIdAndParticipant(dto.id, userId);
+
+		if (!training.startedAt) {
+			// Нельзя досылать метрики в неначавщуюся тренировку
+			throw new NotFoundException(ERRORS.NOT_FOUND);
+		} else if (training.finishedAt) {
+			const dateDiff = new Date().getTime() - training.finishedAt.getTime();
+
+			// Если метрики досылаются после завершения трени - проверям временное окно
+			if (dateDiff > MAX_TIME_TO_SYNC_AFTER_FINISH_TRAINING) {
+				throw new GoneException(ERRORS.TIMEOUT_EXPIRED);
+			}
+		}
+
+		await this.updateRoute(training.participant, dto.metrics);
+	}
+
+	private async updateRoute(participant: TrainingParticipantDto.Entity, metrics: TrainingRouteNode[]): Promise<void> {
+		const [trainingRoute] = await this.db.db
+			.select({
+				id: trainingRoutes.id,
+				points: trainingRoutes.points,
+			})
+			.from(trainingRoutes)
+			.innerJoin(trainingParticipants, eq(trainingParticipants.userId, participant.user.id))
+			.where(eq(trainingRoutes.participantId, trainingParticipants.id))
+			.limit(1);
+
+		if (trainingRoute) {
+			const updatedPoints = (trainingRoute.points || []).concat(metrics);
+
+			await this.db.db
+				.update(trainingRoutes)
+				.set({
+					points: updatedPoints,
+				})
+				.where(eq(trainingRoutes.id, trainingRoute.id));
+		} else {
+			await this.db.db.insert(trainingRoutes).values({
+				participantId: participant.id,
+				points: metrics,
+
+				createdAt: new Date(),
+			});
+		}
 	}
 
 	// eslint-disable-next-line @typescript-eslint/no-unused-vars
-	public async sync(userId: string, id: string): Promise<any> {
-		// eslint-disable-next-line @typescript-eslint/no-unused-vars
-		const onPause = this.trainingsOnPause.has(id);
-	}
+	public async finish(userId: string, id: string): Promise<any> {}
 
 	// eslint-disable-next-line @typescript-eslint/no-unused-vars
-	public async finish(userId: string, id: string): Promise<any> {
-		this.trainingsOnPause.delete(id);
-	}
-
-	// eslint-disable-next-line @typescript-eslint/no-unused-vars
-	public async delete(userId: string, id: string): Promise<any> {
-		await this.db.db.delete(training).where(and(eq(training.id, id), eq(training.userCreatorId, userId)));
-		this.trainingsOnPause.delete(id);
-	}
-
-	// eslint-disable-next-line @typescript-eslint/no-unused-vars
-	public async deleteNotFinished(userId: string): Promise<any> {
+	public async deleteAllNotFinished(userId: string): Promise<any> {
 		const createdTrainingsIds = (await this.getByStatus(userId, true, 'created')).map((t) => t.id);
 		const activeTrainingsIds = (await this.getByStatus(userId, true, 'started')).map((t) => t.id);
 		const trainingsIdsToDeletion = [...createdTrainingsIds, ...activeTrainingsIds];
 
 		await this.db.db.transaction(async (tx) => {
 			for (const tid of trainingsIdsToDeletion) {
-				this.trainingsOnPause.delete(tid);
-
 				const participants = await tx
 					.select()
 					.from(trainingParticipants)
@@ -184,10 +220,129 @@ export class TrainingsService {
 		return await query;
 	}
 
-	// eslint-disable-next-line @typescript-eslint/no-unused-vars
-	public async getById(id: string): Promise<any> {}
-	// eslint-disable-next-line @typescript-eslint/no-unused-vars
-	public async getExtendedById(id: string): Promise<any> {}
+	public async getParticipants(trainingId: string): Promise<TrainingParticipantDto.Entity[]> {
+		const participants = await this.db.db
+			.select({
+				id: trainingParticipants.id,
+				user: {
+					id: users.id,
+					email: users.email,
+					name: users.name,
+					username: users.username,
+					avatarFilename: users.avatarFilename,
+				},
+				colorHex: trainingParticipants.colorHex,
+			})
+			.from(trainingParticipants)
+			.where(eq(trainingParticipants.trainingId, trainingId))
+			.innerJoin(users, eq(users.id, trainingParticipants.userId));
+
+		return participants;
+	}
+
+	public async getByIdAndParticipant(
+		id: string,
+		userId: string,
+	): Promise<Required<TrainingDto.EntityWithCurrentParticipant>> {
+		const [trainingRow] = await this.db.db
+			.select({
+				id: training.id,
+				type: training.type,
+				creatorId: training.userCreatorId,
+				createdAt: training.createdAt,
+				startedAt: training.startedAt,
+				finishedAt: training.finishedAt,
+			})
+			.from(training)
+			.where(eq(training.id, id))
+			.limit(1);
+
+		if (!trainingRow) {
+			throw new NotFoundException(ERRORS.NOT_FOUND);
+		}
+
+		const [participant] = await this.db.db
+			.select({
+				id: trainingParticipants.id,
+				user: {
+					id: users.id,
+					email: users.email,
+					name: users.name,
+					username: users.username,
+					avatarFilename: users.avatarFilename,
+				},
+				colorHex: trainingParticipants.colorHex,
+			})
+			.from(trainingParticipants)
+			.innerJoin(users, eq(users.id, trainingParticipants.userId))
+			.where(and(eq(trainingParticipants.trainingId, id), eq(trainingParticipants.userId, userId)))
+			.limit(1);
+		if (!participant) {
+			throw new BadRequestException(ERRORS.USER_IS_NOT_TRAINING_PARTICIPANT);
+		}
+
+		return {
+			...trainingRow,
+			participant,
+		};
+	}
+
+	public async getById(id: string): Promise<Required<TrainingDto.Entity>> {
+		const [trainingRow] = await this.db.db
+			.select({
+				id: training.id,
+				type: training.type,
+				creatorId: training.userCreatorId,
+				createdAt: training.createdAt,
+				startedAt: training.startedAt,
+				finishedAt: training.finishedAt,
+			})
+			.from(training)
+			.where(eq(training.id, id))
+			.limit(1);
+
+		if (!trainingRow) {
+			throw new NotFoundException(ERRORS.NOT_FOUND);
+		}
+
+		return trainingRow;
+	}
+
+	public async getExtendedById(id: string): Promise<TrainingDto.ExtendedEntity> {
+		const [trainingRow] = await this.db.db
+			.select({
+				id: training.id,
+				creatorId: training.userCreatorId,
+				createdAt: training.createdAt,
+				startedAt: training.startedAt,
+				finishedAt: training.finishedAt,
+
+				creator: {
+					id: users.id,
+					email: users.email,
+					name: users.name,
+					username: users.username,
+					avatarFilename: users.avatarFilename,
+				},
+				type: {
+					name: trainingTypes.name,
+					measuringUnit: trainingTypes.measuringUnit,
+					iconFilename: trainingTypes.iconFilename,
+				},
+			})
+			.from(training)
+			.innerJoin(users, eq(users.id, training.userCreatorId))
+			.innerJoin(trainingTypes, eq(trainingTypes.name, training.type))
+			.where(eq(training.id, id))
+			.limit(1);
+
+		if (!trainingRow) {
+			throw new NotFoundException(ERRORS.NOT_FOUND);
+		}
+
+		const participants = await this.getParticipants(trainingRow.id);
+		return { ...trainingRow, participants };
+	}
 
 	// eslint-disable-next-line @typescript-eslint/no-unused-vars
 	public async sendInvite(userCreatorId: string, toUserId: string): Promise<any> {

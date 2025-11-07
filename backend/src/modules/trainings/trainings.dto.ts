@@ -1,6 +1,7 @@
 ﻿import { MeasuringUnit, TrainingType } from '@shared/enums';
 import { UserDto } from '../user/user.dto';
 import { IsOptional } from 'class-validator';
+import { TrainingRouteNode } from '../database/schema';
 
 export namespace TrainingDto {
 	export type Entity = {
@@ -17,6 +18,16 @@ export namespace TrainingDto {
 		finishedAt: Date | null;
 	};
 
+	export type ExtendedEntity = Omit<TrainingDto.Entity, 'type'> & {
+		creator: UserDto.Entity;
+		participants: TrainingParticipantDto.Entity[];
+		type: TrainingTypeDto.Entity;
+	};
+
+	export type EntityWithCurrentParticipant = Entity & {
+		participant: TrainingParticipantDto.Entity;
+	};
+
 	export class Start {
 		type: TrainingType;
 
@@ -25,11 +36,10 @@ export namespace TrainingDto {
 		now: boolean = false;
 	}
 
-	export type ExtendedEntity = Omit<TrainingDto.Entity, 'type'> & {
-		creator: UserDto.Entity;
-		participants: TrainingParticipantDto.Entity[];
-		type: TrainingTypeDto.Entity;
-	};
+	export class Sync {
+		id: string;
+		metrics: TrainingRouteNode[];
+	}
 }
 
 export namespace TrainingTypeDto {
@@ -42,7 +52,20 @@ export namespace TrainingTypeDto {
 
 export namespace TrainingParticipantDto {
 	export type Entity = {
+		id: string;
 		user: UserDto.Entity;
 		colorHex: string | null;
+	};
+}
+
+export namespace TrainingRouteDto {
+	export type Entity = {
+		participant: TrainingParticipantDto.Entity;
+		colorHex: string | null;
+		points: TrainingRouteNode[];
+
+		createdAt: Date;
+		startedAt: Date | null;
+		finishedAt: Date | null;
 	};
 }
