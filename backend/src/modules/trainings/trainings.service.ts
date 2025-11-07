@@ -82,9 +82,48 @@ export class TrainingsService {
 			});
 
 			// P.S. Для участников таблицы создаются в момент принятия инвайтов (@TODO не забыть),
-			// метрики для всех будут созданы в конце после завершения трени (@TODO не забыть)
+			// метрики для всех будут созданы в конце после завершения трени
 
 			return trainingRow;
+		});
+	}
+
+	public async finish(userId: string): Promise<void> {
+		// Создатель может завершить только активную треню - находим её
+		const [activeTraining] = await this.getActive(userId, true);
+		if (!activeTraining) {
+			throw new NotFoundException(ERRORS.NOT_FOUND);
+		}
+
+		await this.db.db.transaction(async (tx) => {
+			await tx
+				.update(training)
+				.set({
+					finishedAt: new Date(),
+				})
+				.where(eq(training.id, activeTraining.id));
+
+			// Удаляем неактуальные инвайты
+			await tx.delete(trainingInvites).where(eq(trainingInvites.trainingId, activeTraining.id));
+
+			// Всем участникам просчитываем метрики
+			const participants = await this.getParticipants(activeTraining.id);
+			for (const participant of participants) {
+				// @TODO после тестов переписать на адекватные расчеты
+				const distanceMeters = Date.now() % 3000;
+				const timeMinutes = Date.now() % 2000;
+				const tempo = timeMinutes / (distanceMeters / 1000);
+
+				await tx.insert(trainingMetrics).values({
+					participantId: participant.id,
+					timeMin: timeMinutes,
+					avgSpeedKmh: Date.now() % 1000,
+					avgTempoPerKm: tempo.toFixed(2),
+					distanceM: distanceMeters,
+					altitudeGainM: Date.now() % 500,
+					kkcal: distanceMeters / 100,
+				});
+			}
 		});
 	}
 
@@ -136,9 +175,6 @@ export class TrainingsService {
 			});
 		}
 	}
-
-	// eslint-disable-next-line @typescript-eslint/no-unused-vars
-	public async finish(userId: string, id: string): Promise<any> {}
 
 	// eslint-disable-next-line @typescript-eslint/no-unused-vars
 	public async deleteAllNotFinished(userId: string): Promise<any> {
@@ -383,19 +419,25 @@ export class TrainingsService {
 	}
 
 	// eslint-disable-next-line @typescript-eslint/no-unused-vars
-	public async leave(userParticipantId: string): Promise<any> {}
+	public async leave(userParticipantId: string): Promise<any> {
+		// @TODO проверка статуса трени
+	}
 	// eslint-disable-next-line @typescript-eslint/no-unused-vars
-	public async kickParticipant(userCreatorId: string, userParticipantId: string): Promise<any> {}
-
-	// eslint-disable-next-line @typescript-eslint/no-unused-vars
-	public async revokeInvite(userCreatorId: string, toUserId: string): Promise<any> {}
-
-	// eslint-disable-next-line @typescript-eslint/no-unused-vars
-	public async acceptInvite(invitedUserId: string, userCreatorId: string): Promise<any> {
-		// @TODO асинхронно, без ожидания
-		// создать запись под метрики трени, роуты
+	public async kickParticipant(userCreatorId: string, userParticipantId: string): Promise<any> {
+		// @TODO проверка статуса трени
 	}
 
 	// eslint-disable-next-line @typescript-eslint/no-unused-vars
-	public async revectInvite(invitedUserId: string, userCreatorId: string): Promise<any> {}
+	public async revokeInvite(userCreatorId: string, toUserId: string): Promise<any> {
+		// @TODO проверка статуса трени
+	}
+
+	// eslint-disable-next-line @typescript-eslint/no-unused-vars
+	public async acceptInvite(invitedUserId: string, userCreatorId: string): Promise<any> {
+		// @TODO проверка статуса трени, юзера что он уже не участник другой
+		// @TODO  создать запись под метрики трени, роуты
+	}
+
+	// eslint-disable-next-line @typescript-eslint/no-unused-vars
+	public async rejectInvite(invitedUserId: string, userCreatorId: string): Promise<any> {}
 }

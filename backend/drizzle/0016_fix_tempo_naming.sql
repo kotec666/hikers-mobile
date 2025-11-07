@@ -1,0 +1,1 @@
+ALTER TABLE "training_metrics" RENAME COLUMN "avg_tempo_min_sec" TO "avg_tempo_per_km";
