@@ -17,7 +17,7 @@ export class TrainingsService {
 	public async start(userId: string, dto: TrainingDto.Start): Promise<TrainingDto.Entity> {
 		const activeTrainings = await this.getActive(userId, false);
 		if (activeTrainings.length > 0) {
-			throw new BadRequestException(ERRORS.ALREADY_CREATED);
+			throw new BadRequestException(ERRORS.USER_IN_NOT_FINISHED_TRAINING);
 		}
 
 		const upsertQuery = {
@@ -33,10 +33,14 @@ export class TrainingsService {
 			finishedAt: training.finishedAt,
 		};
 
-		// Созданная тренировка может быть только в единственном экземпляре. Обновляем её
-		// Нужно для случая, когда сначала были разосланы инвайты, а потом юзер начал саму треню
+		// Созданная тренировка может быть только в единственном экземпляре.
 		const createdTrainings = await this.getCreated(userId, false);
 		const createdTraining = createdTrainings.length > 0 ? createdTrainings[0] : null;
+
+		// При этом - если юзер не создатель этой трени, то обновить её он не может
+		if (createdTraining && createdTraining.creatorId !== userId) {
+			throw new BadRequestException(ERRORS.USER_IN_NOT_FINISHED_TRAINING);
+		}
 
 		// Обновляем существующюю или создаем новую
 		// (просто удалить существующюю нельзя - т.к. на ней могут висеть инвайты)
@@ -105,15 +109,15 @@ export class TrainingsService {
 		});
 	}
 
-	public async getFinished(userId: string, isCreator: boolean): Promise<any> {
+	public async getFinished(userId: string, isCreator: boolean) {
 		return this.getByStatus(userId, isCreator, 'finished');
 	}
 
-	public async getActive(userId: string, isCreator: boolean): Promise<TrainingDto.Entity[]> {
+	public async getActive(userId: string, isCreator: boolean) {
 		return this.getByStatus(userId, isCreator, 'started');
 	}
 
-	public async getCreated(userId: string, isCreator: boolean): Promise<TrainingDto.Entity[]> {
+	public async getCreated(userId: string, isCreator: boolean) {
 		return this.getByStatus(userId, isCreator, 'created');
 	}
 
@@ -122,7 +126,7 @@ export class TrainingsService {
 		userId: string,
 		isCreator: boolean,
 		status: 'created' | 'started' | 'finished',
-	): Promise<TrainingDto.Entity[]> {
+	): Promise<Required<TrainingDto.Entity>[]> {
 		let startedAtFunc = isNull.bind(this);
 		let finishedAtFunc = isNull.bind(this);
 
@@ -151,6 +155,7 @@ export class TrainingsService {
 			.select({
 				id: training.id,
 				type: training.type,
+				creatorId: training.userCreatorId,
 				createdAt: training.createdAt,
 				startedAt: training.startedAt,
 				finishedAt: training.finishedAt,

@@ -6,6 +6,8 @@ export namespace TrainingDto {
 	export type Entity = {
 		id: string;
 		type: TrainingType;
+		creatorId?: string;
+
 		/** Момент создания тренировки - как только отправился первый инвайт, или юзер начал соло тренировку */
 		createdAt: Date;
 
