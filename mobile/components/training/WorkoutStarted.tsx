@@ -17,15 +17,16 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context'
 import EyeSvg from '@/components/svg/EyeSvg'
 import { Colors } from '@/constants/Colors'
 import PeopleRemoveSvg from '@/components/svg/PeopleRemoveSvg'
-import * as Location from 'expo-location'
+import { IWorkoutLocationStorageItem } from '@/store/workoutStorage'
 
 interface IProps {
-	userLocations: Location.LocationObject[] | null
+	userLocations: IWorkoutLocationStorageItem[]
 	isPaused: boolean
 	handleClickPause: () => void
 	accuracy: number | null
 	heading?: number
 	markerPosition?: ILatLng | null
+	mapCenter?: ILatLng
 }
 
 const { height } = Dimensions.get('screen')
@@ -175,7 +176,7 @@ const data = [
 
 const metrics = [
 	{ id: 1, label: 'Время', value: '00:12:34' },
-	{ id: 2, label: 'Ср. скорость', value: '12км/ч' },
+	{ id: 2, label: 'Скорость', value: '12км/ч' },
 	{ id: 3, label: 'Дистанция', value: '1200 м' },
 	{ id: 4, label: 'Ккал', value: '51 ккал' },
 	{ id: 5, label: 'Ср. темп', value: '05’24”' },
@@ -210,6 +211,7 @@ const WorkoutStarted = (props: IProps) => {
 	return (
 		<>
 			<EndTrainingModal open={state.isEndTrainingModalOpen} handleClose={handleClickEnd} />
+			{/*<CompassDebug heading={props.heading || 0} position="bottom-right" accuracy={props.accuracy} />*/}
 			<Container>
 				<Text className="my-[20px] text-white text-[20px]" style={{ fontFamily: fontFamily.bold }}>
 					Тренировка
@@ -221,6 +223,8 @@ const WorkoutStarted = (props: IProps) => {
 					accuracy={props.accuracy}
 					markerPosition={props.markerPosition}
 					maxMapHeight={maxMapHeight}
+					mapCenter={props.mapCenter}
+					userLocations={props.userLocations}
 				/>
 			)}
 			<Container style={{ paddingBottom: insets.bottom + 35 }} className="flex-1 w-full pt-[16px]">

@@ -21,12 +21,12 @@ const UserWithCircleSvg = (props: IProps) => {
 	const triangleWidth = 30
 	const triangleHeight = 22
 	const triangleDepth = -6
-	const triangleTopY = centerY + circleRadius + triangleDepth
+	const triangleTopY = centerY - circleRadius - triangleHeight - triangleDepth
 
 	const trianglePoints = `
-    ${centerX},${triangleTopY + triangleHeight}   
-    ${centerX - triangleWidth / 2},${triangleTopY} 
-    ${centerX + triangleWidth / 2},${triangleTopY}
+    ${centerX},${triangleTopY}   
+    ${centerX - triangleWidth / 2},${triangleTopY + triangleHeight} 
+    ${centerX + triangleWidth / 2},${triangleTopY + triangleHeight}
   `
 
 	return (

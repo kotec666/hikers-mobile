@@ -1,4 +1,4 @@
-import { StyleSheet, SafeAreaView } from 'react-native'
+import { SafeAreaView, StyleSheet } from 'react-native'
 import { SafeAreaProvider, useSafeAreaInsets } from 'react-native-safe-area-context'
 import { GestureHandlerRootView } from 'react-native-gesture-handler'
 import React, { useEffect, useRef, useState } from 'react'
@@ -6,15 +6,22 @@ import WorkoutRunning from '@/components/svg/WorkoutRunning'
 import WorkoutWalking from '@/components/svg/WorkoutWalking'
 import WorkoutBicycle from '@/components/svg/WorkoutBicycle'
 import * as Location from 'expo-location'
+import { LocationActivityType, LocationObject } from 'expo-location'
 import { useToast } from '@/hooks/useToast'
 import WorkoutStarted from '@/components/training/WorkoutStarted'
 import NewWorkout, { IWorkoutModeElement } from '@/components/training/NewWorkout'
 import { useWorkoutStore, WORKOUT_STAGE } from '@/store/workoutStore'
-import { LocationObject } from 'expo-location'
 import * as TaskManager from 'expo-task-manager'
-import { getAllWorkoutStorage, setWorkoutItem } from '@/store/workoutStorage'
+import {
+	getAllWorkoutStorage,
+	IWorkoutLocationStorageItem,
+	LocationType,
+	removeAllWorkoutStorage,
+	setWorkoutItem,
+	setWorkoutItems,
+	startAndStoreNewActiveWorkout
+} from '@/store/workoutStorage'
 import { ILatLng } from '@/components/map/MapComponent'
-import { getRandomNumber } from '@/helpers/getRandomNumber'
 
 const WorkoutTypesData = [
 	{ id: 1, name: 'Забег', IconComponent: WorkoutRunning },
@@ -50,11 +57,18 @@ TaskManager.defineTask(LOCATION_TASK_NAME, async ({ data, error }) => {
 	}
 
 	if (data) {
-		const { locations } = data as { locations: LocationObject[] }
+		const { locations } = data as { locations: LocationObject[] | LocationObject }
 		console.log('Received background locations', locations)
-		setWorkoutItem(locations)
+
+		if (Array.isArray(locations)) {
+			setWorkoutItems(locations, LocationType.BACKGROUND)
+		} else {
+			setWorkoutItem(locations, LocationType.BACKGROUND)
+		}
 	}
 })
+
+const DEFAULT_MAP_CENTER = { lat: 55.758745, lon: 37.619153 }
 
 export default function NewTraining() {
 	const insets = useSafeAreaInsets()
@@ -62,7 +76,8 @@ export default function NewTraining() {
 	const { setWorkoutStage } = useWorkoutStore()
 	const locationSubscriptionRef = useRef<null | Location.LocationSubscription>(null)
 	const headingSubscriptionRef = useRef<null | Location.LocationSubscription>(null)
-	const [markerPosition, setMarkerPosition] = useState<ILatLng | null>() // { lat: 53.422506, lon: 49.4781051 }
+	const [mapCenter, setMapCenter] = useState<ILatLng>(DEFAULT_MAP_CENTER) // { lat: 53.374427, lon: 49.460595 } // @TODO
+	const [markerPosition, setMarkerPosition] = useState<ILatLng | null>(null) // { lat: 53.422506, lon: 49.4781051 }
 	const [accuracy, setAccuracy] = useState<number | null>(null)
 	const [heading, setHeading] = useState(0)
 
@@ -71,54 +86,79 @@ export default function NewTraining() {
 		isWorkoutStarted: boolean
 		retryPermissions: boolean // переключатель для триггера проверки разрешений
 		isPaused: boolean
-		myLocations: Location.LocationObject[] | null
+		myLocations: IWorkoutLocationStorageItem[]
 	}>({
 		chosenWorkout: WorkoutTypesData[0],
 		isWorkoutStarted: false,
 		retryPermissions: false,
 		isPaused: false,
-		myLocations: null
+		myLocations: []
 	})
 
 	const startTracking = async () => {
-		const isTaskRegistered = await TaskManager.isTaskRegisteredAsync(LOCATION_TASK_NAME)
+		try {
+			const isTaskRegistered = await TaskManager.isTaskRegisteredAsync(LOCATION_TASK_NAME)
 
-		console.log('isTaskRegistered:', isTaskRegistered)
-		if (!isTaskRegistered) {
-			await Location.startLocationUpdatesAsync(LOCATION_TASK_NAME, {
-				accuracy: Location.Accuracy.BestForNavigation,
-				distanceInterval: 1,
-				foregroundService: {
-					notificationTitle: 'Отслеживание местоположения',
-					notificationBody: 'Приложение собирает данные о вашем местоположении',
-					notificationColor: 'rgba(0,0,0,0)',
-					killServiceOnDestroy: false
-				},
-				showsBackgroundLocationIndicator: true,
-				deferredUpdatesDistance: 1
-			})
-		}
-
-		locationSubscriptionRef.current = await Location.watchPositionAsync(
-			{
-				accuracy: Location.Accuracy.BestForNavigation,
-				distanceInterval: 1
-			},
-			(location) => {
-				setMarkerPosition({ lat: location.coords.latitude, lon: location.coords.longitude })
-				setHeading(getRandomNumber(0, 360))
-				setAccuracy(location.coords.accuracy)
-				setState((s) => {
-					setWorkoutItem(location)
-
-					if (s.myLocations) {
-						return { ...s, myLocations: [...s.myLocations, location] }
-					} else {
-						return { ...s, myLocations: [location] }
-					}
+			if (isTaskRegistered) {
+				await Location.stopLocationUpdatesAsync(LOCATION_TASK_NAME)
+			}
+			if (!isTaskRegistered) {
+				// Запускаем фоновое отслеживание
+				await Location.startLocationUpdatesAsync(LOCATION_TASK_NAME, {
+					accuracy: Location.Accuracy.BestForNavigation,
+					distanceInterval: 1,
+					foregroundService: {
+						notificationTitle: 'Отслеживание местоположения',
+						notificationBody: 'Приложение собирает данные о вашем местоположении',
+						notificationColor: 'rgba(0,0,0,0)',
+						killServiceOnDestroy: false
+					},
+					showsBackgroundLocationIndicator: true,
+					deferredUpdatesDistance: 1,
+					pausesUpdatesAutomatically: false,
+					activityType: LocationActivityType.Fitness
 				})
 			}
-		)
+
+			// Запускаем отслеживание в foreground
+			locationSubscriptionRef.current = await Location.watchPositionAsync(
+				{
+					accuracy: Location.Accuracy.BestForNavigation,
+					distanceInterval: 1
+				},
+				(location) => {
+					// Фильтруем неточные точки
+					if (location.coords.accuracy && location.coords.accuracy > 50) {
+						// 50 метров
+						console.warn('Пропущена неточная точка:', location.coords.accuracy)
+						return
+					}
+					setMarkerPosition({ lat: location.coords.latitude, lon: location.coords.longitude })
+					setAccuracy(location.coords.accuracy)
+
+					setState((s) => {
+						const lastSavedWorkoutItem = setWorkoutItem(location, LocationType.FOREGROUND) // Сохраняем в локальное хранилище
+
+						if (s.myLocations?.find((loc) => loc.rel_ts === lastSavedWorkoutItem.rel_ts)) {
+							// защита от дублирования, если такая локация уже существует в локальном стейте
+							return s
+						}
+
+						if (s.myLocations.length) {
+							return {
+								...s,
+								myLocations: [...s.myLocations, lastSavedWorkoutItem]
+							}
+						} else {
+							return { ...s, myLocations: [lastSavedWorkoutItem] }
+						}
+					})
+				}
+			)
+		} catch (e) {
+			console.error('Ошибка запуска отслеживания:', e)
+			toast.error('Ошибка запуска отслеживания местоположения')
+		}
 	}
 
 	const startHeadingTracking = async () => {
@@ -129,7 +169,7 @@ export default function NewTraining() {
 
 	const checkPermissions = async () => {
 		const foregroundStatus = await Location.getForegroundPermissionsAsync()
-		const backgroundStatus = await Location.getForegroundPermissionsAsync()
+		const backgroundStatus = await Location.getBackgroundPermissionsAsync()
 
 		return {
 			foregroundStatus,
@@ -141,6 +181,7 @@ export default function NewTraining() {
 		const { foregroundStatus, backgroundStatus } = await checkPermissions()
 
 		if (foregroundStatus.granted && backgroundStatus.granted) {
+			startAndStoreNewActiveWorkout()
 			// можно запускаться
 			// router.navigate('/training/started?action=start')
 
@@ -166,8 +207,12 @@ export default function NewTraining() {
 	}
 
 	const loadAndSetSavedLocations = () => {
-		const allSavedLocations = getAllWorkoutStorage()
-		setState((s) => ({ ...s, myLocations: allSavedLocations }))
+		const WorkoutStorage = getAllWorkoutStorage()
+
+		const locations = WorkoutStorage.activeWorkout?.locations
+		if (locations) {
+			setState((s) => ({ ...s, myLocations: locations }))
+		}
 	}
 
 	useEffect(() => {
@@ -187,6 +232,18 @@ export default function NewTraining() {
 		<SafeAreaProvider style={{ paddingTop: insets.top }}>
 			<GestureHandlerRootView style={{ flex: 1 }}>
 				<SafeAreaView style={styles.container}>
+					{/*<Button variant="white" onPress={() => setHeading(0)}>*/}
+					{/*	heading = 0° Север*/}
+					{/*</Button>*/}
+					{/*<Button variant="white" onPress={() => setHeading(90)}>*/}
+					{/*	heading = 90° Восток*/}
+					{/*</Button>*/}
+					{/*<Button variant="white" onPress={() => setHeading(180)}>*/}
+					{/*	heading = 180° Юг*/}
+					{/*</Button>*/}
+					{/*<Button variant="white" onPress={() => setHeading(270)}>*/}
+					{/*	heading = 270° Запад*/}
+					{/*</Button>*/}
 					{state.isWorkoutStarted ? (
 						<WorkoutStarted
 							userLocations={state.myLocations}
@@ -195,6 +252,7 @@ export default function NewTraining() {
 							markerPosition={markerPosition}
 							accuracy={accuracy}
 							heading={heading}
+							mapCenter={mapCenter}
 						/>
 					) : (
 						<NewWorkout

@@ -185,6 +185,8 @@ const AuthPage = () => {
 											isPassword
 											autoCapitalize="none"
 											placeholder="Введите пароль"
+											textContentType="password"
+											keyboardType="numbers-and-punctuation"
 											svg={
 												<PasswordSvg
 													error={Boolean(error?.message?.length || data.errors?.password)}

@@ -72,6 +72,9 @@ const personalErrorFields: PersonalErrorFields = {
 	password: {
 		[ERRORS.DIGIT_REQUIRED]: 'Поле должно содержать цифры',
 		[ERRORS.MISMATCH]: 'Неверный пароль'
+	},
+	username: {
+		[ERRORS.ALREADY_EXISTS]: 'Такой ник уже используется'
 	}
 }
 /* prettier-ignore */

@@ -76,7 +76,7 @@ export default function TrainingStarted() {
 
 	const metrics = [
 		{ id: 1, label: 'Время', value: '00:12:34' },
-		{ id: 2, label: 'Ср. скорость', value: '12км/ч' },
+		{ id: 2, label: 'Скорость', value: '12км/ч' },
 		{ id: 3, label: 'Дистанция', value: '1200 м' },
 		{ id: 4, label: 'Ккал', value: '51 ккал' },
 		{ id: 5, label: 'Ср. темп', value: '05’24”' },

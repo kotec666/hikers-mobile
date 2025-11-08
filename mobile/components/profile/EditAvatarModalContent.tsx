@@ -29,7 +29,7 @@ const EditAvatarModalContent = (props: IProps) => {
 					mediaTypes: ['images'],
 					allowsEditing: true,
 					aspect: [1, 1],
-					quality: 1
+					quality: 0.5
 				})
 			} else {
 				await ImagePicker.requestCameraPermissionsAsync()
@@ -37,7 +37,7 @@ const EditAvatarModalContent = (props: IProps) => {
 					cameraType: ImagePicker.CameraType.front,
 					allowsEditing: true,
 					aspect: [1, 1],
-					quality: 1
+					quality: 0.5
 				})
 			}
 

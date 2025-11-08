@@ -33,7 +33,12 @@ const FormData = global.FormData
 const ProfileEdit = () => {
 	const insets = useSafeAreaInsets()
 	const router = useRouter()
-	const { handleSubmit, control, setValue, getValues } = useForm<IEditProfileFormState>()
+	const {
+		handleSubmit,
+		control,
+		setValue,
+		formState: { isDirty }
+	} = useForm<IEditProfileFormState>()
 	const { ErrorMessages } = useErrorMessage()
 	const toast = useToast()
 	const { setUser } = useAuthStore()
@@ -154,16 +159,18 @@ const ProfileEdit = () => {
 		}
 	}
 
-	const handleClickReturnToProfile = () => {
-		if (!data.isSaved) {
-			handleOpenNotSavedModal()
-		}
-	}
-
 	const exitWithoutSave = () => {
 		handleCloseNotSavedModal()
 		setNewActivitiesOrder([])
 		router.back()
+	}
+
+	const handleClickReturnToProfile = () => {
+		if (!data.isSaved && isDirty) {
+			handleOpenNotSavedModal()
+		} else {
+			exitWithoutSave()
+		}
 	}
 
 	const sourceArray = newActivitiesOrder?.length ? newActivitiesOrder : data.activities

@@ -17,7 +17,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context'
 export interface IWorkoutModeElement {
 	id: number
 	name: string
-	IconComponent: (props: { color?: string }) => Element
+	IconComponent: (props: { color?: string }) => React.JSX.Element
 }
 
 interface IProps {
@@ -67,7 +67,7 @@ const NewWorkout = (props: IProps) => {
 				className="-translate-x-[50%] left-[50%] absolute flex-row justify-around items-center w-full"
 			>
 				<MapActionButton onPress={toggleResizableSheet}>
-					{renderIcon(props.chosenWorkout.IconComponent, '#fff')}
+					{props.chosenWorkout && renderIcon(props.chosenWorkout.IconComponent, '#fff')}
 					{/*<SneakerSvg />*/}
 				</MapActionButton>
 				<StartButton onPress={props.handleClickStart}>Начать</StartButton>
