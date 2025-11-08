@@ -11,7 +11,6 @@ import { useContainer } from 'class-validator';
 async function bootstrap() {
 	const app: INestApplication = await NestFactory.create(AppModule, {
 		bufferLogs: true,
-		logger: false,
 	});
 
 	app.useGlobalPipes(
@@ -23,7 +22,6 @@ async function bootstrap() {
 	);
 	app.useGlobalFilters(new HttpExceptionFilter());
 
-	app.useLogger(app.get(Logger));
 	app.enableCors({
 		origin: `*`,
 		credentials: true,

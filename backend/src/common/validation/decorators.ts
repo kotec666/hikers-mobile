@@ -66,6 +66,32 @@ export function UniqueEmail(validationOptions?: ValidationOptions) {
 	};
 }
 
+export function IsHexColor(validationOptions?: ValidationOptions) {
+	return function (object: object, propertyName: string) {
+		registerDecorator({
+			name: 'IsHexColor',
+			target: object.constructor,
+			propertyName: propertyName,
+			options: validationOptions,
+			validator: {
+				validate(value: any): boolean {
+					if (typeof value !== 'string') {
+						return false;
+					}
+
+					// Проверяем, что строка начинается с # и содержит только hex-символы
+					const hexColorRegex = /^#([A-Fa-f0-9]{6}|[A-Fa-f0-9]{3})$/;
+					return hexColorRegex.test(value);
+				},
+
+				defaultMessage(): string {
+					return `_${propertyName}:${ERRORS.MISMATCH}`;
+				},
+			},
+		});
+	};
+}
+
 export function TypedArray(checkFn: (item: any) => boolean, validationOptions?: ValidationOptions) {
 	return function (object: object, propertyName: string) {
 		registerDecorator({
