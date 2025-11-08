@@ -160,13 +160,6 @@ export const userAchievements = pgTable(
 	(table) => [primaryKey({ columns: [table.userId, table.achievementId] })],
 );
 
-// Training Types
-export const trainingTypes = pgTable('training_types', {
-	name: trainingTypeEnum().primaryKey(),
-	measuringUnit: measuringUnitEnum('measuring_unit').notNull(),
-	iconFilename: varchar('icon_filename', { length: 255 }).references(() => media.filename),
-});
-
 // User Activities
 export const userActivities = pgTable(
 	'user_activities',
@@ -188,9 +181,7 @@ export const training = pgTable('training', {
 	userCreatorId: uuid('user_creator_id')
 		.notNull()
 		.references(() => users.id),
-	type: trainingTypeEnum()
-		.notNull()
-		.references(() => trainingTypes.name),
+	type: trainingTypeEnum().notNull(),
 	createdAt: timestamp('created_at').defaultNow().notNull(),
 	startedAt: timestamp('started_at'),
 	finishedAt: timestamp('finished_at'),
@@ -232,12 +223,12 @@ export const trainingMetrics = pgTable(
 		participantId: uuid('participant_id')
 			.notNull()
 			.references(() => trainingParticipants.id),
-		timeMin: integer('time_min'),
-		avgSpeedKmh: smallint('avg_speed_kmh'),
-		avgTempoMinSec: decimal('avg_tempo_min_sec', { precision: 4, scale: 2 }),
-		distanceM: integer('distance_m'),
-		altitudeGainM: smallint('altitude_gain_m'),
-		kkcal: smallint('kkcal'),
+		timeMin: integer('time_min').notNull(),
+		avgSpeedKmh: smallint('avg_speed_kmh').notNull(),
+		avgTempoSecondsPerKm: smallint('avg_tempo_seconds_per_km').notNull(),
+		distanceM: integer('distance_m').notNull(),
+		altitudeGainM: smallint('altitude_gain_m').notNull(),
+		kkcal: smallint('kkcal').notNull(),
 	},
 	(table) => [index('trn_metr_part_idx').on(table.participantId)],
 );

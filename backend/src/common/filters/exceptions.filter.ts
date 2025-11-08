@@ -71,7 +71,7 @@ export class HttpExceptionFilter implements ExceptionFilter {
 						statusCode,
 						message: message.startsWith('_')
 							? [parsePropertyMessage(message)]
-							: statusCodeToError[statusCode] ?? ERRORS.UNKNOWN_ERROR,
+							: (statusCodeToError[statusCode] ?? ERRORS.UNKNOWN_ERROR),
 					});
 				}
 
@@ -100,7 +100,9 @@ export class HttpExceptionFilter implements ExceptionFilter {
 					statusCode: exception.getStatus(),
 					message: message.startsWith('_')
 						? [parsePropertyMessage(message)]
-						: statusCodeToError[exceptionStatus] ?? ERRORS.UNKNOWN_ERROR,
+						: ERRORS[message]
+							? message
+							: (statusCodeToError[exceptionStatus] ?? ERRORS.UNKNOWN_ERROR),
 				});
 			}
 		}

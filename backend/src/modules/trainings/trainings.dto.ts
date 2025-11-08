@@ -1,12 +1,18 @@
-﻿import { MeasuringUnit, TrainingType } from '@shared/enums';
+﻿import { TrainingType } from '@shared/enums';
 import { UserDto } from '../user/user.dto';
+import { IsEnum } from 'class-validator';
+import { TrainingRouteNode } from '../database/schema';
+import { IsHexColor } from '@validation/decorators';
+import { ERRORS } from '@shared/errors';
 
 export namespace TrainingDto {
 	export type Entity = {
 		id: string;
 		type: TrainingType;
-		/** Момент создания тренировки - как только отправился первый инвайт, или юзер начал соло тренировку */
-		createdAt: Date;
+		creatorId?: string;
+
+		/** Момент создания тренировки - как только отправился первый инвайт */
+		createdAt: Date; // @TODO мб выпилить
 
 		/** Момент старта тренировки - как только создатель начал тренировку */
 		startedAt: Date | null;
@@ -14,29 +20,59 @@ export namespace TrainingDto {
 		finishedAt: Date | null;
 	};
 
+	export type ExtendedEntity = Required<TrainingDto.Entity> & {
+		creator: UserDto.Entity;
+		participants: TrainingParticipantDto.ExtendedEntity[];
+	};
+
+	export type EntityWithCurrentParticipant = Entity & {
+		participant: TrainingParticipantDto.Entity;
+	};
+
 	export class Start {
+		@IsEnum(TrainingType, { message: `_type:${ERRORS.MISMATCH}` })
 		type: TrainingType;
-		now: boolean = false;
+
+		@IsHexColor()
+		colorHex: string;
 	}
 
-	export type ExtendedEntity = Omit<TrainingDto.Entity, 'type'> & {
-		creator: UserDto.Entity;
-		participants: TrainingParticipantDto.Entity[];
-		type: TrainingTypeDto.Entity;
-	};
-}
-
-export namespace TrainingTypeDto {
-	export type Entity = {
-		name: TrainingType;
-		measuringUnit: MeasuringUnit;
-		iconFilename: string | null;
-	};
+	export class Sync {
+		// @TODO валидировать
+		metrics: TrainingRouteNode[];
+	}
 }
 
 export namespace TrainingParticipantDto {
 	export type Entity = {
+		id: string;
 		user: UserDto.Entity;
 		colorHex: string | null;
+	};
+
+	export type ExtendedEntity = Entity & {
+		route: TrainingRouteDto.Entity | null;
+		metrics: TrainingMetricsDto.Entity | null;
+	};
+}
+
+export namespace TrainingRouteDto {
+	export type Entity = {
+		points: TrainingRouteNode[] | null;
+
+		createdAt: Date;
+		startedAt: Date | null;
+		finishedAt: Date | null;
+	};
+}
+
+export namespace TrainingMetricsDto {
+	export type Entity = {
+		timeMin: number;
+		avgSpeedKmh: number;
+		avgTempoSecondsPerKm: number;
+		distanceM: number;
+		altitudeGainM: number;
+		kkcal: number;
 	};
 }
