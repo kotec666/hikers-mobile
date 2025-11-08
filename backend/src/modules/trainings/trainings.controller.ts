@@ -1,4 +1,4 @@
-﻿import { Body, Controller, Delete, Param, Patch, Post, UseInterceptors } from '@nestjs/common';
+﻿import { Body, Controller, Delete, Get, Param, Patch, Post, Query, UseInterceptors } from '@nestjs/common';
 import { TrainingsService } from './trainings.service';
 import { TrainingDto } from './trainings.dto';
 import { User } from 'src/common/decorators/user.decorator';
@@ -6,11 +6,26 @@ import { TokenDto } from '../token/token.dto';
 import { UserInterceptor } from 'src/common/interceptors/user.interceptor';
 import { CommonDto } from 'src/common/dto/common.dto';
 import { IsUUID } from '@validation/uuid.validatior';
+import { TrainingType } from '@shared/enums';
+import { ParseEnumArray } from '@validation/param.decorators';
 
 @Controller('trainings')
 @UseInterceptors(UserInterceptor)
 export class TrainingsController {
 	constructor(private readonly service: TrainingsService) {}
+
+	/**
+	 * @tag Trainings
+	 * @summary История тренировок (завершённые, где пользователь был участником)
+	 * @security token
+	 */
+	@Get('history')
+	public async getHistory(
+		@User() user: TokenDto.Payload,
+		@ParseEnumArray({ key: 'types', enum: TrainingType }) @Query('types') types?: TrainingType[],
+	): Promise<TrainingDto.Entity[]> {
+		return this.service.getHistory(user.id, types);
+	}
 
 	/**
 	 * @tag Trainings

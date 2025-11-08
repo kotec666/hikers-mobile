@@ -11,9 +11,10 @@ import {
 	users,
 } from '../database/schema';
 import { TrainingDto, TrainingParticipantDto } from './trainings.dto';
-import { eq, and, isNull, isNotNull } from 'drizzle-orm';
+import { eq, and, isNull, isNotNull, inArray } from 'drizzle-orm';
 import { ERRORS } from '@shared/errors';
 import { CommonDto } from 'src/common/dto/common.dto';
+import { TrainingType } from '@shared/enums';
 
 const MAX_TIME_TO_SYNC_AFTER_FINISH_TRAINING = 60 * 1000; // 1 минута
 const MAX_TEMPO_VALUE = 32766; // pg_smallint
@@ -354,6 +355,28 @@ export class TrainingsService {
 			...trainingRow,
 			participant,
 		};
+	}
+
+	public async getHistory(userId: string, types?: TrainingType[]): Promise<TrainingDto.Entity[]> {
+		// @TODO пагинация
+		const query = this.db.db
+			.select({
+				id: training.id,
+				type: training.type,
+				creatorId: training.userCreatorId,
+				createdAt: training.createdAt,
+				startedAt: training.startedAt,
+				finishedAt: training.finishedAt,
+			})
+			.from(training)
+			.leftJoin(trainingParticipants, eq(trainingParticipants.trainingId, training.id));
+
+		if (types) {
+			query.where(and(inArray(training.type, types), eq(trainingParticipants.userId, userId)));
+		} else {
+			query.where(eq(trainingParticipants.userId, userId));
+		}
+		return await query;
 	}
 
 	public async getById(id: string): Promise<Required<TrainingDto.Entity>> {
