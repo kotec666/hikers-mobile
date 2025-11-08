@@ -16,7 +16,6 @@ import {
 	getAllWorkoutStorage,
 	IWorkoutLocationStorageItem,
 	LocationType,
-	removeAllWorkoutStorage,
 	setWorkoutItem,
 	setWorkoutItems,
 	startAndStoreNewActiveWorkout
@@ -95,31 +94,31 @@ export default function NewTraining() {
 		myLocations: []
 	})
 
+	const startBackgroundTracking = async () => {
+		const isTaskRegistered = await TaskManager.isTaskRegisteredAsync(LOCATION_TASK_NAME)
+
+		if (!isTaskRegistered) {
+			// Запускаем фоновое отслеживание
+			await Location.startLocationUpdatesAsync(LOCATION_TASK_NAME, {
+				accuracy: Location.Accuracy.BestForNavigation,
+				distanceInterval: 1,
+				foregroundService: {
+					notificationTitle: 'Отслеживание местоположения',
+					notificationBody: 'Приложение собирает данные о вашем местоположении',
+					notificationColor: 'rgba(0,0,0,0)',
+					killServiceOnDestroy: false
+				},
+				showsBackgroundLocationIndicator: true,
+				deferredUpdatesDistance: 1,
+				pausesUpdatesAutomatically: false,
+				activityType: LocationActivityType.Fitness
+			})
+		}
+	}
+
 	const startTracking = async () => {
 		try {
-			const isTaskRegistered = await TaskManager.isTaskRegisteredAsync(LOCATION_TASK_NAME)
-
-			if (isTaskRegistered) {
-				await Location.stopLocationUpdatesAsync(LOCATION_TASK_NAME)
-			}
-			if (!isTaskRegistered) {
-				// Запускаем фоновое отслеживание
-				await Location.startLocationUpdatesAsync(LOCATION_TASK_NAME, {
-					accuracy: Location.Accuracy.BestForNavigation,
-					distanceInterval: 1,
-					foregroundService: {
-						notificationTitle: 'Отслеживание местоположения',
-						notificationBody: 'Приложение собирает данные о вашем местоположении',
-						notificationColor: 'rgba(0,0,0,0)',
-						killServiceOnDestroy: false
-					},
-					showsBackgroundLocationIndicator: true,
-					deferredUpdatesDistance: 1,
-					pausesUpdatesAutomatically: false,
-					activityType: LocationActivityType.Fitness
-				})
-			}
-
+			await startBackgroundTracking()
 			// Запускаем отслеживание в foreground
 			locationSubscriptionRef.current = await Location.watchPositionAsync(
 				{
@@ -137,6 +136,7 @@ export default function NewTraining() {
 					setAccuracy(location.coords.accuracy)
 
 					setState((s) => {
+						if (s.isPaused) return s
 						const lastSavedWorkoutItem = setWorkoutItem(location, LocationType.FOREGROUND) // Сохраняем в локальное хранилище
 
 						if (s.myLocations?.find((loc) => loc.rel_ts === lastSavedWorkoutItem.rel_ts)) {
@@ -182,8 +182,6 @@ export default function NewTraining() {
 
 		if (foregroundStatus.granted && backgroundStatus.granted) {
 			startAndStoreNewActiveWorkout()
-			// можно запускаться
-			// router.navigate('/training/started?action=start')
 
 			console.log('chosenWorkout', state.chosenWorkout)
 			setWorkoutStage(WORKOUT_STAGE.PROCESSING)
@@ -202,8 +200,23 @@ export default function NewTraining() {
 		setState((s) => ({ ...s, chosenWorkout: foundedWorkout }))
 	}
 
-	const handleClickPause = () => {
-		setState((s) => ({ ...s, isPaused: !s.isPaused }))
+	const handleClickPause = async () => {
+		// Получение последней локации и установка её в стор и state @TODO
+		if (!state.isPaused) {
+			try {
+				const isTaskRegistered = await TaskManager.isTaskRegisteredAsync(LOCATION_TASK_NAME)
+				if (isTaskRegistered) {
+					await Location.stopLocationUpdatesAsync(LOCATION_TASK_NAME)
+				}
+			} catch (e) {
+				console.log('Ошибка в паузе, фоновая локация')
+			}
+		} else {
+			await startBackgroundTracking()
+		}
+		setState((s) => {
+			return { ...s, isPaused: !s.isPaused }
+		})
 	}
 
 	const loadAndSetSavedLocations = () => {

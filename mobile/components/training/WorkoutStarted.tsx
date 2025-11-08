@@ -297,7 +297,12 @@ const WorkoutStarted = (props: IProps) => {
 							</ActionButton>
 						</View>
 						{props.isPaused && (
-							<Button onPress={handleClickEnd} variant="white" buttonContainerClassName="flex-1">
+							<Button
+								onPress={handleClickEnd}
+								variant="white"
+								buttonContainerClassName="flex-1"
+								buttonHeight={70}
+							>
 								Завершить
 							</Button>
 						)}

@@ -139,9 +139,6 @@ export default function HomeScreen() {
 					<Button variant="black" onPress={() => router.navigate('/route/1')}>
 						Страница просмотра маршрута
 					</Button>
-					<Button variant="black" onPress={() => router.navigate('/training/started')}>
-						Страница активной тренировки
-					</Button>
 					<Button
 						variant="black"
 						onPress={() =>

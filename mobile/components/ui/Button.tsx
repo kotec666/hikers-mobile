@@ -4,7 +4,7 @@ import { fontFamily } from '@/constants/Fonts'
 import { ActivityIndicator, Animated, GestureResponderEvent, Pressable, PressableProps } from 'react-native'
 import { Colors } from '@/constants/Colors'
 
-const buttonBaseStyles = 'rounded-full w-full h-[50px] flex justify-center items-center flex-row'
+const buttonBaseStyles = 'rounded-full w-full flex justify-center items-center flex-row'
 
 const variantColors = {
 	green: {
@@ -47,13 +47,14 @@ const variantColors = {
 
 export interface Props extends PropsWithChildren {
 	className?: string
+	buttonHeight?: number
 	buttonContainerClassName?: string
 	isLoading?: boolean
 	variant: keyof typeof variantColors
 }
 
 export function Button(props: Props & PressableProps) {
-	const { children, className, buttonContainerClassName, variant, isLoading, ...restProps } = props
+	const { children, className, buttonContainerClassName, variant, isLoading, buttonHeight, ...restProps } = props
 
 	const animatedValue = useRef(new Animated.Value(0)).current
 	const colors = variantColors[variant]
@@ -91,12 +92,12 @@ export function Button(props: Props & PressableProps) {
 			className={cn('flex-row', buttonContainerClassName)}
 			onPressIn={!isLoading ? fadeIn : undefined}
 			onPressOut={!isLoading ? fadeOut : undefined}
-			disabled={isLoading}
 			{...restProps}
 		>
 			<Animated.View
 				style={{
-					backgroundColor: isLoading ? Colors['gray-92'] : btnColor
+					backgroundColor: isLoading ? Colors['gray-92'] : btnColor,
+					height: buttonHeight || 50
 				}}
 				className={cn(buttonBaseStyles, className)}
 			>
