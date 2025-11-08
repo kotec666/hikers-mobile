@@ -1,4 +1,4 @@
-﻿import { MeasuringUnit, TrainingType } from '@shared/enums';
+﻿import { TrainingType } from '@shared/enums';
 import { UserDto } from '../user/user.dto';
 import { IsEnum } from 'class-validator';
 import { TrainingRouteNode } from '../database/schema';
@@ -20,11 +20,9 @@ export namespace TrainingDto {
 		finishedAt: Date | null;
 	};
 
-	export type ExtendedEntity = Omit<TrainingDto.Entity, 'type'> & {
+	export type ExtendedEntity = Required<TrainingDto.Entity> & {
 		creator: UserDto.Entity;
-		// @TODO TrainingParticipantDto.Extendedentity[] с маршрутами, метриками итд
-		participants: TrainingParticipantDto.Entity[];
-		type: TrainingTypeDto.Entity;
+		participants: TrainingParticipantDto.ExtendedEntity[];
 	};
 
 	export type EntityWithCurrentParticipant = Entity & {
@@ -45,30 +43,36 @@ export namespace TrainingDto {
 	}
 }
 
-export namespace TrainingTypeDto {
-	export type Entity = {
-		name: TrainingType;
-		measuringUnit: MeasuringUnit;
-		iconFilename: string | null;
-	};
-}
-
 export namespace TrainingParticipantDto {
 	export type Entity = {
 		id: string;
 		user: UserDto.Entity;
 		colorHex: string | null;
 	};
+
+	export type ExtendedEntity = Entity & {
+		route: TrainingRouteDto.Entity | null;
+		metrics: TrainingMetricsDto.Entity | null;
+	};
 }
 
 export namespace TrainingRouteDto {
 	export type Entity = {
-		participant: TrainingParticipantDto.Entity;
-		colorHex: string | null;
-		points: TrainingRouteNode[];
+		points: TrainingRouteNode[] | null;
 
 		createdAt: Date;
 		startedAt: Date | null;
 		finishedAt: Date | null;
+	};
+}
+
+export namespace TrainingMetricsDto {
+	export type Entity = {
+		timeMin: number;
+		avgSpeedKmh: number;
+		avgTempoSecondsPerKm: number;
+		distanceM: number;
+		altitudeGainM: number;
+		kkcal: number;
 	};
 }

@@ -7,7 +7,6 @@ import {
 	trainingParticipants,
 	TrainingRouteNode,
 	trainingRoutes,
-	trainingTypes,
 	users,
 } from '../database/schema';
 import { TrainingDto, TrainingParticipantDto } from './trainings.dto';
@@ -290,6 +289,42 @@ export class TrainingsService {
 		return await query;
 	}
 
+	public async getExtendedParticipants(trainingId: string): Promise<TrainingParticipantDto.ExtendedEntity[]> {
+		const participants = await this.db.db
+			.select({
+				id: trainingParticipants.id,
+				colorHex: trainingParticipants.colorHex,
+				user: {
+					id: users.id,
+					email: users.email,
+					name: users.name,
+					username: users.username,
+					avatarFilename: users.avatarFilename,
+				},
+				route: {
+					points: trainingRoutes.points,
+					createdAt: trainingRoutes.createdAt,
+					startedAt: trainingRoutes.startedAt,
+					finishedAt: trainingRoutes.finishedAt,
+				},
+				metrics: {
+					timeMin: trainingMetrics.timeMin,
+					avgSpeedKmh: trainingMetrics.avgSpeedKmh,
+					avgTempoSecondsPerKm: trainingMetrics.avgTempoSecondsPerKm,
+					distanceM: trainingMetrics.distanceM,
+					altitudeGainM: trainingMetrics.altitudeGainM,
+					kkcal: trainingMetrics.kkcal,
+				},
+			})
+			.from(trainingParticipants)
+			.where(eq(trainingParticipants.trainingId, trainingId))
+			.innerJoin(users, eq(users.id, trainingParticipants.userId))
+			.leftJoin(trainingRoutes, eq(trainingRoutes.participantId, trainingParticipants.id))
+			.leftJoin(trainingMetrics, eq(trainingMetrics.participantId, trainingParticipants.id));
+
+		return participants;
+	}
+
 	public async getParticipants(trainingId: string): Promise<TrainingParticipantDto.Entity[]> {
 		const participants = await this.db.db
 			.select({
@@ -400,10 +435,22 @@ export class TrainingsService {
 		return trainingRow;
 	}
 
+	public async getExtendedByIdAndParticipant(id: string, userId: string): Promise<TrainingDto.ExtendedEntity> {
+		const extendedTraining = await this.getExtendedById(id);
+
+		const userIsParticipant = !!extendedTraining.participants.find((p) => p.user.id === userId);
+		if (!userIsParticipant) {
+			throw new NotFoundException(ERRORS.USER_IS_NOT_TRAINING_PARTICIPANT);
+		}
+
+		return extendedTraining;
+	}
+
 	public async getExtendedById(id: string): Promise<TrainingDto.ExtendedEntity> {
 		const [trainingRow] = await this.db.db
 			.select({
 				id: training.id,
+				type: training.type,
 				creatorId: training.userCreatorId,
 				createdAt: training.createdAt,
 				startedAt: training.startedAt,
@@ -416,15 +463,9 @@ export class TrainingsService {
 					username: users.username,
 					avatarFilename: users.avatarFilename,
 				},
-				type: {
-					name: trainingTypes.name,
-					measuringUnit: trainingTypes.measuringUnit,
-					iconFilename: trainingTypes.iconFilename,
-				},
 			})
 			.from(training)
 			.innerJoin(users, eq(users.id, training.userCreatorId))
-			.innerJoin(trainingTypes, eq(trainingTypes.name, training.type))
 			.where(eq(training.id, id))
 			.limit(1);
 
@@ -432,7 +473,7 @@ export class TrainingsService {
 			throw new NotFoundException(ERRORS.NOT_FOUND);
 		}
 
-		const participants = await this.getParticipants(trainingRow.id);
+		const participants = await this.getExtendedParticipants(trainingRow.id);
 		return { ...trainingRow, participants };
 	}
 

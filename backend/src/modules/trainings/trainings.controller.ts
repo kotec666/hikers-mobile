@@ -29,6 +29,32 @@ export class TrainingsController {
 
 	/**
 	 * @tag Trainings
+	 * @summary Получить детали тренировки по id
+	 * @security token
+	 */
+	@Get('extended/:id')
+	public async getExtendedById(
+		@User() user: TokenDto.Payload,
+		@IsUUID('id') @Param('id') id: string,
+	): Promise<TrainingDto.Entity> {
+		return this.service.getExtendedByIdAndParticipant(id, user.id);
+	}
+
+	/**
+	 * @tag Trainings
+	 * @summary Получить тренировку по id
+	 * @security token
+	 */
+	@Get(':id')
+	public async getById(
+		@User() user: TokenDto.Payload,
+		@IsUUID('id') @Param('id') id: string,
+	): Promise<TrainingDto.Entity> {
+		return this.service.getByIdAndParticipant(id, user.id);
+	}
+
+	/**
+	 * @tag Trainings
 	 * @summary Начать тренировку
 	 * @security token
 	 */
