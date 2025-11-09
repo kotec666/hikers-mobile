@@ -14,7 +14,7 @@ import { Colors } from '@/constants/Colors'
 import { BlurView } from 'expo-blur'
 
 const { height: SCREEN_HEIGHT } = Dimensions.get('window')
-const MAX_SHEET_TRANSLATION = -SCREEN_HEIGHT + 50
+const MAX_SHEET_TRANSLATION = -SCREEN_HEIGHT // + 50
 
 export type BottomSheetResizableRef = {
 	scrollTo: (destination: number) => void
@@ -79,6 +79,7 @@ const BottomSheetResizable = forwardRef<BottomSheetResizableRef, BottomSheetResi
 		})
 
 	const animatedSheetStyle = useAnimatedStyle(() => {
+		const hidden = translateY.value >= 0
 		return {
 			borderRadius: interpolate(
 				translateY.value,
@@ -86,7 +87,8 @@ const BottomSheetResizable = forwardRef<BottomSheetResizableRef, BottomSheetResi
 				[25, 5],
 				Extrapolation.CLAMP
 			),
-			transform: [{ translateY: translateY.value }]
+			transform: [{ translateY: translateY.value }],
+			display: hidden ? 'none' : 'flex'
 		}
 	})
 
@@ -177,6 +179,8 @@ const BottomSheetResizableContent = ({
 		</>
 	)
 }
+
+BottomSheetResizable.displayName = 'BottomSheetResizable'
 
 export default BottomSheetResizable
 

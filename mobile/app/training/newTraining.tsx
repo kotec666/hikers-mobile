@@ -10,17 +10,18 @@ import { LocationActivityType, LocationObject } from 'expo-location'
 import { useToast } from '@/hooks/useToast'
 import WorkoutStarted from '@/components/training/WorkoutStarted'
 import NewWorkout, { IWorkoutModeElement } from '@/components/training/NewWorkout'
-import { useWorkoutStore, WORKOUT_STAGE } from '@/store/workoutStore'
 import * as TaskManager from 'expo-task-manager'
 import {
 	getAllWorkoutStorage,
 	IWorkoutLocationStorageItem,
-	LocationType,
+	moveActiveWorkoutToNotSaved,
+	setActiveWorkoutPauseState,
 	setWorkoutItem,
 	setWorkoutItems,
 	startAndStoreNewActiveWorkout
 } from '@/store/workoutStorage'
 import { ILatLng } from '@/components/map/MapComponent'
+import { useRouter } from 'expo-router'
 
 const WorkoutTypesData = [
 	{ id: 1, name: 'Забег', IconComponent: WorkoutRunning },
@@ -60,9 +61,9 @@ TaskManager.defineTask(LOCATION_TASK_NAME, async ({ data, error }) => {
 		console.log('Received background locations', locations)
 
 		if (Array.isArray(locations)) {
-			setWorkoutItems(locations, LocationType.BACKGROUND)
+			setWorkoutItems(locations)
 		} else {
-			setWorkoutItem(locations, LocationType.BACKGROUND)
+			setWorkoutItem(locations)
 		}
 	}
 })
@@ -72,13 +73,15 @@ const DEFAULT_MAP_CENTER = { lat: 55.758745, lon: 37.619153 }
 export default function NewTraining() {
 	const insets = useSafeAreaInsets()
 	const toast = useToast()
-	const { setWorkoutStage } = useWorkoutStore()
+	const router = useRouter()
 	const locationSubscriptionRef = useRef<null | Location.LocationSubscription>(null)
 	const headingSubscriptionRef = useRef<null | Location.LocationSubscription>(null)
 	const [mapCenter, setMapCenter] = useState<ILatLng>(DEFAULT_MAP_CENTER) // { lat: 53.374427, lon: 49.460595 } // @TODO
 	const [markerPosition, setMarkerPosition] = useState<ILatLng | null>(null) // { lat: 53.422506, lon: 49.4781051 }
 	const [accuracy, setAccuracy] = useState<number | null>(null)
 	const [heading, setHeading] = useState(0)
+	const [speedMPS, setSpeedMPS] = useState(0) // метры в секунду
+	const [altitude, setAltitude] = useState(0) // Высота в метрах над опорным эллипсоидом WGS 84.
 
 	const [state, setState] = useState<{
 		chosenWorkout: IWorkoutModeElement | null
@@ -93,6 +96,8 @@ export default function NewTraining() {
 		isPaused: false,
 		myLocations: []
 	})
+
+	const handleSendNotification = () => {}
 
 	const startBackgroundTracking = async () => {
 		const isTaskRegistered = await TaskManager.isTaskRegisteredAsync(LOCATION_TASK_NAME)
@@ -116,6 +121,33 @@ export default function NewTraining() {
 		}
 	}
 
+	const stopBackgroundTracking = async () => {
+		const isTaskRegistered = await TaskManager.isTaskRegisteredAsync(LOCATION_TASK_NAME)
+		if (isTaskRegistered) {
+			await Location.stopLocationUpdatesAsync(LOCATION_TASK_NAME)
+		}
+	}
+
+	const saveLocationToStorageAndState = (location: LocationObject) => {
+		setState((s) => {
+			const lastSavedWorkoutItem = setWorkoutItem(location) // Сохраняем в локальное хранилище
+
+			if (s.myLocations?.find((loc) => loc.rel_ts === lastSavedWorkoutItem.rel_ts)) {
+				// защита от дублирования, если такая локация уже существует в локальном стейте
+				return s
+			}
+
+			if (s.myLocations.length) {
+				return {
+					...s,
+					myLocations: [...s.myLocations, lastSavedWorkoutItem]
+				}
+			} else {
+				return { ...s, myLocations: [lastSavedWorkoutItem] }
+			}
+		})
+	}
+
 	const startTracking = async () => {
 		try {
 			await startBackgroundTracking()
@@ -135,24 +167,12 @@ export default function NewTraining() {
 					setMarkerPosition({ lat: location.coords.latitude, lon: location.coords.longitude })
 					setAccuracy(location.coords.accuracy)
 
-					setState((s) => {
-						if (s.isPaused) return s
-						const lastSavedWorkoutItem = setWorkoutItem(location, LocationType.FOREGROUND) // Сохраняем в локальное хранилище
+					if (!state.isPaused) {
+						setSpeedMPS(location.coords.speed ?? 0)
+						setAltitude(location.coords.altitude ?? 0)
+					}
 
-						if (s.myLocations?.find((loc) => loc.rel_ts === lastSavedWorkoutItem.rel_ts)) {
-							// защита от дублирования, если такая локация уже существует в локальном стейте
-							return s
-						}
-
-						if (s.myLocations.length) {
-							return {
-								...s,
-								myLocations: [...s.myLocations, lastSavedWorkoutItem]
-							}
-						} else {
-							return { ...s, myLocations: [lastSavedWorkoutItem] }
-						}
-					})
+					saveLocationToStorageAndState(location)
 				}
 			)
 		} catch (e) {
@@ -170,21 +190,26 @@ export default function NewTraining() {
 	const checkPermissions = async () => {
 		const foregroundStatus = await Location.getForegroundPermissionsAsync()
 		const backgroundStatus = await Location.getBackgroundPermissionsAsync()
+		const isGPSEnabled = await Location.hasServicesEnabledAsync()
 
 		return {
 			foregroundStatus,
-			backgroundStatus
+			backgroundStatus,
+			isGPSEnabled
 		}
 	}
 
-	const handleClickStart = async () => {
-		const { foregroundStatus, backgroundStatus } = await checkPermissions()
+	const getLastUserPosition = async (): Promise<Location.LocationObject> => {
+		return await Location.getCurrentPositionAsync()
+	}
 
-		if (foregroundStatus.granted && backgroundStatus.granted) {
+	const handleClickStart = async () => {
+		const { foregroundStatus, backgroundStatus, isGPSEnabled } = await checkPermissions()
+
+		if (foregroundStatus.granted && backgroundStatus.granted && isGPSEnabled) {
 			startAndStoreNewActiveWorkout()
 
 			console.log('chosenWorkout', state.chosenWorkout)
-			setWorkoutStage(WORKOUT_STAGE.PROCESSING)
 			setState((s) => ({ ...s, isWorkoutStarted: true }))
 			await startHeadingTracking()
 			return startTracking()
@@ -200,23 +225,47 @@ export default function NewTraining() {
 		setState((s) => ({ ...s, chosenWorkout: foundedWorkout }))
 	}
 
+	const allPermissionsGrantedCallback = async () => {
+		const lastUserPosition = await getLastUserPosition()
+		setMarkerPosition({ lat: lastUserPosition.coords.latitude, lon: lastUserPosition.coords.longitude })
+		// setMapCenter({ lat: lastUserPosition.coords.latitude, lon: lastUserPosition.coords.longitude }) @TODO
+	}
+
 	const handleClickPause = async () => {
-		// Получение последней локации и установка её в стор и state @TODO
-		if (!state.isPaused) {
-			try {
-				const isTaskRegistered = await TaskManager.isTaskRegisteredAsync(LOCATION_TASK_NAME)
-				if (isTaskRegistered) {
-					await Location.stopLocationUpdatesAsync(LOCATION_TASK_NAME)
-				}
-			} catch (e) {
-				console.log('Ошибка в паузе, фоновая локация')
-			}
-		} else {
-			await startBackgroundTracking()
-		}
+		const lastUserPosition = await getLastUserPosition()
+		setSpeedMPS(0)
 		setState((s) => {
-			return { ...s, isPaused: !s.isPaused }
+			const nextPauseState = !s.isPaused
+			setActiveWorkoutPauseState(nextPauseState)
+			saveLocationToStorageAndState(lastUserPosition)
+			return { ...s, isPaused: nextPauseState }
 		})
+	}
+
+	const handleClickEndWorkout = async () => {
+		// @TODO требуется проверка на то что тренировка завершилась слишком рано
+		const lastUserPosition = await getLastUserPosition()
+		await stopBackgroundTracking()
+		saveLocationToStorageAndState(lastUserPosition)
+		moveActiveWorkoutToNotSaved() // Наверное эта строка крашит приложение, т.к. все данные становятся null + undefined
+		if (locationSubscriptionRef.current) {
+			locationSubscriptionRef.current.remove()
+			locationSubscriptionRef.current = null
+		}
+		if (headingSubscriptionRef.current) {
+			headingSubscriptionRef.current.remove()
+			headingSubscriptionRef.current = null
+		}
+		setState((s) => ({
+			...s,
+			isWorkoutStarted: false,
+			isPaused: false,
+			myLocations: []
+		}))
+		setMarkerPosition(null)
+		setAccuracy(null)
+		setHeading(0)
+		router.push('/training/viewWorkout')
 	}
 
 	const loadAndSetSavedLocations = () => {
@@ -261,9 +310,12 @@ export default function NewTraining() {
 						<WorkoutStarted
 							userLocations={state.myLocations}
 							handleClickPause={handleClickPause}
+							handleClickEndWorkout={handleClickEndWorkout}
 							isPaused={state.isPaused}
 							markerPosition={markerPosition}
 							accuracy={accuracy}
+							speedMPS={speedMPS}
+							altitude={altitude}
 							heading={heading}
 							mapCenter={mapCenter}
 						/>
@@ -273,6 +325,7 @@ export default function NewTraining() {
 							accuracy={accuracy}
 							heading={heading}
 							retryPermissions={state.retryPermissions}
+							allPermsGranted={allPermissionsGrantedCallback}
 							handleClickStart={handleClickStart}
 							handleChangeWorkout={handleChangeWorkout}
 							chosenWorkout={state.chosenWorkout}

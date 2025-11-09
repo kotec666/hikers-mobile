@@ -10,6 +10,11 @@ import * as Location from 'expo-location'
 
 const { height: screenHeight } = Dimensions.get('screen')
 
+interface IProps {
+	retryPermissions: boolean
+	allPermissionsGrantedCallback?: () => void
+}
+
 /**
  *
  * Компонент, в котором проверяются + включаются geolocation permissions (+GPS)
@@ -20,7 +25,7 @@ const { height: screenHeight } = Dimensions.get('screen')
  *
  */
 
-const AllGeolocationPermissions = (props: { retryPermissions: boolean }) => {
+const AllGeolocationPermissions = (props: IProps) => {
 	const bottomSheetRef = useRef<BottomSheetHandle>(null)
 	const [bottomSheetContent, setBottomSheetContent] = useState<React.ReactNode>(null)
 	const [appState, setAppState] = useState(AppState.currentState)
@@ -29,37 +34,31 @@ const AllGeolocationPermissions = (props: { retryPermissions: boolean }) => {
 	const openBottomSheet = useCallback((newContent: React.ReactNode) => {
 		setBottomSheetContent(newContent)
 		if (bottomSheetRef.current) {
-			bottomSheetRef.current.openSheet()
+			requestAnimationFrame(() => bottomSheetRef.current?.openSheet())
 		}
 	}, [])
 
 	const closeBottomSheet = useCallback(() => {
 		if (bottomSheetRef.current) {
-			bottomSheetRef.current.closeSheet()
+			requestAnimationFrame(() => bottomSheetRef.current?.closeSheet())
 			setBottomSheetContent(null)
 		}
 	}, [])
 
 	useEffect(() => {
 		const subscription = AppState.addEventListener('change', async (nextAppState) => {
-			console.log('nextAppState', nextAppState)
 			// Если возвращаемся из background/inactive в active и были в настройках
 			if (wasInSettings && appState.match(/inactive|background/) && nextAppState === 'active') {
 				// Returned from settings, checking permissions
-				setWasInSettings(true)
-
-				setTimeout(async () => {
-					await checkForegroundPermission()
-				}, 500)
+				setWasInSettings(false)
+				setTimeout(checkForegroundPermission, 500)
 			}
 
 			setAppState(nextAppState)
 		})
 
-		return () => {
-			subscription.remove()
-		}
-	}, [appState, wasInSettings])
+		return () => subscription.remove()
+	}, [])
 
 	const openAppSettings = async () => {
 		try {
@@ -88,6 +87,7 @@ const AllGeolocationPermissions = (props: { retryPermissions: boolean }) => {
 	}
 
 	const allowBackgroundLocationPermission = async () => {
+		closeBottomSheet()
 		const { status: backgroundStatus } = await Location.requestBackgroundPermissionsAsync()
 
 		if (backgroundStatus === 'granted') {
@@ -95,27 +95,47 @@ const AllGeolocationPermissions = (props: { retryPermissions: boolean }) => {
 		}
 	}
 
+	const allowGPS = async () => {
+		closeBottomSheet()
+		await Location.enableNetworkProviderAsync()
+		const servicesEnabled = await Location.hasServicesEnabledAsync()
+
+		if (servicesEnabled) {
+			props.allPermissionsGrantedCallback?.()
+		}
+	}
+
 	const checkIsGPSEnabled = async () => {
+		// @TODO только для android, проверить как работает на ios
+		// if (Platform.OS === 'ios') return
 		const isGPSEnabled = await Location.hasServicesEnabledAsync()
 		if (!isGPSEnabled) {
-			openBottomSheet(<EnableGPS allow={closeBottomSheet} close={closeBottomSheet} />) // @TODO
+			openBottomSheet(<EnableGPS allow={allowGPS} close={closeBottomSheet} />)
+		} else {
+			props.allPermissionsGrantedCallback?.()
 		}
 	}
 
 	const checkForegroundPermission = async () => {
 		const { granted, canAskAgain } = await Location.getForegroundPermissionsAsync()
 
-		if (!granted && canAskAgain) {
-			openBottomSheet(<AllowGeolocation allow={allowForegroundLocationPermission} close={closeBottomSheet} />)
+		if (granted) {
+			return checkBackgroundPermission()
+		} else if (!granted && canAskAgain) {
+			return openBottomSheet(
+				<AllowGeolocation allow={allowForegroundLocationPermission} close={closeBottomSheet} />
+			)
 		} else if (!granted && !canAskAgain) {
-			openBottomSheet(<AllowDeniedGeolocation allow={openAppSettings} close={closeBottomSheet} />)
+			return openBottomSheet(<AllowDeniedGeolocation allow={openAppSettings} close={closeBottomSheet} />)
 		}
 	}
 
 	const checkBackgroundPermission = async () => {
 		const { granted, canAskAgain } = await Location.getBackgroundPermissionsAsync()
 
-		if (!granted && canAskAgain) {
+		if (granted) {
+			return checkIsGPSEnabled()
+		} else if (!granted && canAskAgain) {
 			openBottomSheet(
 				<AllowBackgroundGeolocation allow={allowBackgroundLocationPermission} close={closeBottomSheet} />
 			)

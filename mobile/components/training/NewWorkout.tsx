@@ -27,6 +27,7 @@ interface IProps {
 	chosenWorkout: IWorkoutModeElement | null
 	handleChangeWorkout: (workoutId: number) => void
 	handleClickStart: () => void
+	allPermsGranted: () => void
 	retryPermissions: boolean
 	WorkoutTypesData: IWorkoutModeElement[]
 }
@@ -75,7 +76,10 @@ const NewWorkout = (props: IProps) => {
 					<PeopleAddSvg />
 				</MapActionButton>
 			</View>
-			<AllGeolocationPermissions retryPermissions={props.retryPermissions} />
+			<AllGeolocationPermissions
+				allPermissionsGrantedCallback={props.allPermsGranted}
+				retryPermissions={props.retryPermissions}
+			/>
 			<BottomSheetResizable ref={bottomSheetResizableRef}>
 				<Container className="flex-1">
 					<FlatList
@@ -90,13 +94,7 @@ const NewWorkout = (props: IProps) => {
 						)}
 						keyExtractor={(_, idx) => idx.toString()}
 						ItemSeparatorComponent={() => <View style={{ height: 16 }} />}
-						ListFooterComponent={
-							<View
-								style={{
-									height: insets.bottom + 50
-								}}
-							/>
-						}
+						ListFooterComponent={<View style={{ height: insets.bottom + insets.top + 72 }} />}
 						nestedScrollEnabled
 						showsVerticalScrollIndicator={false}
 					/>

@@ -7,17 +7,13 @@ export const workoutStorage = new MMKV({
 
 const workoutStorageKey = 'WORKOUT_PROGRESS_ITEMS_LIST'
 
-export enum LocationType {
-	BACKGROUND = 'background',
-	FOREGROUND = 'foreground'
-}
-
 export interface IWorkoutStorage {
 	notSavedWorkouts: IWorkout[]
 	activeWorkout: IWorkout | null
 }
 
 export interface IWorkout {
+	isPaused: boolean
 	startedAt: number // Date.now()
 	locations: IWorkoutLocationStorageItem[]
 }
@@ -25,8 +21,28 @@ export interface IWorkout {
 export interface IWorkoutLocationStorageItem {
 	rel_ts: number // workoutItem.locationObject.timestamp - startedAt таймстамп полученной локации относительно начала тренировки
 	locationObject: LocationObject
-	type: LocationType
+	isPausedPoint: boolean
 	isSavedToServer: boolean
+}
+
+/**
+ * Нажатие на кнопку "Пауза" вызовет эту ф-ю, меняет в хранилище паузу для активной тренировки
+ **/
+export const setActiveWorkoutPauseState = (isPaused: boolean) => {
+	const workoutStorageStr = workoutStorage.getString(workoutStorageKey)
+
+	if (workoutStorageStr) {
+		const parsedStorage = JSON.parse(workoutStorageStr) as IWorkoutStorage
+
+		if (parsedStorage.activeWorkout) {
+			const updatedStorage = {
+				...parsedStorage,
+				activeWorkout: { ...parsedStorage.activeWorkout, isPaused: isPaused }
+			}
+
+			return workoutStorage.set(workoutStorageKey, JSON.stringify(updatedStorage))
+		}
+	}
 }
 
 /**
@@ -44,6 +60,7 @@ export const startAndStoreNewActiveWorkout = () => {
 				: parsedStorage.notSavedWorkouts,
 			activeWorkout: {
 				startedAt: Date.now(),
+				isPaused: false,
 				locations: [] as IWorkoutLocationStorageItem[]
 			} as IWorkout
 		}
@@ -54,6 +71,7 @@ export const startAndStoreNewActiveWorkout = () => {
 			notSavedWorkouts: [] as unknown as IWorkout,
 			activeWorkout: {
 				startedAt: Date.now(),
+				isPaused: false,
 				locations: [] as IWorkoutLocationStorageItem[]
 			} as IWorkout
 		} as unknown as IWorkoutStorage
@@ -62,10 +80,27 @@ export const startAndStoreNewActiveWorkout = () => {
 	}
 }
 
+export const moveActiveWorkoutToNotSaved = () => {
+	const workoutStorageStr = workoutStorage.getString(workoutStorageKey)
+
+	if (workoutStorageStr) {
+		const parsedStorage = JSON.parse(workoutStorageStr) as IWorkoutStorage
+
+		if (parsedStorage.activeWorkout) {
+			const updatedStorage = {
+				notSavedWorkouts: [...parsedStorage.notSavedWorkouts, parsedStorage.activeWorkout],
+				activeWorkout: null
+			}
+
+			return workoutStorage.set(workoutStorageKey, JSON.stringify(updatedStorage))
+		}
+	}
+}
+
 /**
  * Сохраняет один элемент локации в активную тренировку
  **/
-export const setWorkoutItem = (workoutItem: LocationObject, type: LocationType): IWorkoutLocationStorageItem => {
+export const setWorkoutItem = (workoutItem: LocationObject): IWorkoutLocationStorageItem => {
 	const workoutStorageStr = workoutStorage.getString(workoutStorageKey)
 	const parsedStorage = JSON.parse(workoutStorageStr!) as IWorkoutStorage
 
@@ -77,7 +112,7 @@ export const setWorkoutItem = (workoutItem: LocationObject, type: LocationType):
 		locationObject: workoutItem,
 		rel_ts: lastSavedRelTs,
 		isSavedToServer: false,
-		type
+		isPausedPoint: parsedStorage.activeWorkout?.isPaused || false
 	}
 
 	const updatedStorage = {
@@ -93,7 +128,7 @@ export const setWorkoutItem = (workoutItem: LocationObject, type: LocationType):
 /**
  * Сохраняет много элементов локации в активную тренировку
  **/
-export const setWorkoutItems = (workoutItems: LocationObject[], type: LocationType) => {
+export const setWorkoutItems = (workoutItems: LocationObject[]) => {
 	const workoutStorageStr = workoutStorage.getString(workoutStorageKey)
 	const parsedStorage = JSON.parse(workoutStorageStr!) as IWorkoutStorage
 
@@ -107,7 +142,7 @@ export const setWorkoutItems = (workoutItems: LocationObject[], type: LocationTy
 			rel_ts: lastSavedRelTs,
 			isSavedToServer: false,
 			locationObject: workoutItem,
-			type
+			isPausedPoint: parsedStorage.activeWorkout?.isPaused || false
 		}
 
 		activeWorkoutLocations.push(workoutItemToSave)

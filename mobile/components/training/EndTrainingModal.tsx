@@ -7,6 +7,7 @@ import Modal from '@/components/ui/Modal/Modal'
 interface IProps {
 	open: boolean
 	handleClose: () => void
+	handleClickEnd: () => void
 }
 
 const EndTrainingModal = (props: IProps) => {
@@ -21,7 +22,7 @@ const EndTrainingModal = (props: IProps) => {
 					Это действие нельзя отменить
 				</Text>
 				<View className="flex-row gap-[10px]">
-					<Button onPress={props.handleClose} variant="white" buttonContainerClassName="flex-1">
+					<Button onPress={props.handleClickEnd} variant="white" buttonContainerClassName="flex-1">
 						Да
 					</Button>
 					<Button onPress={props.handleClose} variant="white" buttonContainerClassName="flex-1">

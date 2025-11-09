@@ -1,4 +1,4 @@
-import React, { useState } from 'react'
+import React, { useMemo, useState } from 'react'
 import EndTrainingModal from '@/components/training/EndTrainingModal'
 import { Container } from '@/components/ui/Container'
 import { Dimensions, ScrollView, Text, View } from 'react-native'
@@ -18,13 +18,18 @@ import EyeSvg from '@/components/svg/EyeSvg'
 import { Colors } from '@/constants/Colors'
 import PeopleRemoveSvg from '@/components/svg/PeopleRemoveSvg'
 import { IWorkoutLocationStorageItem } from '@/store/workoutStorage'
+import { mpsToKmph } from '@/helpers/mpsToKmph'
+import { calculateTotalDistance, formatDistance } from '@/helpers/distance'
 
 interface IProps {
 	userLocations: IWorkoutLocationStorageItem[]
 	isPaused: boolean
 	handleClickPause: () => void
+	handleClickEndWorkout: () => void
 	accuracy: number | null
 	heading?: number
+	speedMPS: number
+	altitude: number
 	markerPosition?: ILatLng | null
 	mapCenter?: ILatLng
 }
@@ -174,15 +179,6 @@ const data = [
 	}
 ]
 
-const metrics = [
-	{ id: 1, label: 'Время', value: '00:12:34' },
-	{ id: 2, label: 'Скорость', value: '12км/ч' },
-	{ id: 3, label: 'Дистанция', value: '1200 м' },
-	{ id: 4, label: 'Ккал', value: '51 ккал' },
-	{ id: 5, label: 'Ср. темп', value: '05’24”' },
-	{ id: 6, label: 'Набор высоты', value: '140 м' }
-]
-
 const WorkoutStarted = (props: IProps) => {
 	const insets = useSafeAreaInsets()
 	const maxMapHeight = height / 2 - 40 - insets.top
@@ -196,8 +192,12 @@ const WorkoutStarted = (props: IProps) => {
 		isEndTrainingModalOpen: false
 	})
 
-	const handleClickEnd = () => {
-		setState((s) => ({ ...s, isEndTrainingModalOpen: !s.isEndTrainingModalOpen }))
+	const handleCloseEndModal = () => {
+		setState((s) => ({ ...s, isEndTrainingModalOpen: false }))
+	}
+
+	const handleClickOpenEndModal = () => {
+		setState((s) => ({ ...s, isEndTrainingModalOpen: true }))
 	}
 
 	const handleClickPeopleList = () => {
@@ -208,9 +208,30 @@ const WorkoutStarted = (props: IProps) => {
 		setState((s) => ({ ...s, mapViewHidden: !s.mapViewHidden, peopleListHidden: true }))
 	}
 
+	const handleClickEnd = () => {
+		handleCloseEndModal()
+		props.handleClickEndWorkout()
+	}
+
+	const metrics = useMemo(
+		() => [
+			{ id: 1, label: 'Время', value: '00:12:34' },
+			{ id: 2, label: 'Скорость', value: mpsToKmph(props.speedMPS) + 'км/ч' },
+			{ id: 3, label: 'Дистанция', value: formatDistance(calculateTotalDistance(props.userLocations)) },
+			{ id: 4, label: 'Ккал', value: '51 ккал' },
+			{ id: 5, label: 'Ср. темп', value: '05’24”' },
+			{ id: 6, label: 'Набор высоты', value: `${Math.round(props.altitude)} м` }
+		],
+		[props.speedMPS, props.userLocations]
+	)
+
 	return (
 		<>
-			<EndTrainingModal open={state.isEndTrainingModalOpen} handleClose={handleClickEnd} />
+			<EndTrainingModal
+				open={state.isEndTrainingModalOpen}
+				handleClose={handleCloseEndModal}
+				handleClickEnd={handleClickEnd}
+			/>
 			{/*<CompassDebug heading={props.heading || 0} position="bottom-right" accuracy={props.accuracy} />*/}
 			<Container>
 				<Text className="my-[20px] text-white text-[20px]" style={{ fontFamily: fontFamily.bold }}>
@@ -231,7 +252,13 @@ const WorkoutStarted = (props: IProps) => {
 				<View className="flex-1 justify-between gap-[16px]">
 					{state.peopleListHidden ? (
 						<View className="gap-4">
-							<Parameter isPaused={props.isPaused} label={metrics[0].label} value={metrics[0].value} />
+							{state.mapViewHidden && (
+								<Parameter
+									isPaused={props.isPaused}
+									label={metrics[0].label}
+									value={metrics[0].value}
+								/>
+							)}
 							<View
 								className={cn('', {
 									'flex-row justify-between': state.mapViewHidden,
@@ -298,7 +325,7 @@ const WorkoutStarted = (props: IProps) => {
 						</View>
 						{props.isPaused && (
 							<Button
-								onPress={handleClickEnd}
+								onPress={handleClickOpenEndModal}
 								variant="white"
 								buttonContainerClassName="flex-1"
 								buttonHeight={70}

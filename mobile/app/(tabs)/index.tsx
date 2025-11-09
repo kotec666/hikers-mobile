@@ -62,32 +62,43 @@ export default function HomeScreen() {
 	// )
 
 	const WorkoutTypesData = [
-		{ id: 1, name: 'Забег', icon: <WorkoutRunning /> },
-		{ id: 2, name: 'Ходьба', icon: <WorkoutWalking /> },
-		{ id: 3, name: 'Велосипед', icon: <WorkoutBicycle /> },
-		{ id: 4, name: 'Велосипед', icon: <WorkoutBicycle /> },
-		{ id: 5, name: 'Велосипед', icon: <WorkoutBicycle /> },
-		{ id: 6, name: 'Велосипед', icon: <WorkoutBicycle /> },
-		{ id: 7, name: 'Велосипед', icon: <WorkoutBicycle /> },
-		{ id: 8, name: 'Велосипед', icon: <WorkoutBicycle /> },
-		{ id: 9, name: 'Велосипед', icon: <WorkoutBicycle /> },
-		{ id: 10, name: 'Велосипед', icon: <WorkoutBicycle /> },
-		{ id: 11, name: 'Велосипед', icon: <WorkoutBicycle /> },
-		{ id: 12, name: 'Велосипед', icon: <WorkoutBicycle /> },
-		{ id: 13, name: 'Велосипед', icon: <WorkoutBicycle /> },
-		{ id: 14, name: 'Велосипед', icon: <WorkoutBicycle /> },
-		{ id: 15, name: 'Велосипед', icon: <WorkoutBicycle /> },
-		{ id: 16, name: 'Велосипед', icon: <WorkoutBicycle /> },
-		{ id: 17, name: 'Велосипед', icon: <WorkoutBicycle /> },
-		{ id: 18, name: 'Велосипед', icon: <WorkoutBicycle /> },
-		{ id: 19, name: 'Велосипед', icon: <WorkoutBicycle /> },
-		{ id: 20, name: 'Велосипед', icon: <WorkoutBicycle /> },
-		{ id: 21, name: 'Велосипед', icon: <WorkoutBicycle /> },
-		{ id: 22, name: 'Велосипед last', icon: <WorkoutBicycle /> }
+		{ id: 1, name: 'Забег', IconComponent: WorkoutRunning },
+		{ id: 2, name: 'Ходьба', IconComponent: WorkoutWalking },
+		{ id: 3, name: 'Велосипед', IconComponent: WorkoutBicycle },
+		{ id: 4, name: 'Велосипед', IconComponent: WorkoutBicycle },
+		{ id: 5, name: 'Велосипед', IconComponent: WorkoutBicycle },
+		{ id: 6, name: 'Велосипед', IconComponent: WorkoutBicycle },
+		{ id: 7, name: 'Велосипед', IconComponent: WorkoutBicycle },
+		{ id: 8, name: 'Велосипед', IconComponent: WorkoutBicycle },
+		{ id: 9, name: 'Велосипед', IconComponent: WorkoutBicycle },
+		{ id: 10, name: 'Велосипед', IconComponent: WorkoutBicycle },
+		{ id: 11, name: 'Велосипед', IconComponent: WorkoutBicycle },
+		{ id: 12, name: 'Велосипед', IconComponent: WorkoutBicycle },
+		{ id: 13, name: 'Велосипед', IconComponent: WorkoutBicycle },
+		{ id: 14, name: 'Велосипед', IconComponent: WorkoutBicycle },
+		{ id: 15, name: 'Велосипед', IconComponent: WorkoutBicycle },
+		{ id: 16, name: 'Велосипед', IconComponent: WorkoutBicycle },
+		{ id: 17, name: 'Велосипед', IconComponent: WorkoutBicycle },
+		{ id: 18, name: 'Велосипед', IconComponent: WorkoutBicycle },
+		{ id: 19, name: 'Велосипед', IconComponent: WorkoutBicycle },
+		{ id: 20, name: 'Велосипед', IconComponent: WorkoutBicycle },
+		{ id: 21, name: 'Велосипед', IconComponent: WorkoutBicycle },
+		{ id: 22, name: 'Велосипед last', IconComponent: WorkoutBicycle }
 	]
 
+	const renderIcon = (IconComponent: React.ComponentType<any>, color?: string) => {
+		return <IconComponent color={color} />
+	}
+
 	const renderWorkoutItem = useCallback(
-		({ item }: { item: (typeof WorkoutTypesData)[0] }) => <WorkoutType icon={item.icon} name={item.name} />,
+		({ item }: { item: (typeof WorkoutTypesData)[0] }) => (
+			<WorkoutType
+				id={item.id}
+				handleChange={() => {}}
+				icon={(color) => renderIcon(item.IconComponent, color)}
+				name={item.name}
+			/>
+		),
 		[]
 	)
 	const insets = useSafeAreaInsets()
@@ -291,7 +302,7 @@ export default function HomeScreen() {
 								renderItem={renderWorkoutItem}
 								keyExtractor={(_, idx) => idx.toString()}
 								ItemSeparatorComponent={() => <View style={{ height: 16 }} />}
-								ListFooterComponent={<View style={{ height: insets.bottom + 50 }} />}
+								ListFooterComponent={<View style={{ height: insets.bottom + insets.top + 72 }} />}
 								nestedScrollEnabled
 								showsVerticalScrollIndicator={false}
 							/>

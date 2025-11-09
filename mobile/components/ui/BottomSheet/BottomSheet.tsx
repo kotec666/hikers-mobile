@@ -127,6 +127,8 @@ const BottomSheet = forwardRef<BottomSheetHandle, BottomSheetProps>(
 	}
 )
 
+BottomSheet.displayName = 'BottomSheet'
+
 export default BottomSheet
 
 const styles = StyleSheet.create({
