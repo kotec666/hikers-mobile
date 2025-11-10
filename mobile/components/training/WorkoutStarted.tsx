@@ -20,6 +20,7 @@ import PeopleRemoveSvg from '@/components/svg/PeopleRemoveSvg'
 import { IWorkoutLocationStorageItem } from '@/store/workoutStorage'
 import { mpsToKmph } from '@/helpers/mpsToKmph'
 import { calculateTotalDistance, formatDistance } from '@/helpers/distance'
+import { useWorkoutTimer } from '@/hooks/useWorkoutTimer'
 
 interface IProps {
 	userLocations: IWorkoutLocationStorageItem[]
@@ -191,6 +192,7 @@ const WorkoutStarted = (props: IProps) => {
 		mapViewHidden: true,
 		isEndTrainingModalOpen: false
 	})
+	const workoutTime = useWorkoutTimer()
 
 	const handleCloseEndModal = () => {
 		setState((s) => ({ ...s, isEndTrainingModalOpen: false }))
@@ -215,14 +217,14 @@ const WorkoutStarted = (props: IProps) => {
 
 	const metrics = useMemo(
 		() => [
-			{ id: 1, label: 'Время', value: '00:12:34' },
+			{ id: 1, label: 'Время', value: workoutTime },
 			{ id: 2, label: 'Скорость', value: mpsToKmph(props.speedMPS) + 'км/ч' },
 			{ id: 3, label: 'Дистанция', value: formatDistance(calculateTotalDistance(props.userLocations)) },
 			{ id: 4, label: 'Ккал', value: '51 ккал' },
 			{ id: 5, label: 'Ср. темп', value: '05’24”' },
 			{ id: 6, label: 'Набор высоты', value: `${Math.round(props.altitude)} м` }
 		],
-		[props.speedMPS, props.userLocations]
+		[props.speedMPS, props.userLocations, workoutTime]
 	)
 
 	return (

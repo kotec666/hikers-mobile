@@ -56,6 +56,7 @@ const WorkoutTypesData = [
 ]
 
 const LOCATION_TASK_NAME = 'background-location-task'
+const NOTIFICATION_TASK_NAME = 'background-notification-task'
 
 TaskManager.defineTask(LOCATION_TASK_NAME, async ({ data, error }) => {
 	if (error) {
@@ -72,6 +73,29 @@ TaskManager.defineTask(LOCATION_TASK_NAME, async ({ data, error }) => {
 		} else {
 			setWorkoutItem(locations)
 		}
+	}
+})
+
+TaskManager.defineTask(NOTIFICATION_TASK_NAME, async ({ data, error }) => {
+	if (error) {
+		console.error('Location task error:', error)
+		return
+	}
+	console.log('NOTIFICATION_TASK_NAME data', data)
+
+	if (data) {
+		console.log('Received background notifications', data)
+		// @TODO Не работает
+		setInterval(async () => {
+			await Notifications.scheduleNotificationAsync({
+				content: {
+					title: 'Тренировка активна',
+					body: `Вы находитесь в движении! ${Date.now()}`,
+					sound: true
+				},
+				trigger: null
+			})
+		}, 1000)
 	}
 })
 
@@ -106,6 +130,58 @@ export default function NewTraining() {
 	})
 
 	const isPausedRef = useLatest(state.isPaused)
+
+	const startBackgroundNotifications = async () => {
+		const isTaskRegistered = await TaskManager.isTaskRegisteredAsync(NOTIFICATION_TASK_NAME)
+
+		console.log('isTaskRegistered startBackgroundNotifications', isTaskRegistered)
+
+		if (!isTaskRegistered) {
+			const workoutStorage = getAllWorkoutStorage()
+
+			if (!workoutStorage?.activeWorkout?.startedAt) {
+				return toast.error('Нет активной тренировки для показа уведомления')
+			}
+
+			await Notifications.registerTaskAsync(NOTIFICATION_TASK_NAME)
+
+			notificationIntervalRef.current = setInterval(async () => {
+				const { activeWorkout: active } = getAllWorkoutStorage()
+				if (!active) return
+
+				let elapsed
+				if (active.isPaused && active.lastPauseAt) {
+					elapsed = active.lastPauseAt - active.startedAt - active.totalPausedMs
+				} else {
+					elapsed = Date.now() - active.startedAt - active.totalPausedMs
+				}
+
+				const formatted = formatTime(elapsed)
+				await Notifications.scheduleNotificationAsync({
+					// @TODO по нажатию на уведомление можно ли что-то сделать
+					identifier: 'workout-notification',
+					content: {
+						autoDismiss: false,
+						sticky: true,
+						title: 'Тренировка',
+						body: `${formatted}`,
+						sound: false,
+						categoryIdentifier: 'workout-controls'
+					},
+					trigger: null
+				})
+			}, 1000)
+		} else {
+			await stopBackgroundNotifications()
+		}
+	}
+
+	const stopBackgroundNotifications = async () => {
+		const isTaskRegistered = await TaskManager.isTaskRegisteredAsync(NOTIFICATION_TASK_NAME)
+		if (isTaskRegistered) {
+			await Notifications.unregisterTaskAsync(NOTIFICATION_TASK_NAME)
+		}
+	}
 
 	const startBackgroundTracking = async () => {
 		const isTaskRegistered = await TaskManager.isTaskRegisteredAsync(LOCATION_TASK_NAME)
@@ -255,6 +331,7 @@ export default function NewTraining() {
 		// @TODO требуется проверка на то что тренировка завершилась слишком рано
 		const lastUserPosition = await getLastUserPosition()
 		await stopBackgroundTracking()
+		await stopBackgroundNotifications()
 		saveLocationToStorageAndState(lastUserPosition)
 		moveActiveWorkoutToNotSaved() // Наверное эта строка крашит приложение, т.к. все данные становятся null + undefined
 		if (locationSubscriptionRef.current) {
@@ -266,6 +343,8 @@ export default function NewTraining() {
 			headingSubscriptionRef.current = null
 		}
 		if (notificationIntervalRef.current) {
+			await stopBackgroundNotifications()
+			await Notifications.dismissNotificationAsync('workout-notification')
 			clearInterval(notificationIntervalRef.current)
 		}
 		setState((s) => ({
@@ -306,11 +385,31 @@ export default function NewTraining() {
 	}, [])
 
 	useEffect(() => {
+		;(async () => {
+			if (isPausedRef.current) {
+				await Notifications.setNotificationCategoryAsync('workout-controls', [
+					{ identifier: 'resume', buttonTitle: 'Продолжить' },
+					{ identifier: 'stop', buttonTitle: 'Завершить' }
+				])
+			} else {
+				await Notifications.setNotificationCategoryAsync('workout-controls', [
+					{ identifier: 'pause', buttonTitle: 'Пауза' }
+				])
+			}
+		})()
+	}, [isPausedRef.current])
+
+	useEffect(() => {
 		const sub = Notifications.addNotificationResponseReceivedListener((response) => {
 			const action = response.actionIdentifier
-			if (action === 'pause') console.log('PAUSE CLICKED')
-			else if (action === 'resume') console.log('RESUME CLICKED')
-			else if (action === 'stop') console.log('STOP CLICKED')
+			switch (action) {
+				case 'pause':
+					return handleClickPause()
+				case 'resume':
+					return handleClickPause()
+				case 'stop':
+					return handleClickEndWorkout()
+			}
 		})
 
 		return () => sub.remove()
@@ -336,6 +435,7 @@ export default function NewTraining() {
 
 			const formatted = formatTime(elapsed)
 			await Notifications.scheduleNotificationAsync({
+				// @TODO по нажатию на уведомление можно ли что-то сделать
 				identifier: 'workout-notification',
 				content: {
 					autoDismiss: false,
@@ -366,7 +466,7 @@ export default function NewTraining() {
 					{/*<Button variant="white" onPress={() => setHeading(270)}>*/}
 					{/*	heading = 270° Запад*/}
 					{/*</Button>*/}
-					<Button variant="white" onPress={handleShowNotification}>
+					<Button variant="white" onPress={startBackgroundNotifications}>
 						Показ уведомления
 					</Button>
 					{state.isWorkoutStarted ? (

@@ -10,10 +10,4 @@ export const initializeNotifications = async () => {
 			shouldShowList: false
 		})
 	})
-
-	await Notifications.setNotificationCategoryAsync('workout-controls', [
-		{ identifier: 'pause', buttonTitle: '⏸ Пауза' },
-		{ identifier: 'resume', buttonTitle: '▶ Продолжить' },
-		{ identifier: 'stop', buttonTitle: '⏹ Завершить', options: { isDestructive: true } }
-	])
 }
