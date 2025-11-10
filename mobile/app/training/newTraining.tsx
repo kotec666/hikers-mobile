@@ -6,6 +6,7 @@ import WorkoutRunning from '@/components/svg/WorkoutRunning'
 import WorkoutWalking from '@/components/svg/WorkoutWalking'
 import WorkoutBicycle from '@/components/svg/WorkoutBicycle'
 import * as Location from 'expo-location'
+import * as Notifications from 'expo-notifications'
 import { LocationActivityType, LocationObject } from 'expo-location'
 import { useToast } from '@/hooks/useToast'
 import WorkoutStarted from '@/components/training/WorkoutStarted'
@@ -22,6 +23,12 @@ import {
 } from '@/store/workoutStorage'
 import { ILatLng } from '@/components/map/MapComponent'
 import { useRouter } from 'expo-router'
+import { useLatest } from '@/hooks/useLatest'
+import { Button } from '@/components/ui/Button'
+import { initializeNotifications } from '@/helpers/notifications'
+import { formatTime } from '@/helpers/formatTime'
+
+initializeNotifications()
 
 const WorkoutTypesData = [
 	{ id: 1, name: 'Забег', IconComponent: WorkoutRunning },
@@ -76,6 +83,7 @@ export default function NewTraining() {
 	const router = useRouter()
 	const locationSubscriptionRef = useRef<null | Location.LocationSubscription>(null)
 	const headingSubscriptionRef = useRef<null | Location.LocationSubscription>(null)
+	const notificationIntervalRef = useRef<null | NodeJS.Timeout>(null)
 	const [mapCenter, setMapCenter] = useState<ILatLng>(DEFAULT_MAP_CENTER) // { lat: 53.374427, lon: 49.460595 } // @TODO
 	const [markerPosition, setMarkerPosition] = useState<ILatLng | null>(null) // { lat: 53.422506, lon: 49.4781051 }
 	const [accuracy, setAccuracy] = useState<number | null>(null)
@@ -97,7 +105,7 @@ export default function NewTraining() {
 		myLocations: []
 	})
 
-	const handleSendNotification = () => {}
+	const isPausedRef = useLatest(state.isPaused)
 
 	const startBackgroundTracking = async () => {
 		const isTaskRegistered = await TaskManager.isTaskRegisteredAsync(LOCATION_TASK_NAME)
@@ -167,7 +175,7 @@ export default function NewTraining() {
 					setMarkerPosition({ lat: location.coords.latitude, lon: location.coords.longitude })
 					setAccuracy(location.coords.accuracy)
 
-					if (!state.isPaused) {
+					if (!isPausedRef.current) {
 						setSpeedMPS(location.coords.speed ?? 0)
 						setAltitude(location.coords.altitude ?? 0)
 					}
@@ -212,6 +220,7 @@ export default function NewTraining() {
 			console.log('chosenWorkout', state.chosenWorkout)
 			setState((s) => ({ ...s, isWorkoutStarted: true }))
 			await startHeadingTracking()
+			// await handleSendNotification()
 			return startTracking()
 		} else {
 			toast.error('Невозможно начать тренировку без предоставления разрешений')
@@ -232,14 +241,14 @@ export default function NewTraining() {
 	}
 
 	const handleClickPause = async () => {
-		const lastUserPosition = await getLastUserPosition()
 		setSpeedMPS(0)
 		setState((s) => {
 			const nextPauseState = !s.isPaused
 			setActiveWorkoutPauseState(nextPauseState)
-			saveLocationToStorageAndState(lastUserPosition)
 			return { ...s, isPaused: nextPauseState }
 		})
+		const lastUserPosition = await getLastUserPosition()
+		saveLocationToStorageAndState(lastUserPosition)
 	}
 
 	const handleClickEndWorkout = async () => {
@@ -255,6 +264,9 @@ export default function NewTraining() {
 		if (headingSubscriptionRef.current) {
 			headingSubscriptionRef.current.remove()
 			headingSubscriptionRef.current = null
+		}
+		if (notificationIntervalRef.current) {
+			clearInterval(notificationIntervalRef.current)
 		}
 		setState((s) => ({
 			...s,
@@ -287,8 +299,56 @@ export default function NewTraining() {
 			if (headingSubscriptionRef.current) {
 				headingSubscriptionRef.current.remove()
 			}
+			if (notificationIntervalRef.current) {
+				clearInterval(notificationIntervalRef.current)
+			}
 		}
 	}, [])
+
+	useEffect(() => {
+		const sub = Notifications.addNotificationResponseReceivedListener((response) => {
+			const action = response.actionIdentifier
+			if (action === 'pause') console.log('PAUSE CLICKED')
+			else if (action === 'resume') console.log('RESUME CLICKED')
+			else if (action === 'stop') console.log('STOP CLICKED')
+		})
+
+		return () => sub.remove()
+	}, [])
+
+	const handleShowNotification = async () => {
+		const workoutStorage = getAllWorkoutStorage()
+
+		if (!workoutStorage?.activeWorkout?.startedAt) {
+			return toast.error('Нет активной тренировки для показа уведомления')
+		}
+
+		notificationIntervalRef.current = setInterval(async () => {
+			const { activeWorkout: active } = getAllWorkoutStorage()
+			if (!active) return
+
+			let elapsed
+			if (active.isPaused && active.lastPauseAt) {
+				elapsed = active.lastPauseAt - active.startedAt - active.totalPausedMs
+			} else {
+				elapsed = Date.now() - active.startedAt - active.totalPausedMs
+			}
+
+			const formatted = formatTime(elapsed)
+			await Notifications.scheduleNotificationAsync({
+				identifier: 'workout-notification',
+				content: {
+					autoDismiss: false,
+					sticky: true,
+					title: 'Тренировка',
+					body: `${formatted}`,
+					sound: false,
+					categoryIdentifier: 'workout-controls'
+				},
+				trigger: null
+			})
+		}, 1000)
+	}
 
 	return (
 		<SafeAreaProvider style={{ paddingTop: insets.top }}>
@@ -306,6 +366,9 @@ export default function NewTraining() {
 					{/*<Button variant="white" onPress={() => setHeading(270)}>*/}
 					{/*	heading = 270° Запад*/}
 					{/*</Button>*/}
+					<Button variant="white" onPress={handleShowNotification}>
+						Показ уведомления
+					</Button>
 					{state.isWorkoutStarted ? (
 						<WorkoutStarted
 							userLocations={state.myLocations}

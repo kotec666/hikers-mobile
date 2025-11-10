@@ -15,6 +15,8 @@ export interface IWorkoutStorage {
 export interface IWorkout {
 	isPaused: boolean
 	startedAt: number // Date.now()
+	totalPausedMs: number
+	lastPauseAt: null | number
 	locations: IWorkoutLocationStorageItem[]
 }
 
@@ -35,9 +37,20 @@ export const setActiveWorkoutPauseState = (isPaused: boolean) => {
 		const parsedStorage = JSON.parse(workoutStorageStr) as IWorkoutStorage
 
 		if (parsedStorage.activeWorkout) {
+			let totalPausedMs = parsedStorage.activeWorkout.totalPausedMs
+			if (!isPaused && parsedStorage.activeWorkout.isPaused && parsedStorage.activeWorkout.lastPauseAt) {
+				const pausedFor = Date.now() - parsedStorage.activeWorkout.lastPauseAt
+				totalPausedMs += pausedFor
+			}
+
 			const updatedStorage = {
 				...parsedStorage,
-				activeWorkout: { ...parsedStorage.activeWorkout, isPaused: isPaused }
+				activeWorkout: {
+					...parsedStorage.activeWorkout,
+					isPaused: isPaused,
+					totalPausedMs: totalPausedMs,
+					lastPauseAt: isPaused ? Date.now() : null
+				}
 			}
 
 			return workoutStorage.set(workoutStorageKey, JSON.stringify(updatedStorage))
@@ -61,6 +74,8 @@ export const startAndStoreNewActiveWorkout = () => {
 			activeWorkout: {
 				startedAt: Date.now(),
 				isPaused: false,
+				totalPausedMs: 0,
+				lastPauseAt: null,
 				locations: [] as IWorkoutLocationStorageItem[]
 			} as IWorkout
 		}
@@ -68,10 +83,12 @@ export const startAndStoreNewActiveWorkout = () => {
 		return workoutStorage.set(workoutStorageKey, JSON.stringify(updatedStorage))
 	} else {
 		const newWorkoutStorage = {
-			notSavedWorkouts: [] as unknown as IWorkout,
+			notSavedWorkouts: [] as IWorkout[],
 			activeWorkout: {
 				startedAt: Date.now(),
 				isPaused: false,
+				totalPausedMs: 0,
+				lastPauseAt: null,
 				locations: [] as IWorkoutLocationStorageItem[]
 			} as IWorkout
 		} as unknown as IWorkoutStorage
@@ -88,7 +105,7 @@ export const moveActiveWorkoutToNotSaved = () => {
 
 		if (parsedStorage.activeWorkout) {
 			const updatedStorage = {
-				notSavedWorkouts: [...parsedStorage.notSavedWorkouts, parsedStorage.activeWorkout],
+				notSavedWorkouts: [...(parsedStorage.notSavedWorkouts || []), parsedStorage.activeWorkout],
 				activeWorkout: null
 			}
 
@@ -104,7 +121,7 @@ export const setWorkoutItem = (workoutItem: LocationObject): IWorkoutLocationSto
 	const workoutStorageStr = workoutStorage.getString(workoutStorageKey)
 	const parsedStorage = JSON.parse(workoutStorageStr!) as IWorkoutStorage
 
-	const startedAt = parsedStorage!.activeWorkout!.startedAt // Date.now() @TODO проверить (убрать) таймзоны!
+	const startedAt = parsedStorage!.activeWorkout!.startedAt // Date.now()
 	const activeWorkoutLocations = parsedStorage!.activeWorkout!.locations
 	const lastSavedRelTs = workoutItem.timestamp - startedAt
 
@@ -132,7 +149,7 @@ export const setWorkoutItems = (workoutItems: LocationObject[]) => {
 	const workoutStorageStr = workoutStorage.getString(workoutStorageKey)
 	const parsedStorage = JSON.parse(workoutStorageStr!) as IWorkoutStorage
 
-	const startedAt = parsedStorage.activeWorkout!.startedAt // Date.now() @TODO проверить (убрать) таймзоны!
+	const startedAt = parsedStorage.activeWorkout!.startedAt // Date.now()
 	const activeWorkoutLocations = parsedStorage.activeWorkout!.locations
 
 	for (const workoutItem of workoutItems) {

@@ -6,7 +6,9 @@ import { Alert, AppState, Dimensions, Linking, Platform } from 'react-native'
 import EnableGPS from '@/components/BottomSheets/EnableGPS'
 import AllowBackgroundGeolocation from '@/components/BottomSheets/AllowBackgroundGeolocation'
 import AllowDeniedGeolocation from '@/components/BottomSheets/AllowDeniedGeolocation'
+import AllowNotifications from '@/components/BottomSheets/AllowNotifications'
 import * as Location from 'expo-location'
+import * as Notification from 'expo-notifications'
 
 const { height: screenHeight } = Dimensions.get('screen')
 
@@ -77,6 +79,22 @@ const AllGeolocationPermissions = (props: IProps) => {
 		}
 	}
 
+	const cancelNotificationsPermissions = () => {
+		closeBottomSheet()
+		props.allPermissionsGrantedCallback?.()
+	}
+
+	const allowNotificationPermission = async () => {
+		closeBottomSheet()
+		const { status } = await Notification.requestPermissionsAsync()
+
+		if (status === 'granted') {
+			props.allPermissionsGrantedCallback?.()
+		} else {
+			props.allPermissionsGrantedCallback?.()
+		}
+	}
+
 	const allowForegroundLocationPermission = async () => {
 		closeBottomSheet()
 		const { status: foregroundStatus } = await Location.requestForegroundPermissionsAsync()
@@ -101,7 +119,7 @@ const AllGeolocationPermissions = (props: IProps) => {
 		const servicesEnabled = await Location.hasServicesEnabledAsync()
 
 		if (servicesEnabled) {
-			props.allPermissionsGrantedCallback?.()
+			return checkNotificationPermission()
 		}
 	}
 
@@ -112,7 +130,21 @@ const AllGeolocationPermissions = (props: IProps) => {
 		if (!isGPSEnabled) {
 			openBottomSheet(<EnableGPS allow={allowGPS} close={closeBottomSheet} />)
 		} else {
-			props.allPermissionsGrantedCallback?.()
+			return checkNotificationPermission()
+		}
+	}
+
+	const checkNotificationPermission = async () => {
+		const { granted, canAskAgain } = await Notification.getPermissionsAsync()
+
+		if (granted) {
+			return props.allPermissionsGrantedCallback?.()
+		} else if (!granted && canAskAgain) {
+			return openBottomSheet(
+				<AllowNotifications allow={allowNotificationPermission} close={cancelNotificationsPermissions} />
+			)
+		} else if (!granted && !canAskAgain) {
+			return cancelNotificationsPermissions()
 		}
 	}
 
