@@ -10,7 +10,7 @@ const AllowNotifications = (props: { allow: () => void; close: () => void }) => 
 			<View className="items-center gap-[20px]">
 				<NotificationsPermissionSvg width={36} height={36} />
 				<Text style={{ fontFamily: fontFamily.bold }} className="text-white text-lg">
-					Разрешите доступ к отправке push уведомлений
+					Разрешите доступ к отправке пуш-уведомлений
 				</Text>
 			</View>
 			<View className="w-full gap-[10px]">

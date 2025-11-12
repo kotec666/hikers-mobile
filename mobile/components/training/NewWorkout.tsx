@@ -6,7 +6,7 @@ import { FlatList, View } from 'react-native'
 import { MapActionButton } from '@/components/map/MapActionButton'
 import { StartButton } from '@/components/map/StartButton'
 import PeopleAddSvg from '@/components/svg/PeopleAddSvg'
-import AllGeolocationPermissions from '@/components/AllGeolocationPermissions'
+import AllGeolocationPermissions, { AllGeolocationPermissionsHandle } from '@/components/AllGeolocationPermissions'
 import BottomSheetResizable, {
 	BottomSheetResizableRef
 } from '@/components/ui/BottomSheetResizable/BottomSheetResizable'
@@ -28,8 +28,8 @@ interface IProps {
 	handleChangeWorkout: (workoutId: number) => void
 	handleClickStart: () => void
 	allPermsGranted: () => void
-	retryPermissions: boolean
 	WorkoutTypesData: IWorkoutModeElement[]
+	permissionsRef: React.RefObject<AllGeolocationPermissionsHandle | null>
 }
 
 const NewWorkout = (props: IProps) => {
@@ -77,8 +77,8 @@ const NewWorkout = (props: IProps) => {
 				</MapActionButton>
 			</View>
 			<AllGeolocationPermissions
+				ref={props.permissionsRef}
 				allPermissionsGrantedCallback={props.allPermsGranted}
-				retryPermissions={props.retryPermissions}
 			/>
 			<BottomSheetResizable ref={bottomSheetResizableRef}>
 				<Container className="flex-1">

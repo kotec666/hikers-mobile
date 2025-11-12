@@ -1,4 +1,4 @@
-import { SafeAreaView, StyleSheet } from 'react-native'
+import { PermissionsAndroid, Platform, SafeAreaView, StyleSheet } from 'react-native'
 import { SafeAreaProvider, useSafeAreaInsets } from 'react-native-safe-area-context'
 import { GestureHandlerRootView } from 'react-native-gesture-handler'
 import React, { useEffect, useRef, useState } from 'react'
@@ -33,6 +33,8 @@ import notifee, {
 	AndroidVisibility,
 	EventType
 } from '@notifee/react-native'
+import { AllGeolocationPermissionsHandle } from '@/components/AllGeolocationPermissions'
+import * as Notification from 'expo-notifications'
 
 initializeNotifications()
 
@@ -87,6 +89,7 @@ export default function NewTraining() {
 	const insets = useSafeAreaInsets()
 	const toast = useToast()
 	const router = useRouter()
+	const permissionsRef = useRef<AllGeolocationPermissionsHandle>(null)
 	const locationSubscriptionRef = useRef<null | Location.LocationSubscription>(null)
 	const headingSubscriptionRef = useRef<null | Location.LocationSubscription>(null)
 	const notificationIntervalRef = useRef<null | NodeJS.Timeout>(null)
@@ -100,13 +103,11 @@ export default function NewTraining() {
 	const [state, setState] = useState<{
 		chosenWorkout: IWorkoutModeElement | null
 		isWorkoutStarted: boolean
-		retryPermissions: boolean // переключатель для триггера проверки разрешений
 		isPaused: boolean
 		myLocations: IWorkoutLocationStorageItem[]
 	}>({
 		chosenWorkout: WorkoutTypesData[0],
 		isWorkoutStarted: false,
-		retryPermissions: false,
 		isPaused: false,
 		myLocations: []
 	})
@@ -205,11 +206,29 @@ export default function NewTraining() {
 		const foregroundStatus = await Location.getForegroundPermissionsAsync()
 		const backgroundStatus = await Location.getBackgroundPermissionsAsync()
 		const isGPSEnabled = await Location.hasServicesEnabledAsync()
+		let isPhysicalActivityPermissionGranted = false
+		let isNotificationsGranted = {
+			granted: false,
+			canAskAgain: false
+		}
+
+		if (Platform.OS === 'android') {
+			const { granted: notificationsGranted, canAskAgain } = await Notification.getPermissionsAsync()
+			isNotificationsGranted = {
+				granted: notificationsGranted,
+				canAskAgain: canAskAgain
+			}
+			isPhysicalActivityPermissionGranted = await PermissionsAndroid.check(
+				PermissionsAndroid.PERMISSIONS.ACTIVITY_RECOGNITION
+			)
+		}
 
 		return {
 			foregroundStatus,
 			backgroundStatus,
-			isGPSEnabled
+			isGPSEnabled,
+			isPhysicalActivityPermissionGranted,
+			isNotificationsGranted
 		}
 	}
 
@@ -218,8 +237,20 @@ export default function NewTraining() {
 	}
 
 	const handleClickStart = async () => {
-		const { foregroundStatus, backgroundStatus, isGPSEnabled } = await checkPermissions()
+		const {
+			foregroundStatus,
+			backgroundStatus,
+			isGPSEnabled,
+			isPhysicalActivityPermissionGranted,
+			isNotificationsGranted
+		} = await checkPermissions()
 
+		if (
+			(Platform.OS === 'android' && !isPhysicalActivityPermissionGranted) ||
+			(Platform.OS === 'android' && !isNotificationsGranted.granted && isNotificationsGranted.canAskAgain)
+		) {
+			return permissionsRef.current?.checkPermissions()
+		}
 		if (foregroundStatus.granted && backgroundStatus.granted && isGPSEnabled) {
 			startAndStoreNewActiveWorkout()
 
@@ -230,7 +261,7 @@ export default function NewTraining() {
 			return startTracking()
 		} else {
 			toast.error('Невозможно начать тренировку без предоставления разрешений')
-			setState((s) => ({ ...s, retryPermissions: !s.retryPermissions }))
+			permissionsRef.current?.checkPermissions()
 		}
 	}
 
@@ -320,7 +351,7 @@ export default function NewTraining() {
 	const createChannel = async () => {
 		await notifee.createChannel({
 			id: 'workout',
-			name: 'Workout tracking',
+			name: 'Отслеживание тренировки',
 			importance: AndroidImportance.LOW
 		})
 	}
@@ -366,6 +397,13 @@ export default function NewTraining() {
 	}
 
 	const startNotificationTimer = async () => {
+		// @TODO if not Android
+		const { granted: notificationsGranted } = await Notification.getPermissionsAsync()
+		const activityRecognitionPerms = await PermissionsAndroid.request(
+			PermissionsAndroid.PERMISSIONS.ACTIVITY_RECOGNITION
+		)
+
+		if (activityRecognitionPerms !== PermissionsAndroid.RESULTS.GRANTED || !notificationsGranted) return
 		await createChannel()
 
 		notificationIntervalRef.current = setInterval(() => {
@@ -427,12 +465,12 @@ export default function NewTraining() {
 							markerPosition={markerPosition}
 							accuracy={accuracy}
 							heading={heading}
-							retryPermissions={state.retryPermissions}
 							allPermsGranted={allPermissionsGrantedCallback}
 							handleClickStart={handleClickStart}
 							handleChangeWorkout={handleChangeWorkout}
 							chosenWorkout={state.chosenWorkout}
 							WorkoutTypesData={WorkoutTypesData}
+							permissionsRef={permissionsRef}
 						/>
 					)}
 				</SafeAreaView>
