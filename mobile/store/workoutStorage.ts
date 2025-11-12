@@ -30,7 +30,7 @@ export interface IWorkoutLocationStorageItem {
 /**
  * Нажатие на кнопку "Пауза" вызовет эту ф-ю, меняет в хранилище паузу для активной тренировки
  **/
-export const setActiveWorkoutPauseState = (isPaused: boolean) => {
+export const setActiveWorkoutPauseState = (isPaused: boolean): IWorkout | null => {
 	const workoutStorageStr = workoutStorage.getString(workoutStorageKey)
 
 	if (workoutStorageStr) {
@@ -53,9 +53,14 @@ export const setActiveWorkoutPauseState = (isPaused: boolean) => {
 				}
 			}
 
-			return workoutStorage.set(workoutStorageKey, JSON.stringify(updatedStorage))
+			workoutStorage.set(workoutStorageKey, JSON.stringify(updatedStorage))
+			return updatedStorage.activeWorkout
 		}
+
+		return null
 	}
+
+	return null
 }
 
 /**

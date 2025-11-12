@@ -8,6 +8,8 @@ import { useAuthStore } from '@/store/authStore'
 import { useEffect, useState } from 'react'
 import { ActivityIndicator, View } from 'react-native'
 import { NotificationProvider } from '@/components/providers/NotificationProvider'
+import notifee, { EventType } from '@notifee/react-native'
+import { setActiveWorkoutPauseState } from '@/store/workoutStorage'
 
 YamapInstance.setLocale('ru_RU')
 	.then(() => {
@@ -18,6 +20,30 @@ YamapInstance.setLocale('ru_RU')
 			.catch(console.warn)
 	})
 	.catch(console.warn)
+
+// Глобальный обработчик фоновых событий (нужно для кнопок уведомлений)
+notifee.onBackgroundEvent(async ({ type, detail }) => {
+	if (type === EventType.ACTION_PRESS) {
+		const actionId = detail.pressAction?.id
+
+		switch (actionId) {
+			case 'pause':
+				setActiveWorkoutPauseState(true)
+				break
+			case 'resume':
+				setActiveWorkoutPauseState(false)
+				break
+		}
+	}
+})
+
+notifee.registerForegroundService((_notification) => {
+	return new Promise((resolve) => {
+		// console.log('[Notifee] foreground service started:', notification.id)
+		// Можно выполнять любую долгую задачу, например, трекинг GPS
+		resolve()
+	})
+})
 
 export default function RootLayout() {
 	const [isLoading, setIsLoading] = useState(true)

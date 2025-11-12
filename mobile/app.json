@@ -25,7 +25,9 @@
 				"android.permission.ACCESS_FINE_LOCATION",
 				"android.permission.ACCESS_BACKGROUND_LOCATION",
 				"android.permission.FOREGROUND_SERVICE",
-				"android.permission.FOREGROUND_SERVICE_LOCATION"
+				"android.permission.FOREGROUND_SERVICE_LOCATION",
+				"android.permission.ACTIVITY_RECOGNITION",
+				"android.permission.FOREGROUND_SERVICE_HEALTH"
 			]
 		},
 		"web": {
@@ -56,6 +58,8 @@
 				"expo-build-properties",
 				{
 					"android": {
+						"compileSdkVersion": 35,
+						"targetSdkVersion": 35,
 						"minSdkVersion": 26
 					}
 				}

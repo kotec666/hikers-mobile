@@ -2,7 +2,7 @@ import React, { useCallback, useEffect, useRef, useState } from 'react'
 import { BottomSheetHandle } from '@/components/ui/BottomSheet/types'
 import AllowGeolocation from '@/components/BottomSheets/AllowGeolocation'
 import BottomSheet from '@/components/ui/BottomSheet/BottomSheet'
-import { Alert, AppState, Dimensions, Linking, Platform } from 'react-native'
+import { Alert, AppState, Dimensions, Linking, PermissionsAndroid, Platform } from 'react-native'
 import EnableGPS from '@/components/BottomSheets/EnableGPS'
 import AllowBackgroundGeolocation from '@/components/BottomSheets/AllowBackgroundGeolocation'
 import AllowDeniedGeolocation from '@/components/BottomSheets/AllowDeniedGeolocation'
@@ -86,9 +86,11 @@ const AllGeolocationPermissions = (props: IProps) => {
 
 	const allowNotificationPermission = async () => {
 		closeBottomSheet()
-		const { status } = await Notification.requestPermissionsAsync()
-
-		if (status === 'granted') {
+		// const { status } = await Notification.requestPermissionsAsync() // 1
+		// await PermissionsAndroid.request(PermissionsAndroid.PERMISSIONS.ACTIVITY_RECOGNITION)
+		const result = await PermissionsAndroid.request(PermissionsAndroid.PERMISSIONS.ACTIVITY_RECOGNITION) // 2
+		if (result === PermissionsAndroid.RESULTS.GRANTED) {
+			// if (status === 'granted') { // 1
 			props.allPermissionsGrantedCallback?.()
 		} else {
 			props.allPermissionsGrantedCallback?.()
@@ -135,15 +137,19 @@ const AllGeolocationPermissions = (props: IProps) => {
 	}
 
 	const checkNotificationPermission = async () => {
-		const { granted, canAskAgain } = await Notification.getPermissionsAsync()
+		// if (Platform.OS === 'android') { @TODO
+		// const { granted, canAskAgain } = await Notification.getPermissionsAsync()
+		const result = await PermissionsAndroid.request(PermissionsAndroid.PERMISSIONS.ACTIVITY_RECOGNITION) // 2
 
-		if (granted) {
+		if (result === PermissionsAndroid.RESULTS.GRANTED) {
+			// if (granted) {
 			return props.allPermissionsGrantedCallback?.()
-		} else if (!granted && canAskAgain) {
+		} else if (result === PermissionsAndroid.RESULTS.NEVER_ASK_AGAIN) {
+			// @TODO
 			return openBottomSheet(
 				<AllowNotifications allow={allowNotificationPermission} close={cancelNotificationsPermissions} />
 			)
-		} else if (!granted && !canAskAgain) {
+		} else if (result === PermissionsAndroid.RESULTS.DENIED) {
 			return cancelNotificationsPermissions()
 		}
 	}
