@@ -26,7 +26,10 @@ export const calculateTotalDistance = (points: IWorkoutLocationStorageItem[]): n
 	let prev: IWorkoutLocationStorageItem | null = null
 
 	for (const point of points) {
-		if (point.isPausedPoint) continue
+		if (point.isPausedPoint) {
+			prev = null // разрываем трек, первая точка после паузы не соединяется с предыдущей
+			continue
+		}
 
 		if (prev) {
 			const prevCoords = prev.locationObject.coords
@@ -52,6 +55,38 @@ export const calculateTotalDistance = (points: IWorkoutLocationStorageItem[]): n
 
 	return Math.round(totalDistance)
 }
+
+// С фильтрацией только активных точек
+// export const calculateTotalDistance = (points: IWorkoutLocationStorageItem[]): number => {
+//     // Фильтруем только активные точки (не паузы)
+//     const activePoints = points.filter(point => !point.isPausedPoint)
+//
+//     let totalDistance = 0
+//
+//     for (let i = 1; i < activePoints.length; i++) {
+//         const prev = activePoints[i - 1]
+//         const curr = activePoints[i]
+//
+//         const prevCoords = prev.locationObject.coords
+//         const currCoords = curr.locationObject.coords
+//
+//         if (
+//             prevCoords.latitude != null &&
+//             prevCoords.longitude != null &&
+//             currCoords.latitude != null &&
+//             currCoords.longitude != null
+//         ) {
+//             totalDistance += haversineDistance(
+//                 prevCoords.latitude,
+//                 prevCoords.longitude,
+//                 currCoords.latitude,
+//                 currCoords.longitude
+//             )
+//         }
+//     }
+//
+//     return Math.round(totalDistance)
+// }
 
 export const formatDistance = (meters: number): string => {
 	if (meters < 1000) {

@@ -244,6 +244,7 @@ export default function NewTraining() {
 	}
 
 	const getLastUserPosition = async (): Promise<Location.LocationObject> => {
+		// @TODO здесь нет фильтра по accuracy > 50
 		return await Location.getCurrentPositionAsync()
 	}
 
