@@ -363,10 +363,10 @@ const MapComponent = (props: IProps) => {
 				initialRegion={{ ...(props.mapCenter ? props.mapCenter : DEFAULT_MAP_CENTER), zoom: 12 }}
 				style={{ flex: 1, maxHeight: props.maxMapHeight, minHeight: props.minMapHeight }}
 				logoPosition={{ horizontal: 'right', vertical: 'top' }}
-				followUser // @TODO не работает
+				// followUser // @TODO не работает / 2d 3d?
 				showUserPosition={false}
 				tiltGesturesEnabled={false}
-				rotateGesturesEnabled={false}
+				rotateGesturesEnabled
 			>
 				{/*<DirectionMarkersDebug center={{ lat: 53.374451, lon: 49.460469 }} />*/}
 				<UserLocationMarker

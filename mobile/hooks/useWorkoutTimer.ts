@@ -1,6 +1,6 @@
-import { useEffect, useState } from 'react'
-import { getAllWorkoutStorage } from '@/store/workoutStorage'
 import { formatTime } from '@/helpers/formatTime'
+import { getAllWorkoutStorage } from '@/store/workoutStorage'
+import { useEffect, useState } from 'react'
 
 export const useWorkoutTimer = () => {
 	const [elapsed, setElapsed] = useState(0)
@@ -23,5 +23,8 @@ export const useWorkoutTimer = () => {
 		return () => clearInterval(interval)
 	}, [])
 
-	return formatTime(elapsed)
+	return {
+		formatted: formatTime(elapsed),
+		ms: elapsed
+	}
 }

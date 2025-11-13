@@ -21,6 +21,8 @@ import { IWorkoutLocationStorageItem } from '@/store/workoutStorage'
 import { mpsToKmph } from '@/helpers/mpsToKmph'
 import { calculateTotalDistance, formatDistance } from '@/helpers/distance'
 import { useWorkoutTimer } from '@/hooks/useWorkoutTimer'
+import { calculatePace } from '@/helpers/calculatePace'
+import { getWorkoutHeight } from '@/helpers/getWorkoutHeight'
 
 interface IProps {
 	userLocations: IWorkoutLocationStorageItem[]
@@ -30,7 +32,6 @@ interface IProps {
 	accuracy: number | null
 	heading?: number
 	speedMPS: number
-	altitude: number
 	markerPosition?: ILatLng | null
 	mapCenter?: ILatLng
 }
@@ -215,16 +216,24 @@ const WorkoutStarted = (props: IProps) => {
 		props.handleClickEndWorkout()
 	}
 
+	const totalDistance = calculateTotalDistance(props.userLocations)
+	const averagePace = calculatePace(workoutTime.ms, totalDistance)
+	const calculatedHeight = getWorkoutHeight(props.userLocations)
+
 	const metrics = useMemo(
 		() => [
-			{ id: 1, label: 'Время', value: workoutTime },
-			{ id: 2, label: 'Скорость', value: mpsToKmph(props.speedMPS) + 'км/ч' },
-			{ id: 3, label: 'Дистанция', value: formatDistance(calculateTotalDistance(props.userLocations)) },
-			{ id: 4, label: 'Ккал', value: '51 ккал' },
-			{ id: 5, label: 'Ср. темп', value: '05’24”' },
-			{ id: 6, label: 'Набор высоты', value: `${Math.round(props.altitude)} м` }
+			{ id: 1, label: 'Время', value: workoutTime.formatted },
+			{ id: 2, label: 'Скорость', value: mpsToKmph(props.speedMPS) + ' км/ч' },
+			{ id: 3, label: 'Дистанция', value: formatDistance(totalDistance) },
+			{ id: 4, label: 'Ср. темп', value: averagePace },
+			{ id: 5, label: 'Ккал', value: '-' },
+			{
+				id: 6,
+				label: 'Набор высоты',
+				value: calculatedHeight == null ? '- м' : `${calculatedHeight} м`
+			}
 		],
-		[props.speedMPS, props.userLocations, workoutTime]
+		[props.speedMPS, props.userLocations, workoutTime, calculatedHeight]
 	)
 
 	return (

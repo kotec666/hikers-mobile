@@ -98,7 +98,6 @@ export default function NewTraining() {
 	const [accuracy, setAccuracy] = useState<number | null>(null)
 	const [heading, setHeading] = useState(0)
 	const [speedMPS, setSpeedMPS] = useState(0) // метры в секунду
-	const [altitude, setAltitude] = useState(0) // Высота в метрах над опорным эллипсоидом WGS 84.
 
 	const [state, setState] = useState<{
 		chosenWorkout: IWorkoutModeElement
@@ -201,7 +200,6 @@ export default function NewTraining() {
 
 					if (!isPausedRef.current) {
 						setSpeedMPS(location.coords.speed ?? 0)
-						setAltitude(location.coords.altitude ?? 0)
 					}
 
 					saveLocationToStorageAndState(location)
@@ -476,7 +474,6 @@ export default function NewTraining() {
 							markerPosition={markerPosition}
 							accuracy={accuracy}
 							speedMPS={speedMPS}
-							altitude={altitude}
 							heading={heading}
 							mapCenter={mapCenter}
 						/>
