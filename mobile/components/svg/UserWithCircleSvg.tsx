@@ -20,7 +20,7 @@ const UserWithCircleSvg = (props: IProps) => {
 
 	const triangleWidth = 30
 	const triangleHeight = 22
-	const triangleDepth = -6
+	const triangleDepth = -7
 	const triangleTopY = centerY - circleRadius - triangleHeight - triangleDepth
 
 	const trianglePoints = `
@@ -33,7 +33,7 @@ const UserWithCircleSvg = (props: IProps) => {
 		<Svg width={width} height={height} fill="none" viewBox={`0 0 ${width} ${height}`} {...props}>
 			{typeof heading === 'number' && (
 				<G transform={`rotate(${heading}, ${centerX}, ${centerY})`}>
-					<Polygon points={trianglePoints} fill="#FFF" stroke="#000" strokeWidth={0.5} />
+					<Polygon points={trianglePoints} fill="#FFF" strokeWidth={0} />
 				</G>
 			)}
 

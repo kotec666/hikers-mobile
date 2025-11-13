@@ -10,6 +10,7 @@ import * as Location from 'expo-location'
 import * as Notification from 'expo-notifications'
 import AllowTrackPhysicalActivity from '@/components/BottomSheets/AllowTrackPhysicalActivity'
 import AllowNotifications from '@/components/BottomSheets/AllowNotifications'
+import AllowDeniedNotifications from '@/components/BottomSheets/AllowDeniedNotifications'
 
 const { height: screenHeight } = Dimensions.get('screen')
 
@@ -19,7 +20,7 @@ interface IProps {
 
 /**
  *
- * Компонент, в котором проверяются + включаются geolocation permissions (+GPS)
+ * Компонент, в котором проверяются + включаются geolocation permissions (+GPS) + notifications + physical activity track
  *
  * 1. запрос foreground (обязательно)
  * 2. запрос background (обязательно)
@@ -70,8 +71,8 @@ const AllGeolocationPermissions = forwardRef<AllGeolocationPermissionsHandle, IP
 	}, [])
 
 	const openAppSettings = async () => {
+		closeBottomSheet()
 		try {
-			closeBottomSheet()
 			setWasInSettings(true)
 
 			if (Platform.OS === 'ios') {
@@ -88,117 +89,9 @@ const AllGeolocationPermissions = forwardRef<AllGeolocationPermissionsHandle, IP
 		}
 	}
 
-	const cancelTrackPhysicalActivityPermissions = () => {
-		closeBottomSheet()
-		props.allPermissionsGrantedCallback?.()
-	}
-
-	const allowPhysicalActivityPermission = async () => {
-		closeBottomSheet()
-
-		const result = await PermissionsAndroid.request(PermissionsAndroid.PERMISSIONS.ACTIVITY_RECOGNITION)
-
-		if (result === PermissionsAndroid.RESULTS.GRANTED) {
-			props.allPermissionsGrantedCallback?.()
-		} else if (result === PermissionsAndroid.RESULTS.NEVER_ASK_AGAIN) {
-			// Открываем настройки, потому что запросить повторно уже нельзя
-			setWasInSettings(true)
-			await Linking.openSettings()
-		} else if (result === PermissionsAndroid.RESULTS.DENIED) {
-			cancelTrackPhysicalActivityPermissions()
-		}
-	}
-
-	const allowForegroundLocationPermission = async () => {
-		closeBottomSheet()
-		const { status: foregroundStatus } = await Location.requestForegroundPermissionsAsync()
-
-		if (foregroundStatus === 'granted') {
-			await checkBackgroundPermission()
-		}
-	}
-
-	const allowBackgroundLocationPermission = async () => {
-		closeBottomSheet()
-		const { status: backgroundStatus } = await Location.requestBackgroundPermissionsAsync()
-
-		if (backgroundStatus === 'granted') {
-			return checkIsGPSEnabled()
-		}
-	}
-
-	const cancelNotificationsPermissions = () => {
-		closeBottomSheet()
-		props.allPermissionsGrantedCallback?.()
-	}
-
-	const allowNotificationPermission = async () => {
-		closeBottomSheet()
-		const { status } = await Notification.requestPermissionsAsync()
-		if (status === 'granted') {
-			return checkPhysicalActivityTrackPermission()
-		}
-	}
-
-	const checkNotificationPermission = async () => {
-		// if (Platform.OS === 'android') { @TODO
-		const { granted, canAskAgain } = await Notification.getPermissionsAsync()
-
-		if (granted) {
-			return checkPhysicalActivityTrackPermission()
-		} else if (!granted && canAskAgain) {
-			return openBottomSheet(
-				<AllowNotifications allow={allowNotificationPermission} close={cancelNotificationsPermissions} />
-			)
-		} else if (!granted && !canAskAgain) {
-			return cancelNotificationsPermissions()
-		}
-	}
-
-	const allowGPS = async () => {
-		closeBottomSheet()
-		await Location.enableNetworkProviderAsync()
-		const servicesEnabled = await Location.hasServicesEnabledAsync()
-
-		if (servicesEnabled) {
-			//  @TODO только для android, проверить как работает на ios
-			return checkNotificationPermission()
-		}
-	}
-
-	const checkIsGPSEnabled = async () => {
-		// @TODO только для android, проверить как работает на ios
-		// if (Platform.OS === 'ios') return
-		const isGPSEnabled = await Location.hasServicesEnabledAsync()
-		if (!isGPSEnabled) {
-			openBottomSheet(<EnableGPS allow={allowGPS} close={closeBottomSheet} />)
-		} else {
-			return checkNotificationPermission()
-		}
-	}
-
-	const checkPhysicalActivityTrackPermission = async () => {
-		// if (Platform.OS === 'android') { @TODO
-		// const { granted, canAskAgain } = await Notification.getPermissionsAsync()
-		const isGranted = await PermissionsAndroid.check(PermissionsAndroid.PERMISSIONS.ACTIVITY_RECOGNITION) // 2
-
-		if (isGranted) {
-			// if (granted) {
-			return props.allPermissionsGrantedCallback?.()
-		} else {
-			return openBottomSheet(
-				<AllowTrackPhysicalActivity
-					allow={allowPhysicalActivityPermission}
-					close={cancelTrackPhysicalActivityPermissions}
-				/>
-			)
-		}
-		// else if (result === PermissionsAndroid.RESULTS.DENIED) {
-		// 	return cancelTrackPhysicalActivityPermissions()
-		// }
-	}
-
+	// Проверка Foreground geo
 	const checkForegroundPermission = async () => {
+		/** Шаг 1, проверка разрешения на предоставление геолокации в активном режиме */
 		const { granted, canAskAgain } = await Location.getForegroundPermissionsAsync()
 
 		if (granted) {
@@ -212,17 +105,119 @@ const AllGeolocationPermissions = forwardRef<AllGeolocationPermissionsHandle, IP
 		}
 	}
 
+	// Включение Foreground geo
+	const allowForegroundLocationPermission = async () => {
+		closeBottomSheet()
+		const { status: foregroundStatus } = await Location.requestForegroundPermissionsAsync()
+
+		if (foregroundStatus === 'granted') {
+			await checkBackgroundPermission()
+		}
+	}
+
+	// Проверка Background geo
 	const checkBackgroundPermission = async () => {
+		/** Шаг 2, проверка разрешения на предоставление геолокации в фоновом режиме */
 		const { granted, canAskAgain } = await Location.getBackgroundPermissionsAsync()
 
 		if (granted) {
 			return checkIsGPSEnabled()
 		} else if (!granted && canAskAgain) {
-			openBottomSheet(
+			return openBottomSheet(
 				<AllowBackgroundGeolocation allow={allowBackgroundLocationPermission} close={closeBottomSheet} />
 			)
 		} else if (!granted && !canAskAgain) {
-			openBottomSheet(<AllowDeniedGeolocation allow={openAppSettings} close={closeBottomSheet} />)
+			return openBottomSheet(<AllowDeniedGeolocation allow={openAppSettings} close={closeBottomSheet} />)
+		}
+	}
+
+	// Включение Background geo
+	const allowBackgroundLocationPermission = async () => {
+		closeBottomSheet()
+		const { status: backgroundStatus } = await Location.requestBackgroundPermissionsAsync()
+
+		if (backgroundStatus === 'granted') {
+			return checkIsGPSEnabled()
+		}
+	}
+
+	// Проверка GPS (on/off)
+	const checkIsGPSEnabled = async () => {
+		/** Шаг 3, проверка включен ли GPS на android */
+		// @TODO только для android, проверить как работает на ios
+		// if (Platform.OS === 'ios') return
+		const isGPSEnabled = await Location.hasServicesEnabledAsync()
+		if (!isGPSEnabled) {
+			return openBottomSheet(<EnableGPS allow={allowGPS} close={closeBottomSheet} />)
+		} else {
+			return checkNotificationPermission()
+		}
+	}
+
+	// Включение GPS
+	const allowGPS = async () => {
+		closeBottomSheet()
+		await Location.enableNetworkProviderAsync()
+		const servicesEnabled = await Location.hasServicesEnabledAsync()
+
+		if (servicesEnabled) {
+			//  @TODO только для android, проверить как работает на ios
+			return checkNotificationPermission()
+		}
+	}
+
+	// Проверка Notification perms
+	const checkNotificationPermission = async () => {
+		/** Шаг 4, проверка включены ли уведомления (имеет смысл только на android) */
+		// if (Platform.OS === 'android') { @TODO
+		const { granted, canAskAgain } = await Notification.getPermissionsAsync()
+
+		if (granted) {
+			return checkPhysicalActivityTrackPermission()
+		} else if (!granted && canAskAgain) {
+			return openBottomSheet(<AllowNotifications allow={allowNotificationPermission} close={closeBottomSheet} />)
+		} else if (!granted && !canAskAgain) {
+			return openBottomSheet(<AllowDeniedNotifications allow={openAppSettings} close={closeBottomSheet} />)
+		}
+	}
+
+	// Включение Notification perms
+	const allowNotificationPermission = async () => {
+		closeBottomSheet()
+		const { status } = await Notification.requestPermissionsAsync()
+		if (status === 'granted') {
+			return checkPhysicalActivityTrackPermission()
+		}
+	}
+
+	// Проверка physical activity track
+	const checkPhysicalActivityTrackPermission = async () => {
+		/** Шаг 5, проверка включен ли трек физ. активности (имеет смысл только на android) */
+		// if (Platform.OS === 'android') { @TODO
+		const isGranted = await PermissionsAndroid.check(PermissionsAndroid.PERMISSIONS.ACTIVITY_RECOGNITION) // 2
+
+		if (isGranted) {
+			// if (granted) {
+			return props.allPermissionsGrantedCallback?.()
+		} else {
+			return openBottomSheet(
+				<AllowTrackPhysicalActivity allow={allowPhysicalActivityPermission} close={closeBottomSheet} />
+			)
+		}
+	}
+
+	// Включение physical activity track
+	const allowPhysicalActivityPermission = async () => {
+		closeBottomSheet()
+
+		const result = await PermissionsAndroid.request(PermissionsAndroid.PERMISSIONS.ACTIVITY_RECOGNITION)
+
+		if (result === PermissionsAndroid.RESULTS.GRANTED) {
+			return props.allPermissionsGrantedCallback?.()
+		} else if (result === PermissionsAndroid.RESULTS.NEVER_ASK_AGAIN) {
+			return openAppSettings()
+		} else if (result === PermissionsAndroid.RESULTS.DENIED) {
+			return closeBottomSheet()
 		}
 	}
 

@@ -24,7 +24,6 @@ import {
 import { ILatLng } from '@/components/map/MapComponent'
 import { useRouter } from 'expo-router'
 import { useLatest } from '@/hooks/useLatest'
-import { Button } from '@/components/ui/Button'
 import { initializeNotifications } from '@/helpers/notifications'
 import { formatTime } from '@/helpers/formatTime'
 import notifee, {
@@ -35,32 +34,33 @@ import notifee, {
 } from '@notifee/react-native'
 import { AllGeolocationPermissionsHandle } from '@/components/AllGeolocationPermissions'
 import * as Notification from 'expo-notifications'
+import { TrainingType } from '../../../shared/enums'
 
 initializeNotifications()
 
 const WorkoutTypesData = [
-	{ id: 1, name: 'Забег', IconComponent: WorkoutRunning },
-	{ id: 2, name: 'Ходьба', IconComponent: WorkoutWalking },
-	{ id: 3, name: 'Велосипед', IconComponent: WorkoutBicycle },
-	{ id: 4, name: 'Велосипед', IconComponent: WorkoutBicycle },
-	{ id: 5, name: 'Велосипед', IconComponent: WorkoutBicycle },
-	{ id: 6, name: 'Велосипед', IconComponent: WorkoutBicycle },
-	{ id: 7, name: 'Велосипед', IconComponent: WorkoutBicycle },
-	{ id: 8, name: 'Велосипед', IconComponent: WorkoutBicycle },
-	{ id: 9, name: 'Велосипед', IconComponent: WorkoutBicycle },
-	{ id: 10, name: 'Велосипед', IconComponent: WorkoutBicycle },
-	{ id: 11, name: 'Велосипед', IconComponent: WorkoutBicycle },
-	{ id: 12, name: 'Велосипед', IconComponent: WorkoutBicycle },
-	{ id: 13, name: 'Велосипед', IconComponent: WorkoutBicycle },
-	{ id: 14, name: 'Велосипед', IconComponent: WorkoutBicycle },
-	{ id: 15, name: 'Велосипед', IconComponent: WorkoutBicycle },
-	{ id: 16, name: 'Велосипед', IconComponent: WorkoutBicycle },
-	{ id: 17, name: 'Велосипед', IconComponent: WorkoutBicycle },
-	{ id: 18, name: 'Велосипед', IconComponent: WorkoutBicycle },
-	{ id: 19, name: 'Велосипед', IconComponent: WorkoutBicycle },
-	{ id: 20, name: 'Велосипед', IconComponent: WorkoutBicycle },
-	{ id: 21, name: 'Велосипед', IconComponent: WorkoutBicycle },
-	{ id: 22, name: 'Велосипед last', IconComponent: WorkoutBicycle }
+	{ id: 1, type: TrainingType.RUN, name: 'Забег', IconComponent: WorkoutRunning },
+	{ id: 2, type: TrainingType.RUN, name: 'Ходьба', IconComponent: WorkoutWalking },
+	{ id: 3, type: TrainingType.BICYCLE, name: 'Велосипед', IconComponent: WorkoutBicycle },
+	{ id: 4, type: TrainingType.BICYCLE, name: 'Велосипед', IconComponent: WorkoutBicycle },
+	{ id: 5, type: TrainingType.BICYCLE, name: 'Велосипед', IconComponent: WorkoutBicycle },
+	{ id: 6, type: TrainingType.BICYCLE, name: 'Велосипед', IconComponent: WorkoutBicycle },
+	{ id: 7, type: TrainingType.BICYCLE, name: 'Велосипед', IconComponent: WorkoutBicycle },
+	{ id: 8, type: TrainingType.BICYCLE, name: 'Велосипед', IconComponent: WorkoutBicycle },
+	{ id: 9, type: TrainingType.BICYCLE, name: 'Велосипед', IconComponent: WorkoutBicycle },
+	{ id: 10, type: TrainingType.BICYCLE, name: 'Велосипед', IconComponent: WorkoutBicycle },
+	{ id: 11, type: TrainingType.BICYCLE, name: 'Велосипед', IconComponent: WorkoutBicycle },
+	{ id: 12, type: TrainingType.BICYCLE, name: 'Велосипед', IconComponent: WorkoutBicycle },
+	{ id: 13, type: TrainingType.BICYCLE, name: 'Велосипед', IconComponent: WorkoutBicycle },
+	{ id: 14, type: TrainingType.BICYCLE, name: 'Велосипед', IconComponent: WorkoutBicycle },
+	{ id: 15, type: TrainingType.BICYCLE, name: 'Велосипед', IconComponent: WorkoutBicycle },
+	{ id: 16, type: TrainingType.BICYCLE, name: 'Велосипед', IconComponent: WorkoutBicycle },
+	{ id: 17, type: TrainingType.BICYCLE, name: 'Велосипед', IconComponent: WorkoutBicycle },
+	{ id: 18, type: TrainingType.BICYCLE, name: 'Велосипед', IconComponent: WorkoutBicycle },
+	{ id: 19, type: TrainingType.BICYCLE, name: 'Велосипед', IconComponent: WorkoutBicycle },
+	{ id: 20, type: TrainingType.BICYCLE, name: 'Велосипед', IconComponent: WorkoutBicycle },
+	{ id: 21, type: TrainingType.BICYCLE, name: 'Велосипед', IconComponent: WorkoutBicycle },
+	{ id: 22, type: TrainingType.BICYCLE, name: 'Велосипед last', IconComponent: WorkoutBicycle }
 ]
 
 const LOCATION_TASK_NAME = 'background-location-task'
@@ -101,7 +101,7 @@ export default function NewTraining() {
 	const [altitude, setAltitude] = useState(0) // Высота в метрах над опорным эллипсоидом WGS 84.
 
 	const [state, setState] = useState<{
-		chosenWorkout: IWorkoutModeElement | null
+		chosenWorkout: IWorkoutModeElement
 		isWorkoutStarted: boolean
 		isPaused: boolean
 		myLocations: IWorkoutLocationStorageItem[]
@@ -113,6 +113,23 @@ export default function NewTraining() {
 	})
 
 	const isPausedRef = useLatest(state.isPaused)
+
+	useEffect(() => {
+		// @TODO useLayoutEffect?
+		const workoutStorage = getAllWorkoutStorage()
+		const activeWorkout = workoutStorage.activeWorkout
+
+		if (activeWorkout) {
+			const foundedWorkout = WorkoutTypesData.find((w) => w.type === activeWorkout.type) ?? WorkoutTypesData[0]
+			setState((s) => ({
+				...s,
+				isPaused: activeWorkout.isPaused,
+				myLocations: activeWorkout.locations,
+				isWorkoutStarted: true,
+				chosenWorkout: foundedWorkout
+			}))
+		}
+	}, [])
 
 	const startBackgroundTracking = async () => {
 		const isTaskRegistered = await TaskManager.isTaskRegisteredAsync(LOCATION_TASK_NAME)
@@ -207,17 +224,11 @@ export default function NewTraining() {
 		const backgroundStatus = await Location.getBackgroundPermissionsAsync()
 		const isGPSEnabled = await Location.hasServicesEnabledAsync()
 		let isPhysicalActivityPermissionGranted = false
-		let isNotificationsGranted = {
-			granted: false,
-			canAskAgain: false
-		}
+		let isNotificationsGranted = false
 
 		if (Platform.OS === 'android') {
-			const { granted: notificationsGranted, canAskAgain } = await Notification.getPermissionsAsync()
-			isNotificationsGranted = {
-				granted: notificationsGranted,
-				canAskAgain: canAskAgain
-			}
+			const { granted: notificationsGranted } = await Notification.getPermissionsAsync() // Пока что уведомления нужны только для android
+			isNotificationsGranted = notificationsGranted
 			isPhysicalActivityPermissionGranted = await PermissionsAndroid.check(
 				PermissionsAndroid.PERMISSIONS.ACTIVITY_RECOGNITION
 			)
@@ -237,31 +248,43 @@ export default function NewTraining() {
 	}
 
 	const handleClickStart = async () => {
-		const {
-			foregroundStatus,
-			backgroundStatus,
-			isGPSEnabled,
-			isPhysicalActivityPermissionGranted,
-			isNotificationsGranted
-		} = await checkPermissions()
+		try {
+			const {
+				foregroundStatus,
+				backgroundStatus,
+				isGPSEnabled,
+				isPhysicalActivityPermissionGranted,
+				isNotificationsGranted
+			} = await checkPermissions()
 
-		if (
-			(Platform.OS === 'android' && !isPhysicalActivityPermissionGranted) ||
-			(Platform.OS === 'android' && !isNotificationsGranted.granted && isNotificationsGranted.canAskAgain)
-		) {
-			return permissionsRef.current?.checkPermissions()
-		}
-		if (foregroundStatus.granted && backgroundStatus.granted && isGPSEnabled) {
-			startAndStoreNewActiveWorkout()
+			// --- iOS и Android: базовые проверки геолокации ---
+			const hasLocationPermissions = foregroundStatus?.granted && backgroundStatus?.granted && isGPSEnabled
 
+			// --- Android: дополнительные проверки уведомлений и физ. активности ---
+			const hasAndroidExtras =
+				Platform.OS === 'android' ? isNotificationsGranted && isPhysicalActivityPermissionGranted : true // на iOS просто true
+
+			// --- Проверка всех обязательных разрешений ---
+			if (!hasLocationPermissions || !hasAndroidExtras) {
+				toast.error('Невозможно начать тренировку без предоставления всех разрешений')
+				return permissionsRef.current?.checkPermissions()
+			}
+
+			// --- Все разрешения есть, запускаем тренировку ---
+			startAndStoreNewActiveWorkout(state.chosenWorkout.type)
 			console.log('chosenWorkout', state.chosenWorkout)
+
 			setState((s) => ({ ...s, isWorkoutStarted: true }))
+
 			await startHeadingTracking()
-			// await handleSendNotification()
+			if (isNotificationsGranted && isPhysicalActivityPermissionGranted) {
+				await startNotificationTimer() // опционально, если уведомления разрешены
+			}
+
 			return startTracking()
-		} else {
-			toast.error('Невозможно начать тренировку без предоставления разрешений')
-			permissionsRef.current?.checkPermissions()
+		} catch (error) {
+			console.error('Ошибка при старте тренировки:', error)
+			toast.error('Произошла ошибка при запуске тренировки')
 		}
 	}
 
@@ -420,8 +443,7 @@ export default function NewTraining() {
 	useEffect(() => {
 		return notifee.onForegroundEvent(async ({ type, detail }) => {
 			if (type === EventType.ACTION_PRESS) {
-				if (!detail.pressAction) return console.log('no details provided')
-				console.log('[Foreground event]', detail.pressAction.id)
+				if (!detail.pressAction) return
 				if (detail.pressAction.id === 'pause') await handleClickPause()
 				if (detail.pressAction.id === 'resume') await handleClickPause()
 			}
@@ -444,9 +466,6 @@ export default function NewTraining() {
 					{/*<Button variant="white" onPress={() => setHeading(270)}>*/}
 					{/*	heading = 270° Запад*/}
 					{/*</Button>*/}
-					<Button variant="white" onPress={startNotificationTimer}>
-						Показ уведомления
-					</Button>
 					{state.isWorkoutStarted ? (
 						<WorkoutStarted
 							userLocations={state.myLocations}

@@ -1,5 +1,6 @@
 import { MMKV } from 'react-native-mmkv'
 import { LocationObject } from 'expo-location'
+import { TrainingType } from '@shared/enums'
 
 export const workoutStorage = new MMKV({
 	id: 'workout-storage'
@@ -14,6 +15,7 @@ export interface IWorkoutStorage {
 
 export interface IWorkout {
 	isPaused: boolean
+	type: TrainingType
 	startedAt: number // Date.now()
 	totalPausedMs: number
 	lastPauseAt: null | number
@@ -66,7 +68,7 @@ export const setActiveWorkoutPauseState = (isPaused: boolean): IWorkout | null =
 /**
  * Нажатие на кнопку "Начать" вызовет эту ф-ю, создает новый стор и активную тренировку
  **/
-export const startAndStoreNewActiveWorkout = () => {
+export const startAndStoreNewActiveWorkout = (type: TrainingType) => {
 	const workoutStorageStr = workoutStorage.getString(workoutStorageKey)
 
 	if (workoutStorageStr) {
@@ -77,6 +79,7 @@ export const startAndStoreNewActiveWorkout = () => {
 				? [...parsedStorage.notSavedWorkouts, parsedStorage.activeWorkout]
 				: parsedStorage.notSavedWorkouts,
 			activeWorkout: {
+				type,
 				startedAt: Date.now(),
 				isPaused: false,
 				totalPausedMs: 0,
@@ -87,16 +90,17 @@ export const startAndStoreNewActiveWorkout = () => {
 
 		return workoutStorage.set(workoutStorageKey, JSON.stringify(updatedStorage))
 	} else {
-		const newWorkoutStorage = {
+		const newWorkoutStorage: IWorkoutStorage = {
 			notSavedWorkouts: [] as IWorkout[],
 			activeWorkout: {
+				type,
 				startedAt: Date.now(),
 				isPaused: false,
 				totalPausedMs: 0,
 				lastPauseAt: null,
 				locations: [] as IWorkoutLocationStorageItem[]
 			} as IWorkout
-		} as unknown as IWorkoutStorage
+		}
 
 		return workoutStorage.set(workoutStorageKey, JSON.stringify(newWorkoutStorage))
 	}

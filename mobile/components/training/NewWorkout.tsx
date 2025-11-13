@@ -13,10 +13,12 @@ import BottomSheetResizable, {
 import WorkoutType from '@/components/WorkoutType'
 import { useRouter } from 'expo-router'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
+import { TrainingType } from '@shared/enums'
 
 export interface IWorkoutModeElement {
 	id: number
 	name: string
+	type: TrainingType
 	IconComponent: (props: { color?: string }) => React.JSX.Element
 }
 
