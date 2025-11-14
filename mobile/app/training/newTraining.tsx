@@ -470,6 +470,7 @@ export default function NewTraining() {
 							userLocations={state.myLocations}
 							handleClickPause={handleClickPause}
 							handleClickEndWorkout={handleClickEndWorkout}
+							workoutType={state.chosenWorkout.type}
 							isPaused={state.isPaused}
 							markerPosition={markerPosition}
 							accuracy={accuracy}

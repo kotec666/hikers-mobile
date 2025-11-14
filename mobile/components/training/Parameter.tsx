@@ -2,7 +2,7 @@ import React from 'react'
 import { Text, View } from 'react-native'
 import { fontFamily } from '@/constants/Fonts'
 
-const Parameter = (props: { label: string; value: string; isPaused?: boolean }) => {
+const Parameter = (props: { label: string; value: string | number; isPaused?: boolean }) => {
 	return (
 		<View style={{ opacity: props.isPaused ? 0.5 : 1 }}>
 			<Text className="text-gray-ab text-base" style={{ fontFamily: fontFamily.medium }}>
