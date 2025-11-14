@@ -3,7 +3,7 @@ import EndTrainingModal from '@/components/training/EndTrainingModal'
 import { Container } from '@/components/ui/Container'
 import { Dimensions, ScrollView, Text, View } from 'react-native'
 import { fontFamily } from '@/constants/Fonts'
-import MapComponent, { ILatLng } from '@/components/map/MapComponent'
+import MapComponent, { ILatLng, MapComponentHandle } from '@/components/map/MapComponent'
 import Parameter from '@/components/training/Parameter'
 import { cn } from '@/helpers/cn'
 import PeopleListItem from '@/components/find-people/PeopleListItem'
@@ -25,18 +25,19 @@ import { calculatePace } from '@/helpers/calculatePace'
 import { getWorkoutHeight } from '@/helpers/getWorkoutHeight'
 import { calculateCalories } from '@/helpers/calculateCalories'
 import { TrainingType } from '@shared/enums'
+import { UserLocationMarkerHandle } from '@/components/ui/UserLocationMarker'
 
 interface IProps {
+	// headingDebug: number | null
+	initialMarkerLocation?: ILatLng | null
 	userLocations: IWorkoutLocationStorageItem[]
 	isPaused: boolean
 	handleClickPause: () => void
 	handleClickEndWorkout: () => void
-	accuracy: number | null
-	heading?: number
 	speedMPS: number
-	markerPosition?: ILatLng | null
-	mapCenter?: ILatLng
 	workoutType: TrainingType
+	mapComponentRef: React.RefObject<MapComponentHandle | null>
+	userLocationMarkerRef: React.RefObject<UserLocationMarkerHandle | null>
 }
 
 const { height } = Dimensions.get('screen')
@@ -247,7 +248,7 @@ const WorkoutStarted = (props: IProps) => {
 				handleClose={handleCloseEndModal}
 				handleClickEnd={handleClickEnd}
 			/>
-			{/*<CompassDebug heading={props.heading || 0} position="bottom-right" accuracy={props.accuracy} />*/}
+			{/*<CompassDebug heading={props.headingDebug || 0} position="bottom-right" />*/}
 			<Container>
 				<Text className="my-[20px] text-white text-[20px]" style={{ fontFamily: fontFamily.bold }}>
 					Тренировка
@@ -255,11 +256,10 @@ const WorkoutStarted = (props: IProps) => {
 			</Container>
 			{state.mapViewHidden && (
 				<MapComponent
-					heading={props.heading}
-					accuracy={props.accuracy}
-					markerPosition={props.markerPosition}
+					ref={props.mapComponentRef}
+					userLocationMarkerRef={props.userLocationMarkerRef}
 					maxMapHeight={maxMapHeight}
-					mapCenter={props.mapCenter}
+					initialMarkerLocation={props.initialMarkerLocation}
 					userLocations={props.userLocations}
 				/>
 			)}

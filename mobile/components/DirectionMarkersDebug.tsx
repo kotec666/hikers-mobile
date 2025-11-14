@@ -1,4 +1,4 @@
-import { Marker } from 'react-native-yamap-plus-lite'
+import { Marker } from 'react-native-yamap-plus'
 import { ILatLng } from '@/components/map/MapComponent'
 import { Text } from 'react-native'
 

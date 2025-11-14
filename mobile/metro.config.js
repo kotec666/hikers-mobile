@@ -9,7 +9,7 @@ config.resolver = {
 	extraNodeModules: {
 		...config.resolver.extraNodeModules,
 		shared: path.resolve(__dirname, '../shared'),
-		yamap: require.resolve('react-native-yamap-plus-lite')
+		yamap: require.resolve('react-native-yamap-plus')
 	},
 	unstable_enableSymlinks: true,
 	unstable_enablePackageExports: true

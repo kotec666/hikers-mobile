@@ -1,4 +1,4 @@
-import { Marker } from 'react-native-yamap-plus-lite'
+import { Marker } from 'react-native-yamap-plus'
 import { StyleSheet, View } from 'react-native'
 
 export default function DefaultMarker(props: { lat: number; lon: number }) {

@@ -7128,10 +7128,10 @@ react-native-web@~0.20.0:
     postcss-value-parser "^4.2.0"
     styleq "^0.1.3"
 
-react-native-yamap-plus-lite@^4.17.1:
-  version "4.17.1"
-  resolved "https://registry.yarnpkg.com/react-native-yamap-plus-lite/-/react-native-yamap-plus-lite-4.17.1.tgz#42d3abbac46861870b8d613263296ef2e7dfe587"
-  integrity sha512-dGapPMkVNyjy8Vr8gcB+if4y7vsw1ZQEUW7BXCMwCXx+ju0ED+l9DTrfPgF3V9KZYSS0Vd+TFu5w91CnyDIyrw==
+react-native-yamap-plus@^5.3.6:
+  version "5.3.6"
+  resolved "https://registry.yarnpkg.com/react-native-yamap-plus/-/react-native-yamap-plus-5.3.6.tgz#63757106b9a290105503bc28321e7eaf4be74bdb"
+  integrity sha512-pUrL/HsDMe3KZooJVVYAN1YZAQPjgQXn2nzwy8kA5St/3a4mdjYas11ZBNPh6MvDSVt0S+fy9JtWC4EtsyZCfA==
 
 react-native@*:
   version "0.81.0"

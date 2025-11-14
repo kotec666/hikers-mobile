@@ -7,7 +7,7 @@ interface IProps {
 	width?: number
 	height?: number
 	style?: StyleProp<ViewStyle>
-	heading?: number
+	heading: number | null
 }
 
 const UserWithCircleSvg = (props: IProps) => {

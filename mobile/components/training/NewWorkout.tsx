@@ -1,7 +1,7 @@
 import React, { useCallback, useRef } from 'react'
 import { Container } from '@/components/ui/Container'
 import HeaderBack from '@/components/ui/HeaderBack'
-import MapComponent, { ILatLng } from '@/components/map/MapComponent'
+import MapComponent, { ILatLng, MapComponentHandle } from '@/components/map/MapComponent'
 import { FlatList, View } from 'react-native'
 import { MapActionButton } from '@/components/map/MapActionButton'
 import { StartButton } from '@/components/map/StartButton'
@@ -14,6 +14,7 @@ import WorkoutType from '@/components/WorkoutType'
 import { useRouter } from 'expo-router'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
 import { TrainingType } from '@shared/enums'
+import { UserLocationMarkerHandle } from '@/components/ui/UserLocationMarker'
 
 export interface IWorkoutModeElement {
 	id: number
@@ -23,15 +24,15 @@ export interface IWorkoutModeElement {
 }
 
 interface IProps {
-	accuracy: number | null
-	heading?: number
-	markerPosition?: ILatLng | null
+	initialMarkerLocation?: ILatLng | null
 	chosenWorkout: IWorkoutModeElement | null
 	handleChangeWorkout: (workoutId: number) => void
 	handleClickStart: () => void
 	allPermsGranted: () => void
 	WorkoutTypesData: IWorkoutModeElement[]
 	permissionsRef: React.RefObject<AllGeolocationPermissionsHandle | null>
+	mapComponentRef: React.RefObject<MapComponentHandle | null>
+	userLocationMarkerRef: React.RefObject<UserLocationMarkerHandle | null>
 }
 
 const NewWorkout = (props: IProps) => {
@@ -59,7 +60,11 @@ const NewWorkout = (props: IProps) => {
 			<Container>
 				<HeaderBack className="my-[20px]">Новая тренировка</HeaderBack>
 			</Container>
-			<MapComponent accuracy={props.accuracy} heading={props.heading} markerPosition={props.markerPosition} />
+			<MapComponent
+				ref={props.mapComponentRef}
+				initialMarkerLocation={props.initialMarkerLocation}
+				userLocationMarkerRef={props.userLocationMarkerRef}
+			/>
 			<View
 				style={{
 					bottom: insets.bottom + 35,

@@ -46,6 +46,22 @@
      android:stopWithTask="false" />
    ```
    Это необходимо для корректной работы таймера тренировки в фоне.
+4. Для использования lite версии yandex maps в файле `./android/build.gradle` добавьте строку:
+   ```
+   buildscript {
+    ext {
+        ...
+        + useYandexMapsLite = true 
+   }
+   ```
+
+## Подготовка Ios-проекта
+
+1. Для использования lite версии yandex maps в файле `Podfile` добавьте в начало строку:
+   ```
+   + ENV['USE_YANDEX_MAPS_LITE'] = "1"
+   ...
+   ```
 
 ## Общая папка `shared`
 
@@ -62,7 +78,7 @@
 
 ## Запуск приложения
 
-1. Запустите Metro Bundler:
+1. Для запуска впервые `yarn android` или `yarn ios`. Иначе запустите Metro Bundler:
    ```bash
    yarn start
    ```

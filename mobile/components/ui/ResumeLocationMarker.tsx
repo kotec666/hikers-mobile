@@ -1,5 +1,5 @@
 import React from 'react'
-import { Marker } from 'react-native-yamap-plus-lite'
+import { Marker } from 'react-native-yamap-plus'
 import { View } from 'react-native'
 import { ILatLng } from '@/components/map/MapComponent'
 import ResumeWithCircleSvg from '@/components/svg/ResumeWithCircleSvg'

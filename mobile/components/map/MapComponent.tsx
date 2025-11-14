@@ -1,13 +1,12 @@
-import { Polyline, Yamap } from 'react-native-yamap-plus-lite'
-import UserLocationMarker from '@/components/ui/UserLocationMarker'
-import React, { JSX, useEffect, useRef, useState } from 'react'
+import { Animation, Polyline, Yamap, YamapRef } from 'react-native-yamap-plus'
+import UserLocationMarker, { UserLocationMarkerHandle } from '@/components/ui/UserLocationMarker'
+import React, { forwardRef, JSX, useImperativeHandle, useRef, useState } from 'react'
 import { View } from 'react-native'
 import { IWorkoutLocationStorageItem, removeAllWorkoutStorage } from '@/store/workoutStorage'
 import { Colors } from '@/constants/Colors'
 import { Button } from '@/components/ui/Button'
 import PauseLocationMarker from '@/components/ui/PauseLocationMarker'
 import ResumeLocationMarker from '@/components/ui/ResumeLocationMarker'
-import FinishLocationMarker from '@/components/ui/FinishLocationMarker'
 
 // const testLocations = [
 // 	{
@@ -151,122 +150,25 @@ interface IProps {
 	maxMapHeight?: number
 	minMapHeight?: number
 	rounded?: number
-	accuracy?: number | null
-	heading?: number
-	markerPosition?: ILatLng | null
-	mapCenter?: ILatLng
+	initialMarkerLocation?: ILatLng | null // @TODO заменить везде на Point из ya-map?
+	userLocationMarkerRef?: React.RefObject<UserLocationMarkerHandle | null>
 	userLocations?: IWorkoutLocationStorageItem[]
 }
 
 const DEFAULT_MAP_CENTER = { lat: 55.758745, lon: 37.619153 }
 
-const MapComponent = (props: IProps) => {
-	const isFirstRenderPosition = useRef(false)
-	const oldMarkerPosition = useRef<ILatLng | null | undefined>(null)
-	const oldHeading = useRef(props.heading)
-	const [animatedHeading, setAnimatedHeading] = useState<number | undefined>(props.heading)
-	const [isAnimating, setIsAnimating] = useState(false)
-	const [isHeadingAnimating, setIsHeadingAnimating] = useState(false)
-	const [animatedMarkerPosition, setAnimatedMarkerPosition] = useState<ILatLng | undefined | null>(
-		props.markerPosition
-	)
+export interface MapComponentHandle {
+	setMapCenter: (center: ILatLng | null, durationInSeconds?: number, zoom?: number) => void
+	fitAllMarkers: (durationInSeconds?: number) => void
+}
 
-	const animateToPosition = (targetPosition: ILatLng, duration: number = 500) => {
-		if (isAnimating) return
-		if (!oldMarkerPosition.current) return
+const MapComponent = forwardRef<MapComponentHandle, IProps>((props, ref) => {
+	const mapRef = useRef<YamapRef>(null)
 
-		setIsAnimating(true)
-		const startPosition = oldMarkerPosition.current
-		const startTime = Date.now()
-
-		const animateFrame = () => {
-			const currentTime = Date.now()
-			const progress = Math.min((currentTime - startTime) / duration, 1)
-
-			// Эффект easing для более плавной анимации
-			const easeOutQuart = 1 - Math.pow(1 - progress, 4)
-
-			const newLat = startPosition.lat + (targetPosition.lat - startPosition.lat) * easeOutQuart
-			const newLon = startPosition.lon + (targetPosition.lon - startPosition.lon) * easeOutQuart
-
-			const newPosition = { lat: newLat, lon: newLon }
-
-			// Обновляем обе позиции синхронно
-			setAnimatedMarkerPosition?.(newPosition)
-			oldMarkerPosition.current = newPosition
-
-			if (progress < 1) {
-				requestAnimationFrame(animateFrame)
-			} else {
-				setIsAnimating(false)
-			}
-		}
-
-		requestAnimationFrame(animateFrame)
-	}
-
-	const animateHeading = (targetHeading: number, duration: number = 300) => {
-		if (isHeadingAnimating) return
-		if (typeof oldHeading.current !== 'number' || typeof targetHeading !== 'number') return
-
-		setIsHeadingAnimating(true)
-		const startHeading = oldHeading.current
-		const startTime = Date.now()
-
-		// Нормализуем углы для корректного расчета кратчайшего пути
-		const normalizedStart = ((startHeading % 360) + 360) % 360
-		const normalizedTarget = ((targetHeading % 360) + 360) % 360
-
-		// Вычисляем кратчайший путь поворота
-		let diff = normalizedTarget - normalizedStart
-		if (diff > 180) {
-			diff -= 360
-		} else if (diff < -180) {
-			diff += 360
-		}
-
-		const animateFrame = () => {
-			const currentTime = Date.now()
-			const progress = Math.min((currentTime - startTime) / duration, 1)
-
-			// Эффект easing для плавной анимации
-			const easeOutQuart = 1 - Math.pow(1 - progress, 4)
-
-			const newHeading = startHeading + diff * easeOutQuart
-
-			setAnimatedHeading(newHeading)
-			oldHeading.current = newHeading
-
-			if (progress < 1) {
-				requestAnimationFrame(animateFrame)
-			} else {
-				// Убеждаемся, что конечное значение точно равно целевому
-				setAnimatedHeading(targetHeading)
-				setIsHeadingAnimating(false)
-			}
-		}
-
-		requestAnimationFrame(animateFrame)
-	}
-
-	useEffect(() => {
-		if (typeof oldHeading.current === 'number' && typeof props.heading === 'number') {
-			animateHeading(props.heading, 300)
-		}
-	}, [props.heading])
-
-	useEffect(() => {
-		if (props.markerPosition && !isFirstRenderPosition.current) {
-			oldMarkerPosition.current = props.markerPosition
-			isFirstRenderPosition.current = true
-		}
-	}, [props.markerPosition])
-
-	useEffect(() => {
-		if (props.markerPosition && oldMarkerPosition.current) {
-			animateToPosition(props.markerPosition, 500)
-		}
-	}, [props.markerPosition])
+	useImperativeHandle(ref, () => ({
+		setMapCenter: (center, durationInSeconds, zoom) => changeMapCenter(center, durationInSeconds, zoom),
+		fitAllMarkers: (durationInSeconds) => fitAllMarkers(durationInSeconds)
+	}))
 
 	const renderLines = (locations: IWorkoutLocationStorageItem[] | undefined) => {
 		if (!locations || locations.length < 2) return null
@@ -352,29 +254,52 @@ const MapComponent = (props: IProps) => {
 		return elements
 	}
 
-	// console.log('Render MapComponent') @TODO слишком частный ререндер
+	const fitAllMarkers = (durationInSeconds?: number) => {
+		if (!mapRef.current) return
+		mapRef.current.fitAllMarkers(durationInSeconds, Animation.SMOOTH)
+	}
+
+	const changeMapCenter = (center: ILatLng | null, durationInSeconds?: number, zoom?: number) => {
+		if (!center) return
+		if (!mapRef.current) return
+		mapRef.current.getCameraPosition((cameraPosition) => {
+			if (!mapRef.current) return
+
+			mapRef.current.setCenter(
+				center,
+				zoom ?? cameraPosition.zoom,
+				cameraPosition.azimuth,
+				cameraPosition.tilt,
+				durationInSeconds ?? 1,
+				Animation.SMOOTH
+			)
+		})
+	}
+
+	// console.log('Render MapComponent') @TODO слишком частый ререндер
 	return (
 		<View className="flex-1" style={{ overflow: 'hidden', borderRadius: props.rounded || 0 }}>
 			<Button variant="white" onPress={() => removeAllWorkoutStorage()}>
 				REMOVE ALL WORKOUT STORAGE
 			</Button>
 			<Yamap
+				ref={mapRef}
 				nightMode
-				initialRegion={{ ...(props.mapCenter ? props.mapCenter : DEFAULT_MAP_CENTER), zoom: 12 }}
+				initialRegion={{ ...DEFAULT_MAP_CENTER, zoom: 12 }}
 				style={{ flex: 1, maxHeight: props.maxMapHeight, minHeight: props.minMapHeight }}
 				logoPosition={{ horizontal: 'right', vertical: 'top' }}
 				// followUser // @TODO не работает / 2d 3d?
 				showUserPosition={false}
-				tiltGesturesEnabled={false}
-				rotateGesturesEnabled
+				tiltGesturesDisabled={true}
+				rotateGesturesDisabled={true} // @TODO
 			>
 				{/*<DirectionMarkersDebug center={{ lat: 53.374451, lon: 49.460469 }} />*/}
-				<UserLocationMarker
-					position={animatedMarkerPosition}
-					// position={{ lat: 53.374451, lon: 49.460469 }}
-					accuracy={props.accuracy}
-					heading={animatedHeading}
-				/>
+				{props.initialMarkerLocation && (
+					<UserLocationMarker
+						ref={props.userLocationMarkerRef}
+						initialPosition={props.initialMarkerLocation}
+					/>
+				)}
 
 				{/*<PauseLocationMarker position={{ lat: 53.374451, lon: 49.460469 }} />*/}
 				{/*<ResumeLocationMarker position={{ lat: 53.374451, lon: 49.560469 }} />*/}
@@ -384,6 +309,8 @@ const MapComponent = (props: IProps) => {
 			</Yamap>
 		</View>
 	)
-}
+})
+
+MapComponent.displayName = 'MapComponent'
 
 export default MapComponent

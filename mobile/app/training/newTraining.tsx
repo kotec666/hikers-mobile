@@ -21,7 +21,7 @@ import {
 	setWorkoutItems,
 	startAndStoreNewActiveWorkout
 } from '@/store/workoutStorage'
-import { ILatLng } from '@/components/map/MapComponent'
+import { ILatLng, MapComponentHandle } from '@/components/map/MapComponent'
 import { useRouter } from 'expo-router'
 import { useLatest } from '@/hooks/useLatest'
 import { initializeNotifications } from '@/helpers/notifications'
@@ -35,6 +35,8 @@ import notifee, {
 import { AllGeolocationPermissionsHandle } from '@/components/AllGeolocationPermissions'
 import * as Notification from 'expo-notifications'
 import { TrainingType } from '../../../shared/enums'
+import { UserLocationMarkerHandle } from '@/components/ui/UserLocationMarker'
+import { Button } from '@/components/ui/Button'
 
 initializeNotifications()
 
@@ -89,14 +91,12 @@ export default function NewTraining() {
 	const insets = useSafeAreaInsets()
 	const toast = useToast()
 	const router = useRouter()
+	const mapComponentRef = useRef<MapComponentHandle>(null)
+	const userLocationMarkerRef = useRef<UserLocationMarkerHandle>(null)
 	const permissionsRef = useRef<AllGeolocationPermissionsHandle>(null)
 	const locationSubscriptionRef = useRef<null | Location.LocationSubscription>(null)
 	const headingSubscriptionRef = useRef<null | Location.LocationSubscription>(null)
 	const notificationIntervalRef = useRef<null | NodeJS.Timeout>(null)
-	const [mapCenter, setMapCenter] = useState<ILatLng>(DEFAULT_MAP_CENTER) // { lat: 53.374427, lon: 49.460595 } // @TODO
-	const [markerPosition, setMarkerPosition] = useState<ILatLng | null>(null) // { lat: 53.422506, lon: 49.4781051 }
-	const [accuracy, setAccuracy] = useState<number | null>(null)
-	const [heading, setHeading] = useState(0)
 	const [speedMPS, setSpeedMPS] = useState(0) // метры в секунду
 
 	const [state, setState] = useState<{
@@ -104,14 +104,24 @@ export default function NewTraining() {
 		isWorkoutStarted: boolean
 		isPaused: boolean
 		myLocations: IWorkoutLocationStorageItem[]
+		initialMarkerLocation: ILatLng | null
+		// headingDebug: number | null
 	}>({
 		chosenWorkout: WorkoutTypesData[0],
 		isWorkoutStarted: false,
 		isPaused: false,
-		myLocations: []
+		myLocations: [],
+		initialMarkerLocation: null
+		// headingDebug: null
 	})
 
 	const isPausedRef = useLatest(state.isPaused)
+
+	useEffect(() => {
+		if (permissionsRef.current) {
+			permissionsRef.current.checkPermissions()
+		}
+	}, [permissionsRef.current])
 
 	useEffect(() => {
 		// @TODO useLayoutEffect?
@@ -195,8 +205,24 @@ export default function NewTraining() {
 						console.warn('Пропущена неточная точка:', location.coords.accuracy)
 						return
 					}
-					setMarkerPosition({ lat: location.coords.latitude, lon: location.coords.longitude })
-					setAccuracy(location.coords.accuracy)
+
+					const newLatLon = {
+						lat: location.coords.latitude,
+						lon: location.coords.longitude
+					}
+
+					console.log('newLatLon', newLatLon)
+
+					if (mapComponentRef.current) {
+						if (!state.initialMarkerLocation) {
+							setState((s) => ({ ...s, initialMarkerLocation: newLatLon }))
+						}
+						mapComponentRef.current.setMapCenter(newLatLon, 2)
+					}
+					if (userLocationMarkerRef.current) {
+						userLocationMarkerRef.current.setMarkerPosition(newLatLon)
+						userLocationMarkerRef.current.setAccuracy(location.coords.accuracy)
+					}
 
 					if (!isPausedRef.current) {
 						setSpeedMPS(location.coords.speed ?? 0)
@@ -213,7 +239,9 @@ export default function NewTraining() {
 
 	const startHeadingTracking = async () => {
 		headingSubscriptionRef.current = await Location.watchHeadingAsync((data) => {
-			setHeading(data.trueHeading ?? data.magHeading)
+			if (userLocationMarkerRef.current) {
+				userLocationMarkerRef.current.setMarkerHeading(data.trueHeading ?? data.magHeading)
+			}
 		})
 	}
 
@@ -241,7 +269,17 @@ export default function NewTraining() {
 		}
 	}
 
+	async function getFastUserPosition() {
+		const last = await Location.getLastKnownPositionAsync()
+		if (last) return last
+
+		return await Location.getCurrentPositionAsync({
+			accuracy: Location.Accuracy.Low
+		})
+	}
+
 	const getLastUserPosition = async (): Promise<Location.LocationObject> => {
+		console.log('getLastUserPosition')
 		// @TODO здесь нет фильтра по accuracy > 50
 		return await Location.getCurrentPositionAsync()
 	}
@@ -294,9 +332,24 @@ export default function NewTraining() {
 	}
 
 	const allPermissionsGrantedCallback = async () => {
-		const lastUserPosition = await getLastUserPosition()
-		setMarkerPosition({ lat: lastUserPosition.coords.latitude, lon: lastUserPosition.coords.longitude })
-		// setMapCenter({ lat: lastUserPosition.coords.latitude, lon: lastUserPosition.coords.longitude }) @TODO
+		const lastUserPosition = await getFastUserPosition()
+		const newLatLon = {
+			lat: lastUserPosition.coords.latitude,
+			lon: lastUserPosition.coords.longitude
+		}
+
+		setState((s) => ({ ...s, initialMarkerLocation: newLatLon }))
+		if (mapComponentRef.current) {
+			mapComponentRef.current.setMapCenter(newLatLon, 2, 13)
+		}
+		if (userLocationMarkerRef.current) {
+			userLocationMarkerRef.current.setAccuracy(lastUserPosition.coords.accuracy)
+			userLocationMarkerRef.current.setMarkerHeading(lastUserPosition.coords.heading)
+			userLocationMarkerRef.current.setMarkerPosition({
+				lat: lastUserPosition.coords.latitude,
+				lon: lastUserPosition.coords.longitude
+			})
+		}
 	}
 
 	const handleClickPause = async () => {
@@ -339,9 +392,11 @@ export default function NewTraining() {
 			isPaused: false,
 			myLocations: []
 		}))
-		setMarkerPosition(null)
-		setAccuracy(null)
-		setHeading(0)
+		if (userLocationMarkerRef.current) {
+			userLocationMarkerRef.current.setAccuracy(null)
+			userLocationMarkerRef.current.setMarkerPosition(null)
+		}
+		// setAccuracy(null)
 		router.push('/training/viewWorkout')
 	}
 
@@ -365,6 +420,9 @@ export default function NewTraining() {
 			if (headingSubscriptionRef.current) {
 				headingSubscriptionRef.current.remove()
 				headingSubscriptionRef.current = null
+			}
+			if (mapComponentRef.current) {
+				mapComponentRef.current = null
 			}
 			stopNotificationTimer()
 		}
@@ -453,42 +511,30 @@ export default function NewTraining() {
 		<SafeAreaProvider style={{ paddingTop: insets.top }}>
 			<GestureHandlerRootView style={{ flex: 1 }}>
 				<SafeAreaView style={styles.container}>
-					{/*<Button variant="white" onPress={() => setHeading(0)}>*/}
-					{/*	heading = 0° Север*/}
-					{/*</Button>*/}
-					{/*<Button variant="white" onPress={() => setHeading(90)}>*/}
-					{/*	heading = 90° Восток*/}
-					{/*</Button>*/}
-					{/*<Button variant="white" onPress={() => setHeading(180)}>*/}
-					{/*	heading = 180° Юг*/}
-					{/*</Button>*/}
-					{/*<Button variant="white" onPress={() => setHeading(270)}>*/}
-					{/*	heading = 270° Запад*/}
-					{/*</Button>*/}
 					{state.isWorkoutStarted ? (
 						<WorkoutStarted
+							// headingDebug={state.headingDebug}
+							initialMarkerLocation={state.initialMarkerLocation}
 							userLocations={state.myLocations}
 							handleClickPause={handleClickPause}
 							handleClickEndWorkout={handleClickEndWorkout}
 							workoutType={state.chosenWorkout.type}
 							isPaused={state.isPaused}
-							markerPosition={markerPosition}
-							accuracy={accuracy}
 							speedMPS={speedMPS}
-							heading={heading}
-							mapCenter={mapCenter}
+							mapComponentRef={mapComponentRef}
+							userLocationMarkerRef={userLocationMarkerRef}
 						/>
 					) : (
 						<NewWorkout
-							markerPosition={markerPosition}
-							accuracy={accuracy}
-							heading={heading}
+							initialMarkerLocation={state.initialMarkerLocation}
 							allPermsGranted={allPermissionsGrantedCallback}
 							handleClickStart={handleClickStart}
 							handleChangeWorkout={handleChangeWorkout}
 							chosenWorkout={state.chosenWorkout}
 							WorkoutTypesData={WorkoutTypesData}
 							permissionsRef={permissionsRef}
+							mapComponentRef={mapComponentRef}
+							userLocationMarkerRef={userLocationMarkerRef}
 						/>
 					)}
 				</SafeAreaView>
