@@ -15,6 +15,7 @@ import { ERRORS } from '@shared/errors';
 import { CommonDto } from 'src/common/dto/common.dto';
 import { TrainingType } from '@shared/enums';
 import { round, clampToPg } from '@helpers';
+import { calculateCalories } from '@shared/helpers';
 
 const MAX_TIME_TO_SYNC_AFTER_FINISH_TRAINING = 60 * 1000; // 1 минута
 
@@ -115,7 +116,7 @@ export class TrainingsService {
 			for (const participant of participants) {
 				await tx.insert(trainingMetrics).values({
 					participantId: participant.id,
-					...this.calcMetrics(participant),
+					...this.calcMetrics(participant, activeTraining.type),
 				});
 			}
 
@@ -167,7 +168,7 @@ export class TrainingsService {
 		} else {
 			await this.db.db.insert(trainingRoutes).values({
 				participantId: participant.id,
-				points: metrics,
+				points: metrics, // @TODO distance самому считать, с фронта не будет
 
 				createdAt: new Date(),
 			});
@@ -505,24 +506,39 @@ export class TrainingsService {
 	// eslint-disable-next-line @typescript-eslint/no-unused-vars
 	public async rejectInvite(invitedUserId: string, userCreatorId: string): Promise<any> {}
 
-	private calcMetrics(participant: TrainingParticipantDto.ExtendedEntity): TrainingMetricsDto.Entity {
+	private calcMetrics(
+		participant: TrainingParticipantDto.ExtendedEntity,
+		type: TrainingType,
+	): TrainingMetricsDto.Entity {
 		let distanceM = 0;
+		let pausedDistanceM = 0;
 		let maxAltitudeM = 0;
+		let pausedTimeMs = 0;
 
-		participant.route?.points?.forEach((point) => {
-			distanceM += point.distance;
-			maxAltitudeM = Math.max(point.alt, maxAltitudeM);
+		participant.route?.points?.reduce((prev, curr) => {
+			distanceM += curr.distance;
+			maxAltitudeM = Math.max(curr.alt, maxAltitudeM);
+
+			if (prev.paused) {
+				pausedTimeMs += curr.rel_ts - prev.rel_ts;
+				pausedDistanceM += prev.distance;
+			}
+
+			return curr;
 		});
 
-		distanceM = round(distanceM);
+		distanceM = Math.max(round(distanceM - pausedDistanceM), 0);
 		const distanceKmh = round(distanceM / 1000, 2);
-		const timeSec = round((participant.route?.points?.at(-1)?.rel_ts ?? 0) / 1000);
+
+		const allTimeMs = participant.route?.points?.at(-1)?.rel_ts ?? 0;
+		const activeTimeMs = Math.max(allTimeMs - pausedTimeMs, 0);
+		const timeSec = round(activeTimeMs / 1000);
 
 		const avgTempoSecondsPerKm = round(timeSec / distanceKmh);
 		const avgSpeedMPerSec = round(distanceM / timeSec);
 
 		const altitudeGainM = round(maxAltitudeM - (participant.route?.points?.at(0)?.alt ?? 0));
-		const kkcal = 1; // @TODO
+		const kkcal = calculateCalories(activeTimeMs, distanceM, type);
 
 		return {
 			timeSec: clampToPg(trainingMetrics.timeSec, timeSec),
