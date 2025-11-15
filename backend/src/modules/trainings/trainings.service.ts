@@ -15,7 +15,7 @@ import { ERRORS } from '@shared/errors';
 import { CommonDto } from 'src/common/dto/common.dto';
 import { TrainingType } from '@shared/enums';
 import { round, clampToPg } from '@helpers';
-import { calculateCalories } from '@shared/helpers';
+import { calculateCalories, haversineDistance } from '@shared/helpers';
 
 const MAX_TIME_TO_SYNC_AFTER_FINISH_TRAINING = 60 * 1000; // 1 минута
 
@@ -140,7 +140,23 @@ export class TrainingsService {
 			}
 		}
 
-		await this.upsertRoute(training.participant, dto.metrics);
+		const points: TrainingRouteNode[] = [];
+		dto.metrics.reduce((prev, curr) => {
+			points.push({
+				rel_ts: curr.relTs,
+				distance: haversineDistance(curr.lat, curr.lng, prev.lat, prev.lng),
+				speed_kmh: curr.speed_kmh,
+				alt: curr.alt,
+
+				paused: curr.paused,
+				lat: curr.lat,
+				lng: curr.lng,
+			});
+
+			return curr;
+		});
+
+		await this.upsertRoute(training.participant, points);
 
 		return { success: true };
 	}
@@ -534,8 +550,8 @@ export class TrainingsService {
 		const activeTimeMs = Math.max(allTimeMs - pausedTimeMs, 0);
 		const timeSec = round(activeTimeMs / 1000);
 
-		const avgTempoSecondsPerKm = round(timeSec / distanceKmh);
-		const avgSpeedMPerSec = round(distanceM / timeSec);
+		const avgTempoSecondsPerKm = distanceKmh === 0 ? 0 : round(timeSec / distanceKmh);
+		const avgSpeedMPerSec = timeSec === 0 ? 0 : round(distanceM / timeSec);
 
 		const altitudeGainM = round(maxAltitudeM - (participant.route?.points?.at(0)?.alt ?? 0));
 		const kkcal = calculateCalories(activeTimeMs, distanceM, type);

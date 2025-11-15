@@ -5,6 +5,23 @@ import { TrainingRouteNode } from '../database/schema';
 import { IsHexColor } from '@validation/decorators';
 import { ERRORS } from '@shared/errors';
 
+/**
+ * Точка маршрута с клиента
+ */
+export interface TrainingRouteNodeClient {
+	/** Метка времени относительно даты СТАРТА (started_at) тренировки */
+	relTs: number;
+	/** Высота */
+	alt: number;
+	/** Скорость км/ч */
+	speed_kmh: number;
+
+	paused: boolean;
+
+	lat: number;
+	lng: number;
+}
+
 export namespace TrainingDto {
 	export type Entity = {
 		id: string;
@@ -40,7 +57,7 @@ export namespace TrainingDto {
 	export class Sync {
 		// @TODO валидировать
 		@IsArray()
-		metrics: TrainingRouteNode[];
+		metrics: TrainingRouteNodeClient[];
 	}
 }
 
