@@ -1,6 +1,6 @@
-import React, { forwardRef, useEffect, useImperativeHandle, useRef, useState } from 'react'
-import { Marker, MarkerRef, Point } from 'react-native-yamap-plus'
-import { Animated, Easing, View, Text } from 'react-native'
+import React, { forwardRef, useEffect, useImperativeHandle, useRef, useState, useCallback } from 'react'
+import { Marker, MarkerRef, Point, Circle } from 'react-native-yamap-plus'
+import { Animated, Easing, View } from 'react-native'
 import UserWithCircleSvg from '@/components/svg/UserWithCircleSvg'
 import { ILatLng } from '@/components/map/MapComponent'
 
@@ -9,60 +9,44 @@ interface IProps {
 	triangleScale?: number
 }
 
+interface IAccuracyProps {}
+
 export interface UserLocationMarkerHandle {
 	setAccuracy: (accuracy: number | null) => void
-	// setHeading: (heading: number | null) => void
 	setMarkerPosition: (point: Point | null, durationInMs?: number) => void
 	setMarkerHeading: (heading: number | null, durationInSeconds?: number) => void
 }
 
+export interface AccuracyCircleHandle {
+	hideCircle: (hidden: boolean) => void
+	setCircleCenter: (center: Point | null) => void
+	setAccuracy: (accuracy: number | null) => void
+}
+
 const MAX_OPACITY = 0.5
 
-const UserLocationMarker = forwardRef<UserLocationMarkerHandle, IProps>((props, ref) => {
-	const initialPoint = useRef(props.initialPosition).current
+const AccuracyCircle = forwardRef<AccuracyCircleHandle, IAccuracyProps>((props, ref) => {
 	const pulseAnim = useRef(new Animated.Value(0)).current
-	const oldHeading = useRef<number | null>(null)
-	const [animatedHeading, setAnimatedHeading] = useState<number | null>(null)
-	const [isHeadingAnimating, setIsHeadingAnimating] = useState(false)
-	const [radius, setRadius] = useState(0)
-	const [opacity, setOpacity] = useState(MAX_OPACITY)
-	const [currentAccuracy, setCurrentAccuracy] = useState(0)
 	const nextAccuracy = useRef<number | null>(null)
-	const markerRef = useRef<MarkerRef>(null)
+	const circleCenterRef = useRef<ILatLng | undefined | null>(null)
+	const [opacity, setOpacity] = useState(MAX_OPACITY)
+	const [radius, setRadius] = useState(0)
+	const [currentAccuracy, setCurrentAccuracy] = useState(0)
+	const [isCircleHidden, setIsCircleHidden] = useState(false)
 
 	useImperativeHandle(ref, () => ({
+		setCircleCenter: (center) => {
+			circleCenterRef.current = center
+		},
+		hideCircle: (hidden) => {
+			setIsCircleHidden(hidden)
+		},
 		setAccuracy: (accuracy) => {
 			if (accuracy !== currentAccuracy) {
 				nextAccuracy.current = accuracy ?? 0
 			}
-		},
-		// setHeading: (heading) => {
-		// 	if (oldHeading.current === null && typeof heading === 'number') {
-		// 		oldHeading.current = heading
-		// 		setAnimatedHeading(heading)
-		// 		return
-		// 	}
-		//
-		// 	animateHeading(heading, 300)
-		// },
-		setMarkerPosition: (point: Point | null, durationInMs?: number) => animatedMoveTo(point, durationInMs),
-		setMarkerHeading: (heading: number | null, durationInSeconds?: number) =>
-			animatedRotateTo(heading, durationInSeconds)
+		}
 	}))
-
-	const animatedMoveTo = (point: Point | null, durationInMs: number = 1500) => {
-		if (!markerRef.current) return
-		if (!point) return
-
-		markerRef.current.animatedMoveTo(point, durationInMs)
-	}
-
-	const animatedRotateTo = (angle: number | null, durationInMs: number = 250) => {
-		if (!markerRef.current) return
-		if (angle === null) return
-
-		markerRef.current.animatedRotateTo(angle, durationInMs)
-	}
 
 	useEffect(() => {
 		let isCancelled = false
@@ -76,12 +60,10 @@ const UserLocationMarker = forwardRef<UserLocationMarkerHandle, IProps>((props, 
 				useNativeDriver: false
 			}).start(({ finished }) => {
 				if (finished && !isCancelled) {
-					// Если есть новое accuracy — применяем его после цикла
 					if (nextAccuracy.current !== null) {
 						setCurrentAccuracy(nextAccuracy.current)
 						nextAccuracy.current = null
 					}
-					// Перезапускаем следующий цикл
 					animate()
 				}
 			})
@@ -104,41 +86,86 @@ const UserLocationMarker = forwardRef<UserLocationMarkerHandle, IProps>((props, 
 		}
 	}, [currentAccuracy, pulseAnim])
 
+	if (radius > 0.3 && circleCenterRef.current && !isCircleHidden) {
+		console.log('render UserLocationMarker >>> Circle', radius)
+		return (
+			<Circle
+				center={circleCenterRef.current}
+				radius={radius}
+				fillColor={`rgba(0,200,100,${opacity})`}
+				strokeColor="transparent"
+				strokeWidth={0}
+				zIndex={5}
+			/>
+		)
+	}
+})
+
+AccuracyCircle.displayName = 'AccuracyCircle'
+
+const UserLocationMarker = forwardRef<UserLocationMarkerHandle, IProps>((props, ref) => {
+	const initialPoint = useRef(props.initialPosition).current
+	const markerRef = useRef<MarkerRef>(null)
+	const accuracyRef = useRef<AccuracyCircleHandle>(null)
+
+	useImperativeHandle(ref, () => ({
+		setAccuracy: (accuracy) => {
+			if (accuracyRef.current) {
+				accuracyRef.current.setAccuracy(accuracy)
+			}
+		},
+		setMarkerPosition: (point: Point | null, durationInMs?: number) => {
+			animatedMoveTo(point, durationInMs)
+			if (accuracyRef.current) {
+				accuracyRef.current.setCircleCenter(point)
+			}
+		},
+		setMarkerHeading: (heading: number | null, durationInMs?: number) => {
+			animatedRotateTo(heading, durationInMs)
+		}
+	}))
+
+	const animatedMoveTo = useCallback((point: Point | null, durationInMs: number = 1500) => {
+		if (!markerRef.current || !point) return
+		if (accuracyRef.current) {
+			accuracyRef.current.hideCircle(true)
+		}
+
+		markerRef.current.animatedMoveTo(point, durationInMs)
+		setTimeout(() => {
+			if (accuracyRef.current) {
+				accuracyRef.current.hideCircle(false)
+			}
+		}, durationInMs)
+	}, [])
+
+	const animatedRotateTo = useCallback((angle: number | null, durationInMs: number = 250) => {
+		if (!markerRef.current || angle === null) return
+		markerRef.current.animatedRotateTo(angle, durationInMs)
+	}, [])
+
 	if (!initialPoint?.lat || !initialPoint?.lon) return null
+
+	console.log('render UserLocationMarker')
 	return (
 		<>
 			<Marker ref={markerRef} point={initialPoint} zIndex={6} rotated={true}>
 				<View>
 					<UserWithCircleSvg heading={0} />
 				</View>
-				{currentAccuracy > 0 && (
-					<Animated.View
-						style={{
-							position: 'absolute',
-							width: radius * 2,
-							height: radius * 2,
-							borderRadius: radius,
-							backgroundColor: `rgba(0, 200, 100, ${opacity})`,
-							transform: [{ translateX: -radius }, { translateY: -radius }]
-						}}
-					/>
-				)}
 			</Marker>
 
-			{/*{radius > 0.3 && (*/}
-			{/*	<Circle*/}
-			{/*		center={initialPoint}*/}
-			{/*		radius={radius}*/}
-			{/*		fillColor={`rgba(0,200,100,${opacity})`}*/}
-			{/*		strokeColor={'transparent'}*/}
-			{/*		strokeWidth={0}*/}
-			{/*		zIndex={5}*/}
-			{/*	/>*/}
-			{/*)}*/}
+			<AccuracyCircle ref={accuracyRef} />
 		</>
 	)
 })
 
 UserLocationMarker.displayName = 'UserLocationMarker'
 
-export default UserLocationMarker
+export default React.memo(
+	UserLocationMarker,
+	(prev, next) =>
+		prev.triangleScale === next.triangleScale &&
+		prev.initialPosition.lat === next.initialPosition.lat &&
+		prev.initialPosition.lon === next.initialPosition.lon
+)

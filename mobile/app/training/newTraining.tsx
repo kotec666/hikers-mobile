@@ -215,9 +215,12 @@ export default function NewTraining() {
 
 					if (mapComponentRef.current) {
 						if (!state.initialMarkerLocation) {
+							//@TODO может тут неправильно, при перезаходе сделать?
 							setState((s) => ({ ...s, initialMarkerLocation: newLatLon }))
 						}
-						mapComponentRef.current.setMapCenter(newLatLon, 2)
+						// @TODO если впервые получили точку, то центр должен меняться мгновенно
+						// @TODO или анимацию сделать линейной
+						// mapComponentRef.current.setMapCenter(newLatLon, 2)
 					}
 					if (userLocationMarkerRef.current) {
 						userLocationMarkerRef.current.setMarkerPosition(newLatLon)
@@ -340,7 +343,8 @@ export default function NewTraining() {
 
 		setState((s) => ({ ...s, initialMarkerLocation: newLatLon }))
 		if (mapComponentRef.current) {
-			mapComponentRef.current.setMapCenter(newLatLon, 2, 13)
+			// @TODO
+			// mapComponentRef.current.setMapCenter(newLatLon, 2, 13)
 		}
 		if (userLocationMarkerRef.current) {
 			userLocationMarkerRef.current.setAccuracy(lastUserPosition.coords.accuracy)
@@ -511,6 +515,34 @@ export default function NewTraining() {
 		<SafeAreaProvider style={{ paddingTop: insets.top }}>
 			<GestureHandlerRootView style={{ flex: 1 }}>
 				<SafeAreaView style={styles.container}>
+					<Button
+						variant="white"
+						onPress={() => {
+							if (userLocationMarkerRef.current) {
+								userLocationMarkerRef.current.setMarkerPosition({
+									lat: 53.377398777940066,
+									lon: 49.44734799788105
+								})
+								userLocationMarkerRef.current.setAccuracy(10)
+							}
+						}}
+					>
+						переместить 1
+					</Button>
+					<Button
+						variant="white"
+						onPress={() => {
+							if (userLocationMarkerRef.current) {
+								userLocationMarkerRef.current.setMarkerPosition({
+									lat: 53.37815399436764,
+									lon: 49.44731581137271
+								})
+								userLocationMarkerRef.current.setAccuracy(20)
+							}
+						}}
+					>
+						переместить 2
+					</Button>
 					{state.isWorkoutStarted ? (
 						<WorkoutStarted
 							// headingDebug={state.headingDebug}

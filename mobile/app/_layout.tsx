@@ -6,7 +6,7 @@ import { fontFamily } from '@/constants/Fonts'
 import { YamapInstance } from 'react-native-yamap-plus'
 import { useAuthStore } from '@/store/authStore'
 import { useEffect, useState } from 'react'
-import { ActivityIndicator, View } from 'react-native'
+import { ActivityIndicator, Platform, View } from 'react-native'
 import { NotificationProvider } from '@/components/providers/NotificationProvider'
 import notifee, { EventType } from '@notifee/react-native'
 import { setActiveWorkoutPauseState } from '@/store/workoutStorage'
@@ -99,7 +99,17 @@ export default function RootLayout() {
 					headerShown: false,
 					contentStyle: {
 						backgroundColor: Colors['black-0d']
-					}
+					},
+					// Убираем iOS-специфичные пропсы для Android
+					...(Platform.OS === 'android' && {
+						headerBackTitleVisible: undefined,
+						headerBackTitle: undefined,
+						headerLargeTitle: undefined,
+						headerLargeTitleFontFamily: undefined,
+						headerLargeTitleFontWeight: undefined,
+						headerLargeTitleHideShadow: undefined,
+						disableBackButtonMenu: undefined
+					})
 				}}
 			>
 				<Stack.Protected guard={isAuthenticated}>
