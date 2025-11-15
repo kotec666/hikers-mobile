@@ -12,7 +12,8 @@
 		"baseUrl": "./",
 		"paths": {
 			"@validation/*": ["./src/common/validation/*"],
-			"@shared/*": ["./src/shared/*"]
+			"@shared/*": ["./src/shared/*"],
+			"@helpers": ["./src/common/helpers"]
 		},
 		"incremental": true,
 		"skipLibCheck": true,

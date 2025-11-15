@@ -5,7 +5,7 @@ export const ParseEnumArray = createParamDecorator((data: { key: string; enum: o
 	const request = ctx.switchToHttp().getRequest();
 	const value = request.query[data.key];
 
-	if (!value) return [];
+	if (!value) return value;
 
 	if (typeof value !== 'string') {
 		throw new BadRequestException(`_${data.key}:${ERRORS.BAD_REQUEST}`);
