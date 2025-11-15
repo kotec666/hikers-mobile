@@ -1,9 +1,26 @@
 ﻿import { TrainingType } from '@shared/enums';
 import { UserDto } from '../user/user.dto';
-import { IsEnum } from 'class-validator';
+import { IsArray, IsEnum } from 'class-validator';
 import { TrainingRouteNode } from '../database/schema';
 import { IsHexColor } from '@validation/decorators';
 import { ERRORS } from '@shared/errors';
+
+/**
+ * Точка маршрута с клиента
+ */
+export interface TrainingRouteNodeClient {
+	/** Метка времени относительно даты СТАРТА (started_at) тренировки */
+	relTs: number;
+	/** Высота */
+	alt: number;
+	/** Скорость км/ч */
+	speed_kmh: number;
+
+	paused: boolean;
+
+	lat: number;
+	lng: number;
+}
 
 export namespace TrainingDto {
 	export type Entity = {
@@ -39,7 +56,8 @@ export namespace TrainingDto {
 
 	export class Sync {
 		// @TODO валидировать
-		metrics: TrainingRouteNode[];
+		@IsArray()
+		metrics: TrainingRouteNodeClient[];
 	}
 }
 
@@ -68,8 +86,8 @@ export namespace TrainingRouteDto {
 
 export namespace TrainingMetricsDto {
 	export type Entity = {
-		timeMin: number;
-		avgSpeedKmh: number;
+		timeSec: number;
+		avgSpeedMPerSec: number;
 		avgTempoSecondsPerKm: number;
 		distanceM: number;
 		altitudeGainM: number;

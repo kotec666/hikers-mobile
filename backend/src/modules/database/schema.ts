@@ -222,9 +222,10 @@ export const trainingMetrics = pgTable(
 		id: uuid('id').primaryKey().defaultRandom(),
 		participantId: uuid('participant_id')
 			.notNull()
+			.unique()
 			.references(() => trainingParticipants.id),
-		timeMin: integer('time_min').notNull(),
-		avgSpeedKmh: smallint('avg_speed_kmh').notNull(),
+		timeSec: integer('time_sec').notNull(),
+		avgSpeedMPerSec: smallint('avg_speed_m_per_sec').notNull(),
 		avgTempoSecondsPerKm: smallint('avg_tempo_seconds_per_km').notNull(),
 		distanceM: integer('distance_m').notNull(),
 		altitudeGainM: smallint('altitude_gain_m').notNull(),
