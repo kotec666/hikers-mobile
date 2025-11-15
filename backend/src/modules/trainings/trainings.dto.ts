@@ -1,6 +1,6 @@
 ﻿import { TrainingType } from '@shared/enums';
 import { UserDto } from '../user/user.dto';
-import { IsEnum } from 'class-validator';
+import { IsArray, IsEnum } from 'class-validator';
 import { TrainingRouteNode } from '../database/schema';
 import { IsHexColor } from '@validation/decorators';
 import { ERRORS } from '@shared/errors';
@@ -39,6 +39,7 @@ export namespace TrainingDto {
 
 	export class Sync {
 		// @TODO валидировать
+		@IsArray()
 		metrics: TrainingRouteNode[];
 	}
 }
@@ -68,8 +69,8 @@ export namespace TrainingRouteDto {
 
 export namespace TrainingMetricsDto {
 	export type Entity = {
-		timeMin: number;
-		avgSpeedKmh: number;
+		timeSec: number;
+		avgSpeedMPerSec: number;
 		avgTempoSecondsPerKm: number;
 		distanceM: number;
 		altitudeGainM: number;

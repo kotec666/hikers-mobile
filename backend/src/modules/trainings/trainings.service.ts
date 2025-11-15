@@ -9,15 +9,14 @@ import {
 	trainingRoutes,
 	users,
 } from '../database/schema';
-import { TrainingDto, TrainingParticipantDto } from './trainings.dto';
+import { TrainingDto, TrainingMetricsDto, TrainingParticipantDto } from './trainings.dto';
 import { eq, and, isNull, isNotNull, inArray } from 'drizzle-orm';
 import { ERRORS } from '@shared/errors';
 import { CommonDto } from 'src/common/dto/common.dto';
 import { TrainingType } from '@shared/enums';
+import { round, clampToPg } from '@helpers';
 
 const MAX_TIME_TO_SYNC_AFTER_FINISH_TRAINING = 60 * 1000; // 1 минута
-const MAX_TEMPO_VALUE = 32766; // pg_smallint
-const MIN_TEMPO_VALUE = -32767; // pg_smallint
 
 @Injectable()
 export class TrainingsService {
@@ -111,22 +110,12 @@ export class TrainingsService {
 			await tx.delete(trainingInvites).where(eq(trainingInvites.trainingId, activeTraining.id));
 
 			// Всем участникам просчитываем метрики
-			const participants = await this.getParticipants(activeTraining.id);
+			const participants = await this.getExtendedParticipants(activeTraining.id);
 
 			for (const participant of participants) {
-				// @TODO после тестов переписать на адекватные расчеты
-				const distanceMeters = Date.now() % 3000;
-				const timeMinutes = Date.now() % 2000;
-				const tempo = (timeMinutes * 60) / (distanceMeters / 1000);
-
 				await tx.insert(trainingMetrics).values({
 					participantId: participant.id,
-					timeMin: timeMinutes,
-					avgSpeedKmh: Date.now() % 1000,
-					avgTempoSecondsPerKm: Math.max(Math.min(Math.trunc(tempo), MAX_TEMPO_VALUE), MIN_TEMPO_VALUE),
-					distanceM: distanceMeters,
-					altitudeGainM: Date.now() % 500,
-					kkcal: Math.trunc(distanceMeters / 100),
+					...this.calcMetrics(participant),
 				});
 			}
 
@@ -308,8 +297,8 @@ export class TrainingsService {
 					finishedAt: trainingRoutes.finishedAt,
 				},
 				metrics: {
-					timeMin: trainingMetrics.timeMin,
-					avgSpeedKmh: trainingMetrics.avgSpeedKmh,
+					timeSec: trainingMetrics.timeSec,
+					avgSpeedMPerSec: trainingMetrics.avgSpeedMPerSec,
 					avgTempoSecondsPerKm: trainingMetrics.avgTempoSecondsPerKm,
 					distanceM: trainingMetrics.distanceM,
 					altitudeGainM: trainingMetrics.altitudeGainM,
@@ -515,4 +504,33 @@ export class TrainingsService {
 
 	// eslint-disable-next-line @typescript-eslint/no-unused-vars
 	public async rejectInvite(invitedUserId: string, userCreatorId: string): Promise<any> {}
+
+	private calcMetrics(participant: TrainingParticipantDto.ExtendedEntity): TrainingMetricsDto.Entity {
+		let distanceM = 0;
+		let maxAltitudeM = 0;
+
+		participant.route?.points?.forEach((point) => {
+			distanceM += point.distance;
+			maxAltitudeM = Math.max(point.alt, maxAltitudeM);
+		});
+
+		distanceM = round(distanceM);
+		const distanceKmh = round(distanceM / 1000, 2);
+		const timeSec = round((participant.route?.points?.at(-1)?.rel_ts ?? 0) / 1000);
+
+		const avgTempoSecondsPerKm = round(timeSec / distanceKmh);
+		const avgSpeedMPerSec = round(distanceM / timeSec);
+
+		const altitudeGainM = round(maxAltitudeM - (participant.route?.points?.at(0)?.alt ?? 0));
+		const kkcal = 1; // @TODO
+
+		return {
+			timeSec: clampToPg(trainingMetrics.timeSec, timeSec),
+			avgSpeedMPerSec: clampToPg(trainingMetrics.avgSpeedMPerSec, avgSpeedMPerSec),
+			avgTempoSecondsPerKm: clampToPg(trainingMetrics.avgTempoSecondsPerKm, avgTempoSecondsPerKm),
+			distanceM: clampToPg(trainingMetrics.distanceM, distanceM),
+			altitudeGainM: clampToPg(trainingMetrics.altitudeGainM, altitudeGainM),
+			kkcal: clampToPg(trainingMetrics.kkcal, kkcal),
+		};
+	}
 }
