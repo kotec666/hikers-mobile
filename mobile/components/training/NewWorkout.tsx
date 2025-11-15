@@ -14,7 +14,7 @@ import WorkoutType from '@/components/WorkoutType'
 import { useRouter } from 'expo-router'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
 import { TrainingType } from '@shared/enums'
-import { UserLocationMarkerHandle } from '@/components/ui/UserLocationMarker'
+import { UserLocationMarkerHandle } from '@/components/map/markers/UserLocationMarker'
 
 export interface IWorkoutModeElement {
 	id: number

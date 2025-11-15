@@ -23,7 +23,7 @@ export interface IWorkout {
 }
 
 export interface IWorkoutLocationStorageItem {
-	rel_ts: number // workoutItem.locationObject.timestamp - startedAt таймстамп полученной локации относительно начала тренировки
+	relTs: number // workoutItem.locationObject.timestamp - startedAt таймстамп полученной локации относительно начала тренировки
 	locationObject: LocationObject
 	isPausedPoint: boolean
 	isSavedToServer: boolean
@@ -136,7 +136,7 @@ export const setWorkoutItem = (workoutItem: LocationObject): IWorkoutLocationSto
 
 	const workoutItemToSave: IWorkoutLocationStorageItem = {
 		locationObject: workoutItem,
-		rel_ts: lastSavedRelTs,
+		relTs: lastSavedRelTs,
 		isSavedToServer: false,
 		isPausedPoint: parsedStorage.activeWorkout?.isPaused || false
 	}
@@ -165,7 +165,7 @@ export const setWorkoutItems = (workoutItems: LocationObject[]) => {
 		const lastSavedRelTs = workoutItem.timestamp - startedAt
 
 		const workoutItemToSave = {
-			rel_ts: lastSavedRelTs,
+			relTs: lastSavedRelTs,
 			isSavedToServer: false,
 			locationObject: workoutItem,
 			isPausedPoint: parsedStorage.activeWorkout?.isPaused || false

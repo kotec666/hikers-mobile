@@ -2,22 +2,22 @@ import React from 'react'
 import { Marker } from 'react-native-yamap-plus'
 import { View } from 'react-native'
 import { ILatLng } from '@/components/map/MapComponent'
-import PauseWithCircleSvg from '@/components/svg/PauseWithCircleSvg'
+import FinishWithCircleSvg from '@/components/svg/FinishWithCircleSvg'
 
 interface Props {
 	position?: ILatLng | null
 }
 
-const PauseLocationMarker = ({ position }: Props) => {
+const FinishLocationMarker = ({ position }: Props) => {
 	if (!position?.lat || !position?.lon) return null
 
 	return (
-		<Marker point={position} zIndex={6}>
+		<Marker point={position} zIndex={5}>
 			<View>
-				<PauseWithCircleSvg />
+				<FinishWithCircleSvg />
 			</View>
 		</Marker>
 	)
 }
 
-export default PauseLocationMarker
+export default FinishLocationMarker

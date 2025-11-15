@@ -1,16 +1,17 @@
 import { Animation, Polyline, Yamap, YamapRef } from 'react-native-yamap-plus'
-import UserLocationMarker, { UserLocationMarkerHandle } from '@/components/ui/UserLocationMarker'
-import React, { forwardRef, JSX, useImperativeHandle, useRef, useState } from 'react'
+import React, { forwardRef, JSX, useCallback, useImperativeHandle, useRef } from 'react'
 import { View } from 'react-native'
 import { IWorkoutLocationStorageItem, removeAllWorkoutStorage } from '@/store/workoutStorage'
 import { Colors } from '@/constants/Colors'
 import { Button } from '@/components/ui/Button'
-import PauseLocationMarker from '@/components/ui/PauseLocationMarker'
-import ResumeLocationMarker from '@/components/ui/ResumeLocationMarker'
+import { debounce } from '@/helpers/debounce'
+import UserLocationMarker, { UserLocationMarkerHandle } from '@/components/map/markers/UserLocationMarker'
+import PauseLocationMarker from '@/components/map/markers/PauseLocationMarker'
+import ResumeLocationMarker from '@/components/map/markers/ResumeLocationMarker'
 
 // const testLocations = [
 // 	{
-// 		rel_ts: 1,
+// 		relTs: 1,
 // 		locationObject: {
 // 			coords: {
 // 				latitude: 53.377398777940066,
@@ -23,7 +24,7 @@ import ResumeLocationMarker from '@/components/ui/ResumeLocationMarker'
 // 		isSavedToServer: false
 // 	},
 // 	{
-// 		rel_ts: 1,
+// 		relTs: 1,
 // 		locationObject: {
 // 			coords: {
 // 				latitude: 53.37815399436764,
@@ -36,7 +37,7 @@ import ResumeLocationMarker from '@/components/ui/ResumeLocationMarker'
 // 		isSavedToServer: false
 // 	},
 // 	{
-// 		rel_ts: 1,
+// 		relTs: 1,
 // 		locationObject: {
 // 			coords: {
 // 				latitude: 53.3782243952166,
@@ -49,7 +50,7 @@ import ResumeLocationMarker from '@/components/ui/ResumeLocationMarker'
 // 		isSavedToServer: false
 // 	},
 // 	{
-// 		rel_ts: 1,
+// 		relTs: 1,
 // 		locationObject: {
 // 			coords: {
 // 				latitude: 53.377379577347824,
@@ -62,7 +63,7 @@ import ResumeLocationMarker from '@/components/ui/ResumeLocationMarker'
 // 		isSavedToServer: false
 // 	},
 // 	{
-// 		rel_ts: 1,
+// 		relTs: 1,
 // 		locationObject: {
 // 			coords: {
 // 				latitude: 53.37699556368535,
@@ -75,7 +76,7 @@ import ResumeLocationMarker from '@/components/ui/ResumeLocationMarker'
 // 		isSavedToServer: false
 // 	},
 // 	{
-// 		rel_ts: 1,
+// 		relTs: 1,
 // 		locationObject: {
 // 			coords: {
 // 				latitude: 53.376662749043575,
@@ -88,7 +89,7 @@ import ResumeLocationMarker from '@/components/ui/ResumeLocationMarker'
 // 		isSavedToServer: false
 // 	},
 // 	{
-// 		rel_ts: 1,
+// 		relTs: 1,
 // 		locationObject: {
 // 			coords: {
 // 				latitude: 53.37599711195731,
@@ -101,7 +102,7 @@ import ResumeLocationMarker from '@/components/ui/ResumeLocationMarker'
 // 		isSavedToServer: false
 // 	},
 // 	{
-// 		rel_ts: 1,
+// 		relTs: 1,
 // 		locationObject: {
 // 			coords: {
 // 				latitude: 53.37533786497362,
@@ -114,7 +115,7 @@ import ResumeLocationMarker from '@/components/ui/ResumeLocationMarker'
 // 		isSavedToServer: false
 // 	},
 // 	{
-// 		rel_ts: 1,
+// 		relTs: 1,
 // 		locationObject: {
 // 			coords: {
 // 				latitude: 53.37533786497362,
@@ -127,7 +128,7 @@ import ResumeLocationMarker from '@/components/ui/ResumeLocationMarker'
 // 		isSavedToServer: false
 // 	},
 // 	{
-// 		rel_ts: 1,
+// 		relTs: 1,
 // 		locationObject: {
 // 			coords: {
 // 				latitude: 53.37133786497362,
@@ -158,15 +159,18 @@ interface IProps {
 const DEFAULT_MAP_CENTER = { lat: 55.758745, lon: 37.619153 }
 
 export interface MapComponentHandle {
-	setMapCenter: (center: ILatLng | null, durationInSeconds?: number, zoom?: number) => void
+	setMapCenter: (center: ILatLng | null, durationInSeconds?: number, zoom?: number, animationType?: Animation) => void
 	fitAllMarkers: (durationInSeconds?: number) => void
 }
 
 const MapComponent = forwardRef<MapComponentHandle, IProps>((props, ref) => {
 	const mapRef = useRef<YamapRef>(null)
+	const isAnimationBlocked = useRef<boolean>(false)
+	const animationBlockTimer = useRef<NodeJS.Timeout | null>(null)
 
 	useImperativeHandle(ref, () => ({
-		setMapCenter: (center, durationInSeconds, zoom) => changeMapCenter(center, durationInSeconds, zoom),
+		setMapCenter: (center, durationInSeconds, zoom, animationType) =>
+			changeMapCenter(center, durationInSeconds, zoom, animationType),
 		fitAllMarkers: (durationInSeconds) => fitAllMarkers(durationInSeconds)
 	}))
 
@@ -256,10 +260,17 @@ const MapComponent = forwardRef<MapComponentHandle, IProps>((props, ref) => {
 
 	const fitAllMarkers = (durationInSeconds?: number) => {
 		if (!mapRef.current) return
-		mapRef.current.fitAllMarkers(durationInSeconds, Animation.SMOOTH)
+		mapRef.current.fitAllMarkers(durationInSeconds, Animation.LINEAR)
 	}
 
-	const changeMapCenter = (center: ILatLng | null, durationInSeconds?: number, zoom?: number) => {
+	const changeMapCenter = (
+		center: ILatLng | null,
+		durationInSeconds?: number,
+		zoom?: number,
+		animationType?: Animation
+	) => {
+		console.log('changeMapCenter', isAnimationBlocked.current)
+		if (isAnimationBlocked.current) return
 		if (!center) return
 		if (!mapRef.current) return
 		mapRef.current.getCameraPosition((cameraPosition) => {
@@ -271,10 +282,19 @@ const MapComponent = forwardRef<MapComponentHandle, IProps>((props, ref) => {
 				cameraPosition.azimuth,
 				cameraPosition.tilt,
 				durationInSeconds ?? 1,
-				Animation.SMOOTH
+				animationType ?? Animation.SMOOTH
 			)
 		})
 	}
+
+	const handleBlockAnimation = () => {
+		isAnimationBlocked.current = true
+		animationBlockTimer.current = setTimeout(() => {
+			isAnimationBlocked.current = false
+		}, 2000)
+	}
+
+	const handleBlockAnimationDebounced = useCallback(debounce(handleBlockAnimation, 300), [])
 
 	// console.log('Render MapComponent') @TODO слишком частый ререндер
 	return (
@@ -288,10 +308,10 @@ const MapComponent = forwardRef<MapComponentHandle, IProps>((props, ref) => {
 				initialRegion={{ ...DEFAULT_MAP_CENTER, zoom: 12 }}
 				style={{ flex: 1, maxHeight: props.maxMapHeight, minHeight: props.minMapHeight }}
 				logoPosition={{ horizontal: 'right', vertical: 'top' }}
-				// followUser // @TODO не работает / 2d 3d?
 				showUserPosition={false}
 				tiltGesturesDisabled={true}
-				rotateGesturesDisabled={true} // @TODO
+				rotateGesturesDisabled={true} // @TODO включить после дебага
+				onCameraPositionChange={handleBlockAnimationDebounced}
 			>
 				{/*<DirectionMarkersDebug center={{ lat: 53.374451, lon: 49.460469 }} />*/}
 				{props.initialMarkerLocation && (
@@ -301,6 +321,7 @@ const MapComponent = forwardRef<MapComponentHandle, IProps>((props, ref) => {
 					/>
 				)}
 
+				{/* @TODO не хватает маркера для начала тренировки */}
 				{/*<PauseLocationMarker position={{ lat: 53.374451, lon: 49.460469 }} />*/}
 				{/*<ResumeLocationMarker position={{ lat: 53.374451, lon: 49.560469 }} />*/}
 				{/*<FinishLocationMarker position={{ lat: 53.374451, lon: 49.660469 }} />*/}

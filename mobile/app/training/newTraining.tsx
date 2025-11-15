@@ -1,7 +1,7 @@
 import { PermissionsAndroid, Platform, SafeAreaView, StyleSheet } from 'react-native'
 import { SafeAreaProvider, useSafeAreaInsets } from 'react-native-safe-area-context'
 import { GestureHandlerRootView } from 'react-native-gesture-handler'
-import React, { useEffect, useRef, useState } from 'react'
+import React, { useCallback, useEffect, useRef, useState } from 'react'
 import WorkoutRunning from '@/components/svg/WorkoutRunning'
 import WorkoutWalking from '@/components/svg/WorkoutWalking'
 import WorkoutBicycle from '@/components/svg/WorkoutBicycle'
@@ -35,8 +35,10 @@ import notifee, {
 import { AllGeolocationPermissionsHandle } from '@/components/AllGeolocationPermissions'
 import * as Notification from 'expo-notifications'
 import { TrainingType } from '../../../shared/enums'
-import { UserLocationMarkerHandle } from '@/components/ui/UserLocationMarker'
-import { Button } from '@/components/ui/Button'
+import { debounce } from '@/helpers/debounce'
+import { Animation } from 'react-native-yamap-plus'
+import { UserLocationMarkerHandle } from '@/components/map/markers/UserLocationMarker'
+import { throttle } from '@/helpers/throttle'
 
 initializeNotifications()
 
@@ -121,7 +123,7 @@ export default function NewTraining() {
 		if (permissionsRef.current) {
 			permissionsRef.current.checkPermissions()
 		}
-	}, [permissionsRef.current])
+	}, [])
 
 	useEffect(() => {
 		// @TODO useLayoutEffect?
@@ -173,7 +175,7 @@ export default function NewTraining() {
 		setState((s) => {
 			const lastSavedWorkoutItem = setWorkoutItem(location) // Сохраняем в локальное хранилище
 
-			if (s.myLocations?.find((loc) => loc.rel_ts === lastSavedWorkoutItem.rel_ts)) {
+			if (s.myLocations?.find((loc) => loc.relTs === lastSavedWorkoutItem.relTs)) {
 				// защита от дублирования, если такая локация уже существует в локальном стейте
 				return s
 			}
@@ -220,7 +222,8 @@ export default function NewTraining() {
 						}
 						// @TODO если впервые получили точку, то центр должен меняться мгновенно
 						// @TODO или анимацию сделать линейной
-						// mapComponentRef.current.setMapCenter(newLatLon, 2)
+						// @TODO если прервать анимацию центровки не получится, то можно попробовать отправить линейную анимацию с длительностью 0 сек...
+						mapComponentRef.current.setMapCenter(newLatLon, 1.2)
 					}
 					if (userLocationMarkerRef.current) {
 						userLocationMarkerRef.current.setMarkerPosition(newLatLon)
@@ -240,12 +243,12 @@ export default function NewTraining() {
 		}
 	}
 
+	const throttledHeadingUpdate = throttle((data: Location.LocationHeadingObject) => {
+		userLocationMarkerRef.current?.setMarkerHeading(data.trueHeading ?? data.magHeading)
+	}, 1000)
+
 	const startHeadingTracking = async () => {
-		headingSubscriptionRef.current = await Location.watchHeadingAsync((data) => {
-			if (userLocationMarkerRef.current) {
-				userLocationMarkerRef.current.setMarkerHeading(data.trueHeading ?? data.magHeading)
-			}
-		})
+		headingSubscriptionRef.current = await Location.watchHeadingAsync(throttledHeadingUpdate)
 	}
 
 	const checkPermissions = async () => {
@@ -335,6 +338,7 @@ export default function NewTraining() {
 	}
 
 	const allPermissionsGrantedCallback = async () => {
+		console.log('allPermissionsGrantedCallback')
 		const lastUserPosition = await getFastUserPosition()
 		const newLatLon = {
 			lat: lastUserPosition.coords.latitude,
@@ -343,16 +347,12 @@ export default function NewTraining() {
 
 		setState((s) => ({ ...s, initialMarkerLocation: newLatLon }))
 		if (mapComponentRef.current) {
-			// @TODO
-			// mapComponentRef.current.setMapCenter(newLatLon, 2, 13)
+			mapComponentRef.current.setMapCenter(newLatLon, 0.5, 13)
 		}
 		if (userLocationMarkerRef.current) {
 			userLocationMarkerRef.current.setAccuracy(lastUserPosition.coords.accuracy)
 			userLocationMarkerRef.current.setMarkerHeading(lastUserPosition.coords.heading)
-			userLocationMarkerRef.current.setMarkerPosition({
-				lat: lastUserPosition.coords.latitude,
-				lon: lastUserPosition.coords.longitude
-			})
+			userLocationMarkerRef.current.setMarkerPosition(newLatLon)
 		}
 	}
 
@@ -366,6 +366,8 @@ export default function NewTraining() {
 		const lastUserPosition = await getLastUserPosition()
 		saveLocationToStorageAndState(lastUserPosition)
 	}
+
+	const pauseDebounced = useCallback(debounce(handleClickPause, 300), [])
 
 	const stopNotificationTimer = async () => {
 		await notifee.stopForegroundService()
@@ -515,40 +517,40 @@ export default function NewTraining() {
 		<SafeAreaProvider style={{ paddingTop: insets.top }}>
 			<GestureHandlerRootView style={{ flex: 1 }}>
 				<SafeAreaView style={styles.container}>
-					<Button
-						variant="white"
-						onPress={() => {
-							if (userLocationMarkerRef.current) {
-								userLocationMarkerRef.current.setMarkerPosition({
-									lat: 53.377398777940066,
-									lon: 49.44734799788105
-								})
-								userLocationMarkerRef.current.setAccuracy(10)
-							}
-						}}
-					>
-						переместить 1
-					</Button>
-					<Button
-						variant="white"
-						onPress={() => {
-							if (userLocationMarkerRef.current) {
-								userLocationMarkerRef.current.setMarkerPosition({
-									lat: 53.37815399436764,
-									lon: 49.44731581137271
-								})
-								userLocationMarkerRef.current.setAccuracy(20)
-							}
-						}}
-					>
-						переместить 2
-					</Button>
+					{/*<Button*/}
+					{/*	variant="white"*/}
+					{/*	onPress={() => {*/}
+					{/*		if (userLocationMarkerRef.current) {*/}
+					{/*			userLocationMarkerRef.current.setMarkerPosition({*/}
+					{/*				lat: 53.377398777940066,*/}
+					{/*				lon: 49.44734799788105*/}
+					{/*			})*/}
+					{/*			userLocationMarkerRef.current.setAccuracy(10)*/}
+					{/*		}*/}
+					{/*	}}*/}
+					{/*>*/}
+					{/*	переместить 1*/}
+					{/*</Button>*/}
+					{/*<Button*/}
+					{/*	variant="white"*/}
+					{/*	onPress={() => {*/}
+					{/*		if (userLocationMarkerRef.current) {*/}
+					{/*			userLocationMarkerRef.current.setMarkerPosition({*/}
+					{/*				lat: 53.37815399436764,*/}
+					{/*				lon: 49.44731581137271*/}
+					{/*			})*/}
+					{/*			userLocationMarkerRef.current.setAccuracy(20)*/}
+					{/*		}*/}
+					{/*	}}*/}
+					{/*>*/}
+					{/*	переместить 2*/}
+					{/*</Button>*/}
 					{state.isWorkoutStarted ? (
 						<WorkoutStarted
 							// headingDebug={state.headingDebug}
 							initialMarkerLocation={state.initialMarkerLocation}
 							userLocations={state.myLocations}
-							handleClickPause={handleClickPause}
+							handleClickPause={pauseDebounced}
 							handleClickEndWorkout={handleClickEndWorkout}
 							workoutType={state.chosenWorkout.type}
 							isPaused={state.isPaused}

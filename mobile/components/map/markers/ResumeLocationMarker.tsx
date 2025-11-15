@@ -12,7 +12,7 @@ const ResumeLocationMarker = ({ position }: Props) => {
 	if (!position?.lat || !position?.lon) return null
 
 	return (
-		<Marker point={position} zIndex={6}>
+		<Marker point={position} zIndex={5}>
 			<View>
 				<ResumeWithCircleSvg />
 			</View>

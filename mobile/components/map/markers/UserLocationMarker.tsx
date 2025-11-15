@@ -1,6 +1,6 @@
-import React, { forwardRef, useEffect, useImperativeHandle, useRef, useState, useCallback } from 'react'
+import React, { forwardRef, useImperativeHandle, useRef, useState, useCallback } from 'react'
 import { Marker, MarkerRef, Point, Circle } from 'react-native-yamap-plus'
-import { Animated, Easing, View } from 'react-native'
+import { View } from 'react-native'
 import UserWithCircleSvg from '@/components/svg/UserWithCircleSvg'
 import { ILatLng } from '@/components/map/MapComponent'
 
@@ -18,81 +18,42 @@ export interface UserLocationMarkerHandle {
 }
 
 export interface AccuracyCircleHandle {
-	hideCircle: (hidden: boolean) => void
 	setCircleCenter: (center: Point | null) => void
+	hideCircle: (hidden: boolean) => void
 	setAccuracy: (accuracy: number | null) => void
 }
 
-const MAX_OPACITY = 0.5
-
 const AccuracyCircle = forwardRef<AccuracyCircleHandle, IAccuracyProps>((props, ref) => {
-	const pulseAnim = useRef(new Animated.Value(0)).current
-	const nextAccuracy = useRef<number | null>(null)
-	const circleCenterRef = useRef<ILatLng | undefined | null>(null)
-	const [opacity, setOpacity] = useState(MAX_OPACITY)
-	const [radius, setRadius] = useState(0)
-	const [currentAccuracy, setCurrentAccuracy] = useState(0)
-	const [isCircleHidden, setIsCircleHidden] = useState(false)
+	const [state, setState] = useState<{
+		center: Point | null
+		radius: number
+		isCircleHidden: boolean
+	}>({
+		center: null,
+		radius: 0,
+		isCircleHidden: false
+	})
 
 	useImperativeHandle(ref, () => ({
 		setCircleCenter: (center) => {
-			circleCenterRef.current = center
+			setState((s) => ({ ...s, center: center }))
 		},
 		hideCircle: (hidden) => {
-			setIsCircleHidden(hidden)
+			setState((s) => ({ ...s, isCircleHidden: hidden }))
 		},
 		setAccuracy: (accuracy) => {
-			if (accuracy !== currentAccuracy) {
-				nextAccuracy.current = accuracy ?? 0
+			if (accuracy !== state.radius) {
+				setState((s) => ({ ...s, radius: accuracy ?? 0 }))
 			}
 		}
 	}))
 
-	useEffect(() => {
-		let isCancelled = false
-
-		const animate = () => {
-			pulseAnim.setValue(0)
-			Animated.timing(pulseAnim, {
-				toValue: 1,
-				duration: 2000,
-				easing: Easing.out(Easing.ease),
-				useNativeDriver: false
-			}).start(({ finished }) => {
-				if (finished && !isCancelled) {
-					if (nextAccuracy.current !== null) {
-						setCurrentAccuracy(nextAccuracy.current)
-						nextAccuracy.current = null
-					}
-					animate()
-				}
-			})
-		}
-
-		const listenerId = pulseAnim.addListener(({ value }) => {
-			if (!currentAccuracy) return
-			const r = currentAccuracy * value
-			const o = MAX_OPACITY * (1 - value)
-			setRadius(r)
-			setOpacity(o)
-		})
-
-		animate()
-
-		return () => {
-			isCancelled = true
-			pulseAnim.removeListener(listenerId)
-			pulseAnim.stopAnimation()
-		}
-	}, [currentAccuracy, pulseAnim])
-
-	if (radius > 0.3 && circleCenterRef.current && !isCircleHidden) {
-		console.log('render UserLocationMarker >>> Circle', radius)
+	if (state.radius > 0.3 && state.center && !state.isCircleHidden) {
 		return (
 			<Circle
-				center={circleCenterRef.current}
-				radius={radius}
-				fillColor={`rgba(0,200,100,${opacity})`}
+				center={state.center}
+				radius={state.radius}
+				fillColor={`rgba(0,200,100,0.2)`}
 				strokeColor="transparent"
 				strokeWidth={0}
 				zIndex={5}

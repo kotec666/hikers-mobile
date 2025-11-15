@@ -25,7 +25,7 @@ import { calculatePace } from '@/helpers/calculatePace'
 import { getWorkoutHeight } from '@/helpers/getWorkoutHeight'
 import { calculateCalories } from '@/helpers/calculateCalories'
 import { TrainingType } from '@shared/enums'
-import { UserLocationMarkerHandle } from '@/components/ui/UserLocationMarker'
+import { UserLocationMarkerHandle } from '@/components/map/markers/UserLocationMarker'
 
 interface IProps {
 	// headingDebug: number | null
