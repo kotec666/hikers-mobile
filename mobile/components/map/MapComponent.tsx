@@ -1,4 +1,4 @@
-import { Animation, Polyline, Yamap, YamapRef } from 'react-native-yamap-plus'
+import { Animation, InitialRegion, Polyline, Yamap, YamapRef } from 'react-native-yamap-plus'
 import React, { forwardRef, JSX, useCallback, useImperativeHandle, useRef } from 'react'
 import { View } from 'react-native'
 import { IWorkoutLocationStorageItem, removeAllWorkoutStorage } from '@/store/workoutStorage'
@@ -8,6 +8,8 @@ import { debounce } from '@/helpers/debounce'
 import UserLocationMarker, { UserLocationMarkerHandle } from '@/components/map/markers/UserLocationMarker'
 import PauseLocationMarker from '@/components/map/markers/PauseLocationMarker'
 import ResumeLocationMarker from '@/components/map/markers/ResumeLocationMarker'
+import StartLocationMarker from '@/components/map/markers/StartLocationMarker'
+import { getMapSettings, updateMapSettings } from '@/store/mapStorage'
 
 // const testLocations = [
 // 	{
@@ -156,8 +158,6 @@ interface IProps {
 	userLocations?: IWorkoutLocationStorageItem[]
 }
 
-const DEFAULT_MAP_CENTER = { lat: 55.758745, lon: 37.619153 }
-
 export interface MapComponentHandle {
 	setMapCenter: (center: ILatLng | null, durationInSeconds?: number, zoom?: number, animationType?: Animation) => void
 	fitAllMarkers: (durationInSeconds?: number) => void
@@ -167,6 +167,7 @@ const MapComponent = forwardRef<MapComponentHandle, IProps>((props, ref) => {
 	const mapRef = useRef<YamapRef>(null)
 	const isAnimationBlocked = useRef<boolean>(false)
 	const animationBlockTimer = useRef<NodeJS.Timeout | null>(null)
+	const mapInitialRegionSettings = useRef<InitialRegion>(getMapSettings()).current
 
 	useImperativeHandle(ref, () => ({
 		setMapCenter: (center, durationInSeconds, zoom, animationType) =>
@@ -275,7 +276,6 @@ const MapComponent = forwardRef<MapComponentHandle, IProps>((props, ref) => {
 		if (!mapRef.current) return
 		mapRef.current.getCameraPosition((cameraPosition) => {
 			if (!mapRef.current) return
-
 			mapRef.current.setCenter(
 				center,
 				zoom ?? cameraPosition.zoom,
@@ -287,14 +287,19 @@ const MapComponent = forwardRef<MapComponentHandle, IProps>((props, ref) => {
 		})
 	}
 
-	const handleBlockAnimation = () => {
+	const handleBlockAnimation = useCallback(() => {
+		if (animationBlockTimer.current) {
+			clearTimeout(animationBlockTimer.current)
+		}
+
 		isAnimationBlocked.current = true
+
 		animationBlockTimer.current = setTimeout(() => {
 			isAnimationBlocked.current = false
 		}, 2000)
-	}
+	}, [])
 
-	const handleBlockAnimationDebounced = useCallback(debounce(handleBlockAnimation, 300), [])
+	const updateMapSettingsDebounced = debounce(updateMapSettings, 300)
 
 	// console.log('Render MapComponent') @TODO слишком частый ререндер
 	return (
@@ -305,13 +310,28 @@ const MapComponent = forwardRef<MapComponentHandle, IProps>((props, ref) => {
 			<Yamap
 				ref={mapRef}
 				nightMode
-				initialRegion={{ ...DEFAULT_MAP_CENTER, zoom: 12 }}
+				initialRegion={mapInitialRegionSettings}
 				style={{ flex: 1, maxHeight: props.maxMapHeight, minHeight: props.minMapHeight }}
 				logoPosition={{ horizontal: 'right', vertical: 'top' }}
 				showUserPosition={false}
 				tiltGesturesDisabled={true}
 				rotateGesturesDisabled={true} // @TODO включить после дебага
-				onCameraPositionChange={handleBlockAnimationDebounced}
+				onCameraPositionChange={(e) => {
+					if (['GESTURES', 'UNKNOWN'].includes(e.nativeEvent.reason)) {
+						handleBlockAnimation()
+					}
+				}}
+				onCameraPositionChangeEnd={() => {
+					mapRef.current?.getCameraPosition((pos) => {
+						updateMapSettingsDebounced({
+							lat: pos.point.lat,
+							lon: pos.point.lon,
+							zoom: pos.zoom,
+							azimuth: pos.azimuth,
+							tilt: pos.tilt
+						})
+					})
+				}}
 			>
 				{/*<DirectionMarkersDebug center={{ lat: 53.374451, lon: 49.460469 }} />*/}
 				{props.initialMarkerLocation && (
@@ -321,9 +341,17 @@ const MapComponent = forwardRef<MapComponentHandle, IProps>((props, ref) => {
 					/>
 				)}
 
-				{/* @TODO не хватает маркера для начала тренировки */}
+				{props.userLocations && props.userLocations?.length >= 2 && (
+					<StartLocationMarker
+						position={{
+							lat: props.userLocations[0].locationObject.coords.latitude,
+							lon: props.userLocations[0].locationObject.coords.longitude
+						}}
+					/>
+				)}
+
 				{/*<PauseLocationMarker position={{ lat: 53.374451, lon: 49.460469 }} />*/}
-				{/*<ResumeLocationMarker position={{ lat: 53.374451, lon: 49.560469 }} />*/}
+				{/*<ResumeLocationMarker position={{ lat: 53.374451, lon: 49.460489 }} />*/}
 				{/*<FinishLocationMarker position={{ lat: 53.374451, lon: 49.660469 }} />*/}
 
 				{renderLines(props.userLocations)}
