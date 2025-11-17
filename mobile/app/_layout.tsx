@@ -6,18 +6,16 @@ import { fontFamily } from '@/constants/Fonts'
 import { YamapInstance } from 'react-native-yamap-plus'
 import { useAuthStore } from '@/store/authStore'
 import { useEffect, useState } from 'react'
-import { ActivityIndicator, Platform, View } from 'react-native'
+import { ActivityIndicator, View } from 'react-native'
 import { NotificationProvider } from '@/components/providers/NotificationProvider'
 import notifee, { EventType } from '@notifee/react-native'
 import { setActiveWorkoutPauseState } from '@/store/workoutStorage'
+import { getAuthData } from '@/services/tokenService'
 
 YamapInstance.setLocale('ru_RU')
+YamapInstance.init(process.env.EXPO_PUBLIC_YAMAP_KEY || '')
 	.then(() => {
-		YamapInstance.init(process.env.EXPO_PUBLIC_YAMAP_KEY || '')
-			.then(() => {
-				console.log('init')
-			})
-			.catch(console.warn)
+		console.log('Yamap initialized')
 	})
 	.catch(console.warn)
 
@@ -52,10 +50,14 @@ export default function RootLayout() {
 		[fontFamily.medium]: require('../assets/fonts/Manrope-Medium-500.otf'),
 		[fontFamily.bold]: require('../assets/fonts/Manrope-Bold-700.otf')
 	})
-	const { isAuthenticated, checkAuth } = useAuthStore()
+	const { isAuthenticated, login, checkAuth } = useAuthStore()
 
 	useEffect(() => {
+		const savedAuthData = getAuthData()
 		const init = async () => {
+			if (savedAuthData?.accessToken && savedAuthData.user) {
+				login(savedAuthData?.accessToken || '', savedAuthData?.user, savedAuthData.accessTokenExpiration)
+			}
 			await checkAuth()
 			setIsLoading(false)
 		}
@@ -78,8 +80,8 @@ export default function RootLayout() {
 	const authenticatedRoutes = [
 		'profile/index',
 		'find-people',
-		'news-feed',
-		'news-feed/1',
+		'news-feed/index', // для /news-feed
+		'news-feed/members', // для /news-feed/members
 		'workout-history',
 		'friends/search',
 		'friends/my-friends',
@@ -89,7 +91,7 @@ export default function RootLayout() {
 		'training/viewWorkout',
 		'training/newTraining'
 	]
-	const baseRoutes = ['(tabs)/index', 'document']
+	const baseRoutes = ['document']
 	const notAuthenticatedRoutes = ['index', 'auth']
 
 	return (
@@ -99,17 +101,7 @@ export default function RootLayout() {
 					headerShown: false,
 					contentStyle: {
 						backgroundColor: Colors['black-0d']
-					},
-					// Убираем iOS-специфичные пропсы для Android
-					...(Platform.OS === 'android' && {
-						headerBackTitleVisible: undefined,
-						headerBackTitle: undefined,
-						headerLargeTitle: undefined,
-						headerLargeTitleFontFamily: undefined,
-						headerLargeTitleFontWeight: undefined,
-						headerLargeTitleHideShadow: undefined,
-						disableBackButtonMenu: undefined
-					})
+					}
 				}}
 			>
 				<Stack.Protected guard={isAuthenticated}>

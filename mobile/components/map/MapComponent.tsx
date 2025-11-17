@@ -10,6 +10,7 @@ import PauseLocationMarker from '@/components/map/markers/PauseLocationMarker'
 import ResumeLocationMarker from '@/components/map/markers/ResumeLocationMarker'
 import StartLocationMarker from '@/components/map/markers/StartLocationMarker'
 import { getMapSettings, updateMapSettings } from '@/store/mapStorage'
+import PolylineNativeComponent from 'react-native-yamap-plus/src/spec/PolylineNativeComponent'
 
 // const testLocations = [
 // 	{
@@ -165,6 +166,7 @@ export interface MapComponentHandle {
 
 const MapComponent = forwardRef<MapComponentHandle, IProps>((props, ref) => {
 	const mapRef = useRef<YamapRef>(null)
+	// const polylineRef = useRef(null)
 	const isAnimationBlocked = useRef<boolean>(false)
 	const animationBlockTimer = useRef<NodeJS.Timeout | null>(null)
 	const mapInitialRegionSettings = useRef<InitialRegion>(getMapSettings()).current
@@ -301,7 +303,9 @@ const MapComponent = forwardRef<MapComponentHandle, IProps>((props, ref) => {
 
 	const updateMapSettingsDebounced = debounce(updateMapSettings, 300)
 
-	// console.log('Render MapComponent') @TODO слишком частый ререндер
+	// console.log('polylineRef.current', polylineRef.current)
+
+	console.log('Render MapComponent')
 	return (
 		<View className="flex-1" style={{ overflow: 'hidden', borderRadius: props.rounded || 0 }}>
 			<Button variant="white" onPress={() => removeAllWorkoutStorage()}>
@@ -333,6 +337,14 @@ const MapComponent = forwardRef<MapComponentHandle, IProps>((props, ref) => {
 					})
 				}}
 			>
+				{/*<PolylineNativeComponent*/}
+				{/*	ref={polylineRef}*/}
+				{/*	points={[*/}
+				{/*		{ lat: 53.374451, lon: 49.460469 },*/}
+				{/*		{ lat: 53.374451, lon: 49.560469 }*/}
+				{/*	]}*/}
+				{/*/>*/}
+
 				{/*<DirectionMarkersDebug center={{ lat: 53.374451, lon: 49.460469 }} />*/}
 				{props.initialMarkerLocation && (
 					<UserLocationMarker
@@ -362,4 +374,13 @@ const MapComponent = forwardRef<MapComponentHandle, IProps>((props, ref) => {
 
 MapComponent.displayName = 'MapComponent'
 
-export default MapComponent
+export default React.memo(
+	MapComponent,
+	(prev, next) =>
+		prev.initialMarkerLocation?.lat === next.initialMarkerLocation?.lat &&
+		prev.initialMarkerLocation?.lon === next.initialMarkerLocation?.lon &&
+		prev.maxMapHeight === next.maxMapHeight &&
+		prev.minMapHeight === next.minMapHeight &&
+		prev.rounded === next.rounded &&
+		prev.userLocations === next.userLocations // @TODO?
+)

@@ -30,18 +30,3 @@ export const registrationUser = async (data: {
 		})
 	).json()
 }
-
-export const refreshAccessTokenRequest = async (data: {
-	token: string
-}): Promise<{
-	token: string
-	// user: User
-}> => {
-	return (
-		await fetcher.post('auth/refresh', {
-			headers: {
-				Authorization: `Bearer ${data.token}`
-			}
-		})
-	).json()
-}

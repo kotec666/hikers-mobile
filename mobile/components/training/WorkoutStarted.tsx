@@ -1,31 +1,16 @@
-import React, { useMemo, useState } from 'react'
+import React, { useCallback, useState } from 'react'
 import EndTrainingModal from '@/components/training/EndTrainingModal'
 import { Container } from '@/components/ui/Container'
-import { Dimensions, ScrollView, Text, View } from 'react-native'
+import { Dimensions, Text, View } from 'react-native'
 import { fontFamily } from '@/constants/Fonts'
 import MapComponent, { ILatLng, MapComponentHandle } from '@/components/map/MapComponent'
-import Parameter from '@/components/training/Parameter'
-import { cn } from '@/helpers/cn'
-import PeopleListItem from '@/components/find-people/PeopleListItem'
-import ActionButton from '@/components/training/ActionButton'
-import PlaySvg from '@/components/svg/PlaySvg'
-import PauseSvg from '@/components/svg/PauseSvg'
-import PeopleListSvg from '@/components/svg/PeopleListSvg'
-import SwitchMapMode from '@/components/svg/SwitchMapMode'
-import { Button } from '@/components/ui/Button'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
-import EyeSvg from '@/components/svg/EyeSvg'
-import { Colors } from '@/constants/Colors'
-import PeopleRemoveSvg from '@/components/svg/PeopleRemoveSvg'
 import { IWorkoutLocationStorageItem } from '@/store/workoutStorage'
-import { mpsToKmph } from '@/helpers/mpsToKmph'
-import { calculateTotalDistance, formatDistance } from '@/helpers/distance'
-import { useWorkoutTimer } from '@/hooks/useWorkoutTimer'
-import { calculatePace } from '@/helpers/calculatePace'
-import { getWorkoutHeight } from '@/helpers/getWorkoutHeight'
-import { calculateCalories } from '@/helpers/calculateCalories'
 import { TrainingType } from '@shared/enums'
 import { UserLocationMarkerHandle } from '@/components/map/markers/UserLocationMarker'
+import MetricsTab from '@/components/training/tabs/MetricsTab'
+import ShowMembersList from '@/components/training/tabs/ShowMembersList'
+import InteractiveBottomElements from '@/components/training/InteractiveBottomElements'
 
 interface IProps {
 	// headingDebug: number | null
@@ -42,209 +27,41 @@ interface IProps {
 
 const { height } = Dimensions.get('screen')
 
-const data = [
-	{
-		id: '1',
-		username: 'kotec',
-		name: 'Стив Джобс first',
-		avatar: null,
-		icon: <EyeSvg color={Colors['green-main']} opened={true} />
-	},
-	{
-		id: '2',
-		username: 'kotec',
-		name: 'Джефф Безос',
-		avatar: null,
-		icon: <EyeSvg color={Colors['blue-00']} opened={false} />
-	},
-	{
-		id: '3',
-		username: 'kotec',
-		name: 'Джефф Безос',
-		avatar: null,
-		icon: <EyeSvg color={Colors['orange-main']} opened={false} />
-	},
-	{
-		id: '4',
-		username: 'kotec',
-		name: 'Джефф Безос',
-		avatar: null,
-		icon: <EyeSvg color={Colors['gray-d9']} opened={true} />
-	},
-	{
-		id: '5',
-		username: 'kotec',
-		name: 'Джефф Безос',
-		avatar: null,
-		icon: <EyeSvg color={Colors['gray-d9']} opened={true} />
-	},
-	{
-		id: '6',
-		username: 'kotec',
-		name: 'Джефф Безос',
-		avatar: null,
-		icon: <EyeSvg color={Colors['gray-d9']} opened={true} />
-	},
-	{
-		id: '7',
-		username: 'kotec',
-		name: 'Джефф Безос',
-		avatar: null,
-		icon: <EyeSvg color={Colors['gray-d9']} opened={true} />
-	},
-	{
-		id: '8',
-		username: 'kotec',
-		name: 'Джефф Безос',
-		avatar: null,
-		icon: <EyeSvg color={Colors['gray-d9']} opened={true} />
-	},
-	{
-		id: '9',
-		username: 'kotec',
-		name: 'Джефф Безос',
-		avatar: null,
-		icon: <EyeSvg color={Colors['gray-d9']} opened={true} />
-	},
-	{
-		id: '10',
-		username: 'kotec',
-		name: 'Джефф Безос',
-		avatar: null,
-		icon: <EyeSvg color={Colors['gray-d9']} opened={true} />
-	},
-	{
-		id: '11',
-		username: 'kotec',
-		name: 'Джефф Безос',
-		avatar: null,
-		icon: <EyeSvg color={Colors['gray-d9']} opened={true} />
-	},
-	{
-		id: '12',
-		username: 'kotec',
-		name: 'Джефф Безос',
-		avatar: null,
-		icon: <EyeSvg color={Colors['gray-d9']} opened={true} />
-	},
-	{
-		id: '13',
-		username: 'kotec',
-		name: 'Джефф Безос',
-		avatar: null,
-		icon: <EyeSvg color={Colors['gray-d9']} opened={true} />
-	},
-	{
-		id: '14',
-		username: 'kotec',
-		name: 'Джефф Безос',
-		avatar: null,
-		icon: <EyeSvg color={Colors['gray-d9']} opened={true} />
-	},
-	{
-		id: '15',
-		username: 'kotec',
-		name: 'Джефф Безос',
-		avatar: null,
-		icon: <EyeSvg color={Colors['gray-d9']} opened={true} />
-	},
-	{
-		id: '16',
-		username: 'kotec',
-		name: 'Джефф Безос',
-		avatar: null,
-		icon: <EyeSvg color={Colors['gray-d9']} opened={true} />
-	},
-	{
-		id: '17',
-		username: 'kotec',
-		name: 'Джефф Безос',
-		avatar: null,
-		icon: <EyeSvg color={Colors['gray-d9']} opened={true} />
-	},
-	{
-		id: '18',
-		username: 'kotec',
-		name: 'Джефф Безос',
-		avatar: null,
-		icon: <EyeSvg color={Colors['gray-d9']} opened={true} />
-	},
-	{
-		id: '19',
-		username: 'kotec',
-		name: 'Джефф Безос',
-		avatar: null,
-		icon: <EyeSvg color={Colors['gray-d9']} opened={true} />
-	},
-	{
-		id: '20',
-		username: 'kotec',
-		name: 'Джефф Безос last',
-		avatar: null,
-		icon: <EyeSvg color={Colors['gray-d9']} opened={true} />
-	}
-]
-
 const WorkoutStarted = (props: IProps) => {
 	const insets = useSafeAreaInsets()
 	const maxMapHeight = height / 2 - 40 - insets.top
-	const [state, setState] = useState<{
-		isEndTrainingModalOpen: boolean
-		peopleListHidden: boolean
-		mapViewHidden: boolean
-	}>({
-		peopleListHidden: true,
-		mapViewHidden: true,
-		isEndTrainingModalOpen: false
-	})
-	const workoutTime = useWorkoutTimer()
+	const [isEndTrainingModalOpen, setIsEndTrainingModalOpen] = useState(false)
+	const [peopleListHidden, setPeopleListHidden] = useState(false)
+	const [mapViewHidden, setMapViewHidden] = useState(false)
 
-	const handleCloseEndModal = () => {
-		setState((s) => ({ ...s, isEndTrainingModalOpen: false }))
-	}
+	const handleCloseEndModal = useCallback(() => {
+		setIsEndTrainingModalOpen(false)
+	}, [])
 
-	const handleClickOpenEndModal = () => {
-		setState((s) => ({ ...s, isEndTrainingModalOpen: true }))
-	}
+	const handleClickOpenEndModal = useCallback(() => {
+		setIsEndTrainingModalOpen(true)
+	}, [])
 
-	const handleClickPeopleList = () => {
-		setState((s) => ({ ...s, peopleListHidden: !s.peopleListHidden, mapViewHidden: true }))
-	}
+	const handleClickPeopleList = useCallback(() => {
+		setPeopleListHidden((prevState) => !prevState)
+		setMapViewHidden(true)
+	}, [])
 
-	const handleClickSwitchViewMode = () => {
-		setState((s) => ({ ...s, mapViewHidden: !s.mapViewHidden, peopleListHidden: true }))
-	}
+	const handleClickSwitchViewMode = useCallback(() => {
+		setPeopleListHidden(true)
+		setMapViewHidden((prevState) => !prevState)
+	}, [])
 
-	const handleClickEnd = () => {
+	const handleClickEnd = useCallback(() => {
 		handleCloseEndModal()
 		props.handleClickEndWorkout()
-	}
+	}, [])
 
-	const totalDistanceMeters = calculateTotalDistance(props.userLocations)
-	const averagePace = calculatePace(workoutTime.ms, totalDistanceMeters)
-	const calculatedHeight = getWorkoutHeight(props.userLocations)
-	const calories = calculateCalories(workoutTime.ms, totalDistanceMeters, props.workoutType, 70) // @TODO вес пользователя
-
-	const metrics = useMemo(
-		() => [
-			{ id: 1, label: 'Время', value: workoutTime.formatted },
-			{ id: 2, label: 'Скорость', value: mpsToKmph(props.speedMPS) + ' км/ч' },
-			{ id: 3, label: 'Дистанция', value: formatDistance(totalDistanceMeters) },
-			{ id: 4, label: 'Ср. темп', value: averagePace },
-			{ id: 5, label: 'Ккал', value: calories },
-			{
-				id: 6,
-				label: 'Набор высоты',
-				value: calculatedHeight == null ? '- м' : `${calculatedHeight} м`
-			}
-		],
-		[props.speedMPS, props.userLocations, workoutTime, calculatedHeight]
-	)
-
+	console.log('render WorkoutStarted')
 	return (
 		<>
 			<EndTrainingModal
-				open={state.isEndTrainingModalOpen}
+				open={isEndTrainingModalOpen}
 				handleClose={handleCloseEndModal}
 				handleClickEnd={handleClickEnd}
 			/>
@@ -254,7 +71,7 @@ const WorkoutStarted = (props: IProps) => {
 					Тренировка
 				</Text>
 			</Container>
-			{state.mapViewHidden && (
+			{mapViewHidden && (
 				<MapComponent
 					ref={props.mapComponentRef}
 					userLocationMarkerRef={props.userLocationMarkerRef}
@@ -265,94 +82,30 @@ const WorkoutStarted = (props: IProps) => {
 			)}
 			<Container style={{ paddingBottom: insets.bottom + 35 }} className="flex-1 w-full pt-[16px]">
 				<View className="flex-1 justify-between gap-[16px]">
-					{state.peopleListHidden ? (
-						<View className="gap-4">
-							{state.mapViewHidden && (
-								<Parameter
-									isPaused={props.isPaused}
-									label={metrics[0].label}
-									value={metrics[0].value}
-								/>
-							)}
-							<View
-								className={cn('', {
-									'flex-row justify-between': state.mapViewHidden,
-									'gap-4': !state.mapViewHidden
-								})}
-							>
-								{state.mapViewHidden
-									? metrics
-											.slice(1, 4)
-											.map((metric) => (
-												<Parameter
-													key={`${metric.id}-cut-list`}
-													isPaused={props.isPaused}
-													label={metric.label}
-													value={metric.value}
-												/>
-											))
-									: metrics.map((metric) => (
-											<Parameter
-												key={`${metric.id}-full-list`}
-												isPaused={props.isPaused}
-												label={metric.label}
-												value={metric.value}
-											/>
-										))}
-							</View>
-						</View>
+					{peopleListHidden ? (
+						<MetricsTab
+							mapViewHidden={mapViewHidden}
+							workoutType={props.workoutType}
+							isPaused={props.isPaused}
+							speedMPS={props.speedMPS}
+							userLocations={props.userLocations}
+						/>
 					) : (
-						state.mapViewHidden && (
-							<ScrollView>
-								<View className="gap-4">
-									{data.map((item) => (
-										<PeopleListItem
-											key={item.id}
-											id={item.id}
-											avatar={item.avatar}
-											name={item.name}
-											username={item.username}
-											icon={{
-												iconSvg: <EyeSvg color={Colors['blue-00']} opened={false} />,
-												iconCb: () => {}
-											}}
-										/>
-									))}
-								</View>
-							</ScrollView>
-						)
+						mapViewHidden && <ShowMembersList />
 					)}
-					<View
-						className={cn('justify-end gap-[10px]', {
-							'flex-row items-center': props.isPaused
-						})}
-					>
-						<View className="flex-row gap-[10px]">
-							<ActionButton onClickAction={props.handleClickPause}>
-								{props.isPaused ? <PlaySvg /> : <PauseSvg />}
-							</ActionButton>
-							<ActionButton onClickAction={handleClickPeopleList} isPressed={!state.peopleListHidden}>
-								<PeopleListSvg color={state.peopleListHidden ? '#000' : '#fff'} />
-							</ActionButton>
-							<ActionButton onClickAction={handleClickSwitchViewMode} isPressed={!state.mapViewHidden}>
-								<SwitchMapMode color={state.mapViewHidden ? '#000' : '#fff'} />
-							</ActionButton>
-						</View>
-						{props.isPaused && (
-							<Button
-								onPress={handleClickOpenEndModal}
-								variant="white"
-								buttonContainerClassName="flex-1"
-								buttonHeight={70}
-							>
-								Завершить
-							</Button>
-						)}
-					</View>
+					<InteractiveBottomElements
+						isPaused={props.isPaused}
+						mapViewHidden={mapViewHidden}
+						peopleListHidden={peopleListHidden}
+						handleClickSwitchViewMode={handleClickSwitchViewMode}
+						handleClickPeopleList={handleClickPeopleList}
+						handleClickPause={props.handleClickPause}
+						handleClickOpenEndModal={handleClickOpenEndModal}
+					/>
 				</View>
 			</Container>
 		</>
 	)
 }
 
-export default WorkoutStarted
+export default React.memo(WorkoutStarted)

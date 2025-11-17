@@ -77,9 +77,6 @@ const AuthPage = () => {
 				const { token, ...restParameters } = loginData
 
 				login(loginData.token, restParameters)
-				if (!getItem('isAccountExist')?.accountExist) {
-					setItem('isAccountExist', { accountExist: true })
-				}
 			} catch (e) {
 				const errors = await e.response.json()
 				console.log(errors)
@@ -98,7 +95,6 @@ const AuthPage = () => {
 				const { token, ...restParameters } = regData
 
 				login(regData.token, restParameters)
-				setItem('isAccountExist', { accountExist: true })
 			} catch (e) {
 				console.log(e)
 				const errors = await e.response.json()

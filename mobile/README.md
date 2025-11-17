@@ -53,6 +53,12 @@
         ...
         + useYandexMapsLite = true 
    }
+   ``` 
+5. Сжатие android проекта осуществляется в `./android/app/build.gradle` следующим образом:
+   ```xml
+        // minifyEnabled enableProguardInReleaseBuilds
+           minifyEnabled true
+           shrinkResources true
    ```
 
 ## Подготовка Ios-проекта

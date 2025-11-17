@@ -87,8 +87,6 @@ TaskManager.defineTask(LOCATION_TASK_NAME, async ({ data, error }) => {
 	}
 })
 
-const DEFAULT_MAP_CENTER = { lat: 55.758745, lon: 37.619153 }
-
 export default function NewTraining() {
 	const insets = useSafeAreaInsets()
 	const toast = useToast()
@@ -101,23 +99,14 @@ export default function NewTraining() {
 	const notificationIntervalRef = useRef<null | NodeJS.Timeout>(null)
 	const [speedMPS, setSpeedMPS] = useState(0) // метры в секунду
 
-	const [state, setState] = useState<{
-		chosenWorkout: IWorkoutModeElement
-		isWorkoutStarted: boolean
-		isPaused: boolean
-		myLocations: IWorkoutLocationStorageItem[]
-		initialMarkerLocation: ILatLng | null
-		// headingDebug: number | null
-	}>({
-		chosenWorkout: WorkoutTypesData[0],
-		isWorkoutStarted: false,
-		isPaused: false,
-		myLocations: [],
-		initialMarkerLocation: null
-		// headingDebug: null
-	})
+	const [chosenWorkout, setChosenWorkout] = useState<IWorkoutModeElement>(WorkoutTypesData[0])
+	const [isWorkoutStarted, setIsWorkoutStarted] = useState<boolean>(false)
+	const [isPaused, setIsPaused] = useState<boolean>(false)
+	const [myLocations, setMyLocations] = useState<IWorkoutLocationStorageItem[]>([])
+	const [initialMarkerLocation, setInitialMarkerLocation] = useState<ILatLng | null>(null)
+	// const [headingDebug, setHeadingDebug] = useState<number | null>(null)
 
-	const isPausedRef = useLatest(state.isPaused)
+	const isPausedRef = useLatest(isPaused)
 
 	useEffect(() => {
 		if (permissionsRef.current) {
@@ -132,13 +121,10 @@ export default function NewTraining() {
 
 		if (activeWorkout) {
 			const foundedWorkout = WorkoutTypesData.find((w) => w.type === activeWorkout.type) ?? WorkoutTypesData[0]
-			setState((s) => ({
-				...s,
-				isPaused: activeWorkout.isPaused,
-				myLocations: activeWorkout.locations,
-				isWorkoutStarted: true,
-				chosenWorkout: foundedWorkout
-			}))
+			setIsPaused(activeWorkout.isPaused)
+			setMyLocations(activeWorkout.locations)
+			setIsWorkoutStarted(true)
+			setChosenWorkout(foundedWorkout)
 		}
 	}, [])
 
@@ -172,21 +158,21 @@ export default function NewTraining() {
 	}
 
 	const saveLocationToStorageAndState = (location: LocationObject) => {
-		setState((s) => {
+		setMyLocations((prevState) => {
 			const lastSavedWorkoutItem = setWorkoutItem(location) // Сохраняем в локальное хранилище
 
-			if (s.myLocations?.find((loc) => loc.relTs === lastSavedWorkoutItem.relTs)) {
+			if (prevState?.find((loc) => loc.relTs === lastSavedWorkoutItem.relTs)) {
 				// защита от дублирования, если такая локация уже существует в локальном стейте
-				return s
+				return prevState
 			}
 
-			if (s.myLocations.length) {
+			if (prevState.length) {
 				return {
-					...s,
-					myLocations: [...s.myLocations, lastSavedWorkoutItem]
+					...prevState,
+					myLocations: [...prevState, lastSavedWorkoutItem]
 				}
 			} else {
-				return { ...s, myLocations: [lastSavedWorkoutItem] }
+				return { ...prevState, myLocations: [lastSavedWorkoutItem] }
 			}
 		})
 	}
@@ -216,9 +202,9 @@ export default function NewTraining() {
 					console.log('newLatLon', newLatLon)
 
 					if (mapComponentRef.current) {
-						if (!state.initialMarkerLocation) {
+						if (!initialMarkerLocation) {
 							//@TODO может тут неправильно, при перезаходе сделать?
-							setState((s) => ({ ...s, initialMarkerLocation: newLatLon }))
+							setInitialMarkerLocation(newLatLon)
 						}
 						// @TODO если впервые получили точку, то центр должен меняться мгновенно
 						// @TODO или анимацию сделать линейной
@@ -314,10 +300,10 @@ export default function NewTraining() {
 			}
 
 			// --- Все разрешения есть, запускаем тренировку ---
-			startAndStoreNewActiveWorkout(state.chosenWorkout.type)
-			console.log('chosenWorkout', state.chosenWorkout)
+			startAndStoreNewActiveWorkout(chosenWorkout.type)
+			console.log('chosenWorkout', chosenWorkout)
 
-			setState((s) => ({ ...s, isWorkoutStarted: true }))
+			setIsWorkoutStarted(true)
 
 			await startHeadingTracking()
 			if (isNotificationsGranted && isPhysicalActivityPermissionGranted) {
@@ -334,7 +320,7 @@ export default function NewTraining() {
 	const handleChangeWorkout = (workoutId: number) => {
 		const foundedWorkout = WorkoutTypesData.find((workout) => workout.id === workoutId)
 		if (!foundedWorkout) return
-		setState((s) => ({ ...s, chosenWorkout: foundedWorkout }))
+		setChosenWorkout(foundedWorkout)
 	}
 
 	const allPermissionsGrantedCallback = async () => {
@@ -345,7 +331,7 @@ export default function NewTraining() {
 			lon: lastUserPosition.coords.longitude
 		}
 
-		setState((s) => ({ ...s, initialMarkerLocation: newLatLon }))
+		setInitialMarkerLocation(newLatLon)
 		if (mapComponentRef.current) {
 			mapComponentRef.current.setMapCenter(newLatLon, 0.5, 13)
 		}
@@ -358,10 +344,10 @@ export default function NewTraining() {
 
 	const handleClickPause = async () => {
 		setSpeedMPS(0)
-		setState((s) => {
-			const nextPauseState = !s.isPaused
+		setIsPaused((prevState) => {
+			const nextPauseState = !prevState
 			setActiveWorkoutPauseState(nextPauseState)
-			return { ...s, isPaused: nextPauseState }
+			return nextPauseState
 		})
 		const lastUserPosition = await getLastUserPosition()
 		saveLocationToStorageAndState(lastUserPosition)
@@ -392,12 +378,9 @@ export default function NewTraining() {
 			headingSubscriptionRef.current = null
 		}
 		await stopNotificationTimer()
-		setState((s) => ({
-			...s,
-			isWorkoutStarted: false,
-			isPaused: false,
-			myLocations: []
-		}))
+		setIsWorkoutStarted(false)
+		setIsPaused(false)
+		setMyLocations([])
 		if (userLocationMarkerRef.current) {
 			userLocationMarkerRef.current.setAccuracy(null)
 			userLocationMarkerRef.current.setMarkerPosition(null)
@@ -410,8 +393,9 @@ export default function NewTraining() {
 		const WorkoutStorage = getAllWorkoutStorage()
 
 		const locations = WorkoutStorage.activeWorkout?.locations
+		console.log('saved locations: ', JSON.stringify(locations))
 		if (locations) {
-			setState((s) => ({ ...s, myLocations: locations }))
+			setMyLocations(locations)
 		}
 	}
 
@@ -517,54 +501,26 @@ export default function NewTraining() {
 		<SafeAreaProvider style={{ paddingTop: insets.top }}>
 			<GestureHandlerRootView style={{ flex: 1 }}>
 				<SafeAreaView style={styles.container}>
-					{/*<Button*/}
-					{/*	variant="white"*/}
-					{/*	onPress={() => {*/}
-					{/*		if (userLocationMarkerRef.current) {*/}
-					{/*			userLocationMarkerRef.current.setMarkerPosition({*/}
-					{/*				lat: 53.377398777940066,*/}
-					{/*				lon: 49.44734799788105*/}
-					{/*			})*/}
-					{/*			userLocationMarkerRef.current.setAccuracy(10)*/}
-					{/*		}*/}
-					{/*	}}*/}
-					{/*>*/}
-					{/*	переместить 1*/}
-					{/*</Button>*/}
-					{/*<Button*/}
-					{/*	variant="white"*/}
-					{/*	onPress={() => {*/}
-					{/*		if (userLocationMarkerRef.current) {*/}
-					{/*			userLocationMarkerRef.current.setMarkerPosition({*/}
-					{/*				lat: 53.37815399436764,*/}
-					{/*				lon: 49.44731581137271*/}
-					{/*			})*/}
-					{/*			userLocationMarkerRef.current.setAccuracy(20)*/}
-					{/*		}*/}
-					{/*	}}*/}
-					{/*>*/}
-					{/*	переместить 2*/}
-					{/*</Button>*/}
-					{state.isWorkoutStarted ? (
+					{isWorkoutStarted ? (
 						<WorkoutStarted
 							// headingDebug={state.headingDebug}
-							initialMarkerLocation={state.initialMarkerLocation}
-							userLocations={state.myLocations}
+							initialMarkerLocation={initialMarkerLocation}
+							userLocations={myLocations}
 							handleClickPause={pauseDebounced}
 							handleClickEndWorkout={handleClickEndWorkout}
-							workoutType={state.chosenWorkout.type}
-							isPaused={state.isPaused}
+							workoutType={chosenWorkout.type}
+							isPaused={isPaused}
 							speedMPS={speedMPS}
 							mapComponentRef={mapComponentRef}
 							userLocationMarkerRef={userLocationMarkerRef}
 						/>
 					) : (
 						<NewWorkout
-							initialMarkerLocation={state.initialMarkerLocation}
+							initialMarkerLocation={initialMarkerLocation}
 							allPermsGranted={allPermissionsGrantedCallback}
 							handleClickStart={handleClickStart}
 							handleChangeWorkout={handleChangeWorkout}
-							chosenWorkout={state.chosenWorkout}
+							chosenWorkout={chosenWorkout}
 							WorkoutTypesData={WorkoutTypesData}
 							permissionsRef={permissionsRef}
 							mapComponentRef={mapComponentRef}
