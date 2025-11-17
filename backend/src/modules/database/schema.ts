@@ -273,7 +273,7 @@ export const postLikes = pgTable(
 			.references(() => posts.id),
 		userId: uuid('user_id')
 			.notNull()
-			.references(() => media.filename),
+			.references(() => users.id),
 		createdAt: timestamp('created_at').defaultNow().notNull(),
 	},
 	(table) => [primaryKey({ columns: [table.postId, table.userId] })],
