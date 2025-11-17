@@ -31,8 +31,8 @@ const WorkoutStarted = (props: IProps) => {
 	const insets = useSafeAreaInsets()
 	const maxMapHeight = height / 2 - 40 - insets.top
 	const [isEndTrainingModalOpen, setIsEndTrainingModalOpen] = useState(false)
-	const [peopleListHidden, setPeopleListHidden] = useState(false)
-	const [mapViewHidden, setMapViewHidden] = useState(false)
+	const [peopleListHidden, setPeopleListHidden] = useState(true)
+	const [mapViewHidden, setMapViewHidden] = useState(true)
 
 	const handleCloseEndModal = useCallback(() => {
 		setIsEndTrainingModalOpen(false)

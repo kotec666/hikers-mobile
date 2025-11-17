@@ -11,139 +11,140 @@ import ResumeLocationMarker from '@/components/map/markers/ResumeLocationMarker'
 import StartLocationMarker from '@/components/map/markers/StartLocationMarker'
 import { getMapSettings, updateMapSettings } from '@/store/mapStorage'
 import PolylineNativeComponent from 'react-native-yamap-plus/src/spec/PolylineNativeComponent'
+import { PolylineComponentInstanceRef, PolylineCustom } from '@/components/map/PolylineCustom'
 
-// const testLocations = [
-// 	{
-// 		relTs: 1,
-// 		locationObject: {
-// 			coords: {
-// 				latitude: 53.377398777940066,
-// 				longitude: 49.44734799788105
-// 			},
-// 			timestamp: 1,
-// 			mocked: false
-// 		},
-// 		isPausedPoint: false,
-// 		isSavedToServer: false
-// 	},
-// 	{
-// 		relTs: 1,
-// 		locationObject: {
-// 			coords: {
-// 				latitude: 53.37815399436764,
-// 				longitude: 49.44731581137271
-// 			},
-// 			timestamp: 1,
-// 			mocked: false
-// 		},
-// 		isPausedPoint: false,
-// 		isSavedToServer: false
-// 	},
-// 	{
-// 		relTs: 1,
-// 		locationObject: {
-// 			coords: {
-// 				latitude: 53.3782243952166,
-// 				longitude: 49.449622511137036
-// 			},
-// 			timestamp: 1,
-// 			mocked: false
-// 		},
-// 		isPausedPoint: true,
-// 		isSavedToServer: false
-// 	},
-// 	{
-// 		relTs: 1,
-// 		locationObject: {
-// 			coords: {
-// 				latitude: 53.377379577347824,
-// 				longitude: 49.449676155317604
-// 			},
-// 			timestamp: 1,
-// 			mocked: false
-// 		},
-// 		isPausedPoint: true,
-// 		isSavedToServer: false
-// 	},
-// 	{
-// 		relTs: 1,
-// 		locationObject: {
-// 			coords: {
-// 				latitude: 53.37699556368535,
-// 				longitude: 49.448302864295115
-// 			},
-// 			timestamp: 1,
-// 			mocked: false
-// 		},
-// 		isPausedPoint: false,
-// 		isSavedToServer: false
-// 	},
-// 	{
-// 		relTs: 1,
-// 		locationObject: {
-// 			coords: {
-// 				latitude: 53.376662749043575,
-// 				longitude: 49.44670426771426
-// 			},
-// 			timestamp: 1,
-// 			mocked: false
-// 		},
-// 		isPausedPoint: false,
-// 		isSavedToServer: false
-// 	},
-// 	{
-// 		relTs: 1,
-// 		locationObject: {
-// 			coords: {
-// 				latitude: 53.37599711195731,
-// 				longitude: 49.4443761102777
-// 			},
-// 			timestamp: 1,
-// 			mocked: false
-// 		},
-// 		isPausedPoint: true,
-// 		isSavedToServer: false
-// 	},
-// 	{
-// 		relTs: 1,
-// 		locationObject: {
-// 			coords: {
-// 				latitude: 53.37533786497362,
-// 				longitude: 49.44261658115514
-// 			},
-// 			timestamp: 1,
-// 			mocked: false
-// 		},
-// 		isPausedPoint: true,
-// 		isSavedToServer: false
-// 	},
-// 	{
-// 		relTs: 1,
-// 		locationObject: {
-// 			coords: {
-// 				latitude: 53.37533786497362,
-// 				longitude: 49.44561658115514
-// 			},
-// 			timestamp: 1,
-// 			mocked: false
-// 		},
-// 		isPausedPoint: true,
-// 		isSavedToServer: false
-// 	},
-// 	{
-// 		relTs: 1,
-// 		locationObject: {
-// 			coords: {
-// 				latitude: 53.37133786497362,
-// 				longitude: 49.44661658115514
-// 			},
-// 			timestamp: 1,
-// 			mocked: false
-// 		},
-// 		isPausedPoint: true,
-// 		isSavedToServer: false
-// 	}
-// ]
+const testLocations = [
+	{
+		relTs: 1,
+		locationObject: {
+			coords: {
+				latitude: 53.377398777940066,
+				longitude: 49.44734799788105
+			},
+			timestamp: 1,
+			mocked: false
+		},
+		isPausedPoint: false,
+		isSavedToServer: false
+	},
+	{
+		relTs: 1,
+		locationObject: {
+			coords: {
+				latitude: 53.37815399436764,
+				longitude: 49.44731581137271
+			},
+			timestamp: 1,
+			mocked: false
+		},
+		isPausedPoint: false,
+		isSavedToServer: false
+	},
+	{
+		relTs: 1,
+		locationObject: {
+			coords: {
+				latitude: 53.3782243952166,
+				longitude: 49.449622511137036
+			},
+			timestamp: 1,
+			mocked: false
+		},
+		isPausedPoint: true,
+		isSavedToServer: false
+	},
+	{
+		relTs: 1,
+		locationObject: {
+			coords: {
+				latitude: 53.377379577347824,
+				longitude: 49.449676155317604
+			},
+			timestamp: 1,
+			mocked: false
+		},
+		isPausedPoint: true,
+		isSavedToServer: false
+	},
+	{
+		relTs: 1,
+		locationObject: {
+			coords: {
+				latitude: 53.37699556368535,
+				longitude: 49.448302864295115
+			},
+			timestamp: 1,
+			mocked: false
+		},
+		isPausedPoint: false,
+		isSavedToServer: false
+	},
+	{
+		relTs: 1,
+		locationObject: {
+			coords: {
+				latitude: 53.376662749043575,
+				longitude: 49.44670426771426
+			},
+			timestamp: 1,
+			mocked: false
+		},
+		isPausedPoint: false,
+		isSavedToServer: false
+	},
+	{
+		relTs: 1,
+		locationObject: {
+			coords: {
+				latitude: 53.37599711195731,
+				longitude: 49.4443761102777
+			},
+			timestamp: 1,
+			mocked: false
+		},
+		isPausedPoint: true,
+		isSavedToServer: false
+	},
+	{
+		relTs: 1,
+		locationObject: {
+			coords: {
+				latitude: 53.37533786497362,
+				longitude: 49.44261658115514
+			},
+			timestamp: 1,
+			mocked: false
+		},
+		isPausedPoint: true,
+		isSavedToServer: false
+	},
+	{
+		relTs: 1,
+		locationObject: {
+			coords: {
+				latitude: 53.37533786497362,
+				longitude: 49.44561658115514
+			},
+			timestamp: 1,
+			mocked: false
+		},
+		isPausedPoint: true,
+		isSavedToServer: false
+	},
+	{
+		relTs: 1,
+		locationObject: {
+			coords: {
+				latitude: 53.37133786497362,
+				longitude: 49.44661658115514
+			},
+			timestamp: 1,
+			mocked: false
+		},
+		isPausedPoint: true,
+		isSavedToServer: false
+	}
+]
 
 export interface ILatLng {
 	lat: number
@@ -166,7 +167,7 @@ export interface MapComponentHandle {
 
 const MapComponent = forwardRef<MapComponentHandle, IProps>((props, ref) => {
 	const mapRef = useRef<YamapRef>(null)
-	// const polylineRef = useRef(null)
+	const polylineRef = useRef<PolylineComponentInstanceRef>(null)
 	const isAnimationBlocked = useRef<boolean>(false)
 	const animationBlockTimer = useRef<NodeJS.Timeout | null>(null)
 	const mapInitialRegionSettings = useRef<InitialRegion>(getMapSettings()).current
@@ -303,13 +304,25 @@ const MapComponent = forwardRef<MapComponentHandle, IProps>((props, ref) => {
 
 	const updateMapSettingsDebounced = debounce(updateMapSettings, 300)
 
-	// console.log('polylineRef.current', polylineRef.current)
-
 	console.log('Render MapComponent')
 	return (
 		<View className="flex-1" style={{ overflow: 'hidden', borderRadius: props.rounded || 0 }}>
 			<Button variant="white" onPress={() => removeAllWorkoutStorage()}>
 				REMOVE ALL WORKOUT STORAGE
+			</Button>
+			<Button
+				variant="white"
+				onPress={() => {
+					console.log('polylineRef.current', polylineRef.current)
+					polylineRef.current?.setNativeProps({
+						points: testLocations.map((location) => ({
+							lat: location.locationObject.coords.latitude,
+							lon: location.locationObject.coords.longitude
+						}))
+					})
+				}}
+			>
+				Test polyline
 			</Button>
 			<Yamap
 				ref={mapRef}
@@ -344,6 +357,14 @@ const MapComponent = forwardRef<MapComponentHandle, IProps>((props, ref) => {
 				{/*		{ lat: 53.374451, lon: 49.560469 }*/}
 				{/*	]}*/}
 				{/*/>*/}
+
+				<PolylineCustom
+					ref={polylineRef}
+					points={[
+						{ lat: 53.374451, lon: 49.460469 },
+						{ lat: 53.374451, lon: 49.560469 }
+					]}
+				/>
 
 				{/*<DirectionMarkersDebug center={{ lat: 53.374451, lon: 49.460469 }} />*/}
 				{props.initialMarkerLocation && (
