@@ -7,6 +7,8 @@ import { SwaggerTheme, SwaggerThemeNameEnum } from 'swagger-themes';
 import { Logger } from 'nestjs-pino';
 import { HttpExceptionFilter } from './common/filters/exceptions.filter';
 import { useContainer } from 'class-validator';
+import { config } from 'dotenv';
+config();
 
 async function bootstrap() {
 	const app: INestApplication = await NestFactory.create(AppModule, {
