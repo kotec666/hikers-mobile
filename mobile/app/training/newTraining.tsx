@@ -1,7 +1,7 @@
 import { PermissionsAndroid, Platform, SafeAreaView, StyleSheet } from 'react-native'
 import { SafeAreaProvider, useSafeAreaInsets } from 'react-native-safe-area-context'
 import { GestureHandlerRootView } from 'react-native-gesture-handler'
-import React, { useCallback, useEffect, useRef, useState } from 'react'
+import React, { useCallback, useEffect, useLayoutEffect, useRef, useState } from 'react'
 import WorkoutRunning from '@/components/svg/WorkoutRunning'
 import WorkoutWalking from '@/components/svg/WorkoutWalking'
 import WorkoutBicycle from '@/components/svg/WorkoutBicycle'
@@ -18,7 +18,6 @@ import {
 	moveActiveWorkoutToNotSaved,
 	setActiveWorkoutPauseState,
 	setWorkoutItem,
-	setWorkoutItems,
 	startAndStoreNewActiveWorkout
 } from '@/store/workoutStorage'
 import { ILatLng, MapComponentHandle } from '@/components/map/MapComponent'
@@ -36,9 +35,13 @@ import { AllGeolocationPermissionsHandle } from '@/components/AllGeolocationPerm
 import * as Notification from 'expo-notifications'
 import { TrainingType } from '../../../shared/enums'
 import { debounce } from '@/helpers/debounce'
-import { Animation } from 'react-native-yamap-plus'
 import { UserLocationMarkerHandle } from '@/components/map/markers/UserLocationMarker'
 import { throttle } from '@/helpers/throttle'
+
+// eslint-disable-next-line import/no-duplicates
+import '@/tasks/backgroundLocationHandler'
+// eslint-disable-next-line import/no-duplicates
+import { LOCATION_TASK_NAME } from '@/tasks/backgroundLocationHandler'
 
 initializeNotifications()
 
@@ -67,26 +70,6 @@ const WorkoutTypesData = [
 	{ id: 22, type: TrainingType.BICYCLE, name: 'Велосипед last', IconComponent: WorkoutBicycle }
 ]
 
-const LOCATION_TASK_NAME = 'background-location-task'
-
-TaskManager.defineTask(LOCATION_TASK_NAME, async ({ data, error }) => {
-	if (error) {
-		console.error('Location task error:', error)
-		return
-	}
-
-	if (data) {
-		const { locations } = data as { locations: LocationObject[] | LocationObject }
-		console.log('Received background locations', locations)
-
-		if (Array.isArray(locations)) {
-			setWorkoutItems(locations)
-		} else {
-			setWorkoutItem(locations)
-		}
-	}
-})
-
 export default function NewTraining() {
 	const insets = useSafeAreaInsets()
 	const toast = useToast()
@@ -114,8 +97,9 @@ export default function NewTraining() {
 		}
 	}, [])
 
-	useEffect(() => {
+	useLayoutEffect(() => {
 		// @TODO useLayoutEffect?
+		// после рестарта (перезахода в) приложения (-е)
 		const workoutStorage = getAllWorkoutStorage()
 		const activeWorkout = workoutStorage.activeWorkout
 
@@ -123,8 +107,8 @@ export default function NewTraining() {
 			const foundedWorkout = WorkoutTypesData.find((w) => w.type === activeWorkout.type) ?? WorkoutTypesData[0]
 			setIsPaused(activeWorkout.isPaused)
 			setMyLocations(activeWorkout.locations)
-			setIsWorkoutStarted(true)
 			setChosenWorkout(foundedWorkout)
+			handleClickStart(true)
 		}
 	}, [])
 
@@ -161,18 +145,19 @@ export default function NewTraining() {
 		setMyLocations((prevState) => {
 			const lastSavedWorkoutItem = setWorkoutItem(location) // Сохраняем в локальное хранилище
 
+			if (!lastSavedWorkoutItem) {
+				// there was no active workout in storage — don't update state
+				return prevState
+			}
 			if (prevState?.find((loc) => loc.relTs === lastSavedWorkoutItem.relTs)) {
 				// защита от дублирования, если такая локация уже существует в локальном стейте
 				return prevState
 			}
 
 			if (prevState.length) {
-				return {
-					...prevState,
-					myLocations: [...prevState, lastSavedWorkoutItem]
-				}
+				return [...prevState, lastSavedWorkoutItem]
 			} else {
-				return { ...prevState, myLocations: [lastSavedWorkoutItem] }
+				return [lastSavedWorkoutItem]
 			}
 		})
 	}
@@ -210,6 +195,7 @@ export default function NewTraining() {
 						// @TODO или анимацию сделать линейной
 						// @TODO если прервать анимацию центровки не получится, то можно попробовать отправить линейную анимацию с длительностью 0 сек...
 						mapComponentRef.current.setMapCenter(newLatLon, 1.2)
+						// mapComponentRef.current.addPointsToLine(newLatLon)
 					}
 					if (userLocationMarkerRef.current) {
 						userLocationMarkerRef.current.setMarkerPosition(newLatLon)
@@ -231,7 +217,7 @@ export default function NewTraining() {
 
 	const throttledHeadingUpdate = throttle((data: Location.LocationHeadingObject) => {
 		userLocationMarkerRef.current?.setMarkerHeading(data.trueHeading ?? data.magHeading)
-	}, 1000)
+	}, 500)
 
 	const startHeadingTracking = async () => {
 		headingSubscriptionRef.current = await Location.watchHeadingAsync(throttledHeadingUpdate)
@@ -276,7 +262,7 @@ export default function NewTraining() {
 		return await Location.getCurrentPositionAsync()
 	}
 
-	const handleClickStart = async () => {
+	const handleClickStart = async (afterReboot: boolean) => {
 		try {
 			const {
 				foregroundStatus,
@@ -300,10 +286,12 @@ export default function NewTraining() {
 			}
 
 			// --- Все разрешения есть, запускаем тренировку ---
-			startAndStoreNewActiveWorkout(chosenWorkout.type)
-			console.log('chosenWorkout', chosenWorkout)
-
 			setIsWorkoutStarted(true)
+
+			if (!afterReboot) {
+				startAndStoreNewActiveWorkout(chosenWorkout.type)
+				console.log('chosenWorkout', chosenWorkout)
+			}
 
 			await startHeadingTracking()
 			if (isNotificationsGranted && isPhysicalActivityPermissionGranted) {
@@ -365,10 +353,11 @@ export default function NewTraining() {
 
 	const handleClickEndWorkout = async () => {
 		// @TODO требуется проверка на то что тренировка завершилась слишком рано
+		router.push('/training/viewWorkout')
+
 		const lastUserPosition = await getLastUserPosition()
 		await stopBackgroundTracking()
-		saveLocationToStorageAndState(lastUserPosition)
-		moveActiveWorkoutToNotSaved() // Наверное эта строка крашит приложение, т.к. все данные становятся null + undefined
+
 		if (locationSubscriptionRef.current) {
 			locationSubscriptionRef.current.remove()
 			locationSubscriptionRef.current = null
@@ -377,6 +366,8 @@ export default function NewTraining() {
 			headingSubscriptionRef.current.remove()
 			headingSubscriptionRef.current = null
 		}
+		saveLocationToStorageAndState(lastUserPosition)
+		moveActiveWorkoutToNotSaved()
 		await stopNotificationTimer()
 		setIsWorkoutStarted(false)
 		setIsPaused(false)
@@ -386,14 +377,13 @@ export default function NewTraining() {
 			userLocationMarkerRef.current.setMarkerPosition(null)
 		}
 		// setAccuracy(null)
-		router.push('/training/viewWorkout')
 	}
 
 	const loadAndSetSavedLocations = () => {
 		const WorkoutStorage = getAllWorkoutStorage()
 
 		const locations = WorkoutStorage.activeWorkout?.locations
-		console.log('saved locations: ', JSON.stringify(locations))
+
 		if (locations) {
 			setMyLocations(locations)
 		}
@@ -467,7 +457,7 @@ export default function NewTraining() {
 	}
 
 	const startNotificationTimer = async () => {
-		// @TODO if not Android
+		if (Platform.OS !== 'android') return
 		const { granted: notificationsGranted } = await Notification.getPermissionsAsync()
 		const activityRecognitionPerms = await PermissionsAndroid.request(
 			PermissionsAndroid.PERMISSIONS.ACTIVITY_RECOGNITION
@@ -504,6 +494,7 @@ export default function NewTraining() {
 					{isWorkoutStarted ? (
 						<WorkoutStarted
 							// headingDebug={state.headingDebug}
+							userLocationMarkerRef={userLocationMarkerRef}
 							initialMarkerLocation={initialMarkerLocation}
 							userLocations={myLocations}
 							handleClickPause={pauseDebounced}
@@ -512,10 +503,10 @@ export default function NewTraining() {
 							isPaused={isPaused}
 							speedMPS={speedMPS}
 							mapComponentRef={mapComponentRef}
-							userLocationMarkerRef={userLocationMarkerRef}
 						/>
 					) : (
 						<NewWorkout
+							userLocationMarkerRef={userLocationMarkerRef}
 							initialMarkerLocation={initialMarkerLocation}
 							allPermsGranted={allPermissionsGrantedCallback}
 							handleClickStart={handleClickStart}
@@ -524,7 +515,6 @@ export default function NewTraining() {
 							WorkoutTypesData={WorkoutTypesData}
 							permissionsRef={permissionsRef}
 							mapComponentRef={mapComponentRef}
-							userLocationMarkerRef={userLocationMarkerRef}
 						/>
 					)}
 				</SafeAreaView>

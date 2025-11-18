@@ -41,40 +41,21 @@ const MetricsTab = memo((props: IProps) => {
 				)}
 				<MetricSpeed isPaused={props.isPaused} speedMPS={props.speedMPS} />
 				<MetricDistance isPaused={props.isPaused} totalDistanceMeters={totalDistanceMeters} />
+				<MetricAveragePace
+					isPaused={props.isPaused}
+					workoutTimeMs={workoutTime.ms}
+					totalDistanceMeters={totalDistanceMeters}
+				/>
 				{!props.mapViewHidden && (
-					<MetricAveragePace
+					<MetricCalories
 						isPaused={props.isPaused}
+						workoutType={props.workoutType}
 						workoutTimeMs={workoutTime.ms}
 						totalDistanceMeters={totalDistanceMeters}
 					/>
 				)}
-				<MetricCalories
-					isPaused={props.isPaused}
-					workoutType={props.workoutType}
-					workoutTimeMs={workoutTime.ms}
-					totalDistanceMeters={totalDistanceMeters}
-				/>
-				{!props.mapViewHidden && <MetricHeight isPaused={props.isPaused} userLocations={props.userLocations} />}
 
-				{/*{props.mapViewHidden*/}
-				{/*	? metrics*/}
-				{/*			.slice(1, 4)*/}
-				{/*			.map((metric) => (*/}
-				{/*				<Parameter*/}
-				{/*					key={`${metric.id}-cut-list`}*/}
-				{/*					isPaused={props.isPaused}*/}
-				{/*					label={metric.label}*/}
-				{/*					value={metric.value}*/}
-				{/*				/>*/}
-				{/*			))*/}
-				{/*	: metrics.map((metric) => (*/}
-				{/*			<Parameter*/}
-				{/*				key={`${metric.id}-full-list`}*/}
-				{/*				isPaused={props.isPaused}*/}
-				{/*				label={metric.label}*/}
-				{/*				value={metric.value}*/}
-				{/*			/>*/}
-				{/*		))}*/}
+				{!props.mapViewHidden && <MetricHeight isPaused={props.isPaused} userLocations={props.userLocations} />}
 			</View>
 		</View>
 	)

@@ -126,9 +126,25 @@ export const moveActiveWorkoutToNotSaved = () => {
 /**
  * Сохраняет один элемент локации в активную тренировку
  **/
-export const setWorkoutItem = (workoutItem: LocationObject): IWorkoutLocationStorageItem => {
+export const setWorkoutItem = (workoutItem: LocationObject): IWorkoutLocationStorageItem | null => {
 	const workoutStorageStr = workoutStorage.getString(workoutStorageKey)
-	const parsedStorage = JSON.parse(workoutStorageStr!) as IWorkoutStorage
+	if (!workoutStorageStr) {
+		console.warn('setWorkoutItem: storage empty or undefined — skipping')
+		return null
+	}
+
+	let parsedStorage: IWorkoutStorage
+	try {
+		parsedStorage = JSON.parse(workoutStorageStr)
+	} catch (e) {
+		console.error('setWorkoutItem: failed to parse storage JSON', e)
+		return null
+	}
+
+	if (!parsedStorage.activeWorkout) {
+		console.warn('setWorkoutItem called but no activeWorkout found — ignoring location')
+		return null
+	}
 
 	const startedAt = parsedStorage!.activeWorkout!.startedAt // Date.now()
 	const activeWorkoutLocations = parsedStorage!.activeWorkout!.locations
@@ -156,7 +172,23 @@ export const setWorkoutItem = (workoutItem: LocationObject): IWorkoutLocationSto
  **/
 export const setWorkoutItems = (workoutItems: LocationObject[]) => {
 	const workoutStorageStr = workoutStorage.getString(workoutStorageKey)
-	const parsedStorage = JSON.parse(workoutStorageStr!) as IWorkoutStorage
+	if (!workoutStorageStr) {
+		console.warn('setWorkoutItem: storage empty or undefined — skipping')
+		return null
+	}
+
+	let parsedStorage: IWorkoutStorage
+	try {
+		parsedStorage = JSON.parse(workoutStorageStr)
+	} catch (e) {
+		console.error('setWorkoutItem: failed to parse storage JSON', e)
+		return null
+	}
+
+	if (!parsedStorage.activeWorkout) {
+		console.warn('setWorkoutItems called but no activeWorkout found — skipping saving items')
+		return
+	}
 
 	const startedAt = parsedStorage.activeWorkout!.startedAt // Date.now()
 	const activeWorkoutLocations = parsedStorage.activeWorkout!.locations

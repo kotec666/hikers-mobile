@@ -27,7 +27,7 @@ interface IProps {
 	initialMarkerLocation?: ILatLng | null
 	chosenWorkout: IWorkoutModeElement | null
 	handleChangeWorkout: (workoutId: number) => void
-	handleClickStart: () => void
+	handleClickStart: (afterReboot: boolean) => void
 	allPermsGranted: () => void
 	WorkoutTypesData: IWorkoutModeElement[]
 	permissionsRef: React.RefObject<AllGeolocationPermissionsHandle | null>
@@ -78,7 +78,7 @@ const NewWorkout = (props: IProps) => {
 					{props.chosenWorkout && renderIcon(props.chosenWorkout.IconComponent, '#fff')}
 					{/*<SneakerSvg />*/}
 				</MapActionButton>
-				<StartButton onPress={props.handleClickStart}>Начать</StartButton>
+				<StartButton onPress={() => props.handleClickStart(false)}>Начать</StartButton>
 				<MapActionButton onPress={() => router.navigate('/find-people')}>
 					<PeopleAddSvg />
 				</MapActionButton>
