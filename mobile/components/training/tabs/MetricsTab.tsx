@@ -2,7 +2,7 @@ import { View } from 'react-native'
 import { cn } from '@/helpers/cn'
 import React, { memo, useMemo } from 'react'
 import MetricTime from '@/components/training/tabs/metrics/MetricTime'
-import MetricSpeed from '@/components/training/tabs/metrics/MetricSpeed'
+import MetricSpeed, { MetricSpeedHandle } from '@/components/training/tabs/metrics/MetricSpeed'
 import MetricDistance from '@/components/training/tabs/metrics/MetricDistance'
 import { IWorkoutLocationStorageItem } from '@/store/workoutStorage'
 import MetricAveragePace from '@/components/training/tabs/metrics/MetricAveragePace'
@@ -16,8 +16,8 @@ interface IProps {
 	workoutType: TrainingType
 	mapViewHidden: boolean
 	isPaused: boolean
-	speedMPS: number
 	userLocations: IWorkoutLocationStorageItem[]
+	metricSpeedRef: React.RefObject<MetricSpeedHandle | null>
 }
 
 const MetricsTab = memo((props: IProps) => {
@@ -39,7 +39,7 @@ const MetricsTab = memo((props: IProps) => {
 				{!props.mapViewHidden && (
 					<MetricTime isPaused={props.isPaused} workoutTimeFormatted={workoutTime.formatted} />
 				)}
-				<MetricSpeed isPaused={props.isPaused} speedMPS={props.speedMPS} />
+				<MetricSpeed ref={props.metricSpeedRef} isPaused={props.isPaused} />
 				<MetricDistance isPaused={props.isPaused} totalDistanceMeters={totalDistanceMeters} />
 				<MetricAveragePace
 					isPaused={props.isPaused}

@@ -1,4 +1,4 @@
-import React, { useCallback, useState } from 'react'
+import React, { forwardRef, useCallback, useImperativeHandle, useMemo, useState } from 'react'
 import EndTrainingModal from '@/components/training/EndTrainingModal'
 import { Container } from '@/components/ui/Container'
 import { Dimensions, Text, View } from 'react-native'
@@ -11,6 +11,7 @@ import { UserLocationMarkerHandle } from '@/components/map/markers/UserLocationM
 import MetricsTab from '@/components/training/tabs/MetricsTab'
 import ShowMembersList from '@/components/training/tabs/ShowMembersList'
 import InteractiveBottomElements from '@/components/training/InteractiveBottomElements'
+import { MetricSpeedHandle } from '@/components/training/tabs/metrics/MetricSpeed'
 
 interface IProps {
 	// headingDebug: number | null
@@ -19,9 +20,10 @@ interface IProps {
 	isPaused: boolean
 	handleClickPause: () => void
 	handleClickEndWorkout: () => void
-	speedMPS: number
+	// speedMPS: number
 	workoutType: TrainingType
 	mapComponentRef: React.RefObject<MapComponentHandle | null>
+	metricSpeedRef: React.RefObject<MetricSpeedHandle | null>
 	userLocationMarkerRef: React.RefObject<UserLocationMarkerHandle | null>
 }
 
@@ -29,7 +31,7 @@ const { height } = Dimensions.get('screen')
 
 const WorkoutStarted = (props: IProps) => {
 	const insets = useSafeAreaInsets()
-	const maxMapHeight = height / 2 - 40 - insets.top
+	const maxMapHeight = useMemo(() => height / 2 - 40 - insets.top, [insets.top])
 	const [isEndTrainingModalOpen, setIsEndTrainingModalOpen] = useState(false)
 	const [peopleListHidden, setPeopleListHidden] = useState(true)
 	const [mapViewHidden, setMapViewHidden] = useState(true)
@@ -87,8 +89,8 @@ const WorkoutStarted = (props: IProps) => {
 							mapViewHidden={mapViewHidden}
 							workoutType={props.workoutType}
 							isPaused={props.isPaused}
-							speedMPS={props.speedMPS}
 							userLocations={props.userLocations}
+							metricSpeedRef={props.metricSpeedRef}
 						/>
 					) : (
 						mapViewHidden && <ShowMembersList />

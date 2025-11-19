@@ -42,6 +42,7 @@ import { throttle } from '@/helpers/throttle'
 import '@/tasks/backgroundLocationHandler'
 // eslint-disable-next-line import/no-duplicates
 import { LOCATION_TASK_NAME } from '@/tasks/backgroundLocationHandler'
+import { MetricSpeedHandle } from '@/components/training/tabs/metrics/MetricSpeed'
 
 initializeNotifications()
 
@@ -79,16 +80,16 @@ export default function NewTraining() {
 	const permissionsRef = useRef<AllGeolocationPermissionsHandle>(null)
 	const locationSubscriptionRef = useRef<null | Location.LocationSubscription>(null)
 	const headingSubscriptionRef = useRef<null | Location.LocationSubscription>(null)
-	const notificationIntervalRef = useRef<null | NodeJS.Timeout>(null)
-	const [speedMPS, setSpeedMPS] = useState(0) // метры в секунду
+	const notificationIntervalRef = useRef<null | ReturnType<typeof setInterval>>(null)
+	const metricSpeedRef = useRef<MetricSpeedHandle>(null)
 
 	const [chosenWorkout, setChosenWorkout] = useState<IWorkoutModeElement>(WorkoutTypesData[0])
 	const [isWorkoutStarted, setIsWorkoutStarted] = useState<boolean>(false)
 	const [isPaused, setIsPaused] = useState<boolean>(false)
-	const [myLocations, setMyLocations] = useState<IWorkoutLocationStorageItem[]>([])
+	// const [myLocations, setMyLocations] = useState<IWorkoutLocationStorageItem[]>([])
 	const [initialMarkerLocation, setInitialMarkerLocation] = useState<ILatLng | null>(null)
 	// const [headingDebug, setHeadingDebug] = useState<number | null>(null)
-
+	const myLocationsRef = useRef<IWorkoutLocationStorageItem[]>([])
 	const isPausedRef = useLatest(isPaused)
 
 	useEffect(() => {
@@ -106,7 +107,8 @@ export default function NewTraining() {
 		if (activeWorkout) {
 			const foundedWorkout = WorkoutTypesData.find((w) => w.type === activeWorkout.type) ?? WorkoutTypesData[0]
 			setIsPaused(activeWorkout.isPaused)
-			setMyLocations(activeWorkout.locations)
+			// setMyLocations(activeWorkout.locations)
+			myLocationsRef.current = activeWorkout.locations
 			setChosenWorkout(foundedWorkout)
 			handleClickStart(true)
 		}
@@ -142,24 +144,45 @@ export default function NewTraining() {
 	}
 
 	const saveLocationToStorageAndState = (location: LocationObject) => {
-		setMyLocations((prevState) => {
-			const lastSavedWorkoutItem = setWorkoutItem(location) // Сохраняем в локальное хранилище
+		const lastSavedWorkoutItem = setWorkoutItem(location) // Сохраняем в локальное хранилище
 
-			if (!lastSavedWorkoutItem) {
-				// there was no active workout in storage — don't update state
-				return prevState
-			}
-			if (prevState?.find((loc) => loc.relTs === lastSavedWorkoutItem.relTs)) {
-				// защита от дублирования, если такая локация уже существует в локальном стейте
-				return prevState
-			}
+		if (!lastSavedWorkoutItem) {
+			return
+		}
 
-			if (prevState.length) {
-				return [...prevState, lastSavedWorkoutItem]
-			} else {
-				return [lastSavedWorkoutItem]
-			}
-		})
+		const prevLocations = myLocationsRef.current
+		if (prevLocations.length > 0) {
+			const lastLoc = prevLocations[prevLocations.length - 1]
+			// защита от дублирования
+			if (lastLoc.relTs === lastSavedWorkoutItem.relTs) return
+		}
+
+		// Update Ref
+		myLocationsRef.current.push(lastSavedWorkoutItem)
+
+		// Imperatively update Map Path
+		if (mapComponentRef.current) {
+			mapComponentRef.current.updatePath(lastSavedWorkoutItem)
+		}
+
+		// setMyLocations((prevState) => {
+		// 	const lastSavedWorkoutItem = setWorkoutItem(location) // Сохраняем в локальное хранилище
+		//
+		// 	if (!lastSavedWorkoutItem) {
+		// 		// there was no active workout in storage — don't update state
+		// 		return prevState
+		// 	}
+		// 	if (prevState?.find((loc) => loc.relTs === lastSavedWorkoutItem.relTs)) {
+		// 		// защита от дублирования, если такая локация уже существует в локальном стейте
+		// 		return prevState
+		// 	}
+		//
+		// 	if (prevState.length) {
+		// 		return [...prevState, lastSavedWorkoutItem]
+		// 	} else {
+		// 		return [lastSavedWorkoutItem]
+		// 	}
+		// })
 	}
 
 	const startTracking = async () => {
@@ -194,7 +217,7 @@ export default function NewTraining() {
 						// @TODO если впервые получили точку, то центр должен меняться мгновенно
 						// @TODO или анимацию сделать линейной
 						// @TODO если прервать анимацию центровки не получится, то можно попробовать отправить линейную анимацию с длительностью 0 сек...
-						mapComponentRef.current.setMapCenter(newLatLon, 1.2)
+						// mapComponentRef.current.setMapCenter(newLatLon, 1.2)
 						// mapComponentRef.current.addPointsToLine(newLatLon)
 					}
 					if (userLocationMarkerRef.current) {
@@ -203,7 +226,8 @@ export default function NewTraining() {
 					}
 
 					if (!isPausedRef.current) {
-						setSpeedMPS(location.coords.speed ?? 0)
+						// setSpeedMPS(location.coords.speed ?? 0)
+						metricSpeedRef?.current?.setSpeed(location.coords.speed ?? 0)
 					}
 
 					saveLocationToStorageAndState(location)
@@ -262,56 +286,59 @@ export default function NewTraining() {
 		return await Location.getCurrentPositionAsync()
 	}
 
-	const handleClickStart = async (afterReboot: boolean) => {
-		try {
-			const {
-				foregroundStatus,
-				backgroundStatus,
-				isGPSEnabled,
-				isPhysicalActivityPermissionGranted,
-				isNotificationsGranted
-			} = await checkPermissions()
+	const handleClickStart = useCallback(
+		async (afterReboot: boolean) => {
+			try {
+				const {
+					foregroundStatus,
+					backgroundStatus,
+					isGPSEnabled,
+					isPhysicalActivityPermissionGranted,
+					isNotificationsGranted
+				} = await checkPermissions()
 
-			// --- iOS и Android: базовые проверки геолокации ---
-			const hasLocationPermissions = foregroundStatus?.granted && backgroundStatus?.granted && isGPSEnabled
+				// --- iOS и Android: базовые проверки геолокации ---
+				const hasLocationPermissions = foregroundStatus?.granted && backgroundStatus?.granted && isGPSEnabled
 
-			// --- Android: дополнительные проверки уведомлений и физ. активности ---
-			const hasAndroidExtras =
-				Platform.OS === 'android' ? isNotificationsGranted && isPhysicalActivityPermissionGranted : true // на iOS просто true
+				// --- Android: дополнительные проверки уведомлений и физ. активности ---
+				const hasAndroidExtras =
+					Platform.OS === 'android' ? isNotificationsGranted && isPhysicalActivityPermissionGranted : true // на iOS просто true
 
-			// --- Проверка всех обязательных разрешений ---
-			if (!hasLocationPermissions || !hasAndroidExtras) {
-				toast.error('Невозможно начать тренировку без предоставления всех разрешений')
-				return permissionsRef.current?.checkPermissions()
+				// --- Проверка всех обязательных разрешений ---
+				if (!hasLocationPermissions || !hasAndroidExtras) {
+					toast.error('Невозможно начать тренировку без предоставления всех разрешений')
+					return permissionsRef.current?.checkPermissions()
+				}
+
+				// --- Все разрешения есть, запускаем тренировку ---
+				setIsWorkoutStarted(true)
+
+				if (!afterReboot) {
+					startAndStoreNewActiveWorkout(chosenWorkout.type)
+					console.log('chosenWorkout', chosenWorkout)
+				}
+
+				await startHeadingTracking()
+				if (isNotificationsGranted && isPhysicalActivityPermissionGranted) {
+					await startNotificationTimer() // опционально, если уведомления разрешены
+				}
+
+				return startTracking()
+			} catch (error) {
+				console.error('Ошибка при старте тренировки:', error)
+				toast.error('Произошла ошибка при запуске тренировки')
 			}
+		},
+		[chosenWorkout]
+	)
 
-			// --- Все разрешения есть, запускаем тренировку ---
-			setIsWorkoutStarted(true)
-
-			if (!afterReboot) {
-				startAndStoreNewActiveWorkout(chosenWorkout.type)
-				console.log('chosenWorkout', chosenWorkout)
-			}
-
-			await startHeadingTracking()
-			if (isNotificationsGranted && isPhysicalActivityPermissionGranted) {
-				await startNotificationTimer() // опционально, если уведомления разрешены
-			}
-
-			return startTracking()
-		} catch (error) {
-			console.error('Ошибка при старте тренировки:', error)
-			toast.error('Произошла ошибка при запуске тренировки')
-		}
-	}
-
-	const handleChangeWorkout = (workoutId: number) => {
+	const handleChangeWorkout = useCallback((workoutId: number) => {
 		const foundedWorkout = WorkoutTypesData.find((workout) => workout.id === workoutId)
 		if (!foundedWorkout) return
 		setChosenWorkout(foundedWorkout)
-	}
+	}, [])
 
-	const allPermissionsGrantedCallback = async () => {
+	const allPermissionsGrantedCallback = useCallback(async () => {
 		console.log('allPermissionsGrantedCallback')
 		const lastUserPosition = await getFastUserPosition()
 		const newLatLon = {
@@ -328,10 +355,11 @@ export default function NewTraining() {
 			userLocationMarkerRef.current.setMarkerHeading(lastUserPosition.coords.heading)
 			userLocationMarkerRef.current.setMarkerPosition(newLatLon)
 		}
-	}
+	}, [])
 
-	const handleClickPause = async () => {
-		setSpeedMPS(0)
+	const handleClickPause = useCallback(async () => {
+		// setSpeedMPS(0)
+		metricSpeedRef.current?.setSpeed(0)
 		setIsPaused((prevState) => {
 			const nextPauseState = !prevState
 			setActiveWorkoutPauseState(nextPauseState)
@@ -339,7 +367,7 @@ export default function NewTraining() {
 		})
 		const lastUserPosition = await getLastUserPosition()
 		saveLocationToStorageAndState(lastUserPosition)
-	}
+	}, [])
 
 	const pauseDebounced = useCallback(debounce(handleClickPause, 300), [])
 
@@ -351,7 +379,7 @@ export default function NewTraining() {
 		}
 	}
 
-	const handleClickEndWorkout = async () => {
+	const handleClickEndWorkout = useCallback(async () => {
 		// @TODO требуется проверка на то что тренировка завершилась слишком рано
 		router.push('/training/viewWorkout')
 
@@ -371,13 +399,13 @@ export default function NewTraining() {
 		await stopNotificationTimer()
 		setIsWorkoutStarted(false)
 		setIsPaused(false)
-		setMyLocations([])
+		// setMyLocations([])
+		myLocationsRef.current = []
 		if (userLocationMarkerRef.current) {
 			userLocationMarkerRef.current.setAccuracy(null)
 			userLocationMarkerRef.current.setMarkerPosition(null)
 		}
-		// setAccuracy(null)
-	}
+	}, [])
 
 	const loadAndSetSavedLocations = () => {
 		const WorkoutStorage = getAllWorkoutStorage()
@@ -385,7 +413,8 @@ export default function NewTraining() {
 		const locations = WorkoutStorage.activeWorkout?.locations
 
 		if (locations) {
-			setMyLocations(locations)
+			// setMyLocations(locations)
+			myLocationsRef.current = locations
 		}
 	}
 
@@ -487,6 +516,7 @@ export default function NewTraining() {
 		})
 	}, [])
 
+	console.log('render NewTraining')
 	return (
 		<SafeAreaProvider style={{ paddingTop: insets.top }}>
 			<GestureHandlerRootView style={{ flex: 1 }}>
@@ -494,14 +524,15 @@ export default function NewTraining() {
 					{isWorkoutStarted ? (
 						<WorkoutStarted
 							// headingDebug={state.headingDebug}
-							userLocationMarkerRef={userLocationMarkerRef}
 							initialMarkerLocation={initialMarkerLocation}
-							userLocations={myLocations}
+							// userLocations={myLocations}
 							handleClickPause={pauseDebounced}
 							handleClickEndWorkout={handleClickEndWorkout}
 							workoutType={chosenWorkout.type}
 							isPaused={isPaused}
-							speedMPS={speedMPS}
+							userLocations={myLocationsRef.current}
+							userLocationMarkerRef={userLocationMarkerRef}
+							metricSpeedRef={metricSpeedRef}
 							mapComponentRef={mapComponentRef}
 						/>
 					) : (

@@ -1,5 +1,5 @@
-import { Animation, InitialRegion, Yamap, YamapRef } from 'react-native-yamap-plus'
-import React, { forwardRef, JSX, useCallback, useImperativeHandle, useRef } from 'react'
+import { Animation, InitialRegion, Point, Yamap, YamapRef } from 'react-native-yamap-plus'
+import React, { forwardRef, useCallback, useEffect, useImperativeHandle, useRef, useState } from 'react'
 import { View } from 'react-native'
 import { IWorkoutLocationStorageItem, removeAllWorkoutStorage } from '@/store/workoutStorage'
 import { Colors } from '@/constants/Colors'
@@ -11,6 +11,7 @@ import ResumeLocationMarker from '@/components/map/markers/ResumeLocationMarker'
 import StartLocationMarker from '@/components/map/markers/StartLocationMarker'
 import { getMapSettings, updateMapSettings } from '@/store/mapStorage'
 import { PolylineComponentInstanceRef, PolylineCustom } from '@/components/map/PolylineCustom'
+import { PolylineNativeProps } from 'react-native-yamap-plus/src/spec/PolylineNativeComponent'
 
 export interface ILatLng {
 	lat: number
@@ -29,38 +30,192 @@ interface IProps {
 export interface MapComponentHandle {
 	setMapCenter: (center: ILatLng | null, durationInSeconds?: number, zoom?: number, animationType?: Animation) => void
 	fitAllMarkers: (durationInSeconds?: number) => void
+	updatePath: (newItem: IWorkoutLocationStorageItem) => void
 }
+
+interface Segment {
+	isPaused: boolean
+	points: Point[]
+	color: string
+}
+
+interface TransitionMarker {
+	type: 'pause' | 'resume'
+	position: Point
+	id: string
+}
+
+// const testLocations = [
+// 	{
+// 		relTs: 1,
+// 		locationObject: {
+// 			coords: {
+// 				latitude: 53.377398777940066,
+// 				longitude: 49.44734799788105
+// 			},
+// 			timestamp: 1,
+// 			mocked: false
+// 		},
+// 		isPausedPoint: false,
+// 		isSavedToServer: false
+// 	},
+// 	{
+// 		relTs: 1,
+// 		locationObject: {
+// 			coords: {
+// 				latitude: 53.37815399436764,
+// 				longitude: 49.44731581137271
+// 			},
+// 			timestamp: 1,
+// 			mocked: false
+// 		},
+// 		isPausedPoint: false,
+// 		isSavedToServer: false
+// 	},
+// 	{
+// 		relTs: 1,
+// 		locationObject: {
+// 			coords: {
+// 				latitude: 53.3782243952166,
+// 				longitude: 49.449622511137036
+// 			},
+// 			timestamp: 1,
+// 			mocked: false
+// 		},
+// 		isPausedPoint: true,
+// 		isSavedToServer: false
+// 	},
+// 	{
+// 		relTs: 1,
+// 		locationObject: {
+// 			coords: {
+// 				latitude: 53.377379577347824,
+// 				longitude: 49.449676155317604
+// 			},
+// 			timestamp: 1,
+// 			mocked: false
+// 		},
+// 		isPausedPoint: true,
+// 		isSavedToServer: false
+// 	},
+// 	{
+// 		relTs: 1,
+// 		locationObject: {
+// 			coords: {
+// 				latitude: 53.37699556368535,
+// 				longitude: 49.448302864295115
+// 			},
+// 			timestamp: 1,
+// 			mocked: false
+// 		},
+// 		isPausedPoint: false,
+// 		isSavedToServer: false
+// 	},
+// 	{
+// 		relTs: 1,
+// 		locationObject: {
+// 			coords: {
+// 				latitude: 53.376662749043575,
+// 				longitude: 49.44670426771426
+// 			},
+// 			timestamp: 1,
+// 			mocked: false
+// 		},
+// 		isPausedPoint: false,
+// 		isSavedToServer: false
+// 	},
+// 	{
+// 		relTs: 1,
+// 		locationObject: {
+// 			coords: {
+// 				latitude: 53.37599711195731,
+// 				longitude: 49.4443761102777
+// 			},
+// 			timestamp: 1,
+// 			mocked: false
+// 		},
+// 		isPausedPoint: true,
+// 		isSavedToServer: false
+// 	},
+// 	{
+// 		relTs: 1,
+// 		locationObject: {
+// 			coords: {
+// 				latitude: 53.37533786497362,
+// 				longitude: 49.44261658115514
+// 			},
+// 			timestamp: 1,
+// 			mocked: false
+// 		},
+// 		isPausedPoint: true,
+// 		isSavedToServer: false
+// 	},
+// 	{
+// 		relTs: 1,
+// 		locationObject: {
+// 			coords: {
+// 				latitude: 53.37533786497362,
+// 				longitude: 49.44561658115514
+// 			},
+// 			timestamp: 1,
+// 			mocked: false
+// 		},
+// 		isPausedPoint: true,
+// 		isSavedToServer: false
+// 	},
+// 	{
+// 		relTs: 1,
+// 		locationObject: {
+// 			coords: {
+// 				latitude: 53.37133786497362,
+// 				longitude: 49.44661658115514
+// 			},
+// 			timestamp: 1,
+// 			mocked: false
+// 		},
+// 		isPausedPoint: true,
+// 		isSavedToServer: false
+// 	}
+// ]
 
 const MapComponent = forwardRef<MapComponentHandle, IProps>((props, ref) => {
 	const mapRef = useRef<YamapRef>(null)
-	const polylineRef = useRef<PolylineComponentInstanceRef[]>([])
+	// State for React rendering of segments and markers
+	const [segments, setSegments] = useState<Segment[]>([])
+	const [transitionMarkers, setTransitionMarkers] = useState<TransitionMarker[]>([])
+
+	// Ref for the CURRENT active segment points.
+	// This allows us to mutate the array and use setNativeProps for performance,
+	// while ensuring we don't mutate the React state (which might be frozen).
+	const currentSegmentPointsRef = useRef<Point[]>([])
+	const activePolylineRef = useRef<PolylineComponentInstanceRef | null>(null)
 	const isAnimationBlocked = useRef<boolean>(false)
-	const animationBlockTimer = useRef<NodeJS.Timeout | null>(null)
+	const animationBlockTimer = useRef<ReturnType<typeof setTimeout> | null>(null)
 	const mapInitialRegionSettings = useRef<InitialRegion>(getMapSettings()).current
 
-	useImperativeHandle(ref, () => ({
-		setMapCenter: (center, durationInSeconds, zoom, animationType) =>
-			changeMapCenter(center, durationInSeconds, zoom, animationType),
-		fitAllMarkers: (durationInSeconds) => fitAllMarkers(durationInSeconds)
-	}))
+	const activeLineColor = Colors['green-main']
+	const pausedLineColor = Colors['gray-ab']
 
-	const renderLines = (locations: IWorkoutLocationStorageItem[] | undefined) => {
-		if (!locations || locations.length < 2) return null
+	// Initialize from props (History load)
+	useEffect(() => {
+		if (props.userLocations && props.userLocations.length > 0) {
+			const parsed = parseLocationsToSegments(props.userLocations)
+			setSegments(parsed.segments)
+			setTransitionMarkers(parsed.markers)
 
-		const activeLineColor = Colors['green-main']
-		const pausedLineColor = Colors['gray-ab']
+			if (parsed.segments.length > 0) {
+				// IMPORTANT: Clone the points to ensure we have a mutable array for the ref,
+				// separate from the potentially frozen state object.
+				currentSegmentPointsRef.current = [...parsed.segments[parsed.segments.length - 1].points]
+			}
+		}
+	}, [props.userLocations])
 
-		const elements: JSX.Element[] = []
+	const parseLocationsToSegments = (locations: IWorkoutLocationStorageItem[]) => {
+		if (!locations || locations.length === 0) return { segments: [], markers: [] }
 
-		// группируем подряд идущие точки по состоянию,
-		// при смене состояния — добавляем точку-переход в конец предыдущей группы
-		const groupedSegments: IWorkoutLocationStorageItem[][] = []
-		const transitions: {
-			groupIndex: number // индекс группы, после которой произошёл переход
-			fromPaused: boolean
-			toPaused: boolean
-			point: IWorkoutLocationStorageItem // точка перехода (curr)
-		}[] = []
+		const resultSegments: Segment[] = []
+		const markers: TransitionMarker[] = []
 
 		let currentGroup: IWorkoutLocationStorageItem[] = [locations[0]]
 
@@ -73,72 +228,221 @@ const MapComponent = forwardRef<MapComponentHandle, IProps>((props, ref) => {
 			if (sameState) {
 				currentGroup.push(curr)
 			} else {
-				// включаем точку перехода в прошлую группу, чтобы получить сегмент prev -> curr
+				// Connect segments visually
 				currentGroup.push(curr)
 
-				// сохраняем группу
-				groupedSegments.push(currentGroup)
-
-				// сохраняем инфу о переходе — группаIndex = индекс только что добавленной группы
-				transitions.push({
-					groupIndex: groupedSegments.length - 1,
-					fromPaused: prev.isPausedPoint,
-					toPaused: curr.isPausedPoint,
-					point: curr
+				resultSegments.push({
+					isPaused: prev.isPausedPoint,
+					points: currentGroup.map((l) => ({
+						lat: l.locationObject.coords.latitude,
+						lon: l.locationObject.coords.longitude
+					})),
+					color: prev.isPausedPoint ? pausedLineColor : activeLineColor
 				})
 
-				// начинаем новую группу с curr (curr дублируется — как конец прошлой и как начало новой)
+				markers.push({
+					type: prev.isPausedPoint ? 'resume' : 'pause',
+					position: { lat: curr.locationObject.coords.latitude, lon: curr.locationObject.coords.longitude },
+					id: `marker-${i}`
+				})
+
 				currentGroup = [curr]
 			}
 		}
 
-		// добавляем последнюю группу
+		// Add the final group
 		if (currentGroup.length > 0) {
-			groupedSegments.push(currentGroup)
+			resultSegments.push({
+				isPaused: currentGroup[0].isPausedPoint,
+				points: currentGroup.map((l) => ({
+					lat: l.locationObject.coords.latitude,
+					lon: l.locationObject.coords.longitude
+				})),
+				color: currentGroup[0].isPausedPoint ? pausedLineColor : activeLineColor
+			})
 		}
 
-		// рендерим группы как единые линии
-		groupedSegments.forEach((group, idx) => {
-			const color = group[0].isPausedPoint ? pausedLineColor : activeLineColor
-
-			const points = group.map((loc) => ({
-				lat: loc.locationObject.coords.latitude,
-				lon: loc.locationObject.coords.longitude
-			}))
-
-			elements.push(
-				<PolylineCustom
-					ref={(elem) => {
-						if (elem) {
-							polylineRef.current.push(elem)
-						}
-					}}
-					key={`group-${idx}`}
-					points={points}
-					strokeColor={color}
-					strokeWidth={4}
-				/>
-			)
-
-			// если после этой группы был переход — ставим маркер в точке перехода
-			const transition = transitions.find((t) => t.groupIndex === idx)
-			if (transition) {
-				const { fromPaused, toPaused, point } = transition
-				const pos = {
-					lat: point.locationObject.coords.latitude,
-					lon: point.locationObject.coords.longitude
-				}
-
-				if (!fromPaused && toPaused) {
-					elements.push(<PauseLocationMarker key={`pause-${idx}`} position={pos} />)
-				} else if (fromPaused && !toPaused) {
-					elements.push(<ResumeLocationMarker key={`resume-${idx}`} position={pos} />)
-				}
-			}
-		})
-
-		return elements
+		return { segments: resultSegments, markers }
 	}
+
+	const updatePath = (newItem: IWorkoutLocationStorageItem) => {
+		const newPoint: Point = {
+			lat: newItem.locationObject.coords.latitude,
+			lon: newItem.locationObject.coords.longitude
+		}
+
+		// Case 0: No segments exist yet
+		if (segments.length === 0) {
+			const newSegment: Segment = {
+				isPaused: newItem.isPausedPoint,
+				points: [newPoint],
+				color: newItem.isPausedPoint ? pausedLineColor : activeLineColor
+			}
+			currentSegmentPointsRef.current = [newPoint] // Create new mutable array
+			setSegments([newSegment])
+			return
+		}
+
+		const lastSegment = segments[segments.length - 1]
+
+		if (lastSegment.isPaused === newItem.isPausedPoint) {
+			// === SAME STATE: OPTIMIZED UPDATE ===
+			// 1. Update Ref (mutable)
+			currentSegmentPointsRef.current.push(newPoint)
+
+			// 2. Update Native View directly
+			if (activePolylineRef.current) {
+				activePolylineRef.current.setNativeProps({
+					points: currentSegmentPointsRef.current
+				} as PolylineNativeProps)
+			}
+		} else {
+			// === STATE CHANGED: NEW SEGMENT ===
+			const currentPoints = currentSegmentPointsRef.current
+
+			// 1. Seal the old segment by connecting it to the new point
+			const sealedOldSegmentPoints = [...currentPoints, newPoint]
+
+			// 2. Start the new segment with the new point
+			const newSegmentStartPoints = [newPoint]
+
+			// 3. Update Ref for the new segment
+			currentSegmentPointsRef.current = [...newSegmentStartPoints]
+
+			const newSegment: Segment = {
+				isPaused: newItem.isPausedPoint,
+				points: newSegmentStartPoints,
+				color: newItem.isPausedPoint ? pausedLineColor : activeLineColor
+			}
+
+			// 4. Update React State
+			setSegments((prev) => {
+				const copy = [...prev]
+				if (copy.length > 0) {
+					// Update the previously active segment with its full, sealed path
+					copy[copy.length - 1] = {
+						...copy[copy.length - 1],
+						points: sealedOldSegmentPoints
+					}
+				}
+				return [...copy, newSegment]
+			})
+
+			setTransitionMarkers((prev) => [
+				...prev,
+				{
+					type: lastSegment.isPaused ? 'resume' : 'pause',
+					position: newPoint,
+					id: `trans-${Date.now()}`
+				}
+			])
+		}
+	}
+
+	useImperativeHandle(ref, () => ({
+		setMapCenter: (center, durationInSeconds, zoom, animationType) =>
+			changeMapCenter(center, durationInSeconds, zoom, animationType),
+		fitAllMarkers: (durationInSeconds) => fitAllMarkers(durationInSeconds),
+		updatePath: (newItem) => updatePath(newItem)
+	}))
+
+	// const renderLines = (locations: IWorkoutLocationStorageItem[] | undefined) => {
+	// 	if (!locations || locations.length < 2) return null
+	//
+	// 	const activeLineColor = Colors['green-main']
+	// 	const pausedLineColor = Colors['gray-ab']
+	//
+	// 	const elements: JSX.Element[] = []
+	//
+	// 	// группируем подряд идущие точки по состоянию,
+	// 	// при смене состояния — добавляем точку-переход в конец предыдущей группы
+	// 	const groupedSegments: IWorkoutLocationStorageItem[][] = []
+	// 	const transitions: {
+	// 		groupIndex: number // индекс группы, после которой произошёл переход
+	// 		fromPaused: boolean
+	// 		toPaused: boolean
+	// 		point: IWorkoutLocationStorageItem // точка перехода (curr)
+	// 	}[] = []
+	//
+	// 	let currentGroup: IWorkoutLocationStorageItem[] = [locations[0]]
+	//
+	// 	for (let i = 1; i < locations.length; i++) {
+	// 		const prev = locations[i - 1]
+	// 		const curr = locations[i]
+	//
+	// 		const sameState = prev.isPausedPoint === curr.isPausedPoint
+	//
+	// 		if (sameState) {
+	// 			currentGroup.push(curr)
+	// 		} else {
+	// 			// включаем точку перехода в прошлую группу, чтобы получить сегмент prev -> curr
+	// 			currentGroup.push(curr)
+	//
+	// 			// сохраняем группу
+	// 			groupedSegments.push(currentGroup)
+	//
+	// 			// сохраняем инфу о переходе — группаIndex = индекс только что добавленной группы
+	// 			transitions.push({
+	// 				groupIndex: groupedSegments.length - 1,
+	// 				fromPaused: prev.isPausedPoint,
+	// 				toPaused: curr.isPausedPoint,
+	// 				point: curr
+	// 			})
+	//
+	// 			// начинаем новую группу с curr (curr дублируется — как конец прошлой и как начало новой)
+	// 			currentGroup = [curr]
+	// 		}
+	// 	}
+	//
+	// 	// добавляем последнюю группу
+	// 	if (currentGroup.length > 0) {
+	// 		groupedSegments.push(currentGroup)
+	// 	}
+	//
+	// 	// рендерим группы как единые линии
+	// 	groupedSegments.forEach((group, idx) => {
+	// 		const color = group[0].isPausedPoint ? pausedLineColor : activeLineColor
+	//
+	// 		const points = group.map((loc) => ({
+	// 			lat: loc.locationObject.coords.latitude,
+	// 			lon: loc.locationObject.coords.longitude
+	// 		}))
+	//
+	// 		elements.push(
+	// 			<PolylineCustom
+	// 				ref={(elem) => {
+	// 					if (elem) {
+	// 						polylineRef.current.push(elem)
+	// 					}
+	// 				}}
+	// 				key={`group-${idx}`}
+	// 				points={points}
+	// 				strokeColor={color}
+	// 				strokeWidth={4}
+	// 			/>
+	// 		)
+	//
+	// 		// если после этой группы был переход — ставим маркер в точке перехода
+	// 		const transition = transitions.find((t) => t.groupIndex === idx)
+	// 		if (transition) {
+	// 			const { fromPaused, toPaused, point } = transition
+	// 			const pos = {
+	// 				lat: point.locationObject.coords.latitude,
+	// 				lon: point.locationObject.coords.longitude
+	// 			}
+	//
+	// 			if (!fromPaused && toPaused) {
+	// 				elements.push(<PauseLocationMarker key={`pause-${idx}`} position={pos} />)
+	// 			} else if (fromPaused && !toPaused) {
+	// 				elements.push(<ResumeLocationMarker key={`resume-${idx}`} position={pos} />)
+	// 			}
+	// 		}
+	// 	})
+	//
+	// 	return elements
+	// }
+	//
+	// const renderedLines = useMemo(() => renderLines(props.userLocations), [props.userLocations])
 
 	const fitAllMarkers = (durationInSeconds?: number) => {
 		if (!mapRef.current) return
@@ -151,7 +455,6 @@ const MapComponent = forwardRef<MapComponentHandle, IProps>((props, ref) => {
 		zoom?: number,
 		animationType?: Animation
 	) => {
-		console.log('changeMapCenter', isAnimationBlocked.current)
 		if (isAnimationBlocked.current) return
 		if (!center) return
 		if (!mapRef.current) return
@@ -222,7 +525,7 @@ const MapComponent = forwardRef<MapComponentHandle, IProps>((props, ref) => {
 					/>
 				)}
 
-				{props.userLocations && props.userLocations?.length >= 2 && (
+				{props.userLocations && props.userLocations?.length >= 1 && (
 					<StartLocationMarker
 						position={{
 							lat: props.userLocations[0].locationObject.coords.latitude,
@@ -231,11 +534,34 @@ const MapComponent = forwardRef<MapComponentHandle, IProps>((props, ref) => {
 					/>
 				)}
 
+				{/* Render Dynamic Segments */}
+				{segments.map((segment, index) => {
+					const isLast = index === segments.length - 1
+					return (
+						<PolylineCustom
+							key={`poly-${index}`}
+							ref={isLast ? activePolylineRef : undefined} // Only attach ref to the active segment for optimization
+							points={segment.points}
+							strokeColor={segment.color}
+							strokeWidth={4}
+						/>
+					)
+				})}
+
+				{/* Render Transition Markers */}
+				{transitionMarkers.map((tm) =>
+					tm.type === 'pause' ? (
+						<PauseLocationMarker key={tm.id} position={tm.position} />
+					) : (
+						<ResumeLocationMarker key={tm.id} position={tm.position} />
+					)
+				)}
+
 				{/*<PauseLocationMarker position={{ lat: 53.374451, lon: 49.460469 }} />*/}
 				{/*<ResumeLocationMarker position={{ lat: 53.374451, lon: 49.460489 }} />*/}
 				{/*<FinishLocationMarker position={{ lat: 53.374451, lon: 49.660469 }} />*/}
 
-				{renderLines(props.userLocations)}
+				{/*{renderedLines}*/}
 			</Yamap>
 		</View>
 	)
@@ -243,13 +569,14 @@ const MapComponent = forwardRef<MapComponentHandle, IProps>((props, ref) => {
 
 MapComponent.displayName = 'MapComponent'
 
-export default React.memo(
-	MapComponent,
-	(prev, next) =>
-		prev.initialMarkerLocation?.lat === next.initialMarkerLocation?.lat &&
-		prev.initialMarkerLocation?.lon === next.initialMarkerLocation?.lon &&
+// Standard memo to prevent re-renders when props are identical
+export default React.memo(MapComponent, (prev, next) => {
+	return (
 		prev.maxMapHeight === next.maxMapHeight &&
 		prev.minMapHeight === next.minMapHeight &&
 		prev.rounded === next.rounded &&
-		prev.userLocations === next.userLocations
-)
+		prev.initialMarkerLocation === next.initialMarkerLocation &&
+		prev.userLocationMarkerRef === next.userLocationMarkerRef &&
+		prev.userLocations === next.userLocations // Referentially equal (same array instance)
+	)
+})

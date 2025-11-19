@@ -50,4 +50,4 @@ const InteractiveBottomElements = (props: IProps) => {
 	)
 }
 
-export default InteractiveBottomElements
+export default React.memo(InteractiveBottomElements)

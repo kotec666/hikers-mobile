@@ -17,4 +17,4 @@ const MetricDistance = memo((props: IProps) => {
 
 MetricDistance.displayName = 'MetricDistance'
 
-export default MetricDistance
+export default React.memo(MetricDistance)
