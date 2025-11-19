@@ -148,6 +148,7 @@ const ShowMembersList = () => {
 		}
 	]
 
+	console.log('render ShowMembersList')
 	return (
 		<ScrollView>
 			<View className="gap-4">

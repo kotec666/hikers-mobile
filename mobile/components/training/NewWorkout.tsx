@@ -1,10 +1,10 @@
-import React, { useCallback, useRef } from 'react'
+import React, { memo, useCallback, useRef } from 'react'
 import { Container } from '@/components/ui/Container'
 import HeaderBack from '@/components/ui/HeaderBack'
 import MapComponent, { ILatLng, MapComponentHandle } from '@/components/map/MapComponent'
 import { FlatList, View } from 'react-native'
-import { MapActionButton } from '@/components/map/MapActionButton'
-import { StartButton } from '@/components/map/StartButton'
+import MapActionButton from '@/components/map/MapActionButton'
+import StartButton from '@/components/map/StartButton'
 import PeopleAddSvg from '@/components/svg/PeopleAddSvg'
 import AllGeolocationPermissions, { AllGeolocationPermissionsHandle } from '@/components/AllGeolocationPermissions'
 import BottomSheetResizable, {
@@ -14,7 +14,7 @@ import WorkoutType from '@/components/WorkoutType'
 import { useRouter } from 'expo-router'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
 import { TrainingType } from '@shared/enums'
-import { UserLocationMarkerHandle } from '@/components/map/markers/UserLocationMarker'
+import { UserLocationMarkerHandle } from '@/components/map/markers/UserLocationMarker/UserLocationMarker'
 
 export interface IWorkoutModeElement {
 	id: number
@@ -35,7 +35,7 @@ interface IProps {
 	userLocationMarkerRef: React.RefObject<UserLocationMarkerHandle | null>
 }
 
-const NewWorkout = (props: IProps) => {
+const NewWorkout = memo((props: IProps) => {
 	const router = useRouter()
 	const insets = useSafeAreaInsets()
 
@@ -55,6 +55,7 @@ const NewWorkout = (props: IProps) => {
 		return <IconComponent color={color} />
 	}
 
+	console.log('render NewWorkout')
 	return (
 		<>
 			<Container>
@@ -109,6 +110,8 @@ const NewWorkout = (props: IProps) => {
 			</BottomSheetResizable>
 		</>
 	)
-}
+})
+
+NewWorkout.displayName = 'NewWorkout'
 
 export default NewWorkout

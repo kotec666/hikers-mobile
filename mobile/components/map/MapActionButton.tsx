@@ -1,4 +1,4 @@
-import React, { PropsWithChildren } from 'react'
+import React, { memo, PropsWithChildren } from 'react'
 import { cn } from '@/helpers/cn'
 import { Platform, Pressable, PressableProps } from 'react-native'
 import { BlurView } from 'expo-blur'
@@ -7,9 +7,10 @@ export interface Props extends PropsWithChildren {
 	className?: string
 }
 
-export function MapActionButton(props: Props & PressableProps) {
+const MapActionButton = memo((props: Props & PressableProps) => {
 	const { children, className } = props
 
+	console.log('render MapActionButton')
 	return (
 		<Pressable
 			{...props}
@@ -40,4 +41,8 @@ export function MapActionButton(props: Props & PressableProps) {
 			)}
 		</Pressable>
 	)
-}
+})
+
+MapActionButton.displayName = 'MapActionButton'
+
+export default MapActionButton

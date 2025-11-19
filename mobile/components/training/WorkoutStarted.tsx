@@ -1,4 +1,4 @@
-import React, { forwardRef, useCallback, useImperativeHandle, useMemo, useState } from 'react'
+import React, { useCallback, useMemo, useState } from 'react'
 import EndTrainingModal from '@/components/training/EndTrainingModal'
 import { Container } from '@/components/ui/Container'
 import { Dimensions, Text, View } from 'react-native'
@@ -7,11 +7,11 @@ import MapComponent, { ILatLng, MapComponentHandle } from '@/components/map/MapC
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
 import { IWorkoutLocationStorageItem } from '@/store/workoutStorage'
 import { TrainingType } from '@shared/enums'
-import { UserLocationMarkerHandle } from '@/components/map/markers/UserLocationMarker'
 import MetricsTab from '@/components/training/tabs/MetricsTab'
 import ShowMembersList from '@/components/training/tabs/ShowMembersList'
 import InteractiveBottomElements from '@/components/training/InteractiveBottomElements'
 import { MetricSpeedHandle } from '@/components/training/tabs/metrics/MetricSpeed'
+import { UserLocationMarkerHandle } from '@/components/map/markers/UserLocationMarker/UserLocationMarker'
 
 interface IProps {
 	// headingDebug: number | null
@@ -20,7 +20,6 @@ interface IProps {
 	isPaused: boolean
 	handleClickPause: () => void
 	handleClickEndWorkout: () => void
-	// speedMPS: number
 	workoutType: TrainingType
 	mapComponentRef: React.RefObject<MapComponentHandle | null>
 	metricSpeedRef: React.RefObject<MetricSpeedHandle | null>

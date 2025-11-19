@@ -1,4 +1,4 @@
-import React from 'react'
+import React, { memo } from 'react'
 import { Text, View } from 'react-native'
 import { fontFamily } from '@/constants/Fonts'
 import { Button } from '@/components/ui/Button'
@@ -10,7 +10,8 @@ interface IProps {
 	handleClickEnd: () => void
 }
 
-const EndTrainingModal = (props: IProps) => {
+const EndTrainingModal = memo((props: IProps) => {
+	console.log('render EndTrainingModal')
 	return (
 		<Modal
 			isOpen={props.open}
@@ -32,6 +33,8 @@ const EndTrainingModal = (props: IProps) => {
 			</View>
 		</Modal>
 	)
-}
+})
+
+EndTrainingModal.displayName = 'EndTrainingModal'
 
 export default EndTrainingModal

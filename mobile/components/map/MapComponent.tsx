@@ -5,13 +5,15 @@ import { IWorkoutLocationStorageItem, removeAllWorkoutStorage } from '@/store/wo
 import { Colors } from '@/constants/Colors'
 import { Button } from '@/components/ui/Button'
 import { debounce } from '@/helpers/debounce'
-import UserLocationMarker, { UserLocationMarkerHandle } from '@/components/map/markers/UserLocationMarker'
 import PauseLocationMarker from '@/components/map/markers/PauseLocationMarker'
 import ResumeLocationMarker from '@/components/map/markers/ResumeLocationMarker'
 import StartLocationMarker from '@/components/map/markers/StartLocationMarker'
 import { getMapSettings, updateMapSettings } from '@/store/mapStorage'
 import { PolylineComponentInstanceRef, PolylineCustom } from '@/components/map/PolylineCustom'
 import { PolylineNativeProps } from 'react-native-yamap-plus/src/spec/PolylineNativeComponent'
+import UserLocationMarker, {
+	UserLocationMarkerHandle
+} from '@/components/map/markers/UserLocationMarker/UserLocationMarker'
 
 export interface ILatLng {
 	lat: number

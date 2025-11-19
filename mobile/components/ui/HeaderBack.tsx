@@ -1,7 +1,7 @@
 import { Pressable, Text, View } from 'react-native'
 import ArrowBackSvg from '@/components/svg/ArrowBackSvg'
 import { fontFamily } from '@/constants/Fonts'
-import { PropsWithChildren } from 'react'
+import { memo, PropsWithChildren } from 'react'
 import { useRouter } from 'expo-router'
 import { cn } from '@/helpers/cn'
 
@@ -10,7 +10,7 @@ interface IProps extends PropsWithChildren {
 	returnCallback?: () => void
 }
 
-const HeaderBack = (props: IProps) => {
+const HeaderBack = memo((props: IProps) => {
 	const router = useRouter()
 
 	const handleClickBack = () => {
@@ -21,6 +21,7 @@ const HeaderBack = (props: IProps) => {
 		}
 	}
 
+	console.log('render HeaderBack')
 	return (
 		<View className={cn('flex-row gap-x-[16px]', props.className)}>
 			<Pressable onPress={handleClickBack}>
@@ -31,6 +32,8 @@ const HeaderBack = (props: IProps) => {
 			</Text>
 		</View>
 	)
-}
+})
+
+HeaderBack.displayName = 'HeaderBack'
 
 export default HeaderBack

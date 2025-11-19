@@ -19,6 +19,7 @@ interface IProps {
 }
 
 const InteractiveBottomElements = (props: IProps) => {
+	console.log('render InteractiveBottomElements')
 	return (
 		<View
 			className={cn('justify-end gap-[10px]', {

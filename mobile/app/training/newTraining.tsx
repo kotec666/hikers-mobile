@@ -35,7 +35,6 @@ import { AllGeolocationPermissionsHandle } from '@/components/AllGeolocationPerm
 import * as Notification from 'expo-notifications'
 import { TrainingType } from '../../../shared/enums'
 import { debounce } from '@/helpers/debounce'
-import { UserLocationMarkerHandle } from '@/components/map/markers/UserLocationMarker'
 import { throttle } from '@/helpers/throttle'
 
 // eslint-disable-next-line import/no-duplicates
@@ -43,6 +42,7 @@ import '@/tasks/backgroundLocationHandler'
 // eslint-disable-next-line import/no-duplicates
 import { LOCATION_TASK_NAME } from '@/tasks/backgroundLocationHandler'
 import { MetricSpeedHandle } from '@/components/training/tabs/metrics/MetricSpeed'
+import { UserLocationMarkerHandle } from '@/components/map/markers/UserLocationMarker/UserLocationMarker'
 
 initializeNotifications()
 
@@ -361,6 +361,7 @@ export default function NewTraining() {
 	}, [])
 
 	const handleClickPause = useCallback(async () => {
+		console.log('handleClickPause')
 		metricSpeedRef.current?.setSpeed(0)
 		setIsPaused((prevState) => {
 			const nextPauseState = !prevState
