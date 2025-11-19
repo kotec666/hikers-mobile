@@ -475,31 +475,21 @@ const MapComponent = forwardRef<MapComponentHandle, IProps>((props, ref) => {
 		if (!center) return
 		if (!mapRef.current) return
 		mapRef.current.getCameraPosition((cameraPosition) => {
-			const zoomToUse = zoom ?? cameraPosition.zoom
-			const azimuthToUse = cameraPosition.azimuth
-
-			// Проверяем, изменилось ли что-то
-			if (
-				cameraPosition.point.lat === center.lat &&
-				cameraPosition.point.lon === center.lon &&
-				cameraPosition.zoom === zoomToUse &&
-				cameraPosition.azimuth === azimuthToUse
-			) {
-				return
-			}
-
 			if (!mapRef.current) return
+			console.log('animationType ?? Animation.SMOOTH', animationType ?? Animation.SMOOTH)
+			handleBlockAnimation(durationInSeconds)
 			mapRef.current.setCenter(
 				center,
-				zoomToUse,
-				azimuthToUse,
+				zoom ?? cameraPosition.zoom,
+				undefined,
+				undefined,
 				durationInSeconds ?? 1,
 				animationType ?? Animation.SMOOTH
 			)
 		})
 	}
 
-	const handleBlockAnimation = useCallback(() => {
+	const handleBlockAnimation = useCallback((durationInSeconds: number = 2000) => {
 		if (animationBlockTimer.current) {
 			clearTimeout(animationBlockTimer.current)
 		}
@@ -508,7 +498,7 @@ const MapComponent = forwardRef<MapComponentHandle, IProps>((props, ref) => {
 
 		animationBlockTimer.current = setTimeout(() => {
 			isAnimationBlocked.current = false
-		}, 2000)
+		}, durationInSeconds)
 	}, [])
 
 	const updateMapSettingsDebounced = debounce(updateMapSettings, 300)
@@ -536,7 +526,6 @@ const MapComponent = forwardRef<MapComponentHandle, IProps>((props, ref) => {
 				tiltGesturesDisabled={true}
 				rotateGesturesDisabled={true} // @TODO включить после дебага
 				onCameraPositionChange={(e) => {
-					//@TODO Может влиять на 2д/3д режимы. Мб блокировать анимацию также с причиной APPLICATION, а когда анимация кончилась - можно впускать дальше
 					if (['GESTURES', 'UNKNOWN'].includes(e.nativeEvent.reason)) {
 						handleBlockAnimation()
 					}

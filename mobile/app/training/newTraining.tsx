@@ -177,25 +177,6 @@ export default function NewTraining() {
 		if (mapComponentRef.current) {
 			mapComponentRef.current.updatePath(lastSavedWorkoutItem)
 		}
-
-		// setMyLocations((prevState) => {
-		// 	const lastSavedWorkoutItem = setWorkoutItem(location) // Сохраняем в локальное хранилище
-		//
-		// 	if (!lastSavedWorkoutItem) {
-		// 		// there was no active workout in storage — don't update state
-		// 		return prevState
-		// 	}
-		// 	if (prevState?.find((loc) => loc.relTs === lastSavedWorkoutItem.relTs)) {
-		// 		// защита от дублирования, если такая локация уже существует в локальном стейте
-		// 		return prevState
-		// 	}
-		//
-		// 	if (prevState.length) {
-		// 		return [...prevState, lastSavedWorkoutItem]
-		// 	} else {
-		// 		return [lastSavedWorkoutItem]
-		// 	}
-		// })
 	}
 
 	const startTracking = async () => {
@@ -222,20 +203,16 @@ export default function NewTraining() {
 
 					console.log('newLatLon', newLatLon)
 
+					if (userLocationMarkerRef.current) {
+						userLocationMarkerRef.current.setMarkerPosition(newLatLon)
+						userLocationMarkerRef.current.setAccuracy(location.coords.accuracy)
+					}
 					if (mapComponentRef.current) {
 						if (!initialLocationSetRef.current) {
 							initialLocationSetRef.current = true
 							setInitialMarkerLocationState(newLatLon)
 						}
-						// @TODO если впервые получили точку, то центр должен меняться мгновенно
-						// @TODO или анимацию сделать линейной
-						// @TODO если прервать анимацию центровки не получится, то можно попробовать отправить линейную анимацию с длительностью 0 сек...
-						// mapComponentRef.current.setMapCenter(newLatLon, 1.2)
-						// mapComponentRef.current.addPointsToLine(newLatLon)
-					}
-					if (userLocationMarkerRef.current) {
-						userLocationMarkerRef.current.setMarkerPosition(newLatLon)
-						userLocationMarkerRef.current.setAccuracy(location.coords.accuracy)
+						mapComponentRef.current.setMapCenter(newLatLon, 1.2)
 					}
 
 					if (!isPausedRef.current) {
