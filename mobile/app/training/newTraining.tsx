@@ -123,7 +123,6 @@ export default function NewTraining() {
 					})
 				}
 			}
-			// @TODO установка ласт позиции для появления метки
 			handleClickStart(true)
 		}
 	}, [])
