@@ -11,8 +11,8 @@ const initialMapSettings = {
 	lat: 55.758745, // Moscow
 	lon: 37.619153, // Moscow
 	zoom: 13,
-	azimuth: undefined,
-	tilt: 0
+	azimuth: undefined
+	// tilt: 0
 }
 
 export const getMapSettings = (): InitialRegion => {

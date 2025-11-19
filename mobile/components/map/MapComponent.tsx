@@ -22,6 +22,7 @@ export interface ILatLng {
 
 interface IProps {
 	maxMapHeight?: number
+	maxContainerHeight?: number
 	minMapHeight?: number
 	rounded?: number
 	initialMarkerLocation?: ILatLng | null // @TODO заменить везде на Point из ya-map?
@@ -474,12 +475,24 @@ const MapComponent = forwardRef<MapComponentHandle, IProps>((props, ref) => {
 		if (!center) return
 		if (!mapRef.current) return
 		mapRef.current.getCameraPosition((cameraPosition) => {
+			const zoomToUse = zoom ?? cameraPosition.zoom
+			const azimuthToUse = cameraPosition.azimuth
+
+			// Проверяем, изменилось ли что-то
+			if (
+				cameraPosition.point.lat === center.lat &&
+				cameraPosition.point.lon === center.lon &&
+				cameraPosition.zoom === zoomToUse &&
+				cameraPosition.azimuth === azimuthToUse
+			) {
+				return
+			}
+
 			if (!mapRef.current) return
 			mapRef.current.setCenter(
 				center,
-				zoom ?? cameraPosition.zoom,
-				cameraPosition.azimuth,
-				cameraPosition.tilt,
+				zoomToUse,
+				azimuthToUse,
 				durationInSeconds ?? 1,
 				animationType ?? Animation.SMOOTH
 			)
@@ -502,7 +515,14 @@ const MapComponent = forwardRef<MapComponentHandle, IProps>((props, ref) => {
 
 	console.log('Render MapComponent')
 	return (
-		<View className="flex-1" style={{ overflow: 'hidden', borderRadius: props.rounded || 0 }}>
+		<View
+			className="flex-1"
+			style={{
+				overflow: 'hidden',
+				borderRadius: props.rounded || 0,
+				maxHeight: props.maxContainerHeight ?? 'auto'
+			}}
+		>
 			<Button variant="white" onPress={() => removeAllWorkoutStorage()}>
 				REMOVE ALL WORKOUT STORAGE
 			</Button>
@@ -516,6 +536,7 @@ const MapComponent = forwardRef<MapComponentHandle, IProps>((props, ref) => {
 				tiltGesturesDisabled={true}
 				rotateGesturesDisabled={true} // @TODO включить после дебага
 				onCameraPositionChange={(e) => {
+					//@TODO Может влиять на 2д/3д режимы. Мб блокировать анимацию также с причиной APPLICATION, а когда анимация кончилась - можно впускать дальше
 					if (['GESTURES', 'UNKNOWN'].includes(e.nativeEvent.reason)) {
 						handleBlockAnimation()
 					}
@@ -526,8 +547,7 @@ const MapComponent = forwardRef<MapComponentHandle, IProps>((props, ref) => {
 							lat: pos.point.lat,
 							lon: pos.point.lon,
 							zoom: pos.zoom,
-							azimuth: pos.azimuth,
-							tilt: pos.tilt
+							azimuth: pos.azimuth
 						})
 					})
 				}}
@@ -590,6 +610,7 @@ MapComponent.displayName = 'MapComponent'
 // React.memo вернет true и ререндер не произойдет при обновлении массива.
 export default React.memo(MapComponent, (prev, next) => {
 	return (
+		prev.maxContainerHeight === next.maxContainerHeight &&
 		prev.maxMapHeight === next.maxMapHeight &&
 		prev.minMapHeight === next.minMapHeight &&
 		prev.rounded === next.rounded &&

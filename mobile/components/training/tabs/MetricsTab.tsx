@@ -22,7 +22,7 @@ interface IProps {
 
 const MetricsTab = memo((props: IProps) => {
 	const workoutTime = useWorkoutTimer()
-	const totalDistanceMeters = useMemo(() => calculateTotalDistance(props.userLocations), [props.userLocations])
+	const totalDistanceMeters = useMemo(() => calculateTotalDistance(props.userLocations), [props.userLocations.length])
 
 	console.log('renderMetricsTab ===============>')
 	return (

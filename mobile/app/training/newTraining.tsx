@@ -20,7 +20,7 @@ import {
 	setWorkoutItem,
 	startAndStoreNewActiveWorkout
 } from '@/store/workoutStorage'
-import { ILatLng, MapComponentHandle } from '@/components/map/MapComponent'
+import { MapComponentHandle } from '@/components/map/MapComponent'
 import { useRouter } from 'expo-router'
 import { useLatest } from '@/hooks/useLatest'
 import { initializeNotifications } from '@/helpers/notifications'
@@ -43,6 +43,7 @@ import '@/tasks/backgroundLocationHandler'
 import { LOCATION_TASK_NAME } from '@/tasks/backgroundLocationHandler'
 import { MetricSpeedHandle } from '@/components/training/tabs/metrics/MetricSpeed'
 import { UserLocationMarkerHandle } from '@/components/map/markers/UserLocationMarker/UserLocationMarker'
+import { Point } from 'react-native-yamap-plus'
 
 initializeNotifications()
 
@@ -88,8 +89,8 @@ export default function NewTraining() {
 	const [chosenWorkout, setChosenWorkout] = useState<IWorkoutModeElement>(WorkoutTypesData[0])
 	const [isWorkoutStarted, setIsWorkoutStarted] = useState<boolean>(false)
 	const [isPaused, setIsPaused] = useState<boolean>(false)
+	const [initialMarkerLocationState, setInitialMarkerLocationState] = useState<Point | null>(null)
 	// const [myLocations, setMyLocations] = useState<IWorkoutLocationStorageItem[]>([])
-	const [initialMarkerLocation, setInitialMarkerLocation] = useState<ILatLng | null>(null)
 	// const [headingDebug, setHeadingDebug] = useState<number | null>(null)
 	const isPausedRef = useLatest(isPaused)
 
@@ -111,6 +112,18 @@ export default function NewTraining() {
 			// setMyLocations(activeWorkout.locations)
 			myLocationsRef.current = activeWorkout.locations
 			setChosenWorkout(foundedWorkout)
+
+			if (!initialLocationSetRef.current) {
+				const lastKnownPosition = activeWorkout.locations.at(-1)
+				if (lastKnownPosition) {
+					initialLocationSetRef.current = true
+					setInitialMarkerLocationState({
+						lat: lastKnownPosition.locationObject.coords.latitude,
+						lon: lastKnownPosition.locationObject.coords.longitude
+					})
+				}
+			}
+			// @TODO установка ласт позиции для появления метки
 			handleClickStart(true)
 		}
 	}, [])
@@ -213,7 +226,7 @@ export default function NewTraining() {
 					if (mapComponentRef.current) {
 						if (!initialLocationSetRef.current) {
 							initialLocationSetRef.current = true
-							setInitialMarkerLocation(newLatLon)
+							setInitialMarkerLocationState(newLatLon)
 						}
 						// @TODO если впервые получили точку, то центр должен меняться мгновенно
 						// @TODO или анимацию сделать линейной
@@ -348,7 +361,7 @@ export default function NewTraining() {
 
 		if (!initialLocationSetRef.current) {
 			initialLocationSetRef.current = true
-			setInitialMarkerLocation(newLatLon)
+			setInitialMarkerLocationState(newLatLon)
 		}
 		if (mapComponentRef.current) {
 			mapComponentRef.current.setMapCenter(newLatLon, 0.5, 13)
@@ -528,7 +541,7 @@ export default function NewTraining() {
 					{isWorkoutStarted ? (
 						<WorkoutStarted
 							// headingDebug={state.headingDebug}
-							initialMarkerLocation={initialMarkerLocation}
+							initialMarkerLocation={initialMarkerLocationState}
 							// userLocations={myLocations}
 							handleClickPause={pauseDebounced}
 							handleClickEndWorkout={handleClickEndWorkout}
@@ -542,7 +555,7 @@ export default function NewTraining() {
 					) : (
 						<NewWorkout
 							userLocationMarkerRef={userLocationMarkerRef}
-							initialMarkerLocation={initialMarkerLocation}
+							initialMarkerLocation={initialMarkerLocationState}
 							allPermsGranted={allPermissionsGrantedCallback}
 							handleClickStart={handleClickStart}
 							handleChangeWorkout={handleChangeWorkout}

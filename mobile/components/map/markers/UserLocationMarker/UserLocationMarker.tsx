@@ -22,7 +22,7 @@ const UserLocationMarker = forwardRef<UserLocationMarkerHandle, IProps>((props, 
 	const accuracyRef = useRef<AccuracyCircleHandle>(null)
 	const timeoutRef = useRef<NodeJS.Timeout | null>(null)
 
-	const animatedMoveTo = useCallback((point: Point | null, durationInMs: number = 2500) => {
+	const animatedMoveTo = useCallback((point: Point | null, durationInMs: number = 1500) => {
 		if (!markerRef.current || !point) return
 
 		accuracyRef.current?.hideCircle(true)

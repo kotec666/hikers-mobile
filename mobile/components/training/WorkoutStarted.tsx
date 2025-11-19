@@ -72,15 +72,14 @@ const WorkoutStarted = (props: IProps) => {
 					Тренировка
 				</Text>
 			</Container>
-			{mapViewHidden && (
-				<MapComponent
-					ref={props.mapComponentRef}
-					userLocationMarkerRef={props.userLocationMarkerRef}
-					maxMapHeight={maxMapHeight}
-					initialMarkerLocation={props.initialMarkerLocation}
-					initialLocations={props.userLocations}
-				/>
-			)}
+			<MapComponent
+				ref={props.mapComponentRef}
+				userLocationMarkerRef={props.userLocationMarkerRef}
+				maxContainerHeight={mapViewHidden ? maxMapHeight : 0}
+				maxMapHeight={mapViewHidden ? maxMapHeight : 0}
+				initialMarkerLocation={props.initialMarkerLocation}
+				initialLocations={props.userLocations}
+			/>
 			<Container style={{ paddingBottom: insets.bottom + 35 }} className="flex-1 w-full pt-[16px]">
 				<View className="flex-1 justify-between gap-[16px]">
 					{peopleListHidden ? (

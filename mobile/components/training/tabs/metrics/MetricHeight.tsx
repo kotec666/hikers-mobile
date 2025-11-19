@@ -8,18 +8,22 @@ interface IProps {
 	userLocations: IWorkoutLocationStorageItem[]
 }
 
-const MetricHeight = memo((props: IProps) => {
-	const calculatedHeight = useMemo(() => getWorkoutHeight(props.userLocations), [props.userLocations])
+const MetricHeight = memo(
+	(props: IProps) => {
+		const calculatedHeight = useMemo(() => getWorkoutHeight(props.userLocations), [props.userLocations.length])
 
-	console.log('render MetricHeight')
-	return (
-		<Parameter
-			isPaused={props.isPaused}
-			label="Набор высоты"
-			value={calculatedHeight == null ? '- м' : `${calculatedHeight} м`}
-		/>
-	)
-})
+		console.log('render MetricHeight')
+		return (
+			<Parameter
+				isPaused={props.isPaused}
+				label="Набор высоты"
+				value={calculatedHeight == null ? '- м' : `${calculatedHeight} м`}
+			/>
+		)
+	},
+	(prevProps, nextProps) =>
+		prevProps.isPaused === nextProps.isPaused && prevProps.userLocations.length === nextProps.userLocations.length
+)
 
 MetricHeight.displayName = 'MetricHeight'
 
