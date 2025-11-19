@@ -82,6 +82,8 @@ export default function NewTraining() {
 	const headingSubscriptionRef = useRef<null | Location.LocationSubscription>(null)
 	const notificationIntervalRef = useRef<null | ReturnType<typeof setInterval>>(null)
 	const metricSpeedRef = useRef<MetricSpeedHandle>(null)
+	const myLocationsRef = useRef<IWorkoutLocationStorageItem[]>([])
+	const initialLocationSetRef = useRef(false)
 
 	const [chosenWorkout, setChosenWorkout] = useState<IWorkoutModeElement>(WorkoutTypesData[0])
 	const [isWorkoutStarted, setIsWorkoutStarted] = useState<boolean>(false)
@@ -89,7 +91,6 @@ export default function NewTraining() {
 	// const [myLocations, setMyLocations] = useState<IWorkoutLocationStorageItem[]>([])
 	const [initialMarkerLocation, setInitialMarkerLocation] = useState<ILatLng | null>(null)
 	// const [headingDebug, setHeadingDebug] = useState<number | null>(null)
-	const myLocationsRef = useRef<IWorkoutLocationStorageItem[]>([])
 	const isPausedRef = useLatest(isPaused)
 
 	useEffect(() => {
@@ -210,8 +211,8 @@ export default function NewTraining() {
 					console.log('newLatLon', newLatLon)
 
 					if (mapComponentRef.current) {
-						if (!initialMarkerLocation) {
-							//@TODO может тут неправильно, при перезаходе сделать?
+						if (!initialLocationSetRef.current) {
+							initialLocationSetRef.current = true
 							setInitialMarkerLocation(newLatLon)
 						}
 						// @TODO если впервые получили точку, то центр должен меняться мгновенно
@@ -226,7 +227,6 @@ export default function NewTraining() {
 					}
 
 					if (!isPausedRef.current) {
-						// setSpeedMPS(location.coords.speed ?? 0)
 						metricSpeedRef?.current?.setSpeed(location.coords.speed ?? 0)
 					}
 
@@ -346,7 +346,10 @@ export default function NewTraining() {
 			lon: lastUserPosition.coords.longitude
 		}
 
-		setInitialMarkerLocation(newLatLon)
+		if (!initialLocationSetRef.current) {
+			initialLocationSetRef.current = true
+			setInitialMarkerLocation(newLatLon)
+		}
 		if (mapComponentRef.current) {
 			mapComponentRef.current.setMapCenter(newLatLon, 0.5, 13)
 		}
@@ -358,7 +361,6 @@ export default function NewTraining() {
 	}, [])
 
 	const handleClickPause = useCallback(async () => {
-		// setSpeedMPS(0)
 		metricSpeedRef.current?.setSpeed(0)
 		setIsPaused((prevState) => {
 			const nextPauseState = !prevState
@@ -399,6 +401,7 @@ export default function NewTraining() {
 		await stopNotificationTimer()
 		setIsWorkoutStarted(false)
 		setIsPaused(false)
+		initialLocationSetRef.current = false
 		// setMyLocations([])
 		myLocationsRef.current = []
 		if (userLocationMarkerRef.current) {

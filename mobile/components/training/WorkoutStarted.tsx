@@ -79,7 +79,7 @@ const WorkoutStarted = (props: IProps) => {
 					userLocationMarkerRef={props.userLocationMarkerRef}
 					maxMapHeight={maxMapHeight}
 					initialMarkerLocation={props.initialMarkerLocation}
-					userLocations={props.userLocations}
+					initialLocations={props.userLocations}
 				/>
 			)}
 			<Container style={{ paddingBottom: insets.bottom + 35 }} className="flex-1 w-full pt-[16px]">
