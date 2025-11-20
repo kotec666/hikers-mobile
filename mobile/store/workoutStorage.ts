@@ -261,7 +261,7 @@ const clearActiveWorkoutData = () => {
 	workoutStorage.remove(KEY_ACTIVE_META)
 }
 
-const getFullActiveWorkout = (): IWorkout | null => {
+export const getFullActiveWorkout = (): IWorkout | null => {
 	const metaStr = workoutStorage.getString(KEY_ACTIVE_META)
 	if (!metaStr) return null
 

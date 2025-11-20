@@ -533,7 +533,7 @@ export default function NewTraining() {
 							handleClickEndWorkout={handleClickEndWorkout}
 							workoutType={chosenWorkout.type}
 							isPaused={isPaused}
-							userLocations={myLocationsRef.current}
+							userLocations={myLocationsRef}
 							userLocationMarkerRef={userLocationMarkerRef}
 							metricSpeedRef={metricSpeedRef}
 							mapComponentRef={mapComponentRef}

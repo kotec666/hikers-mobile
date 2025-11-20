@@ -16,13 +16,16 @@ interface IProps {
 	workoutType: TrainingType
 	mapViewHidden: boolean
 	isPaused: boolean
-	userLocations: IWorkoutLocationStorageItem[]
+	userLocations: React.RefObject<IWorkoutLocationStorageItem[]>
 	metricSpeedRef: React.RefObject<MetricSpeedHandle | null>
 }
 
 const MetricsTab = memo((props: IProps) => {
 	const workoutTime = useWorkoutTimer()
-	const totalDistanceMeters = useMemo(() => calculateTotalDistance(props.userLocations), [props.userLocations.length])
+	const totalDistanceMeters = useMemo(
+		() => calculateTotalDistance(props.userLocations.current),
+		[props.userLocations.current.length]
+	)
 
 	console.log('renderMetricsTab ===============>')
 	return (

@@ -5,12 +5,15 @@ import { getWorkoutHeight } from '@/helpers/getWorkoutHeight'
 
 interface IProps {
 	isPaused: boolean
-	userLocations: IWorkoutLocationStorageItem[]
+	userLocations: React.RefObject<IWorkoutLocationStorageItem[]>
 }
 
 const MetricHeight = memo(
 	(props: IProps) => {
-		const calculatedHeight = useMemo(() => getWorkoutHeight(props.userLocations), [props.userLocations.length])
+		const calculatedHeight = useMemo(
+			() => getWorkoutHeight(props.userLocations.current),
+			[props.userLocations.current.length]
+		)
 
 		console.log('render MetricHeight')
 		return (
@@ -22,7 +25,8 @@ const MetricHeight = memo(
 		)
 	},
 	(prevProps, nextProps) =>
-		prevProps.isPaused === nextProps.isPaused && prevProps.userLocations.length === nextProps.userLocations.length
+		prevProps.isPaused === nextProps.isPaused &&
+		prevProps.userLocations.current.length === nextProps.userLocations.current.length
 )
 
 MetricHeight.displayName = 'MetricHeight'

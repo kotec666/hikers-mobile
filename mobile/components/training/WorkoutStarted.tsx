@@ -17,7 +17,7 @@ import { Point } from 'react-native-yamap-plus'
 interface IProps {
 	// headingDebug: number | null
 	initialMarkerLocation?: Point | null
-	userLocations: IWorkoutLocationStorageItem[]
+	userLocations: React.RefObject<IWorkoutLocationStorageItem[]>
 	isPaused: boolean
 	handleClickPause: () => void
 	handleClickEndWorkout: () => void

@@ -23,7 +23,7 @@ interface IProps {
 	rounded?: number
 	initialMarkerLocation?: Point | null
 	userLocationMarkerRef?: React.RefObject<UserLocationMarkerHandle | null>
-	initialLocations?: IWorkoutLocationStorageItem[]
+	initialLocations?: React.RefObject<IWorkoutLocationStorageItem[]>
 }
 
 export interface MapComponentHandle {
@@ -73,8 +73,8 @@ const MapComponent = forwardRef<MapComponentHandle, IProps>((props, ref) => {
 		let idleId: number | null = null
 
 		const run = () => {
-			if (props.initialLocations && props.initialLocations.length > 0 && segments.length === 0) {
-				const parsed = parseLocationsToSegments(props.initialLocations)
+			if (props.initialLocations?.current && props.initialLocations.current.length > 0 && segments.length === 0) {
+				const parsed = parseLocationsToSegments(props.initialLocations.current)
 				setSegments(parsed.segments)
 				setTransitionMarkers(parsed.markers)
 
@@ -337,11 +337,11 @@ const MapComponent = forwardRef<MapComponentHandle, IProps>((props, ref) => {
 					/>
 				)}
 
-				{props.initialLocations && props.initialLocations?.length >= 1 && (
+				{props.initialLocations?.current && props.initialLocations?.current.length >= 1 && (
 					<StartLocationMarker
 						position={{
-							lat: props.initialLocations[0].locationObject.coords.latitude,
-							lon: props.initialLocations[0].locationObject.coords.longitude
+							lat: props.initialLocations.current[0].locationObject.coords.latitude,
+							lon: props.initialLocations.current[0].locationObject.coords.longitude
 						}}
 					/>
 				)}
