@@ -1,11 +1,10 @@
 import React from 'react'
-import { Marker } from 'react-native-yamap-plus'
+import { Marker, Point } from 'react-native-yamap-plus'
 import { View } from 'react-native'
-import { ILatLng } from '@/components/map/MapComponent'
 import ResumeWithCircleSvg from '@/components/svg/ResumeWithCircleSvg'
 
 interface Props {
-	position?: ILatLng | null
+	position?: Point | null
 }
 
 const ResumeLocationMarker = ({ position }: Props) => {

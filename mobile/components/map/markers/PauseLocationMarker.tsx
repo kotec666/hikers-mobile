@@ -1,11 +1,10 @@
 import React from 'react'
-import { Marker } from 'react-native-yamap-plus'
+import { Marker, Point } from 'react-native-yamap-plus'
 import { View } from 'react-native'
-import { ILatLng } from '@/components/map/MapComponent'
 import PauseWithCircleSvg from '@/components/svg/PauseWithCircleSvg'
 
 interface Props {
-	position?: ILatLng | null
+	position?: Point | null
 }
 
 const PauseLocationMarker = ({ position }: Props) => {

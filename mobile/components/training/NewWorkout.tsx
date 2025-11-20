@@ -1,7 +1,7 @@
 import React, { memo, useCallback, useRef } from 'react'
 import { Container } from '@/components/ui/Container'
 import HeaderBack from '@/components/ui/HeaderBack'
-import MapComponent, { ILatLng, MapComponentHandle } from '@/components/map/MapComponent'
+import MapComponent, { MapComponentHandle } from '@/components/map/MapComponent'
 import { FlatList, View } from 'react-native'
 import MapActionButton from '@/components/map/MapActionButton'
 import StartButton from '@/components/map/StartButton'
@@ -15,6 +15,7 @@ import { useRouter } from 'expo-router'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
 import { TrainingType } from '@shared/enums'
 import { UserLocationMarkerHandle } from '@/components/map/markers/UserLocationMarker/UserLocationMarker'
+import { Point } from 'react-native-yamap-plus'
 
 export interface IWorkoutModeElement {
 	id: number
@@ -24,7 +25,7 @@ export interface IWorkoutModeElement {
 }
 
 interface IProps {
-	initialMarkerLocation?: ILatLng | null
+	initialMarkerLocation?: Point | null
 	chosenWorkout: IWorkoutModeElement | null
 	handleChangeWorkout: (workoutId: number) => void
 	handleClickStart: (afterReboot: boolean) => void

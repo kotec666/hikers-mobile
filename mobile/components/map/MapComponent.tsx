@@ -14,24 +14,20 @@ import { PolylineNativeProps } from 'react-native-yamap-plus/src/spec/PolylineNa
 import UserLocationMarker, {
 	UserLocationMarkerHandle
 } from '@/components/map/markers/UserLocationMarker/UserLocationMarker'
-
-export interface ILatLng {
-	lat: number
-	lon: number
-}
+import { simplifyPath } from '@/helpers/geoUtils'
 
 interface IProps {
 	maxMapHeight?: number
 	maxContainerHeight?: number
 	minMapHeight?: number
 	rounded?: number
-	initialMarkerLocation?: ILatLng | null // @TODO заменить везде на Point из ya-map?
+	initialMarkerLocation?: Point | null
 	userLocationMarkerRef?: React.RefObject<UserLocationMarkerHandle | null>
 	initialLocations?: IWorkoutLocationStorageItem[]
 }
 
 export interface MapComponentHandle {
-	setMapCenter: (center: ILatLng | null, durationInSeconds?: number, zoom?: number, animationType?: Animation) => void
+	setMapCenter: (center: Point | null, durationInSeconds?: number, zoom?: number, animationType?: Animation) => void
 	fitAllMarkers: (durationInSeconds?: number) => void
 	updatePath: (newItem: IWorkoutLocationStorageItem) => void
 }
@@ -47,139 +43,6 @@ interface TransitionMarker {
 	position: Point
 	id: string
 }
-
-// const testLocations = [
-// 	{
-// 		relTs: 1,
-// 		locationObject: {
-// 			coords: {
-// 				latitude: 53.377398777940066,
-// 				longitude: 49.44734799788105
-// 			},
-// 			timestamp: 1,
-// 			mocked: false
-// 		},
-// 		isPausedPoint: false,
-// 		isSavedToServer: false
-// 	},
-// 	{
-// 		relTs: 1,
-// 		locationObject: {
-// 			coords: {
-// 				latitude: 53.37815399436764,
-// 				longitude: 49.44731581137271
-// 			},
-// 			timestamp: 1,
-// 			mocked: false
-// 		},
-// 		isPausedPoint: false,
-// 		isSavedToServer: false
-// 	},
-// 	{
-// 		relTs: 1,
-// 		locationObject: {
-// 			coords: {
-// 				latitude: 53.3782243952166,
-// 				longitude: 49.449622511137036
-// 			},
-// 			timestamp: 1,
-// 			mocked: false
-// 		},
-// 		isPausedPoint: true,
-// 		isSavedToServer: false
-// 	},
-// 	{
-// 		relTs: 1,
-// 		locationObject: {
-// 			coords: {
-// 				latitude: 53.377379577347824,
-// 				longitude: 49.449676155317604
-// 			},
-// 			timestamp: 1,
-// 			mocked: false
-// 		},
-// 		isPausedPoint: true,
-// 		isSavedToServer: false
-// 	},
-// 	{
-// 		relTs: 1,
-// 		locationObject: {
-// 			coords: {
-// 				latitude: 53.37699556368535,
-// 				longitude: 49.448302864295115
-// 			},
-// 			timestamp: 1,
-// 			mocked: false
-// 		},
-// 		isPausedPoint: false,
-// 		isSavedToServer: false
-// 	},
-// 	{
-// 		relTs: 1,
-// 		locationObject: {
-// 			coords: {
-// 				latitude: 53.376662749043575,
-// 				longitude: 49.44670426771426
-// 			},
-// 			timestamp: 1,
-// 			mocked: false
-// 		},
-// 		isPausedPoint: false,
-// 		isSavedToServer: false
-// 	},
-// 	{
-// 		relTs: 1,
-// 		locationObject: {
-// 			coords: {
-// 				latitude: 53.37599711195731,
-// 				longitude: 49.4443761102777
-// 			},
-// 			timestamp: 1,
-// 			mocked: false
-// 		},
-// 		isPausedPoint: true,
-// 		isSavedToServer: false
-// 	},
-// 	{
-// 		relTs: 1,
-// 		locationObject: {
-// 			coords: {
-// 				latitude: 53.37533786497362,
-// 				longitude: 49.44261658115514
-// 			},
-// 			timestamp: 1,
-// 			mocked: false
-// 		},
-// 		isPausedPoint: true,
-// 		isSavedToServer: false
-// 	},
-// 	{
-// 		relTs: 1,
-// 		locationObject: {
-// 			coords: {
-// 				latitude: 53.37533786497362,
-// 				longitude: 49.44561658115514
-// 			},
-// 			timestamp: 1,
-// 			mocked: false
-// 		},
-// 		isPausedPoint: true,
-// 		isSavedToServer: false
-// 	},
-// 	{
-// 		relTs: 1,
-// 		locationObject: {
-// 			coords: {
-// 				latitude: 53.37133786497362,
-// 				longitude: 49.44661658115514
-// 			},
-// 			timestamp: 1,
-// 			mocked: false
-// 		},
-// 		isPausedPoint: true,
-// 		isSavedToServer: false
-// 	}
-// ]
 
 const MapComponent = forwardRef<MapComponentHandle, IProps>((props, ref) => {
 	const mapRef = useRef<YamapRef>(null)
@@ -198,26 +61,36 @@ const MapComponent = forwardRef<MapComponentHandle, IProps>((props, ref) => {
 	const lastSegmentPausedRef = useRef<boolean>(false)
 
 	const activePolylineRef = useRef<PolylineComponentInstanceRef | null>(null)
-	const isAnimationBlocked = useRef<boolean>(false)
-	const animationBlockTimer = useRef<ReturnType<typeof setTimeout> | null>(null)
-	const mapInitialRegionSettings = useRef<InitialRegion>(getMapSettings()).current
+	const isAnimationBlockedRef = useRef<boolean>(false)
+	const animationBlockTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
+	const mapInitialRegionSettingsRef = useRef<InitialRegion>(getMapSettings()).current
 
 	const activeLineColor = Colors['green-main']
 	const pausedLineColor = Colors['gray-ab']
 
 	// Initialize from props (History load)
 	useEffect(() => {
-		if (props.initialLocations && props.initialLocations.length > 0 && segments.length === 0) {
-			const parsed = parseLocationsToSegments(props.initialLocations)
-			setSegments(parsed.segments)
-			setTransitionMarkers(parsed.markers)
+		let idleId: number | null = null
 
-			if (parsed.segments.length > 0) {
-				// Клонируем точки для мутаций
-				currentSegmentPointsRef.current = [...parsed.segments[parsed.segments.length - 1].points]
-				// Синхронизируем ref состояния
-				lastSegmentPausedRef.current = parsed.segments[parsed.segments.length - 1].isPaused
+		const run = () => {
+			if (props.initialLocations && props.initialLocations.length > 0 && segments.length === 0) {
+				const parsed = parseLocationsToSegments(props.initialLocations)
+				setSegments(parsed.segments)
+				setTransitionMarkers(parsed.markers)
+
+				if (parsed.segments.length > 0) {
+					// Клонируем точки для мутаций
+					currentSegmentPointsRef.current = [...parsed.segments[parsed.segments.length - 1].points]
+					// Синхронизируем ref состояния
+					lastSegmentPausedRef.current = parsed.segments[parsed.segments.length - 1].isPaused
+				}
 			}
+		}
+
+		idleId = requestIdleCallback(run)
+
+		return () => {
+			if (idleId) cancelIdleCallback(idleId)
 		}
 	}, [])
 
@@ -238,15 +111,19 @@ const MapComponent = forwardRef<MapComponentHandle, IProps>((props, ref) => {
 			if (sameState) {
 				currentGroup.push(curr)
 			} else {
-				// Connect segments visually
-				currentGroup.push(curr)
+				// Группа закончилась (смена состояния)
+
+				// 1. Упрощаем путь алгоритмом Ramer-Douglas-Peucker
+				const rawPoints = currentGroup.map((l) => ({
+					lat: l.locationObject.coords.latitude,
+					lon: l.locationObject.coords.longitude
+				}))
+				// Используем агрессивное упрощение для исторических данных (например, 0.00005 ~ 5 метров)
+				const simplifiedPoints = simplifyPath(rawPoints, 0.00005)
 
 				resultSegments.push({
 					isPaused: prev.isPausedPoint,
-					points: currentGroup.map((l) => ({
-						lat: l.locationObject.coords.latitude,
-						lon: l.locationObject.coords.longitude
-					})),
+					points: simplifiedPoints,
 					color: prev.isPausedPoint ? pausedLineColor : activeLineColor
 				})
 
@@ -256,18 +133,23 @@ const MapComponent = forwardRef<MapComponentHandle, IProps>((props, ref) => {
 					id: `marker-${i}`
 				})
 
+				// Начинаем новую группу, добавляя текущую точку (связность линии)
 				currentGroup = [curr]
 			}
 		}
 
-		// Add the final group
+		// Обработка последней группы
 		if (currentGroup.length > 0) {
+			const rawPoints = currentGroup.map((l) => ({
+				lat: l.locationObject.coords.latitude,
+				lon: l.locationObject.coords.longitude
+			}))
+			// Последний сегмент тоже упрощаем, но менее агрессивно, или так же
+			const simplifiedPoints = simplifyPath(rawPoints, 0.00005)
+
 			resultSegments.push({
 				isPaused: currentGroup[0].isPausedPoint,
-				points: currentGroup.map((l) => ({
-					lat: l.locationObject.coords.latitude,
-					lon: l.locationObject.coords.longitude
-				})),
+				points: simplifiedPoints,
 				color: currentGroup[0].isPausedPoint ? pausedLineColor : activeLineColor
 			})
 		}
@@ -305,6 +187,8 @@ const MapComponent = forwardRef<MapComponentHandle, IProps>((props, ref) => {
 				currentSegmentPointsRef.current.push(newPoint)
 
 				// 2. Update Native View directly
+				// ВАЖНО: Здесь мы не упрощаем путь, так как это "живое" рисование.
+				// Упрощение имеет смысл делать только при "запечатывании" сегмента или загрузке истории.
 				if (activePolylineRef.current) {
 					activePolylineRef.current.setNativeProps({
 						points: currentSegmentPointsRef.current
@@ -313,7 +197,9 @@ const MapComponent = forwardRef<MapComponentHandle, IProps>((props, ref) => {
 			} else {
 				// === STATE CHANGE: TRIGGER REACT RENDER ===
 
-				// 1. Seal the previous segment
+				// 1. Запечатываем предыдущий сегмент
+				// Здесь можно было бы упростить путь перед сохранением в стейт,
+				// но для плавности перехода лучше оставить как есть или упростить постфактум.
 				const finishedSegmentPoints = [...currentSegmentPointsRef.current, newPoint]
 
 				// 2. Start new segment
@@ -333,10 +219,11 @@ const MapComponent = forwardRef<MapComponentHandle, IProps>((props, ref) => {
 				setSegments((prev) => {
 					const copy = [...prev]
 					if (copy.length > 0) {
-						// Update the sealed segment in history
+						// Можно упростить законченный сегмент перед сохранением, чтобы освободить память
+						const simplifiedFinished = simplifyPath(finishedSegmentPoints, 0.00005)
 						copy[copy.length - 1] = {
 							...copy[copy.length - 1],
-							points: finishedSegmentPoints
+							points: simplifiedFinished
 						}
 					}
 					return [...copy, newSegment]
@@ -362,121 +249,22 @@ const MapComponent = forwardRef<MapComponentHandle, IProps>((props, ref) => {
 		updatePath: (newItem) => updatePath(newItem)
 	}))
 
-	// const renderLines = (locations: IWorkoutLocationStorageItem[] | undefined) => {
-	// 	if (!locations || locations.length < 2) return null
-	//
-	// 	const activeLineColor = Colors['green-main']
-	// 	const pausedLineColor = Colors['gray-ab']
-	//
-	// 	const elements: JSX.Element[] = []
-	//
-	// 	// группируем подряд идущие точки по состоянию,
-	// 	// при смене состояния — добавляем точку-переход в конец предыдущей группы
-	// 	const groupedSegments: IWorkoutLocationStorageItem[][] = []
-	// 	const transitions: {
-	// 		groupIndex: number // индекс группы, после которой произошёл переход
-	// 		fromPaused: boolean
-	// 		toPaused: boolean
-	// 		point: IWorkoutLocationStorageItem // точка перехода (curr)
-	// 	}[] = []
-	//
-	// 	let currentGroup: IWorkoutLocationStorageItem[] = [locations[0]]
-	//
-	// 	for (let i = 1; i < locations.length; i++) {
-	// 		const prev = locations[i - 1]
-	// 		const curr = locations[i]
-	//
-	// 		const sameState = prev.isPausedPoint === curr.isPausedPoint
-	//
-	// 		if (sameState) {
-	// 			currentGroup.push(curr)
-	// 		} else {
-	// 			// включаем точку перехода в прошлую группу, чтобы получить сегмент prev -> curr
-	// 			currentGroup.push(curr)
-	//
-	// 			// сохраняем группу
-	// 			groupedSegments.push(currentGroup)
-	//
-	// 			// сохраняем инфу о переходе — группаIndex = индекс только что добавленной группы
-	// 			transitions.push({
-	// 				groupIndex: groupedSegments.length - 1,
-	// 				fromPaused: prev.isPausedPoint,
-	// 				toPaused: curr.isPausedPoint,
-	// 				point: curr
-	// 			})
-	//
-	// 			// начинаем новую группу с curr (curr дублируется — как конец прошлой и как начало новой)
-	// 			currentGroup = [curr]
-	// 		}
-	// 	}
-	//
-	// 	// добавляем последнюю группу
-	// 	if (currentGroup.length > 0) {
-	// 		groupedSegments.push(currentGroup)
-	// 	}
-	//
-	// 	// рендерим группы как единые линии
-	// 	groupedSegments.forEach((group, idx) => {
-	// 		const color = group[0].isPausedPoint ? pausedLineColor : activeLineColor
-	//
-	// 		const points = group.map((loc) => ({
-	// 			lat: loc.locationObject.coords.latitude,
-	// 			lon: loc.locationObject.coords.longitude
-	// 		}))
-	//
-	// 		elements.push(
-	// 			<PolylineCustom
-	// 				ref={(elem) => {
-	// 					if (elem) {
-	// 						polylineRef.current.push(elem)
-	// 					}
-	// 				}}
-	// 				key={`group-${idx}`}
-	// 				points={points}
-	// 				strokeColor={color}
-	// 				strokeWidth={4}
-	// 			/>
-	// 		)
-	//
-	// 		// если после этой группы был переход — ставим маркер в точке перехода
-	// 		const transition = transitions.find((t) => t.groupIndex === idx)
-	// 		if (transition) {
-	// 			const { fromPaused, toPaused, point } = transition
-	// 			const pos = {
-	// 				lat: point.locationObject.coords.latitude,
-	// 				lon: point.locationObject.coords.longitude
-	// 			}
-	//
-	// 			if (!fromPaused && toPaused) {
-	// 				elements.push(<PauseLocationMarker key={`pause-${idx}`} position={pos} />)
-	// 			} else if (fromPaused && !toPaused) {
-	// 				elements.push(<ResumeLocationMarker key={`resume-${idx}`} position={pos} />)
-	// 			}
-	// 		}
-	// 	})
-	//
-	// 	return elements
-	// }
-	//
-	// const renderedLines = useMemo(() => renderLines(props.userLocations), [props.userLocations])
-
 	const fitAllMarkers = (durationInSeconds?: number) => {
 		if (!mapRef.current) return
 		mapRef.current.fitAllMarkers(durationInSeconds, Animation.LINEAR)
 	}
 
 	const changeMapCenter = (
-		center: ILatLng | null,
+		center: Point | null,
 		durationInSeconds?: number,
 		zoom?: number,
 		animationType?: Animation
 	) => {
-		if (isAnimationBlocked.current) return
+		if (isAnimationBlockedRef.current) return
 		if (!center) return
 		if (!mapRef.current) return
 		mapRef.current.getCameraPosition((cameraPosition) => {
 			if (!mapRef.current) return
-			console.log('animationType ?? Animation.SMOOTH', animationType ?? Animation.SMOOTH)
 			handleBlockAnimation(durationInSeconds)
 			mapRef.current.setCenter(
 				center,
@@ -490,14 +278,14 @@ const MapComponent = forwardRef<MapComponentHandle, IProps>((props, ref) => {
 	}
 
 	const handleBlockAnimation = useCallback((durationInSeconds: number = 2000) => {
-		if (animationBlockTimer.current) {
-			clearTimeout(animationBlockTimer.current)
+		if (animationBlockTimerRef.current) {
+			clearTimeout(animationBlockTimerRef.current)
 		}
 
-		isAnimationBlocked.current = true
+		isAnimationBlockedRef.current = true
 
-		animationBlockTimer.current = setTimeout(() => {
-			isAnimationBlocked.current = false
+		animationBlockTimerRef.current = setTimeout(() => {
+			isAnimationBlockedRef.current = false
 		}, durationInSeconds)
 	}, [])
 
@@ -519,7 +307,7 @@ const MapComponent = forwardRef<MapComponentHandle, IProps>((props, ref) => {
 			<Yamap
 				ref={mapRef}
 				nightMode
-				initialRegion={mapInitialRegionSettings}
+				initialRegion={mapInitialRegionSettingsRef}
 				style={{ flex: 1, maxHeight: props.maxMapHeight, minHeight: props.minMapHeight }}
 				logoPosition={{ horizontal: 'right', vertical: 'top' }}
 				showUserPosition={false}

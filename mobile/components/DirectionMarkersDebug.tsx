@@ -1,8 +1,7 @@
-import { Marker } from 'react-native-yamap-plus'
-import { ILatLng } from '@/components/map/MapComponent'
+import { Marker, Point } from 'react-native-yamap-plus'
 import { Text } from 'react-native'
 
-const DirectionMarkersDebug = ({ center, radius = 0.01 }: { center: ILatLng; radius?: number }) => {
+const DirectionMarkersDebug = ({ center, radius = 0.01 }: { center: Point; radius?: number }) => {
 	const directions = [
 		{ id: 'north', label: 'Север', position: { lat: center.lat + radius, lon: center.lon } },
 		{ id: 'south', label: 'Юг', position: { lat: center.lat - radius, lon: center.lon } },

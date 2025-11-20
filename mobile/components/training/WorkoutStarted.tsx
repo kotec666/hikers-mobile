@@ -3,7 +3,7 @@ import EndTrainingModal from '@/components/training/EndTrainingModal'
 import { Container } from '@/components/ui/Container'
 import { Dimensions, Text, View } from 'react-native'
 import { fontFamily } from '@/constants/Fonts'
-import MapComponent, { ILatLng, MapComponentHandle } from '@/components/map/MapComponent'
+import MapComponent, { MapComponentHandle } from '@/components/map/MapComponent'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
 import { IWorkoutLocationStorageItem } from '@/store/workoutStorage'
 import { TrainingType } from '@shared/enums'
@@ -12,10 +12,11 @@ import ShowMembersList from '@/components/training/tabs/ShowMembersList'
 import InteractiveBottomElements from '@/components/training/InteractiveBottomElements'
 import { MetricSpeedHandle } from '@/components/training/tabs/metrics/MetricSpeed'
 import { UserLocationMarkerHandle } from '@/components/map/markers/UserLocationMarker/UserLocationMarker'
+import { Point } from 'react-native-yamap-plus'
 
 interface IProps {
 	// headingDebug: number | null
-	initialMarkerLocation?: ILatLng | null
+	initialMarkerLocation?: Point | null
 	userLocations: IWorkoutLocationStorageItem[]
 	isPaused: boolean
 	handleClickPause: () => void

@@ -1,7 +1,7 @@
-import { MMKV } from 'react-native-mmkv'
+import { createMMKV } from 'react-native-mmkv'
 import { InitialRegion } from 'react-native-yamap-plus'
 
-export const mapStorage = new MMKV({
+export const mapStorage = createMMKV({
 	id: 'map-storage'
 })
 
@@ -55,5 +55,5 @@ export const updateMapSettings = (settings: Partial<InitialRegion>) => {
 }
 
 export const removeMapStorage = () => {
-	mapStorage.delete(mapStorageKey)
+	mapStorage.remove(mapStorageKey)
 }

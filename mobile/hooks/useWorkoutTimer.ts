@@ -1,5 +1,5 @@
 import { formatTime } from '@/helpers/formatTime'
-import { getAllWorkoutStorage } from '@/store/workoutStorage'
+import { getWorkoutMeta } from '@/store/workoutStorage'
 import { useEffect, useState } from 'react'
 
 export const useWorkoutTimer = () => {
@@ -7,14 +7,14 @@ export const useWorkoutTimer = () => {
 
 	useEffect(() => {
 		const interval = setInterval(() => {
-			const { activeWorkout: active } = getAllWorkoutStorage()
-			if (!active) return
+			const meta = getWorkoutMeta()
+			if (!meta) return
 
 			let time = 0
-			if (active.isPaused && active.lastPauseAt) {
-				time = active.lastPauseAt - active.startedAt - active.totalPausedMs
+			if (meta.isPaused && meta.lastPauseAt) {
+				time = meta.lastPauseAt - meta.startedAt - meta.totalPausedMs
 			} else {
-				time = Date.now() - active.startedAt - active.totalPausedMs
+				time = Date.now() - meta.startedAt - meta.totalPausedMs
 			}
 
 			setElapsed(time)

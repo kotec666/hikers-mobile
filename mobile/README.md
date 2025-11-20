@@ -33,11 +33,25 @@
      }
    }
    ```
-2. Создайте `./android/local.properties` и укажите путь к Android SDK (пример для Windows):
+2. Для использования lite версии yandex maps в файле `./android/build.gradle` добавьте в ext строку:
+   ```
+   buildscript {
+    ext {
+     useYandexMapsLite = true 
+    }
+   ``` 
+3. Сжатие android проекта осуществляется в `./android/app/build.gradle` следующим образом:
+   ```xml
+        // minifyEnabled enableProguardInReleaseBuilds
+           minifyEnabled true
+           shrinkResources true
+   ```   
+
+4. Создайте `./android/local.properties` и укажите путь к Android SDK (пример для Windows):
    ```
    sdk.dir=C:\\Users\\alexk\\AppData\\Local\\Android\\Sdk
    ```
-3. В сгенерированном `AndroidManifest.xml` добавьте foreground‑сервис Notifee внутри тега `<application>`:
+5. В сгенерированном `AndroidManifest.xml` добавьте foreground‑сервис Notifee внутри тега `<application>`:
    ```xml
    <service
      android:name="app.notifee.core.ForegroundService"
@@ -46,20 +60,7 @@
      android:stopWithTask="false" />
    ```
    Это необходимо для корректной работы таймера тренировки в фоне.
-4. Для использования lite версии yandex maps в файле `./android/build.gradle` добавьте строку:
-   ```
-   buildscript {
-    ext {
-        ...
-        + useYandexMapsLite = true 
-   }
-   ``` 
-5. Сжатие android проекта осуществляется в `./android/app/build.gradle` следующим образом:
-   ```xml
-        // minifyEnabled enableProguardInReleaseBuilds
-           minifyEnabled true
-           shrinkResources true
-   ```
+
 
 ## Подготовка Ios-проекта
 

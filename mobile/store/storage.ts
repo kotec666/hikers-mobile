@@ -1,7 +1,7 @@
-import { MMKV } from 'react-native-mmkv'
 import { IUser } from '@/store/authStore'
+import { createMMKV } from 'react-native-mmkv'
 
-export const storage = new MMKV({
+export const storage = createMMKV({
 	id: 'auth-storage'
 })
 
@@ -37,5 +37,5 @@ export const getItem = (key: string): IAuthStorage | null => {
 }
 
 export const removeItem = (key: string) => {
-	storage.delete(key)
+	storage.remove(key)
 }

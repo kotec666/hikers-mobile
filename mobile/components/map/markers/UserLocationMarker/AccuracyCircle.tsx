@@ -3,10 +3,9 @@ import { Point } from 'react-native-yamap-plus'
 import { CircleComponentInstanceRef, CircleCustom } from '@/components/map/CircleCustom'
 import { CircleNativeProps } from 'react-native-yamap-plus/src/spec/CircleNativeComponent'
 import { processColorsToNative } from 'react-native-yamap-plus/src/utils'
-import { ILatLng } from '@/components/map/MapComponent'
 
 interface IProps {
-	initialPosition: ILatLng
+	initialPosition: Point
 }
 
 export interface AccuracyCircleHandle {

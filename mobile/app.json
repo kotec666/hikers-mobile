@@ -58,9 +58,12 @@
 				"expo-build-properties",
 				{
 					"android": {
+						"kotlinVersion": "2.0.21",
 						"compileSdkVersion": 35,
 						"targetSdkVersion": 35,
-						"minSdkVersion": 26
+						"minSdkVersion": 26,
+						"enableMinifyInReleaseBuilds": true,
+						"enableShrinkResourcesInReleaseBuilds": true
 					}
 				}
 			],
@@ -70,7 +73,8 @@
 					"photosPermission": "Приложению требуется доступ к вашей галереи для выбора аватара",
 					"cameraPermission": "Приложению требуется доступ к вашей камере для добавления аватара"
 				}
-			]
+			],
+			"expo-font"
 		],
 		"experiments": {
 			"typedRoutes": true

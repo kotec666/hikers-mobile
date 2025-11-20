@@ -1,7 +1,7 @@
-import { PermissionsAndroid, Platform, SafeAreaView, StyleSheet } from 'react-native'
+import { Text, PermissionsAndroid, Platform, SafeAreaView, StyleSheet } from 'react-native'
 import { SafeAreaProvider, useSafeAreaInsets } from 'react-native-safe-area-context'
 import { GestureHandlerRootView } from 'react-native-gesture-handler'
-import React, { useCallback, useEffect, useLayoutEffect, useRef, useState } from 'react'
+import React, { useCallback, useEffect, useRef, useState } from 'react'
 import WorkoutRunning from '@/components/svg/WorkoutRunning'
 import WorkoutWalking from '@/components/svg/WorkoutWalking'
 import WorkoutBicycle from '@/components/svg/WorkoutBicycle'
@@ -93,6 +93,7 @@ export default function NewTraining() {
 	// const [myLocations, setMyLocations] = useState<IWorkoutLocationStorageItem[]>([])
 	// const [headingDebug, setHeadingDebug] = useState<number | null>(null)
 	const isPausedRef = useLatest(isPaused)
+	const [isReady, setIsReady] = useState(false)
 
 	useEffect(() => {
 		if (permissionsRef.current) {
@@ -100,32 +101,61 @@ export default function NewTraining() {
 		}
 	}, [])
 
-	useLayoutEffect(() => {
-		// @TODO useLayoutEffect?
+	useEffect(() => {
 		// после рестарта (перезахода в) приложения (-е)
-		const workoutStorage = getAllWorkoutStorage()
-		const activeWorkout = workoutStorage.activeWorkout
+		let idleId: number | null = null
 
-		if (activeWorkout) {
-			const foundedWorkout = WorkoutTypesData.find((w) => w.type === activeWorkout.type) ?? WorkoutTypesData[0]
-			setIsPaused(activeWorkout.isPaused)
-			// setMyLocations(activeWorkout.locations)
-			myLocationsRef.current = activeWorkout.locations
-			setChosenWorkout(foundedWorkout)
+		const run = () => {
+			const workoutStorage = getAllWorkoutStorage()
+			const activeWorkout = workoutStorage.activeWorkout
 
-			if (!initialLocationSetRef.current) {
-				const lastKnownPosition = activeWorkout.locations.at(-1)
-				if (lastKnownPosition) {
-					initialLocationSetRef.current = true
-					setInitialMarkerLocationState({
-						lat: lastKnownPosition.locationObject.coords.latitude,
-						lon: lastKnownPosition.locationObject.coords.longitude
-					})
+			if (activeWorkout) {
+				const foundedWorkout =
+					WorkoutTypesData.find((w) => w.type === activeWorkout.type) ?? WorkoutTypesData[0]
+				setIsPaused(activeWorkout.isPaused)
+
+				// myLocationsRef.current = activeWorkout.locations @TODO дубль
+				setChosenWorkout(foundedWorkout)
+
+				if (!initialLocationSetRef.current) {
+					const lastKnownPosition = activeWorkout.locations.at(-1)
+					if (lastKnownPosition) {
+						initialLocationSetRef.current = true
+						setInitialMarkerLocationState({
+							lat: lastKnownPosition.locationObject.coords.latitude,
+							lon: lastKnownPosition.locationObject.coords.longitude
+						})
+					}
 				}
+				handleClickStart(true)
 			}
-			handleClickStart(true)
+
+			// Загружаем локации
+			if (activeWorkout?.locations) {
+				myLocationsRef.current = activeWorkout.locations
+			}
+
+			setIsReady(true)
 		}
-	}, [])
+
+		idleId = requestIdleCallback(run)
+
+		return () => {
+			if (idleId) cancelIdleCallback(idleId)
+			if (locationSubscriptionRef.current) {
+				locationSubscriptionRef.current.remove()
+				locationSubscriptionRef.current = null
+			}
+			if (headingSubscriptionRef.current) {
+				headingSubscriptionRef.current.remove()
+				headingSubscriptionRef.current = null
+			}
+			if (mapComponentRef.current) {
+				mapComponentRef.current = null
+			}
+			stopNotificationTimer()
+		}
+	}, []) // eslint-disable-line react-hooks/exhaustive-deps
 
 	const startBackgroundTracking = async () => {
 		const isTaskRegistered = await TaskManager.isTaskRegisteredAsync(LOCATION_TASK_NAME)
@@ -230,7 +260,7 @@ export default function NewTraining() {
 
 	const throttledHeadingUpdate = throttle((data: Location.LocationHeadingObject) => {
 		userLocationMarkerRef.current?.setMarkerHeading(data.trueHeading ?? data.magHeading)
-	}, 500)
+	}, 750)
 
 	const startHeadingTracking = async () => {
 		headingSubscriptionRef.current = await Location.watchHeadingAsync(throttledHeadingUpdate)
@@ -392,41 +422,10 @@ export default function NewTraining() {
 		setIsWorkoutStarted(false)
 		setIsPaused(false)
 		initialLocationSetRef.current = false
-		// setMyLocations([])
 		myLocationsRef.current = []
 		if (userLocationMarkerRef.current) {
 			userLocationMarkerRef.current.setAccuracy(null)
 			userLocationMarkerRef.current.setMarkerPosition(null)
-		}
-	}, [])
-
-	const loadAndSetSavedLocations = () => {
-		const WorkoutStorage = getAllWorkoutStorage()
-
-		const locations = WorkoutStorage.activeWorkout?.locations
-
-		if (locations) {
-			// setMyLocations(locations)
-			myLocationsRef.current = locations
-		}
-	}
-
-	useEffect(() => {
-		loadAndSetSavedLocations()
-
-		return () => {
-			if (locationSubscriptionRef.current) {
-				locationSubscriptionRef.current.remove()
-				locationSubscriptionRef.current = null
-			}
-			if (headingSubscriptionRef.current) {
-				headingSubscriptionRef.current.remove()
-				headingSubscriptionRef.current = null
-			}
-			if (mapComponentRef.current) {
-				mapComponentRef.current = null
-			}
-			stopNotificationTimer()
 		}
 	}, [])
 
@@ -510,6 +509,17 @@ export default function NewTraining() {
 	}, [])
 
 	console.log('render NewTraining')
+
+	if (!isReady) {
+		return (
+			<SafeAreaProvider style={{ paddingTop: insets.top }}>
+				<SafeAreaView style={styles.container}>
+					<Text>Загрузка...</Text>
+				</SafeAreaView>
+			</SafeAreaProvider>
+		)
+	}
+
 	return (
 		<SafeAreaProvider style={{ paddingTop: insets.top }}>
 			<GestureHandlerRootView style={{ flex: 1 }}>
