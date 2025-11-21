@@ -1,4 +1,4 @@
-import { Text, PermissionsAndroid, Platform, SafeAreaView, StyleSheet } from 'react-native'
+import { Text, PermissionsAndroid, Platform, SafeAreaView, StyleSheet, View } from 'react-native'
 import { SafeAreaProvider, useSafeAreaInsets } from 'react-native-safe-area-context'
 import { GestureHandlerRootView } from 'react-native-gesture-handler'
 import React, { useCallback, useEffect, useRef, useState } from 'react'
@@ -12,8 +12,7 @@ import WorkoutStarted from '@/components/training/WorkoutStarted'
 import NewWorkout, { IWorkoutModeElement } from '@/components/training/NewWorkout'
 import * as TaskManager from 'expo-task-manager'
 import {
-	getAllWorkoutStorage,
-	IWorkout,
+	getFullActiveWorkout,
 	IWorkoutLocationStorageItem,
 	moveActiveWorkoutToNotSaved,
 	setActiveWorkoutPauseState,
@@ -24,19 +23,11 @@ import { MapComponentHandle } from '@/components/map/MapComponent'
 import { useRouter } from 'expo-router'
 import { useLatest } from '@/hooks/useLatest'
 import { initializeNotifications } from '@/helpers/notifications'
-import { formatTime } from '@/helpers/formatTime'
-import notifee, {
-	AndroidForegroundServiceType,
-	AndroidImportance,
-	AndroidVisibility,
-	EventType
-} from '@notifee/react-native'
 import { AllGeolocationPermissionsHandle } from '@/components/AllGeolocationPermissions'
 import * as Notification from 'expo-notifications'
 import { TrainingType } from '../../../shared/enums'
 import { debounce } from '@/helpers/debounce'
 import { throttle } from '@/helpers/throttle'
-
 // eslint-disable-next-line import/no-duplicates
 import '@/tasks/backgroundLocationHandler'
 // eslint-disable-next-line import/no-duplicates
@@ -44,32 +35,14 @@ import { LOCATION_TASK_NAME } from '@/tasks/backgroundLocationHandler'
 import { MetricSpeedHandle } from '@/components/training/tabs/metrics/MetricSpeed'
 import { UserLocationMarkerHandle } from '@/components/map/markers/UserLocationMarker/UserLocationMarker'
 import { Point } from 'react-native-yamap-plus'
+import { useWorkoutNotification } from '@/hooks/useWorkoutNotification'
 
 initializeNotifications()
 
 const WorkoutTypesData = [
 	{ id: 1, type: TrainingType.RUN, name: 'Забег', IconComponent: WorkoutRunning },
 	{ id: 2, type: TrainingType.RUN, name: 'Ходьба', IconComponent: WorkoutWalking },
-	{ id: 3, type: TrainingType.BICYCLE, name: 'Велосипед', IconComponent: WorkoutBicycle },
-	{ id: 4, type: TrainingType.BICYCLE, name: 'Велосипед', IconComponent: WorkoutBicycle },
-	{ id: 5, type: TrainingType.BICYCLE, name: 'Велосипед', IconComponent: WorkoutBicycle },
-	{ id: 6, type: TrainingType.BICYCLE, name: 'Велосипед', IconComponent: WorkoutBicycle },
-	{ id: 7, type: TrainingType.BICYCLE, name: 'Велосипед', IconComponent: WorkoutBicycle },
-	{ id: 8, type: TrainingType.BICYCLE, name: 'Велосипед', IconComponent: WorkoutBicycle },
-	{ id: 9, type: TrainingType.BICYCLE, name: 'Велосипед', IconComponent: WorkoutBicycle },
-	{ id: 10, type: TrainingType.BICYCLE, name: 'Велосипед', IconComponent: WorkoutBicycle },
-	{ id: 11, type: TrainingType.BICYCLE, name: 'Велосипед', IconComponent: WorkoutBicycle },
-	{ id: 12, type: TrainingType.BICYCLE, name: 'Велосипед', IconComponent: WorkoutBicycle },
-	{ id: 13, type: TrainingType.BICYCLE, name: 'Велосипед', IconComponent: WorkoutBicycle },
-	{ id: 14, type: TrainingType.BICYCLE, name: 'Велосипед', IconComponent: WorkoutBicycle },
-	{ id: 15, type: TrainingType.BICYCLE, name: 'Велосипед', IconComponent: WorkoutBicycle },
-	{ id: 16, type: TrainingType.BICYCLE, name: 'Велосипед', IconComponent: WorkoutBicycle },
-	{ id: 17, type: TrainingType.BICYCLE, name: 'Велосипед', IconComponent: WorkoutBicycle },
-	{ id: 18, type: TrainingType.BICYCLE, name: 'Велосипед', IconComponent: WorkoutBicycle },
-	{ id: 19, type: TrainingType.BICYCLE, name: 'Велосипед', IconComponent: WorkoutBicycle },
-	{ id: 20, type: TrainingType.BICYCLE, name: 'Велосипед', IconComponent: WorkoutBicycle },
-	{ id: 21, type: TrainingType.BICYCLE, name: 'Велосипед', IconComponent: WorkoutBicycle },
-	{ id: 22, type: TrainingType.BICYCLE, name: 'Велосипед last', IconComponent: WorkoutBicycle }
+	{ id: 3, type: TrainingType.BICYCLE, name: 'Велосипед last', IconComponent: WorkoutBicycle }
 ]
 
 export default function NewTraining() {
@@ -81,7 +54,6 @@ export default function NewTraining() {
 	const permissionsRef = useRef<AllGeolocationPermissionsHandle>(null)
 	const locationSubscriptionRef = useRef<null | Location.LocationSubscription>(null)
 	const headingSubscriptionRef = useRef<null | Location.LocationSubscription>(null)
-	const notificationIntervalRef = useRef<null | ReturnType<typeof setInterval>>(null)
 	const metricSpeedRef = useRef<MetricSpeedHandle>(null)
 	const myLocationsRef = useRef<IWorkoutLocationStorageItem[]>([])
 	const initialLocationSetRef = useRef(false)
@@ -90,7 +62,6 @@ export default function NewTraining() {
 	const [isWorkoutStarted, setIsWorkoutStarted] = useState<boolean>(false)
 	const [isPaused, setIsPaused] = useState<boolean>(false)
 	const [initialMarkerLocationState, setInitialMarkerLocationState] = useState<Point | null>(null)
-	// const [myLocations, setMyLocations] = useState<IWorkoutLocationStorageItem[]>([])
 	// const [headingDebug, setHeadingDebug] = useState<number | null>(null)
 	const isPausedRef = useLatest(isPaused)
 	const [isReady, setIsReady] = useState(false)
@@ -106,15 +77,13 @@ export default function NewTraining() {
 		let idleId: number | null = null
 
 		const run = () => {
-			const workoutStorage = getAllWorkoutStorage()
-			const activeWorkout = workoutStorage.activeWorkout
+			const activeWorkout = getFullActiveWorkout()
 
 			if (activeWorkout) {
 				const foundedWorkout =
 					WorkoutTypesData.find((w) => w.type === activeWorkout.type) ?? WorkoutTypesData[0]
 				setIsPaused(activeWorkout.isPaused)
 
-				// myLocationsRef.current = activeWorkout.locations @TODO дубль
 				setChosenWorkout(foundedWorkout)
 
 				if (!initialLocationSetRef.current) {
@@ -391,15 +360,11 @@ export default function NewTraining() {
 		saveLocationToStorageAndState(lastUserPosition)
 	}, [])
 
-	const pauseDebounced = useCallback(debounce(handleClickPause, 300), [])
+	const { startNotificationTimer, stopNotificationTimer } = useWorkoutNotification({
+		handleClickPause
+	})
 
-	const stopNotificationTimer = async () => {
-		await notifee.stopForegroundService()
-		if (notificationIntervalRef.current) {
-			clearInterval(notificationIntervalRef.current)
-			notificationIntervalRef.current = null
-		}
-	}
+	const pauseDebounced = useCallback(debounce(handleClickPause, 300), [])
 
 	const handleClickEndWorkout = useCallback(async () => {
 		// @TODO требуется проверка на то что тренировка завершилась слишком рано
@@ -429,93 +394,14 @@ export default function NewTraining() {
 		}
 	}, [])
 
-	const createChannel = async () => {
-		await notifee.createChannel({
-			id: 'workout',
-			name: 'Отслеживание тренировки',
-			importance: AndroidImportance.LOW
-		})
-	}
-
-	const updateNotification = async (active: IWorkout) => {
-		let actions = []
-
-		if (active.isPaused) {
-			actions = [{ title: 'Продолжить', pressAction: { id: 'resume' } }]
-		} else {
-			actions = [{ title: 'Пауза', pressAction: { id: 'pause' } }]
-		}
-
-		let elapsed
-		if (active.isPaused && active.lastPauseAt) {
-			elapsed = active.lastPauseAt - active.startedAt - active.totalPausedMs
-		} else {
-			elapsed = Date.now() - active.startedAt - active.totalPausedMs
-		}
-
-		const formatted = formatTime(elapsed)
-		await notifee.displayNotification({
-			id: 'workout-timer',
-			title: 'Тренировка',
-			body: formatted,
-			android: {
-				channelId: 'workout',
-				asForegroundService: true,
-				autoCancel: false,
-				foregroundServiceTypes: [AndroidForegroundServiceType.FOREGROUND_SERVICE_TYPE_HEALTH],
-				importance: AndroidImportance.LOW,
-				ongoing: true,
-				visibility: AndroidVisibility.PUBLIC,
-				pressAction: {
-					id: 'default'
-					// launchActivity: '', // @TODO?
-					// launchActivityFlags: [],
-					// mainComponent: ''
-				},
-				actions: actions
-			}
-		})
-	}
-
-	const startNotificationTimer = async () => {
-		if (Platform.OS !== 'android') return
-		const { granted: notificationsGranted } = await Notification.getPermissionsAsync()
-		const activityRecognitionPerms = await PermissionsAndroid.request(
-			PermissionsAndroid.PERMISSIONS.ACTIVITY_RECOGNITION
-		)
-
-		if (activityRecognitionPerms !== PermissionsAndroid.RESULTS.GRANTED || !notificationsGranted) return
-		await createChannel()
-
-		notificationIntervalRef.current = setInterval(() => {
-			const { activeWorkout: active } = getAllWorkoutStorage()
-
-			if (!active) {
-				return toast.error('Нет активной тренировки для показа уведомления')
-			}
-
-			updateNotification(active)
-		}, 1000)
-	}
-
-	useEffect(() => {
-		return notifee.onForegroundEvent(async ({ type, detail }) => {
-			if (type === EventType.ACTION_PRESS) {
-				if (!detail.pressAction) return
-				if (detail.pressAction.id === 'pause') await handleClickPause()
-				if (detail.pressAction.id === 'resume') await handleClickPause()
-			}
-		})
-	}, [])
-
 	console.log('render NewTraining')
 
 	if (!isReady) {
 		return (
 			<SafeAreaProvider style={{ paddingTop: insets.top }}>
-				<SafeAreaView style={styles.container}>
-					<Text>Загрузка...</Text>
-				</SafeAreaView>
+				<View className="w-full grow items-center justify-center">
+					<Text className="text-white">Загрузка...</Text>
+				</View>
 			</SafeAreaProvider>
 		)
 	}

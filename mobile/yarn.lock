@@ -6852,7 +6852,7 @@ react-native-nitro-modules@^0.31.8:
   resolved "https://registry.yarnpkg.com/react-native-nitro-modules/-/react-native-nitro-modules-0.31.8.tgz#28625b6397ce6b2a680dd3b86d30c3aa328f348e"
   integrity sha512-UeX1UCLh06yX6OV9ZcyQ7oLwSJzcaunhlhLRAQFKeiilKqLdnFg2leXTfnYVEezWexNOdWNnuJES7g1QJqvnog==
 
-react-native-reanimated@~4.1.1:
+react-native-reanimated@4.1.5:
   version "4.1.5"
   resolved "https://registry.yarnpkg.com/react-native-reanimated/-/react-native-reanimated-4.1.5.tgz#5106f9d5dc61f06ca54b9813f280bbfde7785987"
   integrity sha512-UA6VUbxwhRjEw2gSNrvhkusUq3upfD3Cv+AnB07V+kC8kpvwRVI+ivwY95ePbWNFkFpP+Y2Sdw1WHpHWEV+P2Q==
@@ -6900,10 +6900,10 @@ react-native-worklets@0.5.1:
     convert-source-map "^2.0.0"
     semver "7.7.2"
 
-react-native-yamap-plus@^5.3.6:
-  version "5.4.0"
-  resolved "https://registry.yarnpkg.com/react-native-yamap-plus/-/react-native-yamap-plus-5.4.0.tgz#390c2896ea1b1b13f5cc1ab40b7a4316b280ab4c"
-  integrity sha512-ApjD6i2F4TdWz54EuFy0B5Bxwh9zKLZzG1ZykayDwj2FGRJ410FbCcZbelcILi5DSJWvdNmoDmevPlU8lIcLww==
+react-native-yamap-plus@6.1.0:
+  version "6.1.0"
+  resolved "https://registry.yarnpkg.com/react-native-yamap-plus/-/react-native-yamap-plus-6.1.0.tgz#f29a306e4b9593ae87eb53587aa8f972a269cc7b"
+  integrity sha512-ubsSWggEC4JQ/72Xk+roMQmvZzSktym7DWF9rhdYnHuznx95jpkk5wVwy3+rXwoRTVFVIaKxLolRh6/vQxkQRA==
 
 react-native@0.81.5:
   version "0.81.5"

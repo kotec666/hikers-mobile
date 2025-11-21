@@ -14,6 +14,7 @@ import { PolylineNativeProps } from 'react-native-yamap-plus/src/spec/PolylineNa
 import UserLocationMarker, {
 	UserLocationMarkerHandle
 } from '@/components/map/markers/UserLocationMarker/UserLocationMarker'
+import { simplifyPath } from '@/helpers/geoUtils'
 
 interface IProps {
 	maxMapHeight?: number
@@ -43,7 +44,7 @@ interface TransitionMarker {
 	id: string
 }
 
-const MapComponent = forwardRef<MapComponentHandle, IProps>((props, ref) => {
+const MapComponentSimplified = forwardRef<MapComponentHandle, IProps>((props, ref) => {
 	const mapRef = useRef<YamapRef>(null)
 	// State for React rendering of segments and markers
 	const [segments, setSegments] = useState<Segment[]>([])
@@ -110,15 +111,19 @@ const MapComponent = forwardRef<MapComponentHandle, IProps>((props, ref) => {
 			if (sameState) {
 				currentGroup.push(curr)
 			} else {
-				// Connect segments visually
-				currentGroup.push(curr)
+				// Группа закончилась (смена состояния)
+
+				// 1. Упрощаем путь алгоритмом Ramer-Douglas-Peucker
+				const rawPoints = currentGroup.map((l) => ({
+					lat: l.locationObject.coords.latitude,
+					lon: l.locationObject.coords.longitude
+				}))
+				// Используем агрессивное упрощение для исторических данных (например, 0.00005 ~ 5 метров)
+				const simplifiedPoints = simplifyPath(rawPoints, 0.00005)
 
 				resultSegments.push({
 					isPaused: prev.isPausedPoint,
-					points: currentGroup.map((l) => ({
-						lat: l.locationObject.coords.latitude,
-						lon: l.locationObject.coords.longitude
-					})),
+					points: simplifiedPoints,
 					color: prev.isPausedPoint ? pausedLineColor : activeLineColor
 				})
 
@@ -128,18 +133,23 @@ const MapComponent = forwardRef<MapComponentHandle, IProps>((props, ref) => {
 					id: `marker-${i}`
 				})
 
+				// Начинаем новую группу, добавляя текущую точку (связность линии)
 				currentGroup = [curr]
 			}
 		}
 
-		// Add the final group
+		// Обработка последней группы
 		if (currentGroup.length > 0) {
+			const rawPoints = currentGroup.map((l) => ({
+				lat: l.locationObject.coords.latitude,
+				lon: l.locationObject.coords.longitude
+			}))
+			// Последний сегмент тоже упрощаем, но менее агрессивно, или так же
+			const simplifiedPoints = simplifyPath(rawPoints, 0.00005)
+
 			resultSegments.push({
 				isPaused: currentGroup[0].isPausedPoint,
-				points: currentGroup.map((l) => ({
-					lat: l.locationObject.coords.latitude,
-					lon: l.locationObject.coords.longitude
-				})),
+				points: simplifiedPoints,
 				color: currentGroup[0].isPausedPoint ? pausedLineColor : activeLineColor
 			})
 		}
@@ -177,6 +187,8 @@ const MapComponent = forwardRef<MapComponentHandle, IProps>((props, ref) => {
 				currentSegmentPointsRef.current.push(newPoint)
 
 				// 2. Update Native View directly
+				// ВАЖНО: Здесь мы не упрощаем путь, так как это "живое" рисование.
+				// Упрощение имеет смысл делать только при "запечатывании" сегмента или загрузке истории.
 				if (activePolylineRef.current) {
 					activePolylineRef.current.setNativeProps({
 						points: currentSegmentPointsRef.current
@@ -185,7 +197,9 @@ const MapComponent = forwardRef<MapComponentHandle, IProps>((props, ref) => {
 			} else {
 				// === STATE CHANGE: TRIGGER REACT RENDER ===
 
-				// 1. Seal the previous segment
+				// 1. Запечатываем предыдущий сегмент
+				// Здесь можно было бы упростить путь перед сохранением в стейт,
+				// но для плавности перехода лучше оставить как есть или упростить постфактум.
 				const finishedSegmentPoints = [...currentSegmentPointsRef.current, newPoint]
 
 				// 2. Start new segment
@@ -205,10 +219,11 @@ const MapComponent = forwardRef<MapComponentHandle, IProps>((props, ref) => {
 				setSegments((prev) => {
 					const copy = [...prev]
 					if (copy.length > 0) {
-						// Update the sealed segment in history
+						// Можно упростить законченный сегмент перед сохранением, чтобы освободить память
+						const simplifiedFinished = simplifyPath(finishedSegmentPoints, 0.00005)
 						copy[copy.length - 1] = {
 							...copy[copy.length - 1],
-							points: finishedSegmentPoints
+							points: simplifiedFinished
 						}
 					}
 					return [...copy, newSegment]
@@ -360,13 +375,13 @@ const MapComponent = forwardRef<MapComponentHandle, IProps>((props, ref) => {
 	)
 })
 
-MapComponent.displayName = 'MapComponent'
+MapComponentSimplified.displayName = 'MapComponentSimplified'
 
 // Memo: Сравниваем пропсы. initialLocations сравниваем по ссылке.
 // Так как в NewTraining мы передаем initialLocations = myLocationsRef.current,
 // а ref.current всегда стабилен (даже если массив внутри мутирует),
 // React.memo вернет true и ререндер не произойдет при обновлении массива.
-export default React.memo(MapComponent, (prev, next) => {
+export default React.memo(MapComponentSimplified, (prev, next) => {
 	return (
 		prev.maxContainerHeight === next.maxContainerHeight &&
 		prev.maxMapHeight === next.maxMapHeight &&
