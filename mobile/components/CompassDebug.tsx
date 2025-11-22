@@ -4,10 +4,12 @@ import { View, Text, StyleSheet } from 'react-native'
 interface CompassDebugProps {
 	heading: number
 	accuracy?: number | null
+	altitude?: number | null
+	altitudeAccuracy?: number | null
 	position?: 'top-right' | 'bottom-left' | 'bottom-right'
 }
 
-const CompassDebug = ({ heading, accuracy, position = 'top-right' }: CompassDebugProps) => {
+const CompassDebug = ({ heading, accuracy, altitude, altitudeAccuracy, position = 'top-right' }: CompassDebugProps) => {
 	const getPositionStyle = () => {
 		switch (position) {
 			case 'top-right':
@@ -60,7 +62,15 @@ const CompassDebug = ({ heading, accuracy, position = 'top-right' }: CompassDebu
 				<View style={[styles.directionLine, styles.westLine]} />
 			</View>
 			<Text style={styles.value}>Направление: {heading?.toFixed(1)}°</Text>
-			{accuracy && <Text style={styles.value}>Точность: {accuracy}м</Text>}
+			{accuracy !== null && accuracy !== undefined && (
+				<Text style={styles.value}>accuracy: {Math.round(accuracy)}</Text>
+			)}
+			{altitude !== null && altitude !== undefined && (
+				<Text style={styles.value}>altitude: {Math.round(altitude)}</Text>
+			)}
+			{altitudeAccuracy !== null && altitudeAccuracy !== undefined && (
+				<Text style={styles.value}>altitudeAccuracy: {Math.round(altitudeAccuracy)}</Text>
+			)}
 			<Text style={styles.helpText}>Красная стрелка → {directionLabel}</Text>
 		</View>
 	)

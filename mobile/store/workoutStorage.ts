@@ -269,6 +269,44 @@ export const getFullActiveWorkout = (): IWorkout | null => {
 	return getActiveWorkoutFromStorage(meta)
 }
 
+export const getLastChunkOfActiveWorkout = (): IWorkout | null => {
+	const metaStr = workoutStorage.getString(KEY_ACTIVE_META)
+	if (!metaStr) return null
+
+	const meta = JSON.parse(metaStr) as IWorkoutMeta
+
+	if (meta.chunkCount === 0) {
+		return {
+			type: meta.type,
+			startedAt: meta.startedAt,
+			isPaused: meta.isPaused,
+			totalPausedMs: meta.totalPausedMs,
+			lastPauseAt: meta.lastPauseAt,
+			locations: []
+		}
+	}
+
+	// Последний индекс чанка
+	const lastChunkIdx = meta.chunkCount - 1
+	const chunkKey = `${KEY_ACTIVE_BIN_CHUNK_PREFIX}${lastChunkIdx}`
+
+	const chunkBuffer = workoutStorage.getBuffer(chunkKey)
+	let locations: IWorkoutLocationStorageItem[] = []
+
+	if (chunkBuffer) {
+		locations = deserializeLocations(new Uint8Array(chunkBuffer))
+	}
+
+	return {
+		type: meta.type,
+		startedAt: meta.startedAt,
+		isPaused: meta.isPaused,
+		totalPausedMs: meta.totalPausedMs,
+		lastPauseAt: meta.lastPauseAt,
+		locations
+	}
+}
+
 const getActiveWorkoutFromStorage = (meta: IWorkoutMeta): IWorkout => {
 	let locations: IWorkoutLocationStorageItem[] = []
 

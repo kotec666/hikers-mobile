@@ -13,9 +13,13 @@ import InteractiveBottomElements from '@/components/training/InteractiveBottomEl
 import { MetricSpeedHandle } from '@/components/training/tabs/metrics/MetricSpeed'
 import { UserLocationMarkerHandle } from '@/components/map/markers/UserLocationMarker/UserLocationMarker'
 import { Point } from 'react-native-yamap-plus'
+import CompassDebug from '@/components/CompassDebug'
 
 interface IProps {
-	// headingDebug: number | null
+	headingDebug: number | null
+	accuracyDebug: number | null
+	altitudeDebug: number | null
+	altitudeAccuracyDebug: number | null
 	initialMarkerLocation?: Point | null
 	userLocations: React.RefObject<IWorkoutLocationStorageItem[]>
 	isPaused: boolean
@@ -67,7 +71,13 @@ const WorkoutStarted = (props: IProps) => {
 				handleClose={handleCloseEndModal}
 				handleClickEnd={handleClickEnd}
 			/>
-			{/*<CompassDebug heading={props.headingDebug || 0} position="bottom-right" />*/}
+			<CompassDebug
+				heading={props.headingDebug || 0}
+				accuracy={props.accuracyDebug || 0}
+				altitude={props.altitudeDebug || 0}
+				altitudeAccuracy={props.altitudeAccuracyDebug || 0}
+				position="bottom-right"
+			/>
 			<Container>
 				<Text className="my-[20px] text-white text-[20px]" style={{ fontFamily: fontFamily.bold }}>
 					Тренировка

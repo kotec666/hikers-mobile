@@ -1,18 +1,19 @@
-import { Text, PermissionsAndroid, Platform, SafeAreaView, StyleSheet, View } from 'react-native'
+import { PermissionsAndroid, Platform, StyleSheet, View } from 'react-native'
 import { SafeAreaProvider, useSafeAreaInsets } from 'react-native-safe-area-context'
 import { GestureHandlerRootView } from 'react-native-gesture-handler'
 import React, { useCallback, useEffect, useRef, useState } from 'react'
 import WorkoutRunning from '@/components/svg/WorkoutRunning'
 import WorkoutWalking from '@/components/svg/WorkoutWalking'
 import WorkoutBicycle from '@/components/svg/WorkoutBicycle'
-import * as Location from 'expo-location'
 import { LocationActivityType, LocationObject } from 'expo-location'
 import { useToast } from '@/hooks/useToast'
 import WorkoutStarted from '@/components/training/WorkoutStarted'
 import NewWorkout, { IWorkoutModeElement } from '@/components/training/NewWorkout'
+import * as Notification from 'expo-notifications'
+import * as Location from 'expo-location'
 import * as TaskManager from 'expo-task-manager'
 import {
-	getFullActiveWorkout,
+	getLastChunkOfActiveWorkout,
 	IWorkoutLocationStorageItem,
 	moveActiveWorkoutToNotSaved,
 	setActiveWorkoutPauseState,
@@ -24,7 +25,6 @@ import { useRouter } from 'expo-router'
 import { useLatest } from '@/hooks/useLatest'
 import { initializeNotifications } from '@/helpers/notifications'
 import { AllGeolocationPermissionsHandle } from '@/components/AllGeolocationPermissions'
-import * as Notification from 'expo-notifications'
 import { TrainingType } from '../../../shared/enums'
 import { debounce } from '@/helpers/debounce'
 import { throttle } from '@/helpers/throttle'
@@ -45,6 +45,10 @@ const WorkoutTypesData = [
 	{ id: 3, type: TrainingType.BICYCLE, name: 'Велосипед last', IconComponent: WorkoutBicycle }
 ]
 
+const ACCURACY_THRESHOLD = 50
+const HEADING_THROTTLE_MS = 750
+const PAUSE_DEBOUNCE_MS = 300
+
 export default function NewTraining() {
 	const insets = useSafeAreaInsets()
 	const toast = useToast()
@@ -62,77 +66,85 @@ export default function NewTraining() {
 	const [isWorkoutStarted, setIsWorkoutStarted] = useState<boolean>(false)
 	const [isPaused, setIsPaused] = useState<boolean>(false)
 	const [initialMarkerLocationState, setInitialMarkerLocationState] = useState<Point | null>(null)
-	// const [headingDebug, setHeadingDebug] = useState<number | null>(null)
+	const [headingDebug, setHeadingDebug] = useState<number | null>(null)
+	const [accuracyDebug, setAccuracyDebug] = useState<number | null>(null)
+	const [altitudeDebug, setAltitudeDebug] = useState<number | null>(null)
+	const [altitudeAccuracyDebug, setAltitudeAccuracyDebug] = useState<number | null>(null)
 	const isPausedRef = useLatest(isPaused)
-	const [isReady, setIsReady] = useState(false)
 
-	useEffect(() => {
-		if (permissionsRef.current) {
-			permissionsRef.current.checkPermissions()
-		}
-	}, [])
+	// @TODO
+	// useEffect(() => {
+	// 	if (permissionsRef.current) {
+	// 		permissionsRef.current.checkPermissions()
+	// 	}
+	// }, [])
 
-	useEffect(() => {
-		// после рестарта (перезахода в) приложения (-е)
-		let idleId: number | null = null
+	// @TODO
+	// useTrainingLifecycle()
+	// useLocationTracking()
+	// useHeadingTracking()
+	// useTrainingRestore()
+	// useTrainingPermissions()
+	// useRestoreWorkout({
+	// 	setIsWorkoutStarted, setIsPaused, setChosenWorkout, myLocationsRef, ... после рестарта (перезахода в) приложения (-е)
+	// })
 
-		const run = () => {
-			const activeWorkout = getFullActiveWorkout()
-
-			if (activeWorkout) {
-				const foundedWorkout =
-					WorkoutTypesData.find((w) => w.type === activeWorkout.type) ?? WorkoutTypesData[0]
-				setIsPaused(activeWorkout.isPaused)
-
-				setChosenWorkout(foundedWorkout)
-
-				if (!initialLocationSetRef.current) {
-					const lastKnownPosition = activeWorkout.locations.at(-1)
-					if (lastKnownPosition) {
-						initialLocationSetRef.current = true
-						setInitialMarkerLocationState({
-							lat: lastKnownPosition.locationObject.coords.latitude,
-							lon: lastKnownPosition.locationObject.coords.longitude
-						})
-					}
-				}
-				handleClickStart(true)
-			}
-
-			// Загружаем локации
-			if (activeWorkout?.locations) {
-				myLocationsRef.current = activeWorkout.locations
-			}
-
-			setIsReady(true)
-		}
-
-		idleId = requestIdleCallback(run)
-
-		return () => {
-			if (idleId) cancelIdleCallback(idleId)
-			if (locationSubscriptionRef.current) {
-				locationSubscriptionRef.current.remove()
-				locationSubscriptionRef.current = null
-			}
-			if (headingSubscriptionRef.current) {
-				headingSubscriptionRef.current.remove()
-				headingSubscriptionRef.current = null
-			}
-			if (mapComponentRef.current) {
-				mapComponentRef.current = null
-			}
-			stopNotificationTimer()
-		}
-	}, []) // eslint-disable-line react-hooks/exhaustive-deps
+	// @TODO
+	// useEffect(() => {
+	// 	// после рестарта (перезахода в) приложения (-е)
+	// 	let idleId: number | null = null
+	// 	toast.info('после рестарта (перезахода в) приложения (-е)')
+	//
+	// 	const run = () => {
+	// 		const activeWorkout = getLastChunkOfActiveWorkout()
+	//
+	// 		if (activeWorkout) {
+	// 			const foundedWorkout =
+	// 				WorkoutTypesData.find((w) => w.type === activeWorkout.type) ?? WorkoutTypesData[0]
+	// 			setIsPaused(activeWorkout.isPaused)
+	//
+	// 			setChosenWorkout(foundedWorkout)
+	//
+	// 			if (!initialLocationSetRef.current) {
+	// 				const lastKnownPosition = activeWorkout.locations.at(-1)
+	// 				if (lastKnownPosition) {
+	// 					initialLocationSetRef.current = true
+	// 					setInitialMarkerLocationState({
+	// 						lat: lastKnownPosition.locationObject.coords.latitude,
+	// 						lon: lastKnownPosition.locationObject.coords.longitude
+	// 					})
+	// 				}
+	// 			}
+	// 			handleClickStart(true)
+	// 		}
+	//
+	// 		// Загружаем локации
+	// 		if (activeWorkout?.locations) {
+	// 			myLocationsRef.current = activeWorkout.locations
+	// 		}
+	// 	}
+	//
+	// 	idleId = requestIdleCallback(run)
+	//
+	// 	return () => {
+	// 		if (idleId) cancelIdleCallback(idleId)
+	// 		if (locationSubscriptionRef.current) {
+	// 			locationSubscriptionRef.current.remove()
+	// 			locationSubscriptionRef.current = null
+	// 		}
+	// 		if (headingSubscriptionRef.current) {
+	// 			headingSubscriptionRef.current.remove()
+	// 			headingSubscriptionRef.current = null
+	// 		}
+	// 		stopNotificationTimer()
+	// 	}
+	// }, []) // eslint-disable-line react-hooks/exhaustive-deps
 
 	const startBackgroundTracking = async () => {
-		const isTaskRegistered = await TaskManager.isTaskRegisteredAsync(LOCATION_TASK_NAME)
-
-		if (!isTaskRegistered) {
+		if (!(await TaskManager.isTaskRegisteredAsync(LOCATION_TASK_NAME))) {
 			// Запускаем фоновое отслеживание
 			await Location.startLocationUpdatesAsync(LOCATION_TASK_NAME, {
-				accuracy: Location.Accuracy.BestForNavigation,
+				accuracy: Location.Accuracy.Lowest,
 				distanceInterval: 1,
 				foregroundService: {
 					notificationTitle: 'Отслеживание местоположения',
@@ -155,7 +167,7 @@ export default function NewTraining() {
 		}
 	}
 
-	const saveLocationToStorageAndState = (location: LocationObject) => {
+	const saveLocationToStorageAndState = useCallback((location: LocationObject) => {
 		const lastSavedWorkoutItem = setWorkoutItem(location) // Сохраняем в локальное хранилище
 
 		if (!lastSavedWorkoutItem) {
@@ -176,20 +188,20 @@ export default function NewTraining() {
 		if (mapComponentRef.current) {
 			mapComponentRef.current.updatePath(lastSavedWorkoutItem)
 		}
-	}
+	}, []) // @TODO deps?
 
 	const startTracking = async () => {
 		try {
 			await startBackgroundTracking()
 			// Запускаем отслеживание в foreground
-			locationSubscriptionRef.current = await Location.watchPositionAsync(
+			const sub = await Location.watchPositionAsync(
 				{
-					accuracy: Location.Accuracy.BestForNavigation,
+					accuracy: Location.Accuracy.Lowest,
 					distanceInterval: 1
 				},
 				(location) => {
 					// Фильтруем неточные точки
-					if (location.coords.accuracy && location.coords.accuracy > 50) {
+					if (location.coords.accuracy && location.coords.accuracy > ACCURACY_THRESHOLD) {
 						// 50 метров
 						console.warn('Пропущена неточная точка:', location.coords.accuracy)
 						return
@@ -201,6 +213,10 @@ export default function NewTraining() {
 					}
 
 					console.log('newLatLon', newLatLon)
+
+					setAccuracyDebug(location.coords.accuracy)
+					setAltitudeDebug(location.coords.altitude)
+					setAltitudeAccuracyDebug(location.coords.altitudeAccuracy)
 
 					if (userLocationMarkerRef.current) {
 						userLocationMarkerRef.current.setMarkerPosition(newLatLon)
@@ -221,6 +237,8 @@ export default function NewTraining() {
 					saveLocationToStorageAndState(location)
 				}
 			)
+
+			locationSubscriptionRef.current = sub
 		} catch (e) {
 			console.error('Ошибка запуска отслеживания:', e)
 			toast.error('Ошибка запуска отслеживания местоположения')
@@ -229,7 +247,8 @@ export default function NewTraining() {
 
 	const throttledHeadingUpdate = throttle((data: Location.LocationHeadingObject) => {
 		userLocationMarkerRef.current?.setMarkerHeading(data.trueHeading ?? data.magHeading)
-	}, 750)
+		setHeadingDebug(data.trueHeading ?? data.magHeading)
+	}, HEADING_THROTTLE_MS)
 
 	const startHeadingTracking = async () => {
 		headingSubscriptionRef.current = await Location.watchHeadingAsync(throttledHeadingUpdate)
@@ -270,54 +289,53 @@ export default function NewTraining() {
 
 	const getLastUserPosition = async (): Promise<Location.LocationObject> => {
 		console.log('getLastUserPosition')
-		// @TODO здесь нет фильтра по accuracy > 50
+		// @TODO здесь нет фильтра по accuracy > ACCURACY_THRESHOLD
 		return await Location.getCurrentPositionAsync()
 	}
 
-	const handleClickStart = useCallback(
-		async (afterReboot: boolean) => {
-			try {
-				const {
-					foregroundStatus,
-					backgroundStatus,
-					isGPSEnabled,
-					isPhysicalActivityPermissionGranted,
-					isNotificationsGranted
-				} = await checkPermissions()
+	const startWorkout = async (workoutType: TrainingType, afterReboot: boolean) => {
+		try {
+			const {
+				foregroundStatus,
+				backgroundStatus,
+				isGPSEnabled,
+				isPhysicalActivityPermissionGranted,
+				isNotificationsGranted
+			} = await checkPermissions()
 
-				// --- iOS и Android: базовые проверки геолокации ---
-				const hasLocationPermissions = foregroundStatus?.granted && backgroundStatus?.granted && isGPSEnabled
+			const hasLocationPermissions = foregroundStatus?.granted && backgroundStatus?.granted && isGPSEnabled
 
-				// --- Android: дополнительные проверки уведомлений и физ. активности ---
-				const hasAndroidExtras =
-					Platform.OS === 'android' ? isNotificationsGranted && isPhysicalActivityPermissionGranted : true // на iOS просто true
+			const hasAndroidExtras =
+				Platform.OS === 'android' ? isNotificationsGranted && isPhysicalActivityPermissionGranted : true // на iOS просто true
 
-				// --- Проверка всех обязательных разрешений ---
-				if (!hasLocationPermissions || !hasAndroidExtras) {
-					toast.error('Невозможно начать тренировку без предоставления всех разрешений')
-					return permissionsRef.current?.checkPermissions()
-				}
-
-				// --- Все разрешения есть, запускаем тренировку ---
-				setIsWorkoutStarted(true)
-
-				if (!afterReboot) {
-					startAndStoreNewActiveWorkout(chosenWorkout.type)
-					console.log('chosenWorkout', chosenWorkout)
-				}
-
-				await startHeadingTracking()
-				if (isNotificationsGranted && isPhysicalActivityPermissionGranted) {
-					await startNotificationTimer() // опционально, если уведомления разрешены
-				}
-
-				return startTracking()
-			} catch (error) {
-				console.error('Ошибка при старте тренировки:', error)
-				toast.error('Произошла ошибка при запуске тренировки')
+			if (!hasLocationPermissions || !hasAndroidExtras) {
+				toast.error('Невозможно начать тренировку без предоставления всех разрешений')
+				return permissionsRef.current?.checkPermissions()
 			}
+			setIsWorkoutStarted(true)
+
+			if (!afterReboot) {
+				startAndStoreNewActiveWorkout(workoutType)
+				console.log('chosenWorkout', workoutType)
+			}
+
+			await startHeadingTracking()
+			if (isNotificationsGranted && isPhysicalActivityPermissionGranted) {
+				await startNotificationTimer() // опционально, если уведомления разрешены
+			}
+
+			return startTracking()
+		} catch (error) {
+			console.error('Ошибка при старте тренировки:', error)
+			toast.error('Произошла ошибка при запуске тренировки')
+		}
+	}
+
+	const handleClickStart = useCallback(
+		(afterReboot: boolean) => {
+			startWorkout(chosenWorkout.type, afterReboot)
 		},
-		[chosenWorkout]
+		[chosenWorkout.type]
 	)
 
 	const handleChangeWorkout = useCallback((workoutId: number) => {
@@ -350,69 +368,66 @@ export default function NewTraining() {
 
 	const handleClickPause = useCallback(async () => {
 		console.log('handleClickPause')
-		metricSpeedRef.current?.setSpeed(0)
-		setIsPaused((prevState) => {
-			const nextPauseState = !prevState
-			setActiveWorkoutPauseState(nextPauseState)
-			return nextPauseState
-		})
-		const lastUserPosition = await getLastUserPosition()
-		saveLocationToStorageAndState(lastUserPosition)
+		try {
+			metricSpeedRef.current?.setSpeed(0)
+			setIsPaused((prevState) => {
+				const nextPauseState = !prevState
+				setActiveWorkoutPauseState(nextPauseState)
+				return nextPauseState
+			})
+			const lastUserPosition = await getLastUserPosition()
+			saveLocationToStorageAndState(lastUserPosition)
+		} catch (e) {
+			console.log('handleClickPause error:', e)
+		}
 	}, [])
 
 	const { startNotificationTimer, stopNotificationTimer } = useWorkoutNotification({
 		handleClickPause
 	})
 
-	const pauseDebounced = useCallback(debounce(handleClickPause, 300), [])
+	const pauseDebounced = useCallback(debounce(handleClickPause, PAUSE_DEBOUNCE_MS), [])
 
 	const handleClickEndWorkout = useCallback(async () => {
 		// @TODO требуется проверка на то что тренировка завершилась слишком рано
-		router.push('/training/viewWorkout')
+		try {
+			router.push('/training/viewWorkout')
 
-		const lastUserPosition = await getLastUserPosition()
-		await stopBackgroundTracking()
+			const lastUserPosition = await getLastUserPosition()
+			await stopBackgroundTracking()
 
-		if (locationSubscriptionRef.current) {
-			locationSubscriptionRef.current.remove()
-			locationSubscriptionRef.current = null
-		}
-		if (headingSubscriptionRef.current) {
-			headingSubscriptionRef.current.remove()
-			headingSubscriptionRef.current = null
-		}
-		saveLocationToStorageAndState(lastUserPosition)
-		moveActiveWorkoutToNotSaved()
-		await stopNotificationTimer()
-		setIsWorkoutStarted(false)
-		setIsPaused(false)
-		initialLocationSetRef.current = false
-		myLocationsRef.current = []
-		if (userLocationMarkerRef.current) {
-			userLocationMarkerRef.current.setAccuracy(null)
-			userLocationMarkerRef.current.setMarkerPosition(null)
+			if (locationSubscriptionRef.current) {
+				locationSubscriptionRef.current.remove()
+				locationSubscriptionRef.current = null
+			}
+			if (headingSubscriptionRef.current) {
+				headingSubscriptionRef.current.remove()
+				headingSubscriptionRef.current = null
+			}
+			saveLocationToStorageAndState(lastUserPosition)
+			moveActiveWorkoutToNotSaved()
+			await stopNotificationTimer()
+			setIsWorkoutStarted(false)
+			setIsPaused(false)
+			initialLocationSetRef.current = false
+			myLocationsRef.current = []
+		} catch (e) {
+			console.error('handleClickEndWorkout error: ', handleClickEndWorkout)
 		}
 	}, [])
 
 	console.log('render NewTraining')
 
-	if (!isReady) {
-		return (
-			<SafeAreaProvider style={{ paddingTop: insets.top }}>
-				<View className="w-full grow items-center justify-center">
-					<Text className="text-white">Загрузка...</Text>
-				</View>
-			</SafeAreaProvider>
-		)
-	}
-
 	return (
 		<SafeAreaProvider style={{ paddingTop: insets.top }}>
 			<GestureHandlerRootView style={{ flex: 1 }}>
-				<SafeAreaView style={styles.container}>
+				<View style={styles.container}>
 					{isWorkoutStarted ? (
 						<WorkoutStarted
-							// headingDebug={state.headingDebug}
+							headingDebug={headingDebug}
+							accuracyDebug={accuracyDebug}
+							altitudeDebug={altitudeDebug}
+							altitudeAccuracyDebug={altitudeAccuracyDebug}
 							initialMarkerLocation={initialMarkerLocationState}
 							// userLocations={myLocations}
 							handleClickPause={pauseDebounced}
@@ -437,7 +452,7 @@ export default function NewTraining() {
 							mapComponentRef={mapComponentRef}
 						/>
 					)}
-				</SafeAreaView>
+				</View>
 			</GestureHandlerRootView>
 		</SafeAreaProvider>
 	)
