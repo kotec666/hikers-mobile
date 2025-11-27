@@ -13,6 +13,7 @@ import { MetricCaloriesHandle } from '@/components/training/tabs/metrics/MetricC
 import { MetricHeightHandle } from '@/components/training/tabs/metrics/MetricHeight'
 import { calculateTotalDistance } from '@/helpers/distance'
 import { MapComponentSegmentsArrayHandle } from '@/components/map/MapComponentSegmentsArray'
+import { MapComponentSegmentsHandle } from '@/components/map/MapComponentSegments'
 
 export function useLocationTracking() {
 	const onStartTracking = useCallback(async () => {
@@ -39,7 +40,7 @@ export function useLocationData(
 	onInitialDataLoadedCallback: () => void,
 	workoutType: TrainingType
 ) {
-	const mapComponentRef = useRef<MapComponentSegmentsArrayHandle>(null)
+	const mapComponentRef = useRef<MapComponentSegmentsHandle>(null)
 	const userLocationMarkerRef = useRef<UserLocationMarkerHandle>(null)
 
 	// Refs для метрик
