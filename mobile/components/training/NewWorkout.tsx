@@ -1,7 +1,6 @@
 import React, { memo, useCallback, useRef } from 'react'
 import { Container } from '@/components/ui/Container'
 import HeaderBack from '@/components/ui/HeaderBack'
-import MapComponent, { MapComponentHandle } from '@/components/map/MapComponent'
 import { FlatList, View } from 'react-native'
 import MapActionButton from '@/components/map/MapActionButton'
 import StartButton from '@/components/map/StartButton'
@@ -16,6 +15,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context'
 import { TrainingType } from '@shared/enums'
 import { UserLocationMarkerHandle } from '@/components/map/markers/UserLocationMarker/UserLocationMarker'
 import { Point } from 'react-native-yamap-plus'
+import MapComponentLight, { MapComponentHandleLight } from '@/components/map/MapComponentLight'
 
 export interface IWorkoutModeElement {
 	id: number
@@ -32,7 +32,7 @@ interface IProps {
 	allPermsGranted: () => void
 	WorkoutTypesData: IWorkoutModeElement[]
 	permissionsRef: React.RefObject<AllGeolocationPermissionsHandle | null>
-	mapComponentRef: React.RefObject<MapComponentHandle | null>
+	mapComponentRef: React.RefObject<MapComponentHandleLight | null>
 	userLocationMarkerRef: React.RefObject<UserLocationMarkerHandle | null>
 }
 
@@ -62,7 +62,7 @@ const NewWorkout = memo((props: IProps) => {
 			<Container>
 				<HeaderBack className="my-[20px]">Новая тренировка</HeaderBack>
 			</Container>
-			<MapComponent
+			<MapComponentLight
 				ref={props.mapComponentRef}
 				initialMarkerLocation={props.initialMarkerLocation}
 				userLocationMarkerRef={props.userLocationMarkerRef}

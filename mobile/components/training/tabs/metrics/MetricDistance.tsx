@@ -1,20 +1,26 @@
-import React, { memo, useMemo } from 'react'
+import React, { memo, forwardRef, useImperativeHandle, useState } from 'react'
 import Parameter from '@/components/training/Parameter'
 import { formatDistance } from '@/helpers/distance'
 
 interface IProps {
 	isPaused: boolean
-	totalDistanceMeters: number
-	// totalDistanceMeters || props.userLocations
 }
 
-const MetricDistance = memo((props: IProps) => {
-	const distance = useMemo(() => formatDistance(props.totalDistanceMeters), [props.totalDistanceMeters])
+export interface MetricDistanceHandle {
+	setDistance: (meters: number) => void
+}
 
-	console.log('render MetricDistance')
-	return <Parameter isPaused={props.isPaused} label="Дистанция" value={distance} />
+const MetricDistance = forwardRef<MetricDistanceHandle, IProps>((props, ref) => {
+	const [distanceStr, setDistanceStr] = useState('0 м')
+
+	useImperativeHandle(ref, () => ({
+		setDistance: (meters: number) => {
+			setDistanceStr(formatDistance(meters))
+		}
+	}))
+
+	return <Parameter isPaused={props.isPaused} label="Дистанция" value={distanceStr} />
 })
 
 MetricDistance.displayName = 'MetricDistance'
-
-export default MetricDistance
+export default memo(MetricDistance)

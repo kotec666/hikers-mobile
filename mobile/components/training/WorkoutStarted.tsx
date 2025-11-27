@@ -3,7 +3,6 @@ import EndTrainingModal from '@/components/training/EndTrainingModal'
 import { Container } from '@/components/ui/Container'
 import { Dimensions, Text, View } from 'react-native'
 import { fontFamily } from '@/constants/Fonts'
-import MapComponent, { MapComponentHandle } from '@/components/map/MapComponent'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
 import { IWorkoutLocationStorageItem } from '@/store/workoutStorage'
 import { TrainingType } from '@shared/enums'
@@ -13,22 +12,32 @@ import InteractiveBottomElements from '@/components/training/InteractiveBottomEl
 import { MetricSpeedHandle } from '@/components/training/tabs/metrics/MetricSpeed'
 import { UserLocationMarkerHandle } from '@/components/map/markers/UserLocationMarker/UserLocationMarker'
 import { Point } from 'react-native-yamap-plus'
-import CompassDebug from '@/components/CompassDebug'
+import { MetricDistanceHandle } from '@/components/training/tabs/metrics/MetricDistance'
+import { MetricCaloriesHandle } from '@/components/training/tabs/metrics/MetricCalories'
+import { MetricHeightHandle } from '@/components/training/tabs/metrics/MetricHeight'
+import MapComponentSegments, { MapComponentSegmentsHandle } from '@/components/map/MapComponentSegments'
 
 interface IProps {
-	headingDebug: number | null
-	accuracyDebug: number | null
-	altitudeDebug: number | null
-	altitudeAccuracyDebug: number | null
+	// headingDebug: number | null
+	// accuracyDebug: number | null
+	// altitudeDebug: number | null
+	// altitudeAccuracyDebug: number | null
 	initialMarkerLocation?: Point | null
-	userLocations: React.RefObject<IWorkoutLocationStorageItem[]>
+	initialLocationsState: IWorkoutLocationStorageItem[]
+
 	isPaused: boolean
 	handleClickPause: () => void
 	handleClickEndWorkout: () => void
 	workoutType: TrainingType
-	mapComponentRef: React.RefObject<MapComponentHandle | null>
-	metricSpeedRef: React.RefObject<MetricSpeedHandle | null>
+
+	mapComponentRef: React.RefObject<MapComponentSegmentsHandle | null>
 	userLocationMarkerRef: React.RefObject<UserLocationMarkerHandle | null>
+
+	metricSpeedRef: React.RefObject<MetricSpeedHandle | null>
+	metricDistanceRef: React.RefObject<MetricDistanceHandle | null>
+	metricCaloriesRef: React.RefObject<MetricCaloriesHandle | null>
+	metricHeightRef: React.RefObject<MetricHeightHandle | null>
+	accumulatedDistanceRef: React.RefObject<number>
 }
 
 const { height } = Dimensions.get('screen')
@@ -71,25 +80,25 @@ const WorkoutStarted = (props: IProps) => {
 				handleClose={handleCloseEndModal}
 				handleClickEnd={handleClickEnd}
 			/>
-			<CompassDebug
-				heading={props.headingDebug || 0}
-				accuracy={props.accuracyDebug || 0}
-				altitude={props.altitudeDebug || 0}
-				altitudeAccuracy={props.altitudeAccuracyDebug || 0}
-				position="bottom-right"
-			/>
+			{/*<CompassDebug*/}
+			{/*	heading={props.headingDebug || 0}*/}
+			{/*	accuracy={props.accuracyDebug || 0}*/}
+			{/*	altitude={props.altitudeDebug || 0}*/}
+			{/*	altitudeAccuracy={props.altitudeAccuracyDebug || 0}*/}
+			{/*	position="bottom-right"*/}
+			{/*/>*/}
 			<Container>
 				<Text className="my-[20px] text-white text-[20px]" style={{ fontFamily: fontFamily.bold }}>
 					Тренировка
 				</Text>
 			</Container>
-			<MapComponent
+			<MapComponentSegments
 				ref={props.mapComponentRef}
 				userLocationMarkerRef={props.userLocationMarkerRef}
 				maxContainerHeight={mapViewHidden ? maxMapHeight : 0}
 				maxMapHeight={mapViewHidden ? maxMapHeight : 0}
 				initialMarkerLocation={props.initialMarkerLocation}
-				initialLocations={props.userLocations}
+				initialLocations={props.initialLocationsState}
 			/>
 			<Container style={{ paddingBottom: insets.bottom + 35 }} className="flex-1 w-full pt-[16px]">
 				<View className="flex-1 justify-between gap-[16px]">
@@ -98,8 +107,11 @@ const WorkoutStarted = (props: IProps) => {
 							mapViewHidden={mapViewHidden}
 							workoutType={props.workoutType}
 							isPaused={props.isPaused}
-							userLocations={props.userLocations}
 							metricSpeedRef={props.metricSpeedRef}
+							metricDistanceRef={props.metricDistanceRef}
+							metricCaloriesRef={props.metricCaloriesRef}
+							metricHeightRef={props.metricHeightRef}
+							accumulatedDistanceRef={props.accumulatedDistanceRef}
 						/>
 					) : (
 						mapViewHidden && <ShowMembersList />

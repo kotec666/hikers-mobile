@@ -1,34 +1,28 @@
-import React, { memo, useMemo } from 'react'
+import React, { forwardRef, memo, useImperativeHandle, useState } from 'react'
 import Parameter from '@/components/training/Parameter'
 import { IWorkoutLocationStorageItem } from '@/store/workoutStorage'
 import { getWorkoutHeight } from '@/helpers/getWorkoutHeight'
 
 interface IProps {
 	isPaused: boolean
-	userLocations: React.RefObject<IWorkoutLocationStorageItem[]>
 }
 
-const MetricHeight = memo(
-	(props: IProps) => {
-		const calculatedHeight = useMemo(
-			() => getWorkoutHeight(props.userLocations.current),
-			[props.userLocations.current.length]
-		)
+export interface MetricHeightHandle {
+	updateHeight: (points: IWorkoutLocationStorageItem[]) => void
+}
 
-		console.log('render MetricHeight')
-		return (
-			<Parameter
-				isPaused={props.isPaused}
-				label="Набор высоты"
-				value={calculatedHeight == null ? '- м' : `${calculatedHeight} м`}
-			/>
-		)
-	},
-	(prevProps, nextProps) =>
-		prevProps.isPaused === nextProps.isPaused &&
-		prevProps.userLocations.current.length === nextProps.userLocations.current.length
-)
+const MetricHeight = forwardRef<MetricHeightHandle, IProps>((props, ref) => {
+	const [height, setHeight] = useState<number | null>(0)
+
+	useImperativeHandle(ref, () => ({
+		updateHeight: (points) => {
+			setHeight(getWorkoutHeight(points))
+		}
+	}))
+
+	console.log('render MetricHeight')
+	return <Parameter isPaused={props.isPaused} label="Набор высоты" value={height == null ? '- м' : `${height} м`} />
+})
 
 MetricHeight.displayName = 'MetricHeight'
-
-export default MetricHeight
+export default memo(MetricHeight)

@@ -1,20 +1,24 @@
-import React, { memo, useMemo } from 'react'
+import React, { forwardRef, memo, useImperativeHandle, useState } from 'react'
 import Parameter from '@/components/training/Parameter'
 import { calculateCalories } from '@/helpers/calculateCalories'
 import { TrainingType } from '@shared/enums'
 
 interface IProps {
-	workoutType: TrainingType
-	workoutTimeMs: number
-	totalDistanceMeters: number
 	isPaused: boolean
 }
 
-const MetricCalories = memo((props: IProps) => {
-	const calories = useMemo(
-		() => calculateCalories(props.workoutTimeMs, props.totalDistanceMeters, props.workoutType, 70), // @TODO вес пользователя
-		[props.workoutTimeMs, props.totalDistanceMeters, props.workoutType]
-	)
+export interface MetricCaloriesHandle {
+	setCalories: (accumulatedDistance: number, timeElapsed: number, workoutType: TrainingType) => void
+}
+
+const MetricCalories = forwardRef<MetricCaloriesHandle, IProps>((props, ref) => {
+	const [calories, setCalories] = useState(0)
+
+	useImperativeHandle(ref, () => ({
+		setCalories: (accumulatedDistance, timeElapsed, workoutType) => {
+			setCalories(calculateCalories(accumulatedDistance, timeElapsed, workoutType, 70)) // @TODO вес пользователя)
+		}
+	}))
 
 	console.log('render MetricCalories')
 	return <Parameter isPaused={props.isPaused} label="Ккал" value={calories} />
@@ -22,4 +26,4 @@ const MetricCalories = memo((props: IProps) => {
 
 MetricCalories.displayName = 'MetricCalories'
 
-export default MetricCalories
+export default memo(MetricCalories)

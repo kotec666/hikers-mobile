@@ -13,7 +13,7 @@ const KEY_ACTIVE_META = 'ACTIVE_WORKOUT_META'
 const KEY_ACTIVE_BIN_CHUNK_PREFIX = 'BIN_CHUNK_'
 
 // Размер чанка (количество точек)
-const CHUNK_POINT_COUNT = 200
+export const CHUNK_POINT_COUNT = 200
 
 export interface IWorkoutStorage {
 	notSavedWorkouts: IWorkout[]
@@ -30,7 +30,7 @@ export interface IWorkout {
 }
 
 // Внутренняя структура метаданных
-interface IWorkoutMeta {
+export interface IWorkoutMeta {
 	isPaused: boolean
 	type: TrainingType
 	startedAt: number
@@ -117,117 +117,87 @@ export const moveActiveWorkoutToNotSaved = () => {
 	}
 }
 
-export const setWorkoutItem = (workoutItem: LocationObject): IWorkoutLocationStorageItem | null => {
+export const setWorkoutItems = (workoutItems: LocationObject[]): IWorkoutLocationStorageItem[] => {
 	const metaStr = workoutStorage.getString(KEY_ACTIVE_META)
-	if (!metaStr) {
-		// Тренировка не активна
-		return null
-	}
-
-	const meta = JSON.parse(metaStr) as IWorkoutMeta
-
-	const startedAt = meta.startedAt
-	const lastSavedRelTs = workoutItem.timestamp - startedAt
-
-	const workoutItemToSave: IWorkoutLocationStorageItem = {
-		locationObject: workoutItem,
-		relTs: lastSavedRelTs,
-		isSavedToServer: false,
-		isPausedPoint: meta.isPaused
-	}
-
-	// 1. Serialize
-	const newBytes = serializeLocation(workoutItemToSave)
-
-	// 2. Get Current Chunk
-	const currentChunkIdx = Math.max(0, meta.chunkCount - 1)
-	const chunkKey = `${KEY_ACTIVE_BIN_CHUNK_PREFIX}${currentChunkIdx}`
-
-	const rawBuffer = workoutStorage.getBuffer(chunkKey)
-	// Ensure we are working with Uint8Array and satisfy Typescript strictness
-	const currentBuffer = rawBuffer ? new Uint8Array(rawBuffer as unknown as ArrayLike<number>) : undefined
-	const currentSize = currentBuffer ? currentBuffer.byteLength : 0
-	const chunkByteLimit = CHUNK_POINT_COUNT * POINT_BYTE_SIZE
-
-	// 3. Append or Create New Chunk
-	if (currentSize >= chunkByteLimit) {
-		const newChunkIdx = currentChunkIdx + 1
-		const newKey = `${KEY_ACTIVE_BIN_CHUNK_PREFIX}${newChunkIdx}`
-
-		workoutStorage.set(newKey, newBytes.buffer as ArrayBuffer)
-
-		meta.chunkCount = newChunkIdx + 1
-		workoutStorage.set(KEY_ACTIVE_META, JSON.stringify(meta))
-	} else {
-		const updatedBuffer = appendBytes(currentBuffer, newBytes)
-		workoutStorage.set(chunkKey, updatedBuffer.buffer as ArrayBuffer)
-	}
-
-	return workoutItemToSave
-}
-
-export const setWorkoutItems = (workoutItems: LocationObject[]) => {
-	const metaStr = workoutStorage.getString(KEY_ACTIVE_META)
-	if (!metaStr) return
+	if (!metaStr) return []
 
 	const meta = JSON.parse(metaStr) as IWorkoutMeta
 	let currentChunkIdx = Math.max(0, meta.chunkCount - 1)
 	let chunkKey = `${KEY_ACTIVE_BIN_CHUNK_PREFIX}${currentChunkIdx}`
 
 	const rawBuffer = workoutStorage.getBuffer(chunkKey)
-	// Explicitly type currentBuffer to avoid narrowing to Uint8Array<ArrayBuffer>
 	let currentBuffer: Uint8Array | undefined = rawBuffer
 		? new Uint8Array(rawBuffer as unknown as ArrayLike<number>)
 		: undefined
 	let metaDirty = false
 
+	// Массив для сохранения созданных элементов
+	const savedItems: IWorkoutLocationStorageItem[] = []
+
 	for (const workoutItem of workoutItems) {
-		const lastSavedRelTs = workoutItem.timestamp - meta.startedAt
-		const workoutItemToSave = {
-			relTs: lastSavedRelTs,
+		const relTs = workoutItem.timestamp - meta.startedAt
+		const workoutItemToSave: IWorkoutLocationStorageItem = {
+			relTs,
 			isSavedToServer: false,
 			locationObject: workoutItem,
 			isPausedPoint: meta.isPaused
 		}
 
+		savedItems.push(workoutItemToSave)
+
 		const newBytes = serializeLocation(workoutItemToSave)
 		const currentSize = currentBuffer ? currentBuffer.byteLength : 0
+		const newSize = currentSize + newBytes.byteLength
 		const chunkByteLimit = CHUNK_POINT_COUNT * POINT_BYTE_SIZE
 
-		if (currentSize >= chunkByteLimit) {
+		// Защита: одна точка больше лимита (крайний случай)
+		if (newBytes.byteLength > chunkByteLimit) {
+			console.warn(
+				'[workoutStorage] Single serialized location exceeds chunk size limit:',
+				newBytes.byteLength,
+				'>',
+				chunkByteLimit
+			)
+		}
+
+		if (newSize > chunkByteLimit) {
 			if (currentBuffer) {
-				workoutStorage.set(chunkKey, currentBuffer.buffer as ArrayBuffer)
+				const exactBytes = currentBuffer.buffer.slice(
+					currentBuffer.byteOffset,
+					currentBuffer.byteOffset + currentBuffer.byteLength
+				)
+				workoutStorage.set(chunkKey, exactBytes as ArrayBuffer)
 			}
 
+			// Переходим к следующему чанку
 			currentChunkIdx++
 			chunkKey = `${KEY_ACTIVE_BIN_CHUNK_PREFIX}${currentChunkIdx}`
-			currentBuffer = undefined
+			currentBuffer = undefined // новый пустой чанк
 
+			// Обновляем мету
 			meta.chunkCount = currentChunkIdx + 1
 			metaDirty = true
 		}
 
+		// --- добавляем текущую точку в (возможно новый) чанк ---
 		currentBuffer = appendBytes(currentBuffer, newBytes)
 	}
 
 	// Save last buffer state
 	if (currentBuffer) {
-		workoutStorage.set(chunkKey, currentBuffer.buffer as ArrayBuffer)
+		const exactBytes = currentBuffer.buffer.slice(
+			currentBuffer.byteOffset,
+			currentBuffer.byteOffset + currentBuffer.byteLength
+		)
+		workoutStorage.set(chunkKey, exactBytes as ArrayBuffer)
 	}
 
 	if (metaDirty) {
 		workoutStorage.set(KEY_ACTIVE_META, JSON.stringify(meta))
 	}
-}
 
-export const getAllWorkoutStorage = (): IWorkoutStorage => {
-	const notSavedStr = workoutStorage.getString(KEY_NOT_SAVED)
-	const notSavedWorkouts = notSavedStr ? (JSON.parse(notSavedStr) as IWorkout[]) : []
-
-	return {
-		notSavedWorkouts,
-		activeWorkout: getFullActiveWorkout()
-	}
+	// Возвращаем массив сохраненных элементов
+	return savedItems
 }
 
 export const removeAllWorkoutStorage = () => {
@@ -269,42 +239,18 @@ export const getFullActiveWorkout = (): IWorkout | null => {
 	return getActiveWorkoutFromStorage(meta)
 }
 
-export const getLastChunkOfActiveWorkout = (): IWorkout | null => {
-	const metaStr = workoutStorage.getString(KEY_ACTIVE_META)
-	if (!metaStr) return null
-
-	const meta = JSON.parse(metaStr) as IWorkoutMeta
-
-	if (meta.chunkCount === 0) {
-		return {
-			type: meta.type,
-			startedAt: meta.startedAt,
-			isPaused: meta.isPaused,
-			totalPausedMs: meta.totalPausedMs,
-			lastPauseAt: meta.lastPauseAt,
-			locations: []
-		}
-	}
-
-	// Последний индекс чанка
-	const lastChunkIdx = meta.chunkCount - 1
-	const chunkKey = `${KEY_ACTIVE_BIN_CHUNK_PREFIX}${lastChunkIdx}`
-
+/**
+ * Получить конкретный чанк тренировки по индексу
+ */
+export const getWorkoutChunk = (chunkIndex: number): IWorkoutLocationStorageItem[] => {
+	const chunkKey = `${KEY_ACTIVE_BIN_CHUNK_PREFIX}${chunkIndex}`
 	const chunkBuffer = workoutStorage.getBuffer(chunkKey)
-	let locations: IWorkoutLocationStorageItem[] = []
 
 	if (chunkBuffer) {
-		locations = deserializeLocations(new Uint8Array(chunkBuffer))
+		// без timestamp
+		return deserializeLocations(new Uint8Array(chunkBuffer))
 	}
-
-	return {
-		type: meta.type,
-		startedAt: meta.startedAt,
-		isPaused: meta.isPaused,
-		totalPausedMs: meta.totalPausedMs,
-		lastPauseAt: meta.lastPauseAt,
-		locations
-	}
+	return []
 }
 
 const getActiveWorkoutFromStorage = (meta: IWorkoutMeta): IWorkout => {
@@ -313,7 +259,7 @@ const getActiveWorkoutFromStorage = (meta: IWorkoutMeta): IWorkout => {
 	for (let i = 0; i < meta.chunkCount; i++) {
 		const chunkBuffer = workoutStorage.getBuffer(`${KEY_ACTIVE_BIN_CHUNK_PREFIX}${i}`)
 		if (chunkBuffer) {
-			const chunkPoints = deserializeLocations(new Uint8Array(chunkBuffer))
+			const chunkPoints = deserializeLocations(new Uint8Array(chunkBuffer), meta.startedAt)
 			locations = locations.concat(chunkPoints)
 		}
 	}
@@ -327,3 +273,13 @@ const getActiveWorkoutFromStorage = (meta: IWorkoutMeta): IWorkout => {
 		locations
 	}
 }
+
+// export const getAllWorkoutStorage = (): IWorkoutStorage => {
+// 	const notSavedStr = workoutStorage.getString(KEY_NOT_SAVED)
+// 	const notSavedWorkouts = notSavedStr ? (JSON.parse(notSavedStr) as IWorkout[]) : []
+//
+// 	return {
+// 		notSavedWorkouts,
+// 		activeWorkout: getFullActiveWorkout()
+// 	}
+// }

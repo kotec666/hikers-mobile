@@ -7,7 +7,7 @@ import notifee, {
 } from '@notifee/react-native'
 import { PermissionsAndroid, Platform } from 'react-native'
 import * as Notification from 'expo-notifications'
-import { getAllWorkoutStorage, IWorkout } from '@/store/workoutStorage'
+import { getWorkoutMeta, IWorkoutMeta } from '@/store/workoutStorage'
 import { formatTime } from '@/helpers/formatTime'
 
 interface NotificationActions {
@@ -30,7 +30,7 @@ export const useWorkoutNotification = (actions: NotificationActions): UseWorkout
 				if (detail.pressAction.id === 'resume') await actions.handleClickPause()
 			}
 		})
-	}, [])
+	}, [actions])
 
 	const createChannel = async () => {
 		await notifee.createChannel({
@@ -42,6 +42,7 @@ export const useWorkoutNotification = (actions: NotificationActions): UseWorkout
 
 	const startNotificationTimer = async () => {
 		if (Platform.OS !== 'android') return
+		if (notificationIntervalRef.current) return
 		const { granted: notificationsGranted } = await Notification.getPermissionsAsync()
 		const activityRecognitionPerms = await PermissionsAndroid.request(
 			PermissionsAndroid.PERMISSIONS.ACTIVITY_RECOGNITION
@@ -50,31 +51,41 @@ export const useWorkoutNotification = (actions: NotificationActions): UseWorkout
 		if (activityRecognitionPerms !== PermissionsAndroid.RESULTS.GRANTED || !notificationsGranted) return
 		await createChannel()
 
-		notificationIntervalRef.current = setInterval(() => {
-			const { activeWorkout: active } = getAllWorkoutStorage()
+		const meta = getWorkoutMeta()
+		if (!meta) {
+			console.log('Нет активной тренировки, уведомления не запускаются')
+			return
+		}
 
-			if (!active) {
+		notificationIntervalRef.current = setInterval(() => {
+			const meta = getWorkoutMeta()
+
+			if (!meta) {
+				if (notificationIntervalRef.current) {
+					clearInterval(notificationIntervalRef.current)
+					notificationIntervalRef.current = null
+				}
 				return console.warn('Нет активной тренировки для показа уведомления')
 			}
 
-			updateNotification(active)
+			updateNotification(meta)
 		}, 1000)
 	}
 
-	const updateNotification = async (active: IWorkout) => {
+	const updateNotification = async (meta: IWorkoutMeta) => {
 		let actions = []
 
-		if (active.isPaused) {
+		if (meta.isPaused) {
 			actions = [{ title: 'Продолжить', pressAction: { id: 'resume' } }]
 		} else {
 			actions = [{ title: 'Пауза', pressAction: { id: 'pause' } }]
 		}
 
 		let elapsed
-		if (active.isPaused && active.lastPauseAt) {
-			elapsed = active.lastPauseAt - active.startedAt - active.totalPausedMs
+		if (meta.isPaused && meta.lastPauseAt) {
+			elapsed = meta.lastPauseAt - meta.startedAt - meta.totalPausedMs
 		} else {
-			elapsed = Date.now() - active.startedAt - active.totalPausedMs
+			elapsed = Date.now() - meta.startedAt - meta.totalPausedMs
 		}
 
 		const formatted = formatTime(elapsed)

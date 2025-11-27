@@ -22,13 +22,13 @@ interface IProps {
 	rounded?: number
 	initialMarkerLocation?: Point | null
 	userLocationMarkerRef?: React.RefObject<UserLocationMarkerHandle | null>
-	initialLocations?: React.RefObject<IWorkoutLocationStorageItem[]>
+	initialLocations?: IWorkoutLocationStorageItem[]
 }
 
-export interface MapComponentHandle {
+export interface MapComponentSegmentsArrayHandle {
 	setMapCenter: (center: Point | null, durationInSeconds?: number, zoom?: number, animationType?: Animation) => void
 	fitAllMarkers: (durationInSeconds?: number) => void
-	updatePath: (newItem: IWorkoutLocationStorageItem) => void
+	updatePath: (newItem: IWorkoutLocationStorageItem[]) => void
 }
 
 interface Segment {
@@ -43,7 +43,7 @@ interface TransitionMarker {
 	id: string
 }
 
-const MapComponent = forwardRef<MapComponentHandle, IProps>((props, ref) => {
+const MapComponentSegmentsArray = forwardRef<MapComponentSegmentsArrayHandle, IProps>((props, ref) => {
 	const mapRef = useRef<YamapRef>(null)
 	// State for React rendering of segments and markers
 	const [segments, setSegments] = useState<Segment[]>([])
@@ -63,23 +63,38 @@ const MapComponent = forwardRef<MapComponentHandle, IProps>((props, ref) => {
 	const isAnimationBlockedRef = useRef<boolean>(false)
 	const animationBlockTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
 	const mapInitialRegionSettingsRef = useRef<InitialRegion>(getMapSettings()).current
+	const pendingUpdateRef = useRef(false)
 
 	const activeLineColor = Colors['green-main']
 	const pausedLineColor = Colors['gray-ab']
+
+	const updateNativePolyline = useCallback(() => {
+		if (pendingUpdateRef.current) return
+		pendingUpdateRef.current = true
+
+		requestAnimationFrame(() => {
+			pendingUpdateRef.current = false
+			activePolylineRef.current?.setNativeProps({
+				points: currentSegmentPointsRef.current
+			})
+		})
+	}, [])
 
 	// Initialize from props (History load)
 	useEffect(() => {
 		let idleId: number | null = null
 
 		const run = () => {
-			if (props.initialLocations?.current && props.initialLocations.current.length > 0 && segments.length === 0) {
-				const parsed = parseLocationsToSegments(props.initialLocations.current)
+			if (props.initialLocations && props.initialLocations.length > 0 && segments.length === 0) {
+				const parsed = parseLocationsToSegments(props.initialLocations)
 				setSegments(parsed.segments)
 				setTransitionMarkers(parsed.markers)
 
 				if (parsed.segments.length > 0) {
 					// Клонируем точки для мутаций
-					currentSegmentPointsRef.current = [...parsed.segments[parsed.segments.length - 1].points]
+					currentSegmentPointsRef.current = parsed.segments[parsed.segments.length - 1].points.map((p) => ({
+						...p
+					}))
 					// Синхронизируем ref состояния
 					lastSegmentPausedRef.current = parsed.segments[parsed.segments.length - 1].isPaused
 				}
@@ -91,7 +106,8 @@ const MapComponent = forwardRef<MapComponentHandle, IProps>((props, ref) => {
 		return () => {
 			if (idleId) cancelIdleCallback(idleId)
 		}
-	}, [])
+		// eslint-disable-next-line react-hooks/exhaustive-deps
+	}, []) // ? parseLocationsToSegments, props.initialLocations, segments.length
 
 	const parseLocationsToSegments = (locations: IWorkoutLocationStorageItem[]) => {
 		if (!locations || locations.length === 0) return { segments: [], markers: [] }
@@ -110,9 +126,7 @@ const MapComponent = forwardRef<MapComponentHandle, IProps>((props, ref) => {
 			if (sameState) {
 				currentGroup.push(curr)
 			} else {
-				// Connect segments visually
-				currentGroup.push(curr)
-
+				// Завершаем старый сегмент
 				resultSegments.push({
 					isPaused: prev.isPausedPoint,
 					points: currentGroup.map((l) => ({
@@ -124,11 +138,15 @@ const MapComponent = forwardRef<MapComponentHandle, IProps>((props, ref) => {
 
 				markers.push({
 					type: prev.isPausedPoint ? 'resume' : 'pause',
-					position: { lat: curr.locationObject.coords.latitude, lon: curr.locationObject.coords.longitude },
+					position: {
+						lat: curr.locationObject.coords.latitude,
+						lon: curr.locationObject.coords.longitude
+					},
 					id: `marker-${i}`
 				})
 
-				currentGroup = [curr]
+				// Начало нового сегмента с curr
+				currentGroup = [curr] // не добавляем curr дважды
 			}
 		}
 
@@ -148,90 +166,125 @@ const MapComponent = forwardRef<MapComponentHandle, IProps>((props, ref) => {
 	}
 
 	const updatePath = useCallback(
-		(newItem: IWorkoutLocationStorageItem) => {
-			const newPoint: Point = {
-				lat: newItem.locationObject.coords.latitude,
-				lon: newItem.locationObject.coords.longitude
-			}
+		(newItems: IWorkoutLocationStorageItem[]) => {
+			let needSegmentsUpdate = false
+			let needMarkersUpdate = false
+			let segmentsUpdater: Segment[] | null = null
+			let markersUpdater: TransitionMarker[] | null = null
 
-			// Case 0: No segments exist yet
-			if (segments.length === 0 && currentSegmentPointsRef.current.length === 0) {
-				const newSegment: Segment = {
-					isPaused: newItem.isPausedPoint,
-					points: [newPoint],
-					color: newItem.isPausedPoint ? pausedLineColor : activeLineColor
-				}
-				currentSegmentPointsRef.current = [newPoint]
-				lastSegmentPausedRef.current = newItem.isPausedPoint
-				setSegments([newSegment])
-				return
-			}
-
-			// Используем ref для проверки состояния, так как state segments может быть "старым" в замыкании
-			// если обновления идут часто, но ререндер еще не произошел.
-			const isStateSame = lastSegmentPausedRef.current === newItem.isPausedPoint
-
-			if (isStateSame) {
-				// === SAME STATE: OPTIMIZED UPDATE (NO RENDER) ===
-				// 1. Update Ref (mutable)
-				currentSegmentPointsRef.current.push(newPoint)
-
-				// 2. Update Native View directly
-				if (activePolylineRef.current) {
-					activePolylineRef.current.setNativeProps({
-						points: currentSegmentPointsRef.current
-					} as PolylineNativeProps)
-				}
-			} else {
-				// === STATE CHANGE: TRIGGER REACT RENDER ===
-
-				// 1. Seal the previous segment
-				const finishedSegmentPoints = [...currentSegmentPointsRef.current, newPoint]
-
-				// 2. Start new segment
-				const newSegmentStartPoints = [newPoint]
-				currentSegmentPointsRef.current = [...newSegmentStartPoints]
-
-				// Обновляем статус в ref
-				lastSegmentPausedRef.current = newItem.isPausedPoint
-
-				const newSegment: Segment = {
-					isPaused: newItem.isPausedPoint,
-					points: newSegmentStartPoints,
-					color: newItem.isPausedPoint ? pausedLineColor : activeLineColor
+			for (const newItem of newItems) {
+				const newPoint: Point = {
+					lat: newItem.locationObject.coords.latitude,
+					lon: newItem.locationObject.coords.longitude
 				}
 
-				// 3. Update State to create new Polyline component (Triggers Render)
-				setSegments((prev) => {
-					const copy = [...prev]
-					if (copy.length > 0) {
-						// Update the sealed segment in history
-						copy[copy.length - 1] = {
-							...copy[copy.length - 1],
-							points: finishedSegmentPoints
+				// Case 0: No segments exist yet
+				if (segments.length === 0 && currentSegmentPointsRef.current.length === 0) {
+					const newSegment: Segment = {
+						isPaused: newItem.isPausedPoint,
+						points: [newPoint],
+						color: newItem.isPausedPoint ? pausedLineColor : activeLineColor
+					}
+					currentSegmentPointsRef.current = [newPoint]
+					lastSegmentPausedRef.current = newItem.isPausedPoint
+
+					segmentsUpdater = [newSegment]
+					needSegmentsUpdate = true
+					continue
+				}
+
+				//
+				// CASE 1 — состояние паузы НЕ поменялось
+				//
+				// Используем ref для проверки состояния, так как state segments может быть "старым" в замыкании
+				// если обновления идут часто, но ререндер еще не произошел.
+
+				const isStateSame = lastSegmentPausedRef.current === newItem.isPausedPoint
+
+				if (isStateSame) {
+					// === SAME STATE: OPTIMIZED UPDATE (NO RENDER) ===
+					// 1. Update Ref (mutable)
+					currentSegmentPointsRef.current.push(newPoint)
+					updateNativePolyline()
+
+					return
+				} else {
+					//
+					// CASE 2 — смена состояния (pause ↔ resume)
+					//
+					// === STATE CHANGE: TRIGGER REACT RENDER ===
+
+					// 1. Закрываем старый сегмент
+					const finishedPoints = currentSegmentPointsRef.current.map((p) => ({ ...p }))
+
+					console.log(
+						'Adding new point to segment',
+						newPoint,
+						'lastSegmentPausedRef',
+						lastSegmentPausedRef.current
+					)
+					// 2. Стартуем новый
+					currentSegmentPointsRef.current = [newPoint]
+					// Обновляем статус в ref
+					lastSegmentPausedRef.current = newItem.isPausedPoint
+
+					const newSegment: Segment = {
+						isPaused: newItem.isPausedPoint,
+						points: [newPoint],
+						color: newItem.isPausedPoint ? pausedLineColor : activeLineColor
+					}
+
+					// 3. Update State to create new Polyline component (Triggers Render)
+					// 3. Batch segment update
+					if (!segmentsUpdater) {
+						segmentsUpdater = segments.map((seg) => ({
+							isPaused: seg.isPaused,
+							color: seg.color,
+							points: seg.points.map((p) => ({ ...p })) // глубокая копия
+						}))
+					}
+
+					if (segmentsUpdater.length > 0) {
+						segmentsUpdater[segmentsUpdater.length - 1] = {
+							...segmentsUpdater[segmentsUpdater.length - 1],
+							points: finishedPoints
 						}
 					}
-					return [...copy, newSegment]
-				})
 
-				setTransitionMarkers((prev) => [
-					...prev,
-					{
+					segmentsUpdater.push(newSegment)
+					needSegmentsUpdate = true
+
+					// 4. Add transition marker
+					if (!markersUpdater) {
+						markersUpdater = [...transitionMarkers]
+					}
+
+					markersUpdater.push({
 						type: !newItem.isPausedPoint ? 'resume' : 'pause',
 						position: newPoint,
-						id: `trans-${Date.now()}`
-					}
-				])
+						id: `trans-${Date.now()}-${Math.random()}`
+					})
+
+					needMarkersUpdate = true
+				}
+			}
+
+			// === APPLY BATCHED UPDATES ===
+			if (needSegmentsUpdate) {
+				setSegments(segmentsUpdater!)
+			}
+			if (needMarkersUpdate) {
+				setTransitionMarkers(markersUpdater!)
 			}
 		},
-		[segments, activeLineColor, pausedLineColor]
+		[segments, transitionMarkers, activeLineColor, pausedLineColor]
 	)
 
 	useImperativeHandle(ref, () => ({
 		setMapCenter: (center, durationInSeconds, zoom, animationType) =>
 			changeMapCenter(center, durationInSeconds, zoom, animationType),
 		fitAllMarkers: (durationInSeconds) => fitAllMarkers(durationInSeconds),
-		updatePath: (newItem) => updatePath(newItem)
+		updatePath: (newItems) => updatePath(newItems)
 	}))
 
 	const fitAllMarkers = (durationInSeconds?: number) => {
@@ -331,11 +384,11 @@ const MapComponent = forwardRef<MapComponentHandle, IProps>((props, ref) => {
 					/>
 				)}
 
-				{props.initialLocations?.current && props.initialLocations?.current.length >= 1 && (
+				{props.initialLocations && props.initialLocations.length >= 1 && (
 					<StartLocationMarker
 						position={{
-							lat: props.initialLocations.current[0].locationObject.coords.latitude,
-							lon: props.initialLocations.current[0].locationObject.coords.longitude
+							lat: props.initialLocations[0].locationObject.coords.latitude,
+							lon: props.initialLocations[0].locationObject.coords.longitude
 						}}
 					/>
 				)}
@@ -369,14 +422,14 @@ const MapComponent = forwardRef<MapComponentHandle, IProps>((props, ref) => {
 	)
 })
 
-MapComponent.displayName = 'MapComponent'
+MapComponentSegmentsArray.displayName = 'MapComponentSegmentsArray'
 
 // Memo: Сравниваем пропсы. initialLocations сравниваем по ссылке.
 // Так как в NewTraining мы передаем initialLocations = myLocationsRef.current,
 // а ref.current всегда стабилен (даже если массив внутри мутирует),
 // React.memo вернет true и ререндер не произойдет при обновлении массива.
-export default React.memo(MapComponent, (prev, next) => {
-	return (
+export default React.memo(MapComponentSegmentsArray, (prev, next) => {
+	const baseEqual =
 		prev.maxContainerHeight === next.maxContainerHeight &&
 		prev.maxMapHeight === next.maxMapHeight &&
 		prev.minMapHeight === next.minMapHeight &&
@@ -384,5 +437,13 @@ export default React.memo(MapComponent, (prev, next) => {
 		prev.initialMarkerLocation === next.initialMarkerLocation &&
 		prev.userLocationMarkerRef === next.userLocationMarkerRef &&
 		prev.initialLocations === next.initialLocations
+
+	if (baseEqual) return true
+
+	return (
+		Array.isArray(prev.initialLocations) &&
+		Array.isArray(next.initialLocations) &&
+		prev.initialLocations.length === next.initialLocations.length &&
+		prev.initialLocations.every((p, i) => p === next.initialLocations?.[i])
 	)
 })

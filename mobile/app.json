@@ -51,7 +51,8 @@
 				{
 					"locationAlwaysAndWhenInUsePermission": "Включите определение вашего местоположения для hikers",
 					"isAndroidForegroundServiceEnabled": true,
-					"isAndroidBackgroundLocationEnabled": true
+					"isAndroidBackgroundLocationEnabled": true,
+					"isIosBackgroundLocationEnabled": true
 				}
 			],
 			[
@@ -62,11 +63,11 @@
 						"compileSdkVersion": 35,
 						"targetSdkVersion": 35,
 						"minSdkVersion": 26,
-						"buildArchs": ["arm64-v8a"],
+						"buildArchs": ["arm64-v8a", "x86_64"],
 						"enableMinifyInReleaseBuilds": true,
 						"enableShrinkResourcesInReleaseBuilds": true,
 						"enableBundleCompression": true,
-						"extraMavenRepos": ["../node_modules/@notifee/react-native/android/libs"]
+						"extraMavenRepos": ["$rootDir/../node_modules/@notifee/react-native/android/libs"]
 					}
 				}
 			],

@@ -1,33 +1,31 @@
 import { View } from 'react-native'
 import { cn } from '@/helpers/cn'
-import React, { memo, useMemo } from 'react'
+import React, { memo } from 'react'
 import MetricTime from '@/components/training/tabs/metrics/MetricTime'
-import MetricSpeed, { MetricSpeedHandle } from '@/components/training/tabs/metrics/MetricSpeed'
-import MetricDistance from '@/components/training/tabs/metrics/MetricDistance'
 import { IWorkoutLocationStorageItem } from '@/store/workoutStorage'
+import MetricSpeed, { MetricSpeedHandle } from '@/components/training/tabs/metrics/MetricSpeed'
+import MetricDistance, { MetricDistanceHandle } from '@/components/training/tabs/metrics/MetricDistance'
 import MetricAveragePace from '@/components/training/tabs/metrics/MetricAveragePace'
-import MetricCalories from '@/components/training/tabs/metrics/MetricCalories'
+import MetricCalories, { MetricCaloriesHandle } from '@/components/training/tabs/metrics/MetricCalories'
+import MetricHeight, { MetricHeightHandle } from '@/components/training/tabs/metrics/MetricHeight'
 import { TrainingType } from '@shared/enums'
-import MetricHeight from '@/components/training/tabs/metrics/MetricHeight'
 import { useWorkoutTimer } from '@/hooks/useWorkoutTimer'
-import { calculateTotalDistance } from '@/helpers/distance'
 
 interface IProps {
 	workoutType: TrainingType
 	mapViewHidden: boolean
 	isPaused: boolean
-	userLocations: React.RefObject<IWorkoutLocationStorageItem[]>
 	metricSpeedRef: React.RefObject<MetricSpeedHandle | null>
+	metricDistanceRef: React.RefObject<MetricDistanceHandle | null>
+	metricCaloriesRef: React.RefObject<MetricCaloriesHandle | null>
+	metricHeightRef: React.RefObject<MetricHeightHandle | null>
+	accumulatedDistanceRef: React.RefObject<number>
 }
 
 const MetricsTab = memo((props: IProps) => {
 	const workoutTime = useWorkoutTimer()
-	const totalDistanceMeters = useMemo(
-		() => calculateTotalDistance(props.userLocations.current),
-		[props.userLocations.current.length]
-	)
 
-	console.log('renderMetricsTab ===============>')
+	console.log('render MetricsTab=====>')
 	return (
 		<View className="gap-4">
 			{props.mapViewHidden && (
@@ -43,22 +41,15 @@ const MetricsTab = memo((props: IProps) => {
 					<MetricTime isPaused={props.isPaused} workoutTimeFormatted={workoutTime.formatted} />
 				)}
 				<MetricSpeed ref={props.metricSpeedRef} isPaused={props.isPaused} />
-				<MetricDistance isPaused={props.isPaused} totalDistanceMeters={totalDistanceMeters} />
+				<MetricDistance ref={props.metricDistanceRef} isPaused={props.isPaused} />
 				<MetricAveragePace
 					isPaused={props.isPaused}
+					accumulatedDistanceRef={props.accumulatedDistanceRef}
 					workoutTimeMs={workoutTime.ms}
-					totalDistanceMeters={totalDistanceMeters}
 				/>
-				{!props.mapViewHidden && (
-					<MetricCalories
-						isPaused={props.isPaused}
-						workoutType={props.workoutType}
-						workoutTimeMs={workoutTime.ms}
-						totalDistanceMeters={totalDistanceMeters}
-					/>
-				)}
+				{!props.mapViewHidden && <MetricCalories ref={props.metricCaloriesRef} isPaused={props.isPaused} />}
 
-				{!props.mapViewHidden && <MetricHeight isPaused={props.isPaused} userLocations={props.userLocations} />}
+				{!props.mapViewHidden && <MetricHeight ref={props.metricHeightRef} isPaused={props.isPaused} />}
 			</View>
 		</View>
 	)
