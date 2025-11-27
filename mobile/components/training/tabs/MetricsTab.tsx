@@ -23,7 +23,7 @@ interface IProps {
 }
 
 const MetricsTab = memo((props: IProps) => {
-	const workoutTime = useWorkoutTimer()
+	const workoutTime = useWorkoutTimer(props.isPaused)
 
 	console.log('render MetricsTab=====>')
 	return (

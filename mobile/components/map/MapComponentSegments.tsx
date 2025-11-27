@@ -53,19 +53,41 @@ const MapComponentSegments = forwardRef<MapComponentSegmentsHandle, IProps>((pro
 
 	const segmentsRef = useRef<Segment[]>([])
 	const transitionMarkersRef = useRef<TransitionMarker[]>([])
+	const processedLocationCountRef = useRef<number>(0)
 
 	const updatePath = useCallback((locations: IWorkoutLocationStorageItem[]) => {
-		if (!locations || locations.length === 0) return
+		if (!locations) return
+
+		// Если пришел пустой массив (или меньше чем было), значит сброс
+		if (locations.length === 0) {
+			segmentsRef.current = []
+			transitionMarkersRef.current = []
+			processedLocationCountRef.current = 0
+			setForceRender((prev) => prev + 1)
+			return
+		}
+
+		// Логика дедупликации: обрабатываем только новые точки
+		const processedCount = processedLocationCountRef.current
+		if (locations.length <= processedCount) {
+			// Ничего нового (или пришел старый стейт), игнорируем
+			return
+		}
+
+		// Берем только хвост массива
+		const newLocations = locations.slice(processedCount)
+		processedLocationCountRef.current = locations.length
+
 		const activeLineColor = Colors['green-main']
 		const pausedLineColor = Colors['gray-ab']
 
 		let hasStructureChanged = false
 
-		// Создаем копии массивов, чтобы избежать мутаций замороженных объектов и ошибок с push
+		// Создаем копии массивов, чтобы избежать мутаций замороженных объектов
 		const currentSegments = [...segmentsRef.current]
 		const currentMarkers = [...transitionMarkersRef.current]
 
-		locations.forEach((loc) => {
+		newLocations.forEach((loc) => {
 			const newPoint: Point = {
 				lat: loc.locationObject.coords.latitude,
 				lon: loc.locationObject.coords.longitude
@@ -79,7 +101,7 @@ const MapComponentSegments = forwardRef<MapComponentSegmentsHandle, IProps>((pro
 				// 1. Первый сегмент
 				currentSegments.push({
 					points: [newPoint],
-					color: activeLineColor, // Обычно начинаем с активного, если не оговорено иное
+					color: activeLineColor, // Обычно начинаем с активного
 					polylineRef: React.createRef<PolylineComponentInstanceRef>()
 				})
 				hasStructureChanged = true
@@ -89,28 +111,24 @@ const MapComponentSegments = forwardRef<MapComponentSegmentsHandle, IProps>((pro
 			const lastSegmentColor = lastSegment.color
 
 			if (lastSegmentColor === expectedColor) {
-				// 2. Состояние не изменилось (Актив -> Актив ИЛИ Пауза -> Пауза)
-				// Обновляем точки иммутабельно (создаем новый массив)
+				// 2. Состояние не изменилось -> обновляем существующий сегмент
+				// Создаем новый массив точек для иммутабельности
 				const newPoints = [...lastSegment.points, newPoint]
 				lastSegment.points = newPoints
 				lastSegment.polylineRef.current?.setNativeProps({ points: newPoints })
 			} else {
-				// 3. Состояние изменилось -> Нужен новый сегмент и маркер перехода
+				// 3. Состояние изменилось -> создаём transition marker и новый сегмент
 				hasStructureChanged = true
 
-				// Берем последнюю точку предыдущего сегмента, чтобы связать линии без разрывов
+				// Берем последнюю точку предыдущего сегмента для связки
 				const transitionPoint = lastSegment.points[lastSegment.points.length - 1]
 
-				// Добавляем маркер в точку перехода
 				currentMarkers.push({
 					id: `tm-${Date.now()}-${Math.random()}`,
 					type: isPaused ? 'pause' : 'resume',
 					position: transitionPoint
 				})
 
-				// Создаем новый сегмент.
-				// ВАЖНО: Первой точкой делаем transitionPoint, второй - newPoint.
-				// Это заполняет пробел между концом старой линии и началом новой.
 				currentSegments.push({
 					points: [transitionPoint, newPoint],
 					color: expectedColor,
@@ -119,15 +137,21 @@ const MapComponentSegments = forwardRef<MapComponentSegmentsHandle, IProps>((pro
 			}
 		})
 
-		// Обновляем рефы новыми массивами
+		// Обновляем рефы
 		segmentsRef.current = currentSegments
 		transitionMarkersRef.current = currentMarkers
 
-		// Вызываем ререндер компонента React ТОЛЬКО если добавился новый сегмент или маркер.
 		if (hasStructureChanged) {
 			setForceRender((prev) => prev + 1)
 		}
 	}, [])
+
+	// Инициализация при маунте, если переданы initialLocations
+	useEffect(() => {
+		if (props.initialLocations && props.initialLocations.length > 0 && processedLocationCountRef.current === 0) {
+			updatePath(props.initialLocations)
+		}
+	}, [props.initialLocations, updatePath])
 
 	useImperativeHandle(ref, () => ({
 		setMapCenter: (center, durationInSeconds, zoom, animationType) =>
@@ -201,8 +225,8 @@ const MapComponentSegments = forwardRef<MapComponentSegmentsHandle, IProps>((pro
 	console.log('Render MapComponent')
 	return (
 		<View
-			className="flex-1"
 			style={{
+				flex: 1,
 				overflow: 'hidden',
 				borderRadius: props.rounded || 0,
 				maxHeight: props.maxContainerHeight ?? 'auto'
