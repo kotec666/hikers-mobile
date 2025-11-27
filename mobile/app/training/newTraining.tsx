@@ -12,6 +12,7 @@ import * as Notification from 'expo-notifications'
 import * as Location from 'expo-location'
 import * as TaskManager from 'expo-task-manager'
 import {
+	getWorkoutMeta,
 	moveActiveWorkoutToNotSaved,
 	setActiveWorkoutPauseState,
 	setWorkoutItems,
@@ -237,8 +238,15 @@ export default function NewTraining() {
 				setActiveWorkoutPauseState(nextPauseState)
 				return nextPauseState
 			})
-			const lastUserPosition = await getLastUserPosition()
-			setWorkoutItems([lastUserPosition]) // save pause position
+			// Fix: Используем последнюю позицию из маршрута, если это доступно.
+			// Это убирает прыгание к "Настоящей GPS" позиции, когда мы используем моковый маршрут.
+			if (pointsRef.current.length > 0) {
+				const lastPoint = pointsRef.current[pointsRef.current.length - 1]
+				setWorkoutItems([lastPoint.locationObject])
+			} else {
+				const lastUserPosition = await getLastUserPosition()
+				setWorkoutItems([lastUserPosition]) // save pause position
+			}
 		} catch (e) {
 			console.log('handleClickPause error:', e)
 		}
@@ -249,6 +257,13 @@ export default function NewTraining() {
 	})
 
 	const getFastUserPositionAndSetAsInitial = async () => {
+		// Fix: Если мы восстанавливаем активную тренировку - НЕ делаем reset initial marker position
+		// к текущей GPS координате. Пусть это сделает loadHistoryProgressively.
+		const meta = getWorkoutMeta()
+		if (meta && meta.startedAt) {
+			return { newLatLon: null, lastUserPosition: null }
+		}
+
 		// @TODO не должно работать, когда нет разрешений
 		try {
 			const lastUserPosition = await getFastUserPosition()
@@ -273,6 +288,7 @@ export default function NewTraining() {
 	}
 
 	useEffect(() => {
+		// @TODO
 		getFastUserPositionAndSetAsInitial()
 	}, [])
 
@@ -294,6 +310,7 @@ export default function NewTraining() {
 			setIsPaused(false)
 			initialMarkerLocationSetRef.current = false
 			pointsRef.current = []
+			// @TODO callback, который почистит карту
 		} catch (e) {
 			console.error('handleClickEndWorkout error: ', e)
 		}

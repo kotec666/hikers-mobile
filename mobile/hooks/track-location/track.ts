@@ -1,8 +1,9 @@
 import * as Location from 'expo-location'
-import { LocationActivityType, LocationObject } from 'expo-location'
 import * as TaskManager from 'expo-task-manager'
-import { getWorkoutMeta, setWorkoutItems } from '@/store/workoutStorage'
+import { LocationActivityType, LocationObject } from 'expo-location'
+import { getWorkoutChunk, getWorkoutMeta, setWorkoutItems } from '@/store/workoutStorage'
 import { locationEmitter } from './locationEmitter'
+import { InfiniteMockRoute } from '@/helpers/generateInfiniteRoute'
 
 export const LOCATION_TASK_NAME = 'background-location-task'
 
@@ -40,6 +41,12 @@ export async function stopTracking() {
 	console.log('[tracking]', 'stopped background location task')
 }
 
+// Move generator to module scope but initialize lazily
+let infiniteRoute: InfiniteMockRoute | null = null
+
+const DEFAULT_START_LAT = 53.37437133195321
+const DEFAULT_START_LON = 49.45812837251587
+
 // создаём генератор при старте приложения или таска
 // const mockRoute = new StructuredMockRoute(53.37437133195321, 49.45812837251587)
 // const infiniteRoute = new InfiniteMockRoute(53.37437133195321, 49.45812837251587)
@@ -58,15 +65,33 @@ export const initializeBackgroundLocationTask = async (innerAppMountedPromise: P
 			return
 		}
 
+		// Restore generator state if it was lost (e.g. after app restart)
+		if (!infiniteRoute) {
+			const meta = getWorkoutMeta()
+			let startLat = DEFAULT_START_LAT
+			let startLon = DEFAULT_START_LON
+
+			if (meta && meta.chunkCount > 0) {
+				const lastChunk = getWorkoutChunk(meta.chunkCount - 1)
+				if (lastChunk && lastChunk.length > 0) {
+					const lastPoint = lastChunk[lastChunk.length - 1]
+					startLat = lastPoint.locationObject.coords.latitude
+					startLon = lastPoint.locationObject.coords.longitude
+					console.log('[tracking] Restored mock route from:', startLat, startLon)
+				}
+			}
+			infiniteRoute = new InfiniteMockRoute(startLat, startLon)
+		}
+
 		const meta = getWorkoutMeta()
 		if (!meta) return
 		if (data) {
 			const { locations } = data as { locations: LocationObject[] }
 			// console.log('Received background locations', locations) // @TODO фильтрация неточных точек + Ramer-Douglas-Peucker algorithm + Kalman filter
-			const savedLocations = setWorkoutItems(locations)
+			// const savedLocations = setWorkoutItems(locations)
 			// const newLocations = mockRoute.nextPoints(segments) // вниз -> вправо зациклено
-			// const newLocations = infiniteRoute.nextPoints(10, 0.0001, 2) // 2 сегмента по 10 точек
-			// const savedLocations = setWorkoutItems(newLocations)
+			const newLocations = infiniteRoute.nextPoints(10, 0.0001, 2) // 2 сегмента по 10 точек
+			const savedLocations = setWorkoutItems(newLocations)
 			locationEmitter.emit(savedLocations)
 		}
 	})
