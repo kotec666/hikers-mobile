@@ -1,4 +1,4 @@
-import { useEffect, useRef } from 'react'
+import { useCallback, useEffect, useRef } from 'react'
 import notifee, {
 	AndroidForegroundServiceType,
 	AndroidImportance,
@@ -112,13 +112,13 @@ export const useWorkoutNotification = (actions: NotificationActions): UseWorkout
 		})
 	}
 
-	const stopNotificationTimer = async () => {
+	const stopNotificationTimer = useCallback(async () => {
 		await notifee.stopForegroundService()
 		if (notificationIntervalRef.current) {
 			clearInterval(notificationIntervalRef.current)
 			notificationIntervalRef.current = null
 		}
-	}
+	}, [])
 
 	return {
 		startNotificationTimer,

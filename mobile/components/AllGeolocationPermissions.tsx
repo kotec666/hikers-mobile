@@ -38,8 +38,8 @@ export interface AllGeolocationPermissionsHandle {
 const AllGeolocationPermissions = forwardRef<AllGeolocationPermissionsHandle, IProps>((props, ref) => {
 	const bottomSheetRef = useRef<BottomSheetHandle>(null)
 	const [bottomSheetContent, setBottomSheetContent] = useState<React.ReactNode>(null)
-	const [appState, setAppState] = useState(AppState.currentState)
-	const [wasInSettings, setWasInSettings] = useState(false)
+	const appStateRef = useRef(AppState.currentState)
+	const wasInSettingsRef = useRef(false)
 
 	const openBottomSheet = useCallback((newContent: React.ReactNode) => {
 		setBottomSheetContent(newContent)
@@ -50,49 +50,51 @@ const AllGeolocationPermissions = forwardRef<AllGeolocationPermissionsHandle, IP
 
 	const closeBottomSheet = useCallback(() => {
 		if (bottomSheetRef.current) {
-			requestAnimationFrame(() => bottomSheetRef.current?.closeSheet())
+			bottomSheetRef.current?.closeSheet()
 			setBottomSheetContent(null)
 		}
 	}, [])
 
 	useEffect(() => {
 		const subscription = AppState.addEventListener('change', async (nextAppState) => {
-			// Если возвращаемся из background/inactive в active и были в настройках
-			if (wasInSettings && appState.match(/inactive|background/) && nextAppState === 'active') {
+			if (
+				wasInSettingsRef.current &&
+				appStateRef.current.match(/inactive|background/) &&
+				nextAppState === 'active'
+			) {
 				// Returned from settings, checking permissions
-				setWasInSettings(false)
+				wasInSettingsRef.current = false
 				setTimeout(checkForegroundPermission, 500)
 			}
 
-			setAppState(nextAppState)
+			appStateRef.current = nextAppState
 		})
 
 		return () => subscription.remove()
-	}, [])
+	}, []) // appState
 
 	const openAppSettings = async () => {
 		closeBottomSheet()
+		wasInSettingsRef.current = true
 		try {
-			setWasInSettings(true)
-
 			if (Platform.OS === 'ios') {
 				await Linking.openURL('app-settings:')
-				return checkIsGPSEnabled()
 			} else {
 				await Linking.openSettings()
-				return checkIsGPSEnabled()
 			}
 		} catch (error) {
 			console.error('Error opening settings:', error)
 			Alert.alert('Ошибка', 'Не удалось открыть настройки')
-			setWasInSettings(false)
+			wasInSettingsRef.current = false
 		}
 	}
 
-	// Проверка Foreground geo
+	// ==========================================
+	// 1. Foreground Location
+	// ==========================================
 	const checkForegroundPermission = async () => {
 		/** Шаг 1, проверка разрешения на предоставление геолокации в активном режиме */
-		const { granted, canAskAgain } = await Location.getForegroundPermissionsAsync()
+		const { granted, canAskAgain } = await Location.getForegroundPermissionsAsync() // ios + android
 
 		if (granted) {
 			return checkBackgroundPermission()
@@ -105,20 +107,23 @@ const AllGeolocationPermissions = forwardRef<AllGeolocationPermissionsHandle, IP
 		}
 	}
 
-	// Включение Foreground geo
 	const allowForegroundLocationPermission = async () => {
+		const { status: foregroundStatus } = await Location.requestForegroundPermissionsAsync() // ios + android
 		closeBottomSheet()
-		const { status: foregroundStatus } = await Location.requestForegroundPermissionsAsync()
 
 		if (foregroundStatus === 'granted') {
 			await checkBackgroundPermission()
+		} else {
+			return
 		}
 	}
 
-	// Проверка Background geo
+	// ==========================================
+	// 2. Background Location
+	// ==========================================
 	const checkBackgroundPermission = async () => {
 		/** Шаг 2, проверка разрешения на предоставление геолокации в фоновом режиме */
-		const { granted, canAskAgain } = await Location.getBackgroundPermissionsAsync()
+		const { granted, canAskAgain } = await Location.getBackgroundPermissionsAsync() // ios + android
 
 		if (granted) {
 			return checkIsGPSEnabled()
@@ -131,93 +136,113 @@ const AllGeolocationPermissions = forwardRef<AllGeolocationPermissionsHandle, IP
 		}
 	}
 
-	// Включение Background geo
 	const allowBackgroundLocationPermission = async () => {
 		closeBottomSheet()
-		const { status: backgroundStatus } = await Location.requestBackgroundPermissionsAsync()
+		const { status: backgroundStatus } = await Location.requestBackgroundPermissionsAsync() // ios + android
 
 		if (backgroundStatus === 'granted') {
 			return checkIsGPSEnabled()
+		} else {
+			return
 		}
 	}
 
-	// Проверка GPS (on/off)
+	// ==========================================
+	// 3. GPS Enabled
+	// ==========================================
 	const checkIsGPSEnabled = async () => {
-		/** Шаг 3, проверка включен ли GPS на android */
-		// @TODO только для android, проверить как работает на ios
-		// if (Platform.OS === 'ios') return
-		const isGPSEnabled = await Location.hasServicesEnabledAsync()
+		/** Шаг 3, проверка включен ли GPS на устройстве */
+		const isGPSEnabled = await Location.hasServicesEnabledAsync() // ios + android
+
 		if (!isGPSEnabled) {
-			return openBottomSheet(<EnableGPS allow={allowGPS} close={closeBottomSheet} />)
+			return openBottomSheet(
+				<EnableGPS allow={Platform.OS === 'ios' ? openAppSettings : allowGPS} close={closeBottomSheet} />
+			)
 		} else {
 			return checkNotificationPermission()
 		}
 	}
 
-	// Включение GPS
 	const allowGPS = async () => {
 		closeBottomSheet()
-		await Location.enableNetworkProviderAsync()
-		const servicesEnabled = await Location.hasServicesEnabledAsync()
-
-		if (servicesEnabled) {
-			//  @TODO только для android, проверить как работает на ios
-			return checkNotificationPermission()
+		try {
+			await Location.enableNetworkProviderAsync() // android only
+			const servicesEnabled = await Location.hasServicesEnabledAsync()
+			if (servicesEnabled) {
+				await checkNotificationPermission()
+			}
+		} catch (e) {
+			console.log('User denied enabling GPS services', e)
 		}
 	}
 
-	// Проверка Notification perms
+	// ==========================================
+	// 4. Notifications (Android only)
+	// ==========================================
 	const checkNotificationPermission = async () => {
-		/** Шаг 4, проверка включены ли уведомления (имеет смысл только на android) */
-		// if (Platform.OS === 'android') { @TODO
-		const { granted, canAskAgain } = await Notification.getPermissionsAsync()
+		/** Шаг 4, проверка включены ли уведомления (имеет смысл только на android, т.к. для ios не используется foreground сервис уведомлений) */
+		if (Platform.OS === 'android') {
+			const { granted, canAskAgain } = await Notification.getPermissionsAsync()
 
-		if (granted) {
+			if (granted) {
+				return checkPhysicalActivityTrackPermission()
+			} else if (!granted && canAskAgain) {
+				return openBottomSheet(
+					<AllowNotifications allow={allowNotificationPermission} close={closeBottomSheet} />
+				)
+			} else if (!granted && !canAskAgain) {
+				return openBottomSheet(<AllowDeniedNotifications allow={openAppSettings} close={closeBottomSheet} />)
+			}
+		} else {
+			// for ios
 			return checkPhysicalActivityTrackPermission()
-		} else if (!granted && canAskAgain) {
-			return openBottomSheet(<AllowNotifications allow={allowNotificationPermission} close={closeBottomSheet} />)
-		} else if (!granted && !canAskAgain) {
-			return openBottomSheet(<AllowDeniedNotifications allow={openAppSettings} close={closeBottomSheet} />)
 		}
 	}
 
-	// Включение Notification perms
 	const allowNotificationPermission = async () => {
 		closeBottomSheet()
 		const { status } = await Notification.requestPermissionsAsync()
 		if (status === 'granted') {
 			return checkPhysicalActivityTrackPermission()
+		} else {
+			return
 		}
 	}
 
-	// Проверка physical activity track
+	// ==========================================
+	// 5. Physical Activity (Android only)
+	// ==========================================
 	const checkPhysicalActivityTrackPermission = async () => {
 		/** Шаг 5, проверка включен ли трек физ. активности (имеет смысл только на android) */
-		// if (Platform.OS === 'android') { @TODO
-		const isGranted = await PermissionsAndroid.check(PermissionsAndroid.PERMISSIONS.ACTIVITY_RECOGNITION) // 2
+		if (Platform.OS === 'android') {
+			const isGranted = await PermissionsAndroid.check(PermissionsAndroid.PERMISSIONS.ACTIVITY_RECOGNITION) // 2
 
-		if (isGranted) {
-			// if (granted) {
-			return props.allPermissionsGrantedCallback?.()
+			if (isGranted) {
+				return props.allPermissionsGrantedCallback?.()
+			} else {
+				return openBottomSheet(
+					<AllowTrackPhysicalActivity allow={allowPhysicalActivityPermission} close={closeBottomSheet} />
+				)
+			}
 		} else {
-			return openBottomSheet(
-				<AllowTrackPhysicalActivity allow={allowPhysicalActivityPermission} close={closeBottomSheet} />
-			)
+			return props.allPermissionsGrantedCallback?.()
 		}
 	}
 
-	// Включение physical activity track
 	const allowPhysicalActivityPermission = async () => {
 		closeBottomSheet()
 
-		const result = await PermissionsAndroid.request(PermissionsAndroid.PERMISSIONS.ACTIVITY_RECOGNITION)
-
-		if (result === PermissionsAndroid.RESULTS.GRANTED) {
-			return props.allPermissionsGrantedCallback?.()
-		} else if (result === PermissionsAndroid.RESULTS.NEVER_ASK_AGAIN) {
-			return openAppSettings()
-		} else if (result === PermissionsAndroid.RESULTS.DENIED) {
-			return closeBottomSheet()
+		try {
+			const result = await PermissionsAndroid.request(PermissionsAndroid.PERMISSIONS.ACTIVITY_RECOGNITION)
+			if (result === PermissionsAndroid.RESULTS.GRANTED) {
+				return props.allPermissionsGrantedCallback?.()
+			} else if (result === PermissionsAndroid.RESULTS.NEVER_ASK_AGAIN) {
+				return openAppSettings()
+			} else if (result === PermissionsAndroid.RESULTS.DENIED) {
+				return
+			}
+		} catch (e) {
+			console.warn(e)
 		}
 	}
 

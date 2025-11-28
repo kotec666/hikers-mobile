@@ -1,4 +1,4 @@
-import { PermissionsAndroid, Platform, StyleSheet, View } from 'react-native'
+import { AppState, PermissionsAndroid, Platform, StyleSheet, View } from 'react-native'
 import { SafeAreaProvider, useSafeAreaInsets } from 'react-native-safe-area-context'
 import { GestureHandlerRootView } from 'react-native-gesture-handler'
 import React, { useCallback, useEffect, useRef, useState } from 'react'
@@ -25,7 +25,7 @@ import { TrainingType } from '../../../shared/enums'
 import { debounce } from '@/helpers/debounce'
 import { throttle } from '@/helpers/throttle'
 import { useWorkoutNotification } from '@/hooks/useWorkoutNotification'
-import { initializeBackgroundLocationTask } from '@/hooks/track-location/track'
+import { initializeBackgroundLocationTask, isTrackingLocation, startTracking } from '@/hooks/track-location/track'
 import { useLocationData, useLocationTracking } from '@/hooks/track-location'
 
 // Debugging
@@ -62,10 +62,23 @@ export default function NewTraining() {
 	const headingSubscriptionRef = useRef<null | Location.LocationSubscription>(null)
 
 	const [chosenWorkout, setChosenWorkout] = useState<IWorkoutModeElement>(WorkoutTypesData[0])
+	// Добавляем флаг ожидания старта после получения прав
+	const isPendingStartRef = useRef(false) // флаг, который отвечает за ожидание запуска тренировки (пока permissions !== granted)
 
-	const onInitialDataLoaded = useCallback(() => {
+	const onInitialDataLoaded = useCallback((restoredType?: TrainingType) => {
+		if (restoredType) {
+			// Ищем объект тренировки по типу (можно улучшить поиск по ID, если он сохраняется)
+			const found = WorkoutTypesData.find((w) => w.type === restoredType)
+			if (found) {
+				console.log('[restore] Restoring workout type:', found.name)
+				setChosenWorkout(found)
+			}
+		}
+
 		handleClickStart(true)
 	}, [])
+
+	const tracking = useLocationTracking()
 
 	const {
 		mapComponentRef,
@@ -81,12 +94,12 @@ export default function NewTraining() {
 		initialLocationsState,
 		isWorkoutStarted,
 		isPaused,
+		resetWorkoutState,
 		setInitialMarkerLocationState,
 		setIsWorkoutStarted,
 		setIsPaused
 	} = useLocationData(resolver, onInitialDataLoaded, chosenWorkout.type)
 
-	const tracking = useLocationTracking()
 	// const distance = useLocationDistance(locations)
 
 	// @TODO так не использовать, отдельно вынести пермишны
@@ -105,6 +118,36 @@ export default function NewTraining() {
 	// useRestoreWorkout({
 	// 	setIsWorkoutStarted, setIsPaused, setChosenWorkout, myLocationsRef, ... после рестарта (перезахода в) приложения (-е)
 	// })
+
+	// Watchdog: если тренировка активна, проверяем, жив ли сервис локации.
+	// Если телефон был перезагружен, isTrackingLocation() вернет false, но isWorkoutStarted будет true.
+	useEffect(() => {
+		if (!isWorkoutStarted || isPaused) return
+
+		const checkAndReviveTracking = async () => {
+			try {
+				const isRunning = await isTrackingLocation()
+				if (!isRunning) {
+					console.warn('[watchdog] Tracking is not running for active workout. Restarting...')
+					await startTracking()
+				}
+			} catch (e) {
+				console.error('[watchdog] Failed to check/restart tracking', e)
+			}
+		}
+
+		// Проверяем сразу при монтировании (например, после открытия приложения после ребута)
+		checkAndReviveTracking()
+
+		// И можно проверять при возвращении приложения из фона в активное состояние
+		const sub = AppState.addEventListener('change', (nextAppState) => {
+			if (nextAppState === 'active') {
+				checkAndReviveTracking()
+			}
+		})
+
+		return () => sub.remove()
+	}, [isWorkoutStarted, isPaused])
 
 	const startTrackingLocation = async () => {
 		try {
@@ -179,11 +222,18 @@ export default function NewTraining() {
 			const hasAndroidExtras =
 				Platform.OS === 'android' ? isNotificationsGranted && isPhysicalActivityPermissionGranted : true // на iOS просто true
 
+			// Если мы восстанавливаемся после ребута, мы предполагаем, что права уже есть.
+			// Если их нет, мы не можем молча упасть, лучше показать ошибку, но можно сделать проверку мягче.
 			if (!hasLocationPermissions || !hasAndroidExtras) {
-				toast.error('Невозможно начать тренировку без предоставления всех разрешений')
+				if (!afterReboot) {
+					// Устанавливаем флаг, что мы пытались начать тренировку
+					isPendingStartRef.current = true
+					// toast.error('Невозможно начать тренировку без предоставления всех разрешений') // Убрал тост, чтобы не мешал модалкам
+				}
 				return permissionsRef.current?.checkPermissions()
 			}
 			setIsWorkoutStarted(true)
+			isPendingStartRef.current = false // сбрасываем, когда начинаем тренировку
 
 			if (!afterReboot) {
 				startAndStoreNewActiveWorkout(workoutType)
@@ -227,7 +277,12 @@ export default function NewTraining() {
 			userLocationMarkerRef.current.setMarkerHeading(lastUserPosition.coords.heading)
 			userLocationMarkerRef.current.setMarkerPosition(newLatLon)
 		}
-	}, [])
+
+		// Если висит флаг ожидания старта - запускаем тренировку автоматически
+		if (isPendingStartRef.current) {
+			startWorkout(chosenWorkout.type, false)
+		}
+	}, [chosenWorkout.type])
 
 	const handleClickPause = useCallback(async () => {
 		console.log('handleClickPause')
@@ -306,15 +361,12 @@ export default function NewTraining() {
 			}
 			moveActiveWorkoutToNotSaved()
 			await stopNotificationTimer()
-			setIsWorkoutStarted(false)
-			setIsPaused(false)
-			initialMarkerLocationSetRef.current = false
-			pointsRef.current = []
-			// @TODO callback, который почистит карту
+			// Полный сброс состояния карты и переменных
+			resetWorkoutState()
 		} catch (e) {
 			console.error('handleClickEndWorkout error: ', e)
 		}
-	}, [])
+	}, [resetWorkoutState, stopNotificationTimer, tracking])
 
 	console.log('render NewTraining')
 

@@ -1,11 +1,5 @@
 import { LocationObject } from 'expo-location'
 
-type Segment = {
-	heading: number // направление движения в градусах
-	length: number // количество точек в сегменте
-	step: number // шаг между точками (~0.0001 ≈ 11м)
-}
-
 /**
  * Генератор бесконечного маршрута с сегментами
  */

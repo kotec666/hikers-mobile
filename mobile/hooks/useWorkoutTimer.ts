@@ -6,7 +6,19 @@ import { AppState, AppStateStatus } from 'react-native'
 export const useWorkoutTimer = (isPaused: boolean) => {
 	const intervalRef = useRef<null | ReturnType<typeof setInterval>>(null)
 	const appStateRef = useRef(AppState.currentState)
-	const [elapsed, setElapsed] = useState(0)
+	// Инициализируем стейт сразу, используя данные из хранилища.
+	// Это важно, чтобы при перезагрузке приложения в состоянии "Пауза"
+	// время отображалось корректно сразу же.
+	const [elapsed, setElapsed] = useState(() => {
+		const meta = getWorkoutMeta()
+		if (!meta) return 0
+
+		if (meta.isPaused && meta.lastPauseAt) {
+			return meta.lastPauseAt - meta.startedAt - meta.totalPausedMs
+		} else {
+			return Date.now() - meta.startedAt - meta.totalPausedMs
+		}
+	})
 
 	const deleteInterval = useCallback(() => {
 		if (intervalRef.current) {
@@ -34,6 +46,8 @@ export const useWorkoutTimer = (isPaused: boolean) => {
 	useEffect(() => {
 		if (isPaused) {
 			deleteInterval()
+			// Даже если пауза, обновим значение один раз, чтобы убедиться, что UI синхронизирован
+			// intervalCallback() не хочу
 			return
 		}
 

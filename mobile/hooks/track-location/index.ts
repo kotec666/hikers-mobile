@@ -12,7 +12,6 @@ import { MetricDistanceHandle } from '@/components/training/tabs/metrics/MetricD
 import { MetricCaloriesHandle } from '@/components/training/tabs/metrics/MetricCalories'
 import { MetricHeightHandle } from '@/components/training/tabs/metrics/MetricHeight'
 import { calculateTotalDistance } from '@/helpers/distance'
-import { MapComponentSegmentsArrayHandle } from '@/components/map/MapComponentSegmentsArray'
 import { MapComponentSegmentsHandle } from '@/components/map/MapComponentSegments'
 
 export function useLocationTracking() {
@@ -37,7 +36,7 @@ const YAMAP_POLYLINE_MINIMUM_POINTS = 2
  */
 export function useLocationData(
 	resolver: (() => void) | null,
-	onInitialDataLoadedCallback: () => void,
+	onInitialDataLoadedCallback: (restoredWorkoutType: TrainingType) => void,
 	workoutType: TrainingType
 ) {
 	const mapComponentRef = useRef<MapComponentSegmentsHandle>(null)
@@ -75,9 +74,14 @@ export function useLocationData(
 		[]
 	)
 
+	// Добавили флаг force, чтобы при загрузке истории мы могли принудительно обновить позицию маркера,
+	// даже если до этого была установлена "быстрая" GPS позиция.
 	const saveInitialLocations = useCallback(
-		(initialLocations: IWorkoutLocationStorageItem[] | IWorkoutLocationStorageItem | null) => {
-			if (initialLocationsSetRef.current) return
+		(
+			initialLocations: IWorkoutLocationStorageItem[] | IWorkoutLocationStorageItem | null,
+			force: boolean = false
+		) => {
+			if (initialLocationsSetRef.current && !force) return
 
 			let result: IWorkoutLocationStorageItem[] = []
 
@@ -98,8 +102,10 @@ export function useLocationData(
 		[ensureMinPolylinePoints]
 	)
 
-	const saveInitialMarkerLocation = useCallback((newLatLon: { lat: number; lon: number }) => {
-		if (!initialMarkerLocationSetRef.current) {
+	// Добавили флаг force, чтобы при загрузке истории мы могли принудительно обновить позицию маркера,
+	// даже если до этого была установлена "быстрая" GPS позиция.
+	const saveInitialMarkerLocation = useCallback((newLatLon: { lat: number; lon: number }, force: boolean = false) => {
+		if (!initialMarkerLocationSetRef.current || force) {
 			initialMarkerLocationSetRef.current = true
 			console.log('saveInitialMarkerLocation update')
 			setInitialMarkerLocationState(newLatLon)
@@ -114,12 +120,19 @@ export function useLocationData(
 
 	/**
 	 * Основная функция обновления метрик при получении новой точки
+	 * @param currentSpeed - текущая скорость
+	 * @param forceUpdate - принудительное обновление (нужно для восстановления состояния при паузе)
 	 */
 	const updateRealtimeMetrics = useCallback(
-		(currentSpeed: number) => {
-			if (isPausedRef.current) return
+		(currentSpeed: number, forceUpdate: boolean = false) => {
+			// Если пауза и это не принудительное обновление (восстановление), то выходим
+			if (isPausedRef.current && !forceUpdate) return
 			// 1. Скорость
-			metricSpeedRef.current?.setSpeed(currentSpeed)
+			if (forceUpdate) {
+				metricSpeedRef.current?.setSpeed(0)
+			} else {
+				metricSpeedRef.current?.setSpeed(currentSpeed)
+			}
 			// 2. Дистанция
 			metricDistanceRef.current?.setDistance(accumulatedDistanceRef.current)
 			// 3. Калории
@@ -196,13 +209,6 @@ export function useLocationData(
 		const meta = getWorkoutMeta()
 		if (!meta) return
 
-		if (!initialDataLoadedSetRef.current) {
-			setIsPaused(meta.isPaused)
-			setIsWorkoutStarted(true)
-			onInitialDataLoadedCallback()
-			initialDataLoadedSetRef.current = true
-		}
-
 		isLoadingRef.current = true
 		const totalChunks = meta.chunkCount
 
@@ -215,6 +221,7 @@ export function useLocationData(
 
 			// Грузим чанки. Для правильного порядка лучше грузить с 0 до N
 			for (let i = 0; i < totalChunks; i++) {
+				console.log(`loadHistoryProgressively idx: ${i}`)
 				const chunk = getWorkoutChunk(i)
 				if (chunk.length > 0) {
 					allLoadedPoints.push(...chunk)
@@ -228,20 +235,35 @@ export function useLocationData(
 			accumulatedDistanceRef.current = totalDist
 			pointsRef.current = allLoadedPoints
 
-			// Инициализируем UI
-			mapComponentRef.current?.updatePath(pointsRef.current)
-
 			if (pointsRef.current.length > 0) {
 				const last = pointsRef.current[pointsRef.current.length - 1]
 				const { latitude, longitude, speed } = last.locationObject.coords
 				const pos = { lat: latitude, lon: longitude }
 
-				saveInitialMarkerLocation(pos)
-				userLocationMarkerRef.current?.setMarkerPosition(pos)
-				mapComponentRef.current?.setMapCenter(pos, 0)
+				// Принудительно обновляем начальную позицию из истории, чтобы перетереть FastGPS позицию
+				saveInitialMarkerLocation(pos, true)
+				// Принудительно обновляем начальные локации для корректного отображения StartLocationMarker
+				saveInitialLocations(pointsRef.current, true)
 
 				// Init metrics
 				updateRealtimeMetrics(speed ?? 0)
+			}
+
+			// Запускаем UI только после того, как данные загружены и стейты обновлены.
+			// Это гарантирует, что WorkoutStarted смонтируется с правильными initialMarkerLocation и initialLocations
+			if (!initialDataLoadedSetRef.current) {
+				setIsPaused(meta.isPaused)
+				setIsWorkoutStarted(true)
+				onInitialDataLoadedCallback(meta.type)
+				initialDataLoadedSetRef.current = true
+			} else if (pointsRef.current.length > 0) {
+				// Fallback: если вью уже была запущена (крайний случай), обновляем императивно
+				mapComponentRef.current?.updatePath(pointsRef.current)
+				const last = pointsRef.current[pointsRef.current.length - 1]
+				const { latitude, longitude } = last.locationObject.coords
+				const pos = { lat: latitude, lon: longitude }
+				userLocationMarkerRef.current?.setMarkerPosition(pos)
+				mapComponentRef.current?.setMapCenter(pos, 0)
 			}
 		}
 		// Сценарий 2: Догрузка после background (упрощенно)
@@ -256,6 +278,7 @@ export function useLocationData(
 			const startChunkIdx = Math.max(0, Math.floor(pointsRef.current.length / CHUNK_POINT_COUNT))
 
 			for (let i = startChunkIdx; i < totalChunks; i++) {
+				console.log(`loadHistoryProgressively let i = startChunkIdx; i < totalChunks; i++ idx: ${i}`)
 				const chunk = getWorkoutChunk(i)
 				// Фильтруем: берем только те, что новее нашей последней точки по relTs
 				const freshPoints = chunk.filter((p) => p.relTs > lastKnownRelTs)
@@ -299,6 +322,49 @@ export function useLocationData(
 		isLoadingRef.current = false
 	}, [onInitialDataLoadedCallback, saveInitialMarkerLocation, updateRealtimeMetrics])
 
+	/**
+	 * Функция для полного сброса состояния тренировки и очистки карты.
+	 * Вызывается при завершении тренировки.
+	 */
+	const resetWorkoutState = useCallback(() => {
+		console.log('resetWorkoutState called')
+		// 1. Сброс refs
+		pointsRef.current = []
+		accumulatedDistanceRef.current = 0
+		initialMarkerLocationSetRef.current = false
+		initialLocationsSetRef.current = false
+		initialDataLoadedSetRef.current = false
+
+		// 2. Сброс React State
+		setInitialLocationsState([])
+		setInitialMarkerLocationState(null)
+		setIsWorkoutStarted(false)
+		setIsPaused(false)
+
+		// 3. Очистка карты (важно для удаления полилайна)
+		mapComponentRef.current?.updatePath([])
+
+		// 4. Сброс метрик
+		metricSpeedRef.current?.setSpeed(0)
+		metricDistanceRef.current?.setDistance(0)
+		metricCaloriesRef.current?.setCalories(0, 0, workoutType)
+		metricHeightRef.current?.updateHeight([])
+	}, [workoutType])
+
+	// Эффект для принудительного обновления метрик после монтирования компонентов тренировки
+	// Это решает проблему пустых метрик при перезапуске приложения в состоянии "Пауза"
+	useEffect(() => {
+		if (isWorkoutStarted && pointsRef.current.length > 0) {
+			const timer = setTimeout(() => {
+				const lastPoint = pointsRef.current[pointsRef.current.length - 1]
+				const speed = lastPoint.locationObject.coords.speed ?? 0
+				updateRealtimeMetrics(speed, true)
+			}, 300) // Задержка для гарантии монтирования refs
+
+			return () => clearTimeout(timer)
+		}
+	}, [isWorkoutStarted, updateRealtimeMetrics])
+
 	useEffect(() => {
 		// Resolve the promise to indicate that the inner app has mounted
 		if (resolver) {
@@ -335,6 +401,12 @@ export function useLocationData(
 
 			// Возвращение в активное состояние
 			if (prev.match(/inactive|background/) && nextAppState === 'active') {
+				// Принудительно проверяем состояние паузы из хранилища, так как оно могло измениться в шторке уведомлений
+				const meta = getWorkoutMeta()
+				if (meta) {
+					setIsPaused(meta.isPaused)
+				}
+
 				// Сначала догружаем пропущенные точки, потом подписываемся
 				await loadHistoryProgressively()
 				subscribeToLocations()
@@ -365,6 +437,7 @@ export function useLocationData(
 		initialLocationsState,
 		isWorkoutStarted,
 		isPaused,
+		resetWorkoutState,
 		setInitialMarkerLocationState,
 		setIsPaused,
 		setIsWorkoutStarted

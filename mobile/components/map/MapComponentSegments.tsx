@@ -296,22 +296,30 @@ const MapComponentSegments = forwardRef<MapComponentSegmentsHandle, IProps>((pro
 
 MapComponentSegments.displayName = 'MapComponentSegments'
 
-// Memo: Сравниваем пропсы. initialLocations сравниваем по ссылке.
-// Так как в NewTraining мы передаем initialLocations = myLocationsRef.current,
-// а ref.current всегда стабилен (даже если массив внутри мутирует),
-// React.memo вернет true и ререндер не произойдет при обновлении массива.
 export default React.memo(MapComponentSegments, (prev, next) => {
-	const baseEqual =
+	// 1. Сначала проверяем базовые пропсы, влияющие на layout и настройки.
+	// Если они изменились - мы ОБЯЗАНЫ сделать ререндер.
+	const layoutPropsEqual =
 		prev.maxContainerHeight === next.maxContainerHeight &&
 		prev.maxMapHeight === next.maxMapHeight &&
 		prev.minMapHeight === next.minMapHeight &&
 		prev.rounded === next.rounded &&
 		prev.initialMarkerLocation === next.initialMarkerLocation &&
-		prev.userLocationMarkerRef === next.userLocationMarkerRef &&
-		prev.initialLocations === next.initialLocations
+		prev.userLocationMarkerRef === next.userLocationMarkerRef
 
-	if (baseEqual) return true
+	if (!layoutPropsEqual) {
+		return false // Пропсы изменились -> вызываем ререндер
+	}
 
+	// 2. Если layout-пропсы равны, проверяем массив локаций.
+	// Если ссылка та же, то всё ок.
+	if (prev.initialLocations === next.initialLocations) {
+		return true
+	}
+
+	// 3. Если ссылка изменилась, делаем глубокую проверку, чтобы избежать лишних ререндеров
+	// при мутациях массива, если контент идентичен (хотя в иммутабельном подходе это редкость,
+	// но оставлено для совместимости с вашей логикой).
 	return (
 		Array.isArray(prev.initialLocations) &&
 		Array.isArray(next.initialLocations) &&
