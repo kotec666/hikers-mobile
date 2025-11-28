@@ -50,8 +50,9 @@ const AllGeolocationPermissions = forwardRef<AllGeolocationPermissionsHandle, IP
 
 	const closeBottomSheet = useCallback(() => {
 		if (bottomSheetRef.current) {
-			bottomSheetRef.current?.closeSheet()
-			setBottomSheetContent(null)
+			bottomSheetRef.current?.closeSheet(() => {
+				setBottomSheetContent(null)
+			})
 		}
 	}, [])
 

@@ -5,10 +5,10 @@ import Animated, {
 	useAnimatedReaction,
 	useAnimatedStyle,
 	useSharedValue,
-	withTiming,
-	runOnJS
+	withTiming
 } from 'react-native-reanimated'
 import { getOrder, getPosition } from '@/helpers/drag'
+import { scheduleOnRN } from 'react-native-worklets'
 
 interface IProps extends PropsWithChildren {
 	positions: SharedValue<any>
@@ -58,7 +58,7 @@ const Draggable = ({ children, positions, id, onDragEnd }: IProps) => {
 			}
 
 			if (onDragEnd) {
-				runOnJS(onDragEnd)({ id, oldOrder, newOrder })
+				scheduleOnRN(() => onDragEnd({ id, oldOrder, newOrder }))
 			}
 
 			const destination = getPosition(positions.value[id])

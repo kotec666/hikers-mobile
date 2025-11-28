@@ -62,6 +62,7 @@ const NewWorkout = memo((props: IProps) => {
 			<Container>
 				<HeaderBack className="my-[20px]">Новая тренировка</HeaderBack>
 			</Container>
+			{/* @TODO */}
 			<MapComponentLight
 				ref={props.mapComponentRef}
 				initialMarkerLocation={props.initialMarkerLocation}
