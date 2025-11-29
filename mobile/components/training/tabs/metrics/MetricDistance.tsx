@@ -11,7 +11,7 @@ export interface MetricDistanceHandle {
 }
 
 const MetricDistance = forwardRef<MetricDistanceHandle, IProps>((props, ref) => {
-	const [distanceStr, setDistanceStr] = useState('0 м')
+	const [distanceStr, setDistanceStr] = useState('0м')
 
 	useImperativeHandle(ref, () => ({
 		setDistance: (meters: number) => {

@@ -15,7 +15,7 @@ const MetricSpeed = forwardRef<MetricSpeedHandle, IProps>((props, ref) => {
 
 	useImperativeHandle(ref, () => ({
 		setSpeed: (speed: number) => {
-			const resultString = mpsToKmph(speed) + ' км/ч'
+			const resultString = mpsToKmph(speed) + 'км/ч'
 			if (resultString === speedKmh) return
 			setSpeedKmh(resultString)
 		}

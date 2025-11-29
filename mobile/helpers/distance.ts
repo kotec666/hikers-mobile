@@ -90,7 +90,7 @@ export const calculateTotalDistance = (points: IWorkoutLocationStorageItem[]): n
 
 export const formatDistance = (meters: number): string => {
 	if (meters < 1000) {
-		return `${Math.round(meters)} м`
+		return `${Math.round(meters)}м`
 	}
 
 	const kilometers = meters / 1000
@@ -99,5 +99,5 @@ export const formatDistance = (meters: number): string => {
 		maximumFractionDigits: 1
 	})
 
-	return `${formatter.format(kilometers)} км`
+	return `${formatter.format(kilometers)}км`
 }

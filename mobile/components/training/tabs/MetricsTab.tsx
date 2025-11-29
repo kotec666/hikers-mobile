@@ -2,7 +2,6 @@ import { View } from 'react-native'
 import { cn } from '@/helpers/cn'
 import React, { memo } from 'react'
 import MetricTime from '@/components/training/tabs/metrics/MetricTime'
-import { IWorkoutLocationStorageItem } from '@/store/workoutStorage'
 import MetricSpeed, { MetricSpeedHandle } from '@/components/training/tabs/metrics/MetricSpeed'
 import MetricDistance, { MetricDistanceHandle } from '@/components/training/tabs/metrics/MetricDistance'
 import MetricAveragePace from '@/components/training/tabs/metrics/MetricAveragePace'
@@ -22,6 +21,19 @@ interface IProps {
 	accumulatedDistanceRef: React.RefObject<number>
 }
 
+const MetricCell = ({
+	children,
+	mapViewHidden,
+	align = 'start'
+}: {
+	children: React.ReactNode
+	mapViewHidden: boolean
+	align?: 'start' | 'center' | 'end'
+}) => {
+	const alignClass = align === 'center' ? 'items-center' : align === 'end' ? 'items-end' : 'items-start'
+	return <View className={mapViewHidden ? `flex-1 ${alignClass}` : ''}>{children}</View>
+}
+
 const MetricsTab = memo((props: IProps) => {
 	const workoutTime = useWorkoutTimer(props.isPaused)
 
@@ -33,22 +45,27 @@ const MetricsTab = memo((props: IProps) => {
 			)}
 			<View
 				className={cn('', {
-					'flex-row justify-between': props.mapViewHidden,
+					'flex-row ': props.mapViewHidden,
 					'gap-4': !props.mapViewHidden
 				})}
 			>
 				{!props.mapViewHidden && (
 					<MetricTime isPaused={props.isPaused} workoutTimeFormatted={workoutTime.formatted} />
 				)}
-				<MetricSpeed ref={props.metricSpeedRef} isPaused={props.isPaused} />
-				<MetricDistance ref={props.metricDistanceRef} isPaused={props.isPaused} />
-				<MetricAveragePace
-					isPaused={props.isPaused}
-					accumulatedDistanceRef={props.accumulatedDistanceRef}
-					workoutTimeMs={workoutTime.ms}
-				/>
+				<MetricCell mapViewHidden={props.mapViewHidden} align="start">
+					<MetricSpeed ref={props.metricSpeedRef} isPaused={props.isPaused} />
+				</MetricCell>
+				<MetricCell mapViewHidden={props.mapViewHidden} align="center">
+					<MetricDistance ref={props.metricDistanceRef} isPaused={props.isPaused} />
+				</MetricCell>
+				<MetricCell mapViewHidden={props.mapViewHidden} align="end">
+					<MetricAveragePace
+						isPaused={props.isPaused}
+						accumulatedDistanceRef={props.accumulatedDistanceRef}
+						workoutTimeMs={workoutTime.ms}
+					/>
+				</MetricCell>
 				{!props.mapViewHidden && <MetricCalories ref={props.metricCaloriesRef} isPaused={props.isPaused} />}
-
 				{!props.mapViewHidden && <MetricHeight ref={props.metricHeightRef} isPaused={props.isPaused} />}
 			</View>
 		</View>
