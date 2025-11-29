@@ -56,10 +56,8 @@ const MapComponentSegments = forwardRef<MapComponentSegmentsHandle, IProps>((pro
 	const processedLocationCountRef = useRef<number>(0)
 
 	const updatePath = useCallback((locations: IWorkoutLocationStorageItem[]) => {
-		if (!locations) return
-
 		// Если пришел пустой массив (или меньше чем было), значит сброс
-		if (locations.length === 0) {
+		if (!locations || locations.length === 0) {
 			segmentsRef.current = []
 			transitionMarkersRef.current = []
 			processedLocationCountRef.current = 0
@@ -83,9 +81,16 @@ const MapComponentSegments = forwardRef<MapComponentSegmentsHandle, IProps>((pro
 
 		let hasStructureChanged = false
 
-		// Создаем копии массивов, чтобы избежать мутаций замороженных объектов
-		const currentSegments = [...segmentsRef.current]
-		const currentMarkers = [...transitionMarkersRef.current]
+		// Работаем с текущим массивом сегментов
+		const currentSegments = segmentsRef.current
+
+		// Получаем последний сегмент
+		let lastSegment = currentSegments.length > 0 ? currentSegments[currentSegments.length - 1] : null
+
+		// Создаем аккумулятор точек для текущего сегмента.
+		// Клонируем массив точек последнего сегмента, чтобы мутировать его локально в цикле.
+		// Это предотвращает O(N^2) сложность, которая возникала при spread-операторе внутри цикла.
+		let workingPoints: Point[] = lastSegment ? [...lastSegment.points] : []
 
 		newLocations.forEach((loc) => {
 			const newPoint: Point = {
@@ -95,54 +100,73 @@ const MapComponentSegments = forwardRef<MapComponentSegmentsHandle, IProps>((pro
 			const isPaused = loc.isPausedPoint
 			const expectedColor = isPaused ? pausedLineColor : activeLineColor
 
-			const lastSegment = currentSegments[currentSegments.length - 1]
-
 			if (!lastSegment) {
 				// 1. Первый сегмент
-				currentSegments.push({
+				const newSeg: Segment = {
 					points: [newPoint],
 					color: activeLineColor, // Обычно начинаем с активного
 					polylineRef: React.createRef<PolylineComponentInstanceRef>()
-				})
+				}
+				currentSegments.push(newSeg)
+
+				// Обновляем текущие рабочие переменные
+				lastSegment = newSeg
+				workingPoints = newSeg.points
 				hasStructureChanged = true
 				return
 			}
 
-			const lastSegmentColor = lastSegment.color
-
-			if (lastSegmentColor === expectedColor) {
-				// 2. Состояние не изменилось -> обновляем существующий сегмент
-				// Создаем новый массив точек для иммутабельности
-				const newPoints = [...lastSegment.points, newPoint]
-				lastSegment.points = newPoints
-				lastSegment.polylineRef.current?.setNativeProps({ points: newPoints })
+			if (lastSegment.color === expectedColor) {
+				// 2. Состояние не изменилось -> просто добавляем точку в аккумулятор
+				workingPoints.push(newPoint)
 			} else {
-				// 3. Состояние изменилось -> создаём transition marker и новый сегмент
+				// 3. Состояние изменилось -> сохраняем текущий сегмент и создаем новый
+
+				// Сначала фиксируем точки в завершенном сегменте
+				lastSegment.points = workingPoints
+				// Если структура меняется, React обновит это при ререндере.
+				// Если бы мы не делали ререндер, нужно было бы обновить setNativeProps для этого сегмента здесь.
+				// Но так как hasStructureChanged станет true, ререндер произойдет в конце.
+
 				hasStructureChanged = true
 
 				// Берем последнюю точку предыдущего сегмента для связки
-				const transitionPoint = lastSegment.points[lastSegment.points.length - 1]
+				const transitionPoint = workingPoints[workingPoints.length - 1]
 
-				currentMarkers.push({
+				transitionMarkersRef.current.push({
 					id: `tm-${Date.now()}-${Math.random()}`,
 					type: isPaused ? 'pause' : 'resume',
 					position: transitionPoint
 				})
 
-				currentSegments.push({
+				const newSeg: Segment = {
 					points: [transitionPoint, newPoint],
 					color: expectedColor,
 					polylineRef: React.createRef<PolylineComponentInstanceRef>()
-				})
+				}
+				currentSegments.push(newSeg)
+
+				// Переключаемся на новый сегмент
+				lastSegment = newSeg
+				workingPoints = newSeg.points
 			}
 		})
 
-		// Обновляем рефы
-		segmentsRef.current = currentSegments
-		transitionMarkersRef.current = currentMarkers
+		// В конце цикла обновляем точки в последнем активном сегменте из аккумулятора
+		if (lastSegment) {
+			lastSegment.points = workingPoints
+		}
 
 		if (hasStructureChanged) {
+			// Если структура изменилась (добавились сегменты или маркеры), вызываем полный ререндер.
+			// React отрисует новые сегменты с обновленными массивами точек.
 			setForceRender((prev) => prev + 1)
+		} else {
+			// Оптимизация: Если структура НЕ изменилась, мы просто обновили массив точек последнего сегмента.
+			// Чтобы не вызывать тяжелый ререндер React, обновляем только Native Props через ref.
+			if (lastSegment && lastSegment.polylineRef.current) {
+				lastSegment.polylineRef.current.setNativeProps({ points: workingPoints })
+			}
 		}
 	}, [])
 
