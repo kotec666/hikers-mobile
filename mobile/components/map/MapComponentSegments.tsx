@@ -246,6 +246,9 @@ const MapComponentSegments = forwardRef<MapComponentSegmentsHandle, IProps>((pro
 		return null
 	}, [props.initialLocations])
 
+	const shouldRenderMap =
+		(!!props.maxMapHeight && props.maxMapHeight > 0) || (!!props.maxContainerHeight && props.maxContainerHeight > 0)
+
 	console.log('Render MapComponent')
 	return (
 		<View
@@ -259,61 +262,63 @@ const MapComponentSegments = forwardRef<MapComponentSegmentsHandle, IProps>((pro
 			<Button variant="white" onPress={() => removeAllWorkoutStorage()}>
 				REMOVE ALL WORKOUT STORAGE
 			</Button>
-			<Yamap
-				ref={mapRef}
-				nightMode
-				initialRegion={mapInitialRegionSettingsRef}
-				style={{ flex: 1, maxHeight: props.maxMapHeight, minHeight: props.minMapHeight }}
-				logoPosition={{ horizontal: 'right', vertical: 'top' }}
-				showUserPosition={false}
-				tiltGesturesDisabled={true}
-				rotateGesturesDisabled={true} // @TODO включить после дебага
-				onCameraPositionChange={(e) => {
-					if (['GESTURES', 'UNKNOWN'].includes(e.nativeEvent.reason)) {
-						handleBlockAnimation()
-					}
-				}}
-				onCameraPositionChangeEnd={() => {
-					mapRef.current?.getCameraPosition((pos) => {
-						updateMapSettingsDebounced({
-							lat: pos.point.lat,
-							lon: pos.point.lon,
-							zoom: pos.zoom,
-							azimuth: pos.azimuth
+			{shouldRenderMap && (
+				<Yamap
+					ref={mapRef}
+					nightMode
+					initialRegion={mapInitialRegionSettingsRef}
+					style={{ flex: 1, maxHeight: props.maxMapHeight, minHeight: props.minMapHeight }}
+					logoPosition={{ horizontal: 'right', vertical: 'top' }}
+					showUserPosition={false}
+					tiltGesturesDisabled={true}
+					rotateGesturesDisabled={true} // @TODO включить после дебага
+					onCameraPositionChange={(e) => {
+						if (['GESTURES', 'UNKNOWN'].includes(e.nativeEvent.reason)) {
+							handleBlockAnimation()
+						}
+					}}
+					onCameraPositionChangeEnd={() => {
+						mapRef.current?.getCameraPosition((pos) => {
+							updateMapSettingsDebounced({
+								lat: pos.point.lat,
+								lon: pos.point.lon,
+								zoom: pos.zoom,
+								azimuth: pos.azimuth
+							})
 						})
-					})
-				}}
-			>
-				{/*<DirectionMarkersDebug center={{ lat: 53.374451, lon: 49.460469 }} />*/}
-				{props.initialMarkerLocation && (
-					<UserLocationMarker
-						ref={props.userLocationMarkerRef}
-						initialPosition={props.initialMarkerLocation}
-					/>
-				)}
+					}}
+				>
+					{/*<DirectionMarkersDebug center={{ lat: 53.374451, lon: 49.460469 }} />*/}
+					{props.initialMarkerLocation && (
+						<UserLocationMarker
+							ref={props.userLocationMarkerRef}
+							initialPosition={props.initialMarkerLocation}
+						/>
+					)}
 
-				{startPosition && <StartLocationMarker position={startPosition} />}
+					{startPosition && <StartLocationMarker position={startPosition} />}
 
-				{segmentsRef.current.map((seg, idx) => (
-					<PolylineCustom
-						key={idx}
-						ref={seg.polylineRef}
-						points={seg.points}
-						strokeColor={seg.color}
-						strokeWidth={4}
-					/>
-				))}
+					{segmentsRef.current.map((seg, idx) => (
+						<PolylineCustom
+							key={idx}
+							ref={seg.polylineRef}
+							points={seg.points}
+							strokeColor={seg.color}
+							strokeWidth={4}
+						/>
+					))}
 
-				{transitionMarkersRef.current.map((tm) =>
-					tm.type === 'pause' ? (
-						<PauseLocationMarker key={tm.id} position={tm.position} />
-					) : (
-						<ResumeLocationMarker key={tm.id} position={tm.position} />
-					)
-				)}
+					{transitionMarkersRef.current.map((tm) =>
+						tm.type === 'pause' ? (
+							<PauseLocationMarker key={tm.id} position={tm.position} />
+						) : (
+							<ResumeLocationMarker key={tm.id} position={tm.position} />
+						)
+					)}
 
-				{/*<FinishLocationMarker position={{ lat: 53.374451, lon: 49.660469 }} />*/}
-			</Yamap>
+					{/*<FinishLocationMarker position={{ lat: 53.374451, lon: 49.660469 }} />*/}
+				</Yamap>
+			)}
 		</View>
 	)
 })
