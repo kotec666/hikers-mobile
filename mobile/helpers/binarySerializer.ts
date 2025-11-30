@@ -62,7 +62,7 @@ export const serializeLocation = (item: IWorkoutLocationStorageItem): Uint8Array
 
 export const deserializeLocations = (
 	buffer: Uint8Array | undefined,
-	startedAt?: number
+	startedAt: number
 ): IWorkoutLocationStorageItem[] => {
 	if (!buffer || buffer.byteLength === 0) return []
 
@@ -104,7 +104,7 @@ export const deserializeLocations = (
 				heading: heading !== 0 ? heading : null,
 				speed: speed !== 0 ? speed : null
 			},
-			timestamp: startedAt ? startedAt + relTs : 0, // НЕ храним timestamp → ставим 0 либо если нужно будет, то meta.startedAt + relTs
+			timestamp: startedAt + relTs, // НЕ храним timestamp → ставим 0 либо если нужно будет, то meta.startedAt + relTs
 			mocked: false
 		}
 

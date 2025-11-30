@@ -203,7 +203,7 @@ export function useLocationData(
 		[isPausedRef, saveInitialLocations, saveInitialMarkerLocation, updateRealtimeMetrics]
 	)
 
-	// Функция постепенной загрузки истории (с конца)
+	// Функция постепенной загрузки истории
 	const loadHistoryProgressively = useCallback(async () => {
 		console.log('loadHistoryProgressively')
 		const meta = getWorkoutMeta()
@@ -222,7 +222,7 @@ export function useLocationData(
 			// Грузим чанки. Для правильного порядка лучше грузить с 0 до N
 			for (let i = 0; i < totalChunks; i++) {
 				console.log(`loadHistoryProgressively idx: ${i}`)
-				const chunk = getWorkoutChunk(i)
+				const chunk = getWorkoutChunk(i, meta.startedAt)
 				if (chunk.length > 0) {
 					allLoadedPoints.push(...chunk)
 				}
@@ -258,6 +258,7 @@ export function useLocationData(
 				initialDataLoadedSetRef.current = true
 			} else if (pointsRef.current.length > 0) {
 				// Fallback: если вью уже была запущена (крайний случай), обновляем императивно
+				console.log('loadHistoryProgressively updatePath: 1')
 				mapComponentRef.current?.updatePath(pointsRef.current)
 				const last = pointsRef.current[pointsRef.current.length - 1]
 				const { latitude, longitude } = last.locationObject.coords
@@ -279,9 +280,25 @@ export function useLocationData(
 
 			for (let i = startChunkIdx; i < totalChunks; i++) {
 				console.log(`loadHistoryProgressively let i = startChunkIdx; i < totalChunks; i++ idx: ${i}`)
-				const chunk = getWorkoutChunk(i)
+				const chunk = getWorkoutChunk(i, meta.startedAt)
 				// Фильтруем: берем только те, что новее нашей последней точки по relTs
-				const freshPoints = chunk.filter((p) => p.relTs > lastKnownRelTs)
+				const freshPoints = chunk.filter((p) => {
+					// 1. Точка должна быть новее последней известной
+					if (p.relTs <= lastKnownRelTs) return false
+
+					// 2. [FIX] Фильтр переполнения (Integer Underflow).
+					// Если точка имеет timestamp 0 (старт или ошибка), а startedAt > 0,
+					// relTs может стать огромным числом (~4294967xxx).
+					// Отсекаем нереалистичные значения (например, > 2 млрд мс, это ~23 дня).
+					const isCorruptedTimestamp = p.relTs > 2000000000
+					if (isCorruptedTimestamp) {
+						console.warn('loadHistoryProgressively: Ignored corrupted point (underflow)', p)
+						return false
+					}
+
+					return true
+				})
+
 				if (freshPoints.length > 0) {
 					newPoints.push(...freshPoints)
 				}
@@ -306,7 +323,8 @@ export function useLocationData(
 				pointsRef.current.push(...newPoints)
 
 				// Обновляем карту и метрики
-				mapComponentRef.current?.updatePath(pointsRef.current)
+				console.log('loadHistoryProgressively updatePath: 2', JSON.stringify(newPoints))
+				mapComponentRef.current?.updatePath(newPoints)
 
 				const lastNewPoint = newPoints[newPoints.length - 1]
 				const { latitude, longitude, speed, accuracy } = lastNewPoint.locationObject.coords

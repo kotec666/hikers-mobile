@@ -135,6 +135,20 @@ export const setWorkoutItems = (workoutItems: LocationObject[]): IWorkoutLocatio
 	const savedItems: IWorkoutLocationStorageItem[] = []
 
 	for (const workoutItem of workoutItems) {
+		// [FIX] Защита от переполнения:
+		// Если timestamp равен 0 (нет GPS времени) или меньше времени старта тренировки,
+		// вычитание (timestamp - startedAt) даст отрицательное число.
+		// В бинарном виде uint32 это превратится в огромное положительное число (~4 млрд).
+		if (workoutItem.timestamp <= meta.startedAt) {
+			console.warn(
+				'[workoutStorage] Ignored point with invalid timestamp:',
+				workoutItem.timestamp,
+				'startedAt:',
+				meta.startedAt
+			)
+			continue
+		}
+
 		const relTs = workoutItem.timestamp - meta.startedAt
 		const workoutItemToSave: IWorkoutLocationStorageItem = {
 			relTs,
@@ -242,13 +256,12 @@ export const getFullActiveWorkout = (): IWorkout | null => {
 /**
  * Получить конкретный чанк тренировки по индексу
  */
-export const getWorkoutChunk = (chunkIndex: number): IWorkoutLocationStorageItem[] => {
+export const getWorkoutChunk = (chunkIndex: number, startedAt: number): IWorkoutLocationStorageItem[] => {
 	const chunkKey = `${KEY_ACTIVE_BIN_CHUNK_PREFIX}${chunkIndex}`
 	const chunkBuffer = workoutStorage.getBuffer(chunkKey)
 
 	if (chunkBuffer) {
-		// без timestamp
-		return deserializeLocations(new Uint8Array(chunkBuffer))
+		return deserializeLocations(new Uint8Array(chunkBuffer), startedAt)
 	}
 	return []
 }
