@@ -104,7 +104,7 @@ const MapComponentSegments = forwardRef<MapComponentSegmentsHandle, IProps>((pro
 				// 1. Первый сегмент
 				const newSeg: Segment = {
 					points: [newPoint],
-					color: expectedColor, // Обычно начинаем с активного
+					color: expectedColor,
 					polylineRef: React.createRef<PolylineComponentInstanceRef>()
 				}
 				currentSegments.push(newSeg)
