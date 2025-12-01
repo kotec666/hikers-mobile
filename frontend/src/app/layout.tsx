@@ -2,6 +2,7 @@ import type { Metadata } from 'next'
 import { Geist, Geist_Mono } from 'next/font/google'
 import './globals.css'
 import Head from 'next/head'
+import { env } from '@/consts/env'
 
 const geistSans = Geist({
 	variable: '--font-geist-sans',
@@ -27,7 +28,7 @@ export default function RootLayout({
 	return (
 		<html lang="ru">
 			<Head>
-				<meta name="yandex-verification" content="55ad64b0b9685a82" />
+				<meta name="yandex-verification" content={env.ya_verification} />
 			</Head>
 			<body className={`${geistSans.variable} ${geistMono.variable} antialiased`}>{children}</body>
 		</html>
