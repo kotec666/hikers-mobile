@@ -1,11 +1,11 @@
-import { Metadata } from 'next';
-import { generateBasicMetadata } from '@/helpers/generateBasicMetadata';
+import { Metadata } from 'next'
+import { generateBasicMetadata } from '@/helpers/generateBasicMetadata'
 
 export const metadata: Metadata = generateBasicMetadata({
 	title: 'Главная страница',
 	description: 'Описание',
-	keywords: 'ключевые, слова',
-});
+	keywords: 'ключевые, слова'
+})
 
 export default function Home() {
 	return (
@@ -14,5 +14,5 @@ export default function Home() {
 				I can not sell this domain for 500,000$; Do not contact me in telegram
 			</div>
 		</div>
-	);
+	)
 }
