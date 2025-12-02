@@ -54,6 +54,7 @@ const WorkoutTypesData = [
 
 const HEADING_THROTTLE_MS = 750
 const PAUSE_DEBOUNCE_MS = 300
+const INITIAL_MAP_ZOOM = 14
 
 export default function NewTraining() {
 	const insets = useSafeAreaInsets()
@@ -259,11 +260,11 @@ export default function NewTraining() {
 
 		setInitialMarkerLocationState({ lat, lon })
 		if (mapComponentRef.current) {
-			mapComponentRef.current.setMapCenter({ lat, lon }, 0.5, 16)
+			mapComponentRef.current.setMapCenter({ lat, lon }, 0.5, INITIAL_MAP_ZOOM)
 			updateMapSettings({
 				lat: lat,
 				lon: lon,
-				zoom: 16
+				zoom: INITIAL_MAP_ZOOM
 			})
 		}
 		if (userLocationMarkerRef.current) {

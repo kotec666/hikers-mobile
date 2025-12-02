@@ -10,7 +10,7 @@ const mapStorageKey = 'MAP_STORAGE_SETTINGS'
 const initialMapSettings = {
 	lat: 55.758745, // Moscow
 	lon: 37.619153, // Moscow
-	zoom: 13,
+	zoom: 14,
 	azimuth: undefined
 	// tilt: 0
 }
