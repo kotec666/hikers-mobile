@@ -41,6 +41,7 @@ export function useLocationData(
 ) {
 	const mapComponentRef = useRef<MapComponentSegmentsHandle>(null)
 	const userLocationMarkerRef = useRef<UserLocationMarkerHandle>(null)
+	const isMountedRef = useRef<boolean>(true)
 
 	// Refs для метрик
 	const metricSpeedRef = useRef<MetricSpeedHandle>(null)
@@ -81,7 +82,7 @@ export function useLocationData(
 			initialLocations: IWorkoutLocationStorageItem[] | IWorkoutLocationStorageItem | null,
 			force: boolean = false
 		) => {
-			if (initialLocationsSetRef.current && !force) return
+			if ((initialLocationsSetRef.current && !force) || !isMountedRef.current) return
 
 			let result: IWorkoutLocationStorageItem[] = []
 
@@ -105,7 +106,7 @@ export function useLocationData(
 	// Добавили флаг force, чтобы при загрузке истории мы могли принудительно обновить позицию маркера,
 	// даже если до этого была установлена "быстрая" GPS позиция.
 	const saveInitialMarkerLocation = useCallback((newLatLon: { lat: number; lon: number }, force: boolean = false) => {
-		if (!initialMarkerLocationSetRef.current || force) {
+		if ((!initialMarkerLocationSetRef.current || force) && isMountedRef.current) {
 			initialMarkerLocationSetRef.current = true
 			console.log('saveInitialMarkerLocation update')
 			setInitialMarkerLocationState(newLatLon)
@@ -188,23 +189,31 @@ export function useLocationData(
 
 					for (const item of stored) {
 						if (previousPoint) {
-							batchDistance += getDist(previousPoint, item)
+							// [FIX] Баг "телепортации": дистанция считается только если оба сегмента активны (не на паузе).
+							// Если previousPoint был поставлен во время паузы, то прямая линия до item не должна идти в зачет.
+							// item.isPausedPoint тоже проверяем, так как дистанция во время паузы не считается.
+							if (!previousPoint.isPausedPoint && !item.isPausedPoint) {
+								batchDistance += getDist(previousPoint, item)
+							}
 						}
 						previousPoint = item
 					}
 
-					accumulatedDistanceRef.current += batchDistance
+					if (batchDistance > 0) {
+						accumulatedDistanceRef.current += batchDistance
+					}
 
 					// Обновляем метрики UI
 					updateRealtimeMetrics(speed ?? 0)
 				}
 			}
 		},
-		[isPausedRef, saveInitialLocations, saveInitialMarkerLocation, updateRealtimeMetrics]
+		[saveInitialLocations, saveInitialMarkerLocation, updateRealtimeMetrics, getDist, isPausedRef]
 	)
 
 	// Функция постепенной загрузки истории
 	const loadHistoryProgressively = useCallback(async () => {
+		if (isLoadingRef.current) return
 		console.log('loadHistoryProgressively')
 		const meta = getWorkoutMeta()
 		if (!meta) return
@@ -221,6 +230,7 @@ export function useLocationData(
 
 			// Грузим чанки. Для правильного порядка лучше грузить с 0 до N
 			for (let i = 0; i < totalChunks; i++) {
+				if (!isMountedRef.current) return // Exit if unmounted
 				console.log(`loadHistoryProgressively idx: ${i}`)
 				const chunk = getWorkoutChunk(i, meta.startedAt)
 				if (chunk.length > 0) {
@@ -230,10 +240,27 @@ export function useLocationData(
 				if (i % 2 === 0) await new Promise((resolve) => setTimeout(resolve, 0))
 			}
 
-			// Считаем полную дистанцию один раз
-			totalDist = calculateTotalDistance(allLoadedPoints)
+			if (!isMountedRef.current) return
+
+			// [BUGFIX] Race Condition:
+			// Пока мы грузили историю (await), могли прийти новые "живые" точки через onLocations.
+			// Если мы просто сделаем pointsRef.current = allLoadedPoints, мы затрём эти новые точки.
+			// Из-за этого маркер прыгнет назад (на конец истории), а потом снова вперёд.
+			const incomingPointsDuringLoad = pointsRef.current
+
+			// Простая защита от дублей по timestamp (если вдруг point успел попасть и в историю, и в live)
+			const historyTimestamps = new Set(allLoadedPoints.map((p) => p.locationObject.timestamp))
+			const uniqueIncomingPoints = incomingPointsDuringLoad.filter(
+				(p) => !historyTimestamps.has(p.locationObject.timestamp)
+			)
+
+			console.log('uniqueIncomingPoints---------', uniqueIncomingPoints)
+			// Мержим: История + То, что прилетело во время загрузки
+			pointsRef.current = [...allLoadedPoints, ...uniqueIncomingPoints]
+
+			// Считаем полную дистанцию один раз по актуальному массиву
+			totalDist = calculateTotalDistance(pointsRef.current)
 			accumulatedDistanceRef.current = totalDist
-			pointsRef.current = allLoadedPoints
 
 			if (pointsRef.current.length > 0) {
 				const last = pointsRef.current[pointsRef.current.length - 1]
@@ -251,12 +278,12 @@ export function useLocationData(
 
 			// Запускаем UI только после того, как данные загружены и стейты обновлены.
 			// Это гарантирует, что WorkoutStarted смонтируется с правильными initialMarkerLocation и initialLocations
-			if (!initialDataLoadedSetRef.current) {
+			if (!initialDataLoadedSetRef.current && isMountedRef.current) {
 				setIsPaused(meta.isPaused)
 				setIsWorkoutStarted(true)
 				onInitialDataLoadedCallback(meta.type)
 				initialDataLoadedSetRef.current = true
-			} else if (pointsRef.current.length > 0) {
+			} else if (pointsRef.current.length > 0 && isMountedRef.current) {
 				// Fallback: если вью уже была запущена (крайний случай), обновляем императивно
 				console.log('loadHistoryProgressively updatePath: 1')
 				mapComponentRef.current?.updatePath(pointsRef.current)
@@ -279,6 +306,7 @@ export function useLocationData(
 			const startChunkIdx = Math.max(0, Math.floor(pointsRef.current.length / CHUNK_POINT_COUNT))
 
 			for (let i = startChunkIdx; i < totalChunks; i++) {
+				if (!isMountedRef.current) return
 				console.log(`loadHistoryProgressively let i = startChunkIdx; i < totalChunks; i++ idx: ${i}`)
 				const chunk = getWorkoutChunk(i, meta.startedAt)
 				// Фильтруем: берем только те, что новее нашей последней точки по relTs
@@ -299,12 +327,14 @@ export function useLocationData(
 					return true
 				})
 
+				console.log('freshPoints: ', freshPoints)
+
 				if (freshPoints.length > 0) {
 					newPoints.push(...freshPoints)
 				}
 			}
 
-			if (newPoints.length > 0) {
+			if (newPoints.length > 0 && isMountedRef.current) {
 				let gapDistance = 0
 
 				// 1. Дистанция от старой последней до первой новой
@@ -323,8 +353,7 @@ export function useLocationData(
 				pointsRef.current.push(...newPoints)
 
 				// Обновляем карту и метрики
-				console.log('loadHistoryProgressively updatePath: 2', JSON.stringify(newPoints))
-				mapComponentRef.current?.updatePath(newPoints)
+				mapComponentRef.current?.updatePath(pointsRef.current)
 
 				const lastNewPoint = newPoints[newPoints.length - 1]
 				const { latitude, longitude, speed, accuracy } = lastNewPoint.locationObject.coords
@@ -372,7 +401,7 @@ export function useLocationData(
 	// Эффект для принудительного обновления метрик после монтирования компонентов тренировки
 	// Это решает проблему пустых метрик при перезапуске приложения в состоянии "Пауза"
 	useEffect(() => {
-		if (isWorkoutStarted && pointsRef.current.length > 0) {
+		if (isWorkoutStarted && pointsRef.current.length > 0 && isMountedRef.current) {
 			const timer = setTimeout(() => {
 				const lastPoint = pointsRef.current[pointsRef.current.length - 1]
 				const speed = lastPoint.locationObject.coords.speed ?? 0
@@ -384,6 +413,7 @@ export function useLocationData(
 	}, [isWorkoutStarted, updateRealtimeMetrics])
 
 	useEffect(() => {
+		isMountedRef.current = true
 		// Resolve the promise to indicate that the inner app has mounted
 		if (resolver) {
 			resolver?.()
@@ -408,7 +438,7 @@ export function useLocationData(
 		const init = async () => {
 			saveInitialLocations(pointsRef.current)
 			await loadHistoryProgressively()
-			if (appStateRef.current === 'active') subscribeToLocations()
+			if (appStateRef.current === 'active' && isMountedRef.current) subscribeToLocations()
 		}
 
 		init()
@@ -421,13 +451,13 @@ export function useLocationData(
 			if (prev.match(/inactive|background/) && nextAppState === 'active') {
 				// Принудительно проверяем состояние паузы из хранилища, так как оно могло измениться в шторке уведомлений
 				const meta = getWorkoutMeta()
-				if (meta) {
+				if (meta && isMountedRef.current) {
 					setIsPaused(meta.isPaused)
 				}
 
 				// Сначала догружаем пропущенные точки, потом подписываемся
 				await loadHistoryProgressively()
-				subscribeToLocations()
+				if (isMountedRef.current) subscribeToLocations()
 			}
 			// Переход в background
 			if (prev === 'active' && nextAppState.match(/inactive|background/)) {
@@ -436,6 +466,7 @@ export function useLocationData(
 		})
 
 		return () => {
+			isMountedRef.current = false
 			unsubscribeFromLocations()
 			appStateSubscription.remove()
 		}

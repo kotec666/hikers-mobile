@@ -55,6 +55,7 @@ const MapComponentSegments = forwardRef<MapComponentSegmentsHandle, IProps>((pro
 	const transitionMarkersRef = useRef<TransitionMarker[]>([])
 	const processedLocationCountRef = useRef<number>(0)
 
+	// ждёт и старые и новые точки (processedCount)
 	const updatePath = useCallback((locations: IWorkoutLocationStorageItem[]) => {
 		// Если пришел пустой массив (или меньше чем было), значит сброс
 		if (!locations || locations.length === 0) {
@@ -130,25 +131,36 @@ const MapComponentSegments = forwardRef<MapComponentSegmentsHandle, IProps>((pro
 
 				hasStructureChanged = true
 
-				// Берем последнюю точку предыдущего сегмента для связки
-				const transitionPoint = workingPoints[workingPoints.length - 1]
+				// Берем последнюю точку предыдущего сегмента для связки, если массив не пустой
+				if (workingPoints.length > 0) {
+					const transitionPoint = workingPoints[workingPoints.length - 1]
+					transitionMarkersRef.current.push({
+						id: `tm-${Date.now()}-${Math.random()}`,
+						type: isPaused ? 'pause' : 'resume',
+						position: transitionPoint
+					})
 
-				transitionMarkersRef.current.push({
-					id: `tm-${Date.now()}-${Math.random()}`,
-					type: isPaused ? 'pause' : 'resume',
-					position: transitionPoint
-				})
+					const newSeg: Segment = {
+						points: [transitionPoint, newPoint],
+						color: expectedColor,
+						polylineRef: React.createRef<PolylineComponentInstanceRef>()
+					}
+					currentSegments.push(newSeg)
 
-				const newSeg: Segment = {
-					points: [transitionPoint, newPoint],
-					color: expectedColor,
-					polylineRef: React.createRef<PolylineComponentInstanceRef>()
+					// Переключаемся на новый сегмент
+					lastSegment = newSeg
+					workingPoints = newSeg.points
+				} else {
+					// Fallback если вдруг workingPoints пуст (не должно происходить при нормальной логике)
+					const newSeg: Segment = {
+						points: [newPoint],
+						color: expectedColor,
+						polylineRef: React.createRef<PolylineComponentInstanceRef>()
+					}
+					currentSegments.push(newSeg)
+					lastSegment = newSeg
+					workingPoints = newSeg.points
 				}
-				currentSegments.push(newSeg)
-
-				// Переключаемся на новый сегмент
-				lastSegment = newSeg
-				workingPoints = newSeg.points
 			}
 		})
 
@@ -171,11 +183,11 @@ const MapComponentSegments = forwardRef<MapComponentSegmentsHandle, IProps>((pro
 	}, [])
 
 	// Инициализация при маунте, если переданы initialLocations
-	useEffect(() => {
-		if (props.initialLocations && props.initialLocations.length > 0 && processedLocationCountRef.current === 0) {
-			updatePath(props.initialLocations)
-		}
-	}, [props.initialLocations, updatePath])
+	// useEffect(() => {
+	// 	if (props.initialLocations && props.initialLocations.length > 0 && processedLocationCountRef.current === 0) {
+	// 		updatePath(props.initialLocations)
+	// 	}
+	// }, [props.initialLocations, updatePath])
 
 	useImperativeHandle(ref, () => ({
 		setMapCenter: (center, durationInSeconds, zoom, animationType) =>
@@ -326,8 +338,6 @@ const MapComponentSegments = forwardRef<MapComponentSegmentsHandle, IProps>((pro
 MapComponentSegments.displayName = 'MapComponentSegments'
 
 export default React.memo(MapComponentSegments, (prev, next) => {
-	// 1. Сначала проверяем базовые пропсы, влияющие на layout и настройки.
-	// Если они изменились - мы ОБЯЗАНЫ сделать ререндер.
 	const layoutPropsEqual =
 		prev.maxContainerHeight === next.maxContainerHeight &&
 		prev.maxMapHeight === next.maxMapHeight &&
@@ -337,22 +347,13 @@ export default React.memo(MapComponentSegments, (prev, next) => {
 		prev.userLocationMarkerRef === next.userLocationMarkerRef
 
 	if (!layoutPropsEqual) {
-		return false // Пропсы изменились -> вызываем ререндер
+		return false
 	}
 
-	// 2. Если layout-пропсы равны, проверяем массив локаций.
-	// Если ссылка та же, то всё ок.
-	if (prev.initialLocations === next.initialLocations) {
-		return true
-	}
+	if (prev.initialLocations === next.initialLocations) return true
 
-	// 3. Если ссылка изменилась, делаем глубокую проверку, чтобы избежать лишних ререндеров
-	// при мутациях массива, если контент идентичен (хотя в иммутабельном подходе это редкость,
-	// но оставлено для совместимости с вашей логикой).
-	return (
-		Array.isArray(prev.initialLocations) &&
-		Array.isArray(next.initialLocations) &&
-		prev.initialLocations.length === next.initialLocations.length &&
-		prev.initialLocations.every((p, i) => p === next.initialLocations?.[i])
-	)
+	const prevLen = prev.initialLocations ? prev.initialLocations.length : 0
+	const nextLen = next.initialLocations ? next.initialLocations.length : 0
+
+	return prevLen === nextLen
 })

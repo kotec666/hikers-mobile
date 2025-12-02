@@ -95,10 +95,10 @@ const WorkoutStarted = (props: IProps) => {
 			<MapComponentSegments
 				ref={props.mapComponentRef}
 				userLocationMarkerRef={props.userLocationMarkerRef}
-				maxContainerHeight={mapViewHidden ? maxMapHeight : 0}
-				maxMapHeight={mapViewHidden ? maxMapHeight : 0}
 				initialMarkerLocation={props.initialMarkerLocation}
 				initialLocations={props.initialLocationsState}
+				maxContainerHeight={mapViewHidden ? maxMapHeight : 0}
+				maxMapHeight={mapViewHidden ? maxMapHeight : 0}
 			/>
 			<Container style={{ paddingBottom: insets.bottom + 35 }} className="flex-1 w-full pt-[16px]">
 				<View className="flex-1 justify-between gap-[16px]">

@@ -139,7 +139,7 @@ export const setWorkoutItems = (workoutItems: LocationObject[]): IWorkoutLocatio
 		// Если timestamp равен 0 (нет GPS времени) или меньше времени старта тренировки,
 		// вычитание (timestamp - startedAt) даст отрицательное число.
 		// В бинарном виде uint32 это превратится в огромное положительное число (~4 млрд).
-		if (workoutItem.timestamp <= meta.startedAt) {
+		if (workoutItem.timestamp < meta.startedAt) {
 			console.warn(
 				'[workoutStorage] Ignored point with invalid timestamp:',
 				workoutItem.timestamp,
@@ -221,24 +221,24 @@ export const removeAllWorkoutStorage = () => {
 // --- Helpers ---
 
 const clearActiveWorkoutData = () => {
-	// Используем getAllKeys() для точечной очистки
 	const metaStr = workoutStorage.getString(KEY_ACTIVE_META)
 	if (metaStr) {
 		try {
 			const meta = JSON.parse(metaStr) as IWorkoutMeta
-			for (let i = 0; i < meta.chunkCount; i++) {
+			// Удаляем все известные чанки
+			for (let i = 0; i < meta.chunkCount + 2; i++) {
+				// +2 на случай рассинхрона
 				workoutStorage.remove(`${KEY_ACTIVE_BIN_CHUNK_PREFIX}${i}`)
 			}
 		} catch (e) {
 			console.warn('Failed to parse meta for cleanup', e)
-		}
-	}
-
-	// На всякий случай подчищаем все ключи чанков
-	const keys = workoutStorage.getAllKeys()
-	for (const key of keys) {
-		if (key.startsWith(KEY_ACTIVE_BIN_CHUNK_PREFIX)) {
-			workoutStorage.remove(key)
+			// Fallback: если мета битая, придется использовать getAllKeys
+			const keys = workoutStorage.getAllKeys()
+			for (const key of keys) {
+				if (key.startsWith(KEY_ACTIVE_BIN_CHUNK_PREFIX)) {
+					workoutStorage.remove(key)
+				}
+			}
 		}
 	}
 

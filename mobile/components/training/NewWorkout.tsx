@@ -1,7 +1,7 @@
 import React, { memo, useCallback, useRef } from 'react'
 import { Container } from '@/components/ui/Container'
 import HeaderBack from '@/components/ui/HeaderBack'
-import { FlatList, View } from 'react-native'
+import { Dimensions, FlatList, View } from 'react-native'
 import MapActionButton from '@/components/map/MapActionButton'
 import StartButton from '@/components/map/StartButton'
 import PeopleAddSvg from '@/components/svg/PeopleAddSvg'
@@ -15,7 +15,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context'
 import { TrainingType } from '@shared/enums'
 import { UserLocationMarkerHandle } from '@/components/map/markers/UserLocationMarker/UserLocationMarker'
 import { Point } from 'react-native-yamap-plus'
-import MapComponentLight, { MapComponentHandleLight } from '@/components/map/MapComponentLight'
+import MapComponentSegments, { MapComponentSegmentsHandle } from '@/components/map/MapComponentSegments'
 
 export interface IWorkoutModeElement {
 	id: number
@@ -32,9 +32,11 @@ interface IProps {
 	allPermsGranted: () => void
 	WorkoutTypesData: IWorkoutModeElement[]
 	permissionsRef: React.RefObject<AllGeolocationPermissionsHandle | null>
-	mapComponentRef: React.RefObject<MapComponentHandleLight | null>
+	mapComponentRef: React.RefObject<MapComponentSegmentsHandle | null>
 	userLocationMarkerRef: React.RefObject<UserLocationMarkerHandle | null>
 }
+
+const { height: SCREEN_HEIGHT } = Dimensions.get('window')
 
 const NewWorkout = memo((props: IProps) => {
 	const router = useRouter()
@@ -62,11 +64,12 @@ const NewWorkout = memo((props: IProps) => {
 			<Container>
 				<HeaderBack className="my-[20px]">Новая тренировка</HeaderBack>
 			</Container>
-			{/* @TODO */}
-			<MapComponentLight
+			<MapComponentSegments
 				ref={props.mapComponentRef}
-				initialMarkerLocation={props.initialMarkerLocation}
 				userLocationMarkerRef={props.userLocationMarkerRef}
+				initialMarkerLocation={props.initialMarkerLocation}
+				maxMapHeight={SCREEN_HEIGHT}
+				maxContainerHeight={SCREEN_HEIGHT}
 			/>
 			<View
 				style={{

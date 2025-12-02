@@ -138,8 +138,8 @@ const AllGeolocationPermissions = forwardRef<AllGeolocationPermissionsHandle, IP
 	}
 
 	const allowBackgroundLocationPermission = async () => {
-		closeBottomSheet()
 		const { status: backgroundStatus } = await Location.requestBackgroundPermissionsAsync() // ios + android
+		closeBottomSheet()
 
 		if (backgroundStatus === 'granted') {
 			return checkIsGPSEnabled()
@@ -201,8 +201,8 @@ const AllGeolocationPermissions = forwardRef<AllGeolocationPermissionsHandle, IP
 	}
 
 	const allowNotificationPermission = async () => {
-		closeBottomSheet()
 		const { status } = await Notification.requestPermissionsAsync()
+		closeBottomSheet()
 		if (status === 'granted') {
 			return checkPhysicalActivityTrackPermission()
 		} else {

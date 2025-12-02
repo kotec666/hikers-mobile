@@ -27,6 +27,7 @@ import { throttle } from '@/helpers/throttle'
 import { useWorkoutNotification } from '@/hooks/useWorkoutNotification'
 import { initializeBackgroundLocationTask, isTrackingLocation, startTracking } from '@/hooks/track-location/track'
 import { useLocationData, useLocationTracking } from '@/hooks/track-location'
+import { updateMapSettings } from '@/store/mapStorage'
 
 // Debugging
 TaskManager.getRegisteredTasksAsync().then((tasks) => {
@@ -99,25 +100,6 @@ export default function NewTraining() {
 		setIsWorkoutStarted,
 		setIsPaused
 	} = useLocationData(resolver, onInitialDataLoaded, chosenWorkout.type)
-
-	// const distance = useLocationDistance(locations)
-
-	// @TODO так не использовать, отдельно вынести пермишны
-	// useEffect(() => {
-	// 	if (permissionsRef.current) {
-	// 		permissionsRef.current.checkPermissions() или здесь asInitialCheck: true
-	// 	}
-	// }, [])
-
-	// @TODO сделать на хуках
-	// useTrainingLifecycle()
-	// useLocationTracking()
-	// useHeadingTracking()
-	// useTrainingRestore()
-	// useTrainingPermissions()
-	// useRestoreWorkout({
-	// 	setIsWorkoutStarted, setIsPaused, setChosenWorkout, myLocationsRef, ... после рестарта (перезахода в) приложения (-е)
-	// })
 
 	// Watchdog: если тренировка активна, проверяем, жив ли сервис локации.
 	// Если телефон был перезагружен, isTrackingLocation() вернет false, но isWorkoutStarted будет true.
@@ -192,7 +174,10 @@ export default function NewTraining() {
 		}
 	}
 
-	async function getFastUserPosition() {
+	const getFastUserPosition = async () => {
+		const foregroundStatus = await Location.getForegroundPermissionsAsync()
+		if (!foregroundStatus.granted) return null
+
 		const last = await Location.getLastKnownPositionAsync()
 		if (last) return last
 
@@ -265,24 +250,46 @@ export default function NewTraining() {
 		setChosenWorkout(foundedWorkout)
 	}, [])
 
+	const getFastUserPosAndSetWithCenter = useCallback(async () => {
+		const locationObject = await getFastUserPosition()
+		if (!locationObject) return
+		const {
+			coords: { latitude: lat, longitude: lon, accuracy, heading }
+		} = locationObject
+
+		setInitialMarkerLocationState({ lat, lon })
+		if (mapComponentRef.current) {
+			mapComponentRef.current.setMapCenter({ lat, lon }, 0.5, 16)
+			updateMapSettings({
+				lat: lat,
+				lon: lon,
+				zoom: 16
+			})
+		}
+		if (userLocationMarkerRef.current) {
+			userLocationMarkerRef.current.setAccuracy(accuracy)
+			userLocationMarkerRef.current.setMarkerHeading(heading)
+			userLocationMarkerRef.current.setMarkerPosition({ lat, lon })
+		}
+	}, [mapComponentRef, userLocationMarkerRef])
+
+	useEffect(() => {
+		// если не в тренировке, то установит локацию - карта + метка
+		const meta = getWorkoutMeta()
+		if (!meta) {
+			getFastUserPosAndSetWithCenter()
+		}
+	}, [getFastUserPosAndSetWithCenter])
+
 	const allPermissionsGrantedCallback = useCallback(async () => {
 		console.log('allPermissionsGrantedCallback')
-		const { newLatLon, lastUserPosition } = await getFastUserPositionAndSetAsInitial()
-
-		if (mapComponentRef.current) {
-			mapComponentRef.current.setMapCenter(newLatLon, 0.5, 13)
-		}
-		if (userLocationMarkerRef.current && lastUserPosition) {
-			userLocationMarkerRef.current.setAccuracy(lastUserPosition.coords.accuracy)
-			userLocationMarkerRef.current.setMarkerHeading(lastUserPosition.coords.heading)
-			userLocationMarkerRef.current.setMarkerPosition(newLatLon)
-		}
 
 		// Если висит флаг ожидания старта - запускаем тренировку автоматически
 		if (isPendingStartRef.current) {
-			startWorkout(chosenWorkout.type, false)
+			await getFastUserPosAndSetWithCenter()
+			return startWorkout(chosenWorkout.type, false)
 		}
-	}, [chosenWorkout.type])
+	}, [chosenWorkout.type, getFastUserPosAndSetWithCenter])
 
 	const handleClickPause = useCallback(async () => {
 		console.log('handleClickPause')
@@ -310,42 +317,6 @@ export default function NewTraining() {
 	const { startNotificationTimer, stopNotificationTimer } = useWorkoutNotification({
 		handleClickPause
 	})
-
-	const getFastUserPositionAndSetAsInitial = async () => {
-		// Fix: Если мы восстанавливаем активную тренировку - НЕ делаем reset initial marker position
-		// к текущей GPS координате. Пусть это сделает loadHistoryProgressively.
-		const meta = getWorkoutMeta()
-		if (meta && meta.startedAt) {
-			return { newLatLon: null, lastUserPosition: null }
-		}
-
-		// @TODO не должно работать, когда нет разрешений
-		try {
-			const lastUserPosition = await getFastUserPosition()
-			const newLatLon = {
-				lat: lastUserPosition.coords.latitude,
-				lon: lastUserPosition.coords.longitude
-			}
-
-			if (!initialMarkerLocationSetRef.current) {
-				initialMarkerLocationSetRef.current = true
-				setInitialMarkerLocationState(newLatLon)
-			}
-
-			return {
-				newLatLon,
-				lastUserPosition
-			}
-		} catch (e) {
-			console.warn('getFastUserPositionAndSetAsInitial: нет разрешений', e)
-			return { newLatLon: null, lastUserPosition: null }
-		}
-	}
-
-	useEffect(() => {
-		// @TODO
-		getFastUserPositionAndSetAsInitial()
-	}, [])
 
 	const pauseDebounced = useCallback(debounce(handleClickPause, PAUSE_DEBOUNCE_MS), [])
 
@@ -376,24 +347,24 @@ export default function NewTraining() {
 				<View style={styles.container}>
 					{isWorkoutStarted ? (
 						<WorkoutStarted
-							initialMarkerLocation={initialMarkerLocationState}
 							handleClickPause={pauseDebounced}
 							handleClickEndWorkout={handleClickEndWorkout}
 							workoutType={chosenWorkout.type}
 							isPaused={isPaused}
-							initialLocationsState={initialLocationsState}
-							userLocationMarkerRef={userLocationMarkerRef}
 							mapComponentRef={mapComponentRef}
 							metricSpeedRef={metricSpeedRef}
 							metricDistanceRef={metricDistanceRef}
 							metricCaloriesRef={metricCaloriesRef}
 							metricHeightRef={metricHeightRef}
 							accumulatedDistanceRef={accumulatedDistanceRef} // Для темпа
+							initialLocationsState={initialLocationsState}
+							initialMarkerLocation={initialMarkerLocationState}
+							userLocationMarkerRef={userLocationMarkerRef}
 						/>
 					) : (
 						<NewWorkout
-							userLocationMarkerRef={userLocationMarkerRef}
 							initialMarkerLocation={initialMarkerLocationState}
+							userLocationMarkerRef={userLocationMarkerRef}
 							allPermsGranted={allPermissionsGrantedCallback}
 							handleClickStart={handleClickStart}
 							handleChangeWorkout={handleChangeWorkout}
