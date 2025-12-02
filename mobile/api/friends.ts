@@ -26,6 +26,15 @@ export const deleteFriendById = async (friendId: string): Promise<IFriend> => {
 	return (await fetcher.delete(`friends/${friendId}`)).json()
 }
 
+// Отозвать свой запрос в друзья к юзеру по его id
+export const revokeFriendInviteByUserId = async (
+	userId: string
+): Promise<{
+	success: boolean
+}> => {
+	return (await fetcher.delete(`friends/invites/revoke/${userId}`)).json()
+}
+
 // Получить все исходящие (ожидающие) запросы в друзья
 export const getSentInvitesList = async (): Promise<IInvite[]> => {
 	return (await fetcher.get(`friends/invites/sent`)).json()

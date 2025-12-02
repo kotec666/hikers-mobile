@@ -17,7 +17,7 @@ import { getFieldsErrors } from '@/helpers/getFieldsErrors'
 import { subscribeToUser, unsubscribeFromUser } from '@/api/subscribers'
 import { useToast } from '@/hooks/useToast'
 import Modal from '@/components/ui/Modal/Modal'
-import { addAsFriend, deleteFriendById } from '@/api/friends'
+import { addAsFriend, deleteFriendById, revokeFriendInviteByUserId } from '@/api/friends'
 import { FriendStatus } from '@shared/enums'
 
 /**
@@ -89,7 +89,7 @@ const UserProfilePage = () => {
 			}
 
 			await subscribeToUser(data.profileData?.user.id)
-			updateProfileData({ isSubscribed: true })
+			updateProfileData({ isSubscribed: true, subscribers: data.profileData.subscribers + 1 })
 		} catch (e) {
 			toast.error('Произошла ошибка, повторите попытку позже')
 		}
@@ -102,7 +102,7 @@ const UserProfilePage = () => {
 			}
 
 			await unsubscribeFromUser(data.profileData?.user.id)
-			updateProfileData({ isSubscribed: false })
+			updateProfileData({ isSubscribed: false, subscribers: data.profileData.subscribers - 1 })
 		} catch (e) {
 			toast.error('Произошла ошибка, повторите попытку позже')
 		}
@@ -119,7 +119,10 @@ const UserProfilePage = () => {
 	const handleDeleteFromFriends = async () => {
 		try {
 			await deleteFriendById(id)
-			updateProfileData({ isFriend: FriendStatus.FALSE })
+			const friendsCount =
+				typeof data.profileData?.friends === 'number' ? data.profileData.friends - 1 : data.profileData?.friends
+
+			updateProfileData({ isFriend: FriendStatus.FALSE, friends: friendsCount })
 			toast.success('Пользователь удалён из списка друзей')
 		} catch (e) {
 			toast.error('Произошла ошибка, повторите попытку позже')
@@ -150,6 +153,18 @@ const UserProfilePage = () => {
 		}
 	}
 
+	const revokeFriendRequest = async () => {
+		try {
+			await revokeFriendInviteByUserId(id)
+			updateProfileData({ isFriend: FriendStatus.FALSE })
+			toast.success('Заявка в друзья отозвана')
+		} catch (e) {
+			toast.error('Произошла ошибка, повторите попытку позже')
+			// const errors = await e.response.json()
+			// getFieldsErrors(errors)
+		}
+	}
+
 	const handleClickDeleteAddFriend = async () => {
 		switch (data.profileData?.isFriend) {
 			case FriendStatus.TRUE:
@@ -157,7 +172,7 @@ const UserProfilePage = () => {
 			case FriendStatus.FALSE:
 				return sendFriendRequest()
 			case FriendStatus.INVITED:
-				return toast.info('Заявка в друзья уже отправлена')
+				return revokeFriendRequest()
 		}
 	}
 
