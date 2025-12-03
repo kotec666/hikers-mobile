@@ -1,0 +1,59 @@
+import fetcher from '@/api/fetcher'
+import { TrainingType } from '@shared/enums'
+
+export interface ITraining {
+	id: string
+	type: TrainingType
+	creatorId: string
+	createdAt: string // '2025-12-03T01:31:11.995Z'
+	startedAt: string | null
+	finishedAt: string | null
+}
+
+// Получить историю тренировок (завершённые, где пользователь был участником)
+export const getMyHistory = async (): Promise<ITraining[]> => {
+	return (await fetcher.get(`trainings/history`)).json()
+}
+
+// Получить детали тренировки по ID
+export const getExtendedDetails = async (trainingId: string): Promise<ITraining[]> => {
+	return (await fetcher.get(`trainings/extended/${trainingId}`)).json()
+}
+
+// Получить тренировку по ID
+export const getTrainingInfo = async (trainingId: string): Promise<ITraining[]> => {
+	return (await fetcher.get(`trainings/${trainingId}`)).json()
+}
+
+// Начать тренировку
+export const startTraining = async (data: { type: TrainingType; colorHex: string }): Promise<ITraining> => {
+	return (
+		await fetcher.post(`trainings/start`, {
+			json: data
+		})
+	).json()
+}
+
+// Завершить тренировку
+export const finishTraining = async (): Promise<{ success: boolean }> => {
+	return (await fetcher.post('trainings/finish')).json()
+}
+
+// Передать метрики по тренировке (можно частями)
+export const syncTraining = async (
+	trainingId: string,
+	metrics: { relTs: number; alt: number; speed_kmh: number; paused: boolean; lat: number; lng: number }[]
+): Promise<{ success: boolean }> => {
+	return (
+		await fetcher.patch(`trainings/sync/${trainingId}`, {
+			json: {
+				metrics
+			}
+		})
+	).json()
+}
+
+// Удалить незавершенную тренировку (не будет отображена в истории тренировок)
+export const deleteNotFinishedTraining = async (): Promise<{ success: boolean }> => {
+	return (await fetcher.delete(`trainings/delete-not-finished`)).json()
+}

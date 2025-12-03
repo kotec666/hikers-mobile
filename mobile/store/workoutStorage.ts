@@ -21,6 +21,7 @@ export interface IWorkoutStorage {
 }
 
 export interface IWorkout {
+	id: string
 	isPaused: boolean
 	type: TrainingType
 	startedAt: number
@@ -31,6 +32,7 @@ export interface IWorkout {
 
 // Внутренняя структура метаданных
 export interface IWorkoutMeta {
+	id: string
 	isPaused: boolean
 	type: TrainingType
 	startedAt: number
@@ -88,10 +90,11 @@ export const setActiveWorkoutPauseState = (isPaused: boolean): void => {
 	}
 }
 
-export const startAndStoreNewActiveWorkout = (type: TrainingType) => {
+export const startAndStoreNewActiveWorkout = (type: TrainingType, createdTrainingId: string) => {
 	clearActiveWorkoutData()
 
 	const newMeta: IWorkoutMeta = {
+		id: createdTrainingId,
 		type,
 		startedAt: Date.now(),
 		isPaused: false,
@@ -278,6 +281,7 @@ const getActiveWorkoutFromStorage = (meta: IWorkoutMeta): IWorkout => {
 	}
 
 	return {
+		id: meta.id,
 		type: meta.type,
 		startedAt: meta.startedAt,
 		isPaused: meta.isPaused,

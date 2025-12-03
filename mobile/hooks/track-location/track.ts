@@ -3,6 +3,8 @@ import * as TaskManager from 'expo-task-manager'
 import { LocationActivityType, LocationObject } from 'expo-location'
 import { getWorkoutMeta, setWorkoutItems } from '@/store/workoutStorage'
 import { locationEmitter } from './locationEmitter'
+import { syncTraining } from '@/api/workout'
+import { mpsToKmph } from '@/helpers/mpsToKmph'
 
 export const LOCATION_TASK_NAME = 'background-location-task'
 
@@ -98,6 +100,17 @@ TaskManager.defineTask(LOCATION_TASK_NAME, async ({ data, error }) => {
 		// const newLocations = infiniteRoute.nextPoints(10, 0.0001, 2) // 2 сегмента по 10 точек
 		// const savedLocations = setWorkoutItems(newLocations)
 		locationEmitter.emit(savedLocations)
+
+		const preparedLocations = savedLocations.map((item) => ({
+			relTs: item.relTs,
+			alt: item.locationObject.coords.altitude || 0,
+			speed_kmh: mpsToKmph(item.locationObject.coords.speed || 0),
+			paused: item.isPausedPoint,
+			lat: item.locationObject.coords.latitude,
+			lng: item.locationObject.coords.longitude
+		}))
+
+		syncTraining(meta.id, preparedLocations)
 	}
 })
 

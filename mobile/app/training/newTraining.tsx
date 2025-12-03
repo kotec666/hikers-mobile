@@ -28,6 +28,8 @@ import { useWorkoutNotification } from '@/hooks/useWorkoutNotification'
 import { initializeBackgroundLocationTask, isTrackingLocation, startTracking } from '@/hooks/track-location/track'
 import { useLocationData, useLocationTracking } from '@/hooks/track-location'
 import { updateMapSettings } from '@/store/mapStorage'
+import { finishTraining, startTraining } from '@/api/workout'
+import { randomHexColor } from '@/helpers/randomHexColor'
 
 // Debugging
 TaskManager.getRegisteredTasksAsync().then((tasks) => {
@@ -222,8 +224,8 @@ export default function NewTraining() {
 			isPendingStartRef.current = false // сбрасываем, когда начинаем тренировку
 
 			if (!afterReboot) {
-				startAndStoreNewActiveWorkout(workoutType)
-				console.log('chosenWorkout', workoutType)
+				const newTraining = await startTraining({ type: workoutType, colorHex: randomHexColor() })
+				startAndStoreNewActiveWorkout(workoutType, newTraining.id)
 			}
 
 			await startHeadingTracking()
@@ -335,6 +337,7 @@ export default function NewTraining() {
 			await stopNotificationTimer()
 			// Полный сброс состояния карты и переменных
 			resetWorkoutState()
+			finishTraining()
 		} catch (e) {
 			console.error('handleClickEndWorkout error: ', e)
 		}
