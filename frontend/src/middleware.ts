@@ -48,7 +48,7 @@ const securityHeaders = [
 	// { key: "Timing-Allow-Origin", value: `${env.web_url}` }, // Доступ к timing-информации для указанных доменов
 	{ key: 'X-XSS-Protection', value: '1; mode=block' }, // Защита от XSS-атак (устарело, но поддерживается)
 	{ key: 'Cross-Origin-Opener-Policy', value: 'same-origin' }, // Изолирует окно/вкладку от доступа через `window.opener` со сторонних доменов
-	{ key: 'Cross-Origin-Embedder-Policy', value: 'require-corp' }, // Блокирует загрузку кросс-доменных ресурсов без явного разрешения (CORS, CORP)
+	{ key: 'Cross-Origin-Embedder-Policy', value: 'credentialless' }, // Блокирует загрузку кросс-доменных ресурсов без явного разрешения (CORS, CORP)
 	{ key: 'Cross-Origin-Resource-Policy', value: 'same-site' }, // Предотвращает загрузку ваших ресурсов (например, изображений, PDF) на чужих сайтах через <img>, <iframe>, <script> и т. д.
 	{
 		key: 'Permissions-Policy', // Контроль доступа к API браузера и функций
@@ -82,7 +82,7 @@ export function middleware(request: NextRequest) {
     script-src-elem 'self' 'unsafe-inline';
     style-src 'self' 'unsafe-inline';
     media-src 'self';
-    img-src 'self' blob: data:;
+    img-src 'self' blob: data: https://*;
     font-src 'self';
     connect-src 'self' ${env.api};
     object-src 'none';

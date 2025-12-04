@@ -104,7 +104,8 @@ TaskManager.defineTask(LOCATION_TASK_NAME, async ({ data, error }) => {
 		const preparedLocations = savedLocations.map((item) => ({
 			relTs: item.relTs,
 			alt: item.locationObject.coords.altitude || 0,
-			speed_kmh: mpsToKmph(item.locationObject.coords.speed || 0),
+			//speed_kmh: mpsToKmph(item.locationObject.coords.speed || 0),
+			speed_kmh: item.locationObject.timestamp,
 			paused: item.isPausedPoint,
 			lat: item.locationObject.coords.latitude,
 			lng: item.locationObject.coords.longitude
