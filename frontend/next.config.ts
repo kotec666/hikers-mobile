@@ -11,7 +11,7 @@ const nextConfig: NextConfig = {
 	// 	NEXT_PUBLIC_YANDEX_VERIFICATION: process.env.NEXT_PUBLIC_YANDEX_VERIFICATION
 	// },
 	experimental: {
-		optimizeCss: false
+		optimizeCss: true
 		// optimizePackageImports: [
 		//   "@mui/material",
 		//   "@emotion/react",

@@ -2,8 +2,8 @@
 import { MapContainer, TileLayer, Marker, Polyline, Popup } from 'react-leaflet'
 import { FitMapToRoute } from './FitToMapRoute'
 import { svgIcon } from './mapIcons'
-import { ITrainingPoint } from '../../../../api/workout'
 import React from 'react'
+import { ITrainingPoint } from '@/api/workout'
 
 export default function MapComponent({ points }: { points: ITrainingPoint[] }) {
 	return (
