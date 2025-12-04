@@ -36,7 +36,7 @@ export class TrainingsController {
 	public async getExtendedById(
 		@User() user: TokenDto.Payload,
 		@IsUUID('id') @Param('id') id: string,
-	): Promise<TrainingDto.Entity> {
+	): Promise<TrainingDto.ExtendedEntity> {
 		return this.service.getExtendedByIdAndParticipant(id, user.id);
 	}
 

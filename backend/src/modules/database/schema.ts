@@ -258,11 +258,25 @@ export const posts = pgTable(
 			.references(() => users.id),
 		title: varchar('title', { length: 255 }).notNull(),
 		description: text('description'),
-		likesCount: integer('likes_count').default(0),
 		createdAt: timestamp('created_at').defaultNow().notNull(),
 		updatedAt: timestamp('updated_at').defaultNow(),
 	},
 	(table) => [index('post_usr_idx').on(table.userCreatorId)],
+);
+
+// Post Likes
+export const postLikes = pgTable(
+	'post_likes',
+	{
+		postId: uuid('post_id')
+			.notNull()
+			.references(() => posts.id),
+		userId: uuid('user_id')
+			.notNull()
+			.references(() => users.id),
+		createdAt: timestamp('created_at').defaultNow().notNull(),
+	},
+	(table) => [primaryKey({ columns: [table.postId, table.userId] })],
 );
 
 // Post Media (many-to-many)

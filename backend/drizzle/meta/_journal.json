@@ -141,6 +141,13 @@
       "when": 1763206957649,
       "tag": "0019_fix_metrics_not_float",
       "breakpoints": true
+    },
+    {
+      "idx": 20,
+      "version": "7",
+      "when": 1763389153896,
+      "tag": "0020_feat_post_likes_table",
+      "breakpoints": true
     }
   ]
 }
