@@ -37,7 +37,7 @@ jobs:
               run: cd frontend/src && ln -s ../../shared ./shared
 
             - name: '[frontend] Run lint'
-              run: cd frontend && yarn next lint
+              run: cd frontend && yarn lint
 
             - name: '[frontend] Run build'
               run: cd frontend && yarn build
