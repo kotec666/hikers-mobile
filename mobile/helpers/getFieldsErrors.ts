@@ -14,8 +14,10 @@ type ErrorFields = {
  * */
 
 const errorFields: ErrorFields = {
-    [ERRORS.MISMATCH]: { field: 'password', message: 'Неверный пароль' },
-    [ERRORS.DIGIT_REQUIRED]: { field: 'password', message: 'Поле должно содержать цифры' },
+    [ERRORS.BAD_REQUEST]: {field: 'field_name', message: 'bad request'},
+    [ERRORS.INTERNAL]: {field: 'field_name', message: 'internal'},
+    [ERRORS.MISMATCH]: {field: 'password', message: 'Неверный пароль'},
+    [ERRORS.DIGIT_REQUIRED]: {field: 'password', message: 'Поле должно содержать цифры'},
     [ERRORS.ALREADY_CREATED]: {
         field: 'email',
         message: 'Такой email уже зарегистрирован',
@@ -24,7 +26,7 @@ const errorFields: ErrorFields = {
         field: 'email',
         message: 'Такой email некорректен',
     },
-    [ERRORS.ALREADY_EXISTS]: { field: 'email', message: 'Такой email уже зарегистрирован' },
+    [ERRORS.ALREADY_EXISTS]: {field: 'email', message: 'Такой email уже зарегистрирован'},
     [ERRORS.NOT_FOUND]: {
         field: 'field_name',
         message: 'Не найдено',
@@ -45,6 +47,22 @@ const errorFields: ErrorFields = {
         field: 'field_name',
         message: 'Не авторизован',
     },
+    [ERRORS.TIMEOUT_EXPIRED]: {
+        field: 'field_name',
+        message: 'TIMEOUT_EXPIRED',
+    },
+    [ERRORS.USER_IN_NOT_FINISHED_TRAINING]: {
+        field: 'field_name',
+        message: 'USER_IN_NOT_FINISHED_TRAINING',
+    },
+    [ERRORS.USER_IS_TRAINING_PARTICIPANT]: {
+        field: 'field_name',
+        message: 'USER_IS_TRAINING_PARTICIPANT',
+    },
+    [ERRORS.USER_IS_NOT_TRAINING_PARTICIPANT]: {
+        field: 'field_name',
+        message: 'USER_IS_NOT_TRAINING_PARTICIPANT',
+    }
 }
 /* prettier-ignore */
 
@@ -68,7 +86,11 @@ const personalErrorFields: PersonalErrorFields = {
 		[ERRORS.ALREADY_EXISTS]: 'Такой email уже зарегистрирован'
 	},
 	password: {
-		[ERRORS.DIGIT_REQUIRED]: 'Поле должно содержать цифры'
+		[ERRORS.DIGIT_REQUIRED]: 'Поле должно содержать цифры',
+		[ERRORS.MISMATCH]: 'Неверный пароль'
+	},
+	username: {
+		[ERRORS.ALREADY_EXISTS]: 'Такой ник уже используется'
 	}
 }
 /* prettier-ignore */

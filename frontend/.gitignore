@@ -20,6 +20,10 @@
 # production
 /build
 
+# Symlinks
+shared/
+src/shared/
+
 # misc
 .DS_Store
 *.pem

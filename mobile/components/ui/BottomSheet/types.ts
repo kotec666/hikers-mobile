@@ -7,5 +7,5 @@ export interface BottomSheetProps {
 
 export interface BottomSheetHandle {
 	openSheet: () => void
-	closeSheet: () => void
+	closeSheet: (onFinished?: () => void) => void
 }

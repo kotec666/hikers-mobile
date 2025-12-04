@@ -1,267 +1,388 @@
-import { MarkerRef, Polyline, Yamap } from 'react-native-yamap-plus-lite'
-import UserLocationMarker from '@/components/ui/UserLocationMarker'
-import { useEffect, useRef, useState } from 'react'
-import AsyncStorage from '@react-native-async-storage/async-storage'
-import * as Location from 'expo-location'
-import * as TaskManager from 'expo-task-manager'
-import { LocationObject } from 'expo-location'
+import { Animation, InitialRegion, Point, Yamap, YamapRef } from 'react-native-yamap-plus'
+import React, { forwardRef, useCallback, useEffect, useImperativeHandle, useRef, useState } from 'react'
 import { View } from 'react-native'
+import { IWorkoutLocationStorageItem, removeAllWorkoutStorage } from '@/store/workoutStorage'
+import { Colors } from '@/constants/Colors'
 import { Button } from '@/components/ui/Button'
+import { debounce } from '@/helpers/debounce'
+import PauseLocationMarker from '@/components/map/markers/PauseLocationMarker'
+import ResumeLocationMarker from '@/components/map/markers/ResumeLocationMarker'
+import StartLocationMarker from '@/components/map/markers/StartLocationMarker'
+import { getMapSettings, updateMapSettings } from '@/store/mapStorage'
+import { PolylineComponentInstanceRef, PolylineCustom } from '@/components/map/PolylineCustom'
+import { PolylineNativeProps } from 'react-native-yamap-plus/src/spec/PolylineNativeComponent'
+import UserLocationMarker, {
+	UserLocationMarkerHandle
+} from '@/components/map/markers/UserLocationMarker/UserLocationMarker'
 
-enum LOCATION_TYPE {
-	BACKGROUND = 'background',
-	FOREGROUND = 'foreground'
+interface IProps {
+	maxMapHeight?: number
+	maxContainerHeight?: number
+	minMapHeight?: number
+	rounded?: number
+	initialMarkerLocation?: Point | null
+	userLocationMarkerRef?: React.RefObject<UserLocationMarkerHandle | null>
+	initialLocations?: React.RefObject<IWorkoutLocationStorageItem[]>
 }
 
-interface myLocationObj extends LocationObject {
-	type: LOCATION_TYPE
+export interface MapComponentHandle {
+	setMapCenter: (center: Point | null, durationInSeconds?: number, zoom?: number, animationType?: Animation) => void
+	fitAllMarkers: (durationInSeconds?: number) => void
+	updatePath: (newItem: IWorkoutLocationStorageItem) => void
 }
 
-const LOCATION_TASK_NAME = 'background-location-task'
+interface Segment {
+	isPaused: boolean
+	points: Point[]
+	color: string
+}
 
-TaskManager.defineTask(LOCATION_TASK_NAME, async ({ data, error }) => {
-	if (error) {
-		console.error('Location task error:', error)
-		return
-	}
+interface TransitionMarker {
+	type: 'pause' | 'resume'
+	position: Point
+	id: string
+}
 
-	if (data) {
-		const { locations } = data as { locations: LocationObject[] }
-		const savedLocations = await AsyncStorage.getItem('@liveLocations')
+const MapComponent = forwardRef<MapComponentHandle, IProps>((props, ref) => {
+	const mapRef = useRef<YamapRef>(null)
+	// State for React rendering of segments and markers
+	const [segments, setSegments] = useState<Segment[]>([])
+	const [transitionMarkers, setTransitionMarkers] = useState<TransitionMarker[]>([])
 
-		console.log('Received background locations', locations)
+	// Ref for the CURRENT active segment points.
+	// This allows us to mutate the array and use setNativeProps for performance,
+	// while ensuring we don't mutate the React state (which might be frozen).
+	const currentSegmentPointsRef = useRef<Point[]>([])
 
-		const mappedLocations = locations.map((location) => ({ ...location, type: LOCATION_TYPE.BACKGROUND }))
-		if (savedLocations) {
-			const parsedSavedLocations = JSON.parse(savedLocations)
-			console.log('locations to save', [...parsedSavedLocations, ...mappedLocations])
-			await AsyncStorage.setItem('@liveLocations', JSON.stringify([...parsedSavedLocations, ...mappedLocations]))
-		}
-	}
-})
+	// Ref для хранения состояния последнего сегмента.
+	// Важно: используем ref вместо segments[last].isPaused, чтобы иметь актуальное значение
+	// внутри императивного метода updatePath, не завися от замыкания и рендеров React.
+	const lastSegmentPausedRef = useRef<boolean>(false)
 
-const MapComponent = (props: { maxMapHeight?: number; minMapHeight?: number; rounded?: number }) => {
-	const [liveLocations, setLiveLocations] = useState<myLocationObj[] | []>([])
-	const [errorMsg, setErrorMsg] = useState<string | null>(null)
+	const activePolylineRef = useRef<PolylineComponentInstanceRef | null>(null)
+	const isAnimationBlockedRef = useRef<boolean>(false)
+	const animationBlockTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
+	const mapInitialRegionSettingsRef = useRef<InitialRegion>(getMapSettings()).current
 
-	const requestPermissions = async (): Promise<Location.PermissionStatus> => {
-		const { status: foregroundStatus } = await Location.requestForegroundPermissionsAsync()
-		console.log('Foreground status:', foregroundStatus)
+	const activeLineColor = Colors['green-main']
+	const pausedLineColor = Colors['gray-ab']
 
-		if (foregroundStatus !== 'granted') {
-			return foregroundStatus
-		} else {
-			const { status: backgroundStatus } = await Location.requestBackgroundPermissionsAsync()
-			console.log('Background status:', backgroundStatus)
-
-			return backgroundStatus
-		}
-	}
-
-	const loadSavedLocations = async () => {
-		try {
-			const savedLocations = await AsyncStorage.getItem('@liveLocations')
-			if (savedLocations) {
-				setLiveLocations(JSON.parse(savedLocations))
-			}
-		} catch (e) {
-			console.error('Failed to load saved locations', e)
-		}
-	}
-
-	const saveLocations = async (locations: LocationObject[]) => {
-		try {
-			await AsyncStorage.setItem('@liveLocations', JSON.stringify(locations))
-		} catch (e) {
-			console.error('Failed to save locations', e)
-		}
-	}
-
+	// Initialize from props (History load)
 	useEffect(() => {
-		loadSavedLocations()
+		let idleId: number | null = null
 
-		let subscription: Location.LocationSubscription
+		const run = () => {
+			if (props.initialLocations?.current && props.initialLocations.current.length > 0 && segments.length === 0) {
+				const parsed = parseLocationsToSegments(props.initialLocations.current)
+				setSegments(parsed.segments)
+				setTransitionMarkers(parsed.markers)
 
-		const startTracking = async () => {
-			const status = await requestPermissions()
+				if (parsed.segments.length > 0) {
+					// Клонируем точки для мутаций
+					currentSegmentPointsRef.current = [...parsed.segments[parsed.segments.length - 1].points]
+					// Синхронизируем ref состояния
+					lastSegmentPausedRef.current = parsed.segments[parsed.segments.length - 1].isPaused
+				}
+			}
+		}
 
-			console.log('75 status')
-			if (status !== 'granted') {
-				setErrorMsg('Permission to access location was denied')
-				console.log(errorMsg)
+		idleId = requestIdleCallback(run)
+
+		return () => {
+			if (idleId) cancelIdleCallback(idleId)
+		}
+	}, [])
+
+	const parseLocationsToSegments = (locations: IWorkoutLocationStorageItem[]) => {
+		if (!locations || locations.length === 0) return { segments: [], markers: [] }
+
+		const resultSegments: Segment[] = []
+		const markers: TransitionMarker[] = []
+
+		let currentGroup: IWorkoutLocationStorageItem[] = [locations[0]]
+
+		for (let i = 1; i < locations.length; i++) {
+			const prev = locations[i - 1]
+			const curr = locations[i]
+
+			const sameState = prev.isPausedPoint === curr.isPausedPoint
+
+			if (sameState) {
+				currentGroup.push(curr)
+			} else {
+				// Connect segments visually
+				currentGroup.push(curr)
+
+				resultSegments.push({
+					isPaused: prev.isPausedPoint,
+					points: currentGroup.map((l) => ({
+						lat: l.locationObject.coords.latitude,
+						lon: l.locationObject.coords.longitude
+					})),
+					color: prev.isPausedPoint ? pausedLineColor : activeLineColor
+				})
+
+				markers.push({
+					type: prev.isPausedPoint ? 'resume' : 'pause',
+					position: { lat: curr.locationObject.coords.latitude, lon: curr.locationObject.coords.longitude },
+					id: `marker-${i}`
+				})
+
+				currentGroup = [curr]
+			}
+		}
+
+		// Add the final group
+		if (currentGroup.length > 0) {
+			resultSegments.push({
+				isPaused: currentGroup[0].isPausedPoint,
+				points: currentGroup.map((l) => ({
+					lat: l.locationObject.coords.latitude,
+					lon: l.locationObject.coords.longitude
+				})),
+				color: currentGroup[0].isPausedPoint ? pausedLineColor : activeLineColor
+			})
+		}
+
+		return { segments: resultSegments, markers }
+	}
+
+	const updatePath = useCallback(
+		(newItem: IWorkoutLocationStorageItem) => {
+			const newPoint: Point = {
+				lat: newItem.locationObject.coords.latitude,
+				lon: newItem.locationObject.coords.longitude
+			}
+
+			// Case 0: No segments exist yet
+			if (segments.length === 0 && currentSegmentPointsRef.current.length === 0) {
+				const newSegment: Segment = {
+					isPaused: newItem.isPausedPoint,
+					points: [newPoint],
+					color: newItem.isPausedPoint ? pausedLineColor : activeLineColor
+				}
+				currentSegmentPointsRef.current = [newPoint]
+				lastSegmentPausedRef.current = newItem.isPausedPoint
+				setSegments([newSegment])
 				return
 			}
 
-			const isTaskRegistered = await TaskManager.isTaskRegisteredAsync(LOCATION_TASK_NAME)
+			// Используем ref для проверки состояния, так как state segments может быть "старым" в замыкании
+			// если обновления идут часто, но ререндер еще не произошел.
+			const isStateSame = lastSegmentPausedRef.current === newItem.isPausedPoint
 
-			console.log('isTaskRegistered:', isTaskRegistered)
-			if (!isTaskRegistered) {
-				await Location.startLocationUpdatesAsync(LOCATION_TASK_NAME, {
-					accuracy: Location.Accuracy.Balanced,
-					distanceInterval: 1,
-					foregroundService: {
-						notificationTitle: 'Отслеживание местоположения',
-						notificationBody: 'Приложение собирает данные о вашем местоположении',
-						notificationColor: 'rgba(0,0,0,0)',
-						killServiceOnDestroy: false
-					},
-					showsBackgroundLocationIndicator: true,
-					deferredUpdatesDistance: 1
-				})
-			}
+			if (isStateSame) {
+				// === SAME STATE: OPTIMIZED UPDATE (NO RENDER) ===
+				// 1. Update Ref (mutable)
+				currentSegmentPointsRef.current.push(newPoint)
 
-			subscription = await Location.watchPositionAsync(
-				{
-					accuracy: Location.Accuracy.Highest,
-					distanceInterval: 1
-				},
-				(location) => {
-					setLiveLocations((prev) => {
-						const newLocations = [...prev, { ...location, type: LOCATION_TYPE.FOREGROUND }]
-						saveLocations(newLocations)
-						return newLocations
-					})
+				// 2. Update Native View directly
+				if (activePolylineRef.current) {
+					activePolylineRef.current.setNativeProps({
+						points: currentSegmentPointsRef.current
+					} as PolylineNativeProps)
 				}
+			} else {
+				// === STATE CHANGE: TRIGGER REACT RENDER ===
+
+				// 1. Seal the previous segment
+				const finishedSegmentPoints = [...currentSegmentPointsRef.current, newPoint]
+
+				// 2. Start new segment
+				const newSegmentStartPoints = [newPoint]
+				currentSegmentPointsRef.current = [...newSegmentStartPoints]
+
+				// Обновляем статус в ref
+				lastSegmentPausedRef.current = newItem.isPausedPoint
+
+				const newSegment: Segment = {
+					isPaused: newItem.isPausedPoint,
+					points: newSegmentStartPoints,
+					color: newItem.isPausedPoint ? pausedLineColor : activeLineColor
+				}
+
+				// 3. Update State to create new Polyline component (Triggers Render)
+				setSegments((prev) => {
+					const copy = [...prev]
+					if (copy.length > 0) {
+						// Update the sealed segment in history
+						copy[copy.length - 1] = {
+							...copy[copy.length - 1],
+							points: finishedSegmentPoints
+						}
+					}
+					return [...copy, newSegment]
+				})
+
+				setTransitionMarkers((prev) => [
+					...prev,
+					{
+						type: !newItem.isPausedPoint ? 'resume' : 'pause',
+						position: newPoint,
+						id: `trans-${Date.now()}`
+					}
+				])
+			}
+		},
+		[segments, activeLineColor, pausedLineColor]
+	)
+
+	useImperativeHandle(ref, () => ({
+		setMapCenter: (center, durationInSeconds, zoom, animationType) =>
+			changeMapCenter(center, durationInSeconds, zoom, animationType),
+		fitAllMarkers: (durationInSeconds) => fitAllMarkers(durationInSeconds),
+		updatePath: (newItem) => updatePath(newItem)
+	}))
+
+	const fitAllMarkers = (durationInSeconds?: number) => {
+		if (!mapRef.current) return
+		mapRef.current.fitAllMarkers(durationInSeconds, Animation.LINEAR)
+	}
+
+	const changeMapCenter = (
+		center: Point | null,
+		durationInSeconds?: number,
+		zoom?: number,
+		animationType?: Animation
+	) => {
+		if (isAnimationBlockedRef.current) return
+		if (!center) return
+		if (!mapRef.current) return
+		mapRef.current.getCameraPosition((cameraPosition) => {
+			if (!mapRef.current) return
+			handleBlockAnimation(durationInSeconds)
+			mapRef.current.setCenter(
+				center,
+				zoom ?? cameraPosition.zoom,
+				undefined,
+				undefined,
+				durationInSeconds ?? 1,
+				animationType ?? Animation.SMOOTH
 			)
+		})
+	}
+
+	const handleBlockAnimation = useCallback((durationInMS: number = 2000) => {
+		if (animationBlockTimerRef.current) {
+			clearTimeout(animationBlockTimerRef.current)
 		}
 
-		startTracking()
+		isAnimationBlockedRef.current = true
 
+		animationBlockTimerRef.current = setTimeout(() => {
+			isAnimationBlockedRef.current = false
+			animationBlockTimerRef.current = null
+		}, durationInMS)
+	}, [])
+
+	const updateMapSettingsDebounced = debounce(updateMapSettings, 300)
+
+	useEffect(() => {
 		return () => {
-			if (subscription) {
-				subscription.remove()
+			if (animationBlockTimerRef.current) {
+				clearTimeout(animationBlockTimerRef.current)
 			}
 		}
 	}, [])
 
-	const lastLocation = liveLocations.at(-1)?.coords
-
-	const foregroundLocations = liveLocations.filter((location) => location.type === LOCATION_TYPE.FOREGROUND)
-	const backgroundLocations = liveLocations.filter((location) => location.type === LOCATION_TYPE.BACKGROUND)
-
-	// const clearLocations = async () => {
-	// 	setLiveLocations([])
-	// 	await AsyncStorage.removeItem('@liveLocations')
-	// }
-
-	const userMarkerRef = useRef<MarkerRef | null>(null)
-
-	const [accuracy, setAccuracy] = useState(5)
-	const [markerPosition, setMarkerPosition] = useState({ lat: 53.422506, lon: 49.4781051 })
-	const [isAnimating, setIsAnimating] = useState(false)
-
-	const animateToPosition = (targetPosition: { lat: number; lon: number }, duration: number = 500) => {
-		if (isAnimating) return
-
-		setIsAnimating(true)
-		const startPosition = markerPosition
-		const startTime = Date.now()
-
-		const animateFrame = () => {
-			const currentTime = Date.now()
-			const progress = Math.min((currentTime - startTime) / duration, 1)
-
-			// Эффект easing для более плавной анимации
-			const easeOutQuart = 1 - Math.pow(1 - progress, 4)
-
-			const newLat = startPosition.lat + (targetPosition.lat - startPosition.lat) * easeOutQuart
-			const newLon = startPosition.lon + (targetPosition.lon - startPosition.lon) * easeOutQuart
-
-			const newPosition = { lat: newLat, lon: newLon }
-
-			// Обновляем обе позиции синхронно
-			setMarkerPosition(newPosition)
-
-			if (progress < 1) {
-				requestAnimationFrame(animateFrame)
-			} else {
-				setIsAnimating(false)
-			}
-		}
-
-		requestAnimationFrame(animateFrame)
-	}
-
-	const onClickMove = () => {
-		animateToPosition({ lat: 53.4229, lon: 49.4782 }, 500)
-	}
-
-	const onClickAccuracy = () => {
-		setAccuracy(15)
-	}
-
+	console.log('Render MapComponent')
 	return (
-		<View className="flex-1" style={{ overflow: 'hidden', borderRadius: props.rounded || 0 }}>
-			<View>
-				<Button variant="white" onPress={onClickMove}>
-					передвинуть
-				</Button>
-				<Button variant="white" onPress={onClickAccuracy}>
-					onClickAccuracy
-				</Button>
-			</View>
+		<View
+			className="flex-1"
+			style={{
+				overflow: 'hidden',
+				borderRadius: props.rounded || 0,
+				maxHeight: props.maxContainerHeight ?? 'auto'
+			}}
+		>
+			<Button variant="white" onPress={() => removeAllWorkoutStorage()}>
+				REMOVE ALL WORKOUT STORAGE
+			</Button>
 			<Yamap
+				ref={mapRef}
 				nightMode
-				initialRegion={{ lat: 53.422506, lon: 49.4781051, zoom: 12 }}
+				initialRegion={mapInitialRegionSettingsRef}
 				style={{ flex: 1, maxHeight: props.maxMapHeight, minHeight: props.minMapHeight }}
 				logoPosition={{ horizontal: 'right', vertical: 'top' }}
-				followUser
 				showUserPosition={false}
-				tiltGesturesEnabled={false}
+				tiltGesturesDisabled={true}
+				rotateGesturesDisabled={true} // @TODO включить после дебага
+				onCameraPositionChange={(e) => {
+					if (['GESTURES', 'UNKNOWN'].includes(e.nativeEvent.reason)) {
+						handleBlockAnimation()
+					}
+				}}
+				onCameraPositionChangeEnd={() => {
+					mapRef.current?.getCameraPosition((pos) => {
+						updateMapSettingsDebounced({
+							lat: pos.point.lat,
+							lon: pos.point.lon,
+							zoom: pos.zoom,
+							azimuth: pos.azimuth
+						})
+					})
+				}}
 			>
-				{/*{lastLocation?.latitude && lastLocation?.longitude && (*/}
-				{/*	<UserLocationMarker*/}
-				{/*		position={{ lat: lastLocation?.latitude, lon: lastLocation?.longitude }}*/}
-				{/*		accuracy={5}*/}
-				{/*	/>*/}
-				{/*)}*/}
-
-				{/*{liveLocations?.length &&*/}
-				{/*	liveLocations.map((location, idx) => (*/}
-				{/*		<DefaultMarker*/}
-				{/*			key={JSON.stringify(`${location}${idx}`)}*/}
-				{/*			lat={location.coords.latitude}*/}
-				{/*			lon={location.coords.longitude}*/}
-				{/*		/>*/}
-				{/*	))}*/}
-
-				<UserLocationMarker userMarkerRef={userMarkerRef} position={markerPosition} accuracy={accuracy} />
-
-				{foregroundLocations?.length && (
-					<Polyline
-						points={foregroundLocations.map((location) => ({
-							lat: location.coords.latitude,
-							lon: location.coords.longitude
-						}))}
-						strokeWidth={4}
-						strokeColor={'black'}
-						outlineColor={'black'}
-						outlineWidth={2}
-						handled={false}
-						gapLength={5}
-						dashLength={0}
-						onPress={() => console.log('polyline press')}
+				{/*<DirectionMarkersDebug center={{ lat: 53.374451, lon: 49.460469 }} />*/}
+				{props.initialMarkerLocation && (
+					<UserLocationMarker
+						ref={props.userLocationMarkerRef}
+						initialPosition={props.initialMarkerLocation}
 					/>
 				)}
 
-				{backgroundLocations?.length && (
-					<Polyline
-						points={backgroundLocations.map((location) => ({
-							lat: location.coords.latitude,
-							lon: location.coords.longitude
-						}))}
-						strokeWidth={4}
-						strokeColor={'blue'}
-						outlineColor={'blue'}
-						outlineWidth={2}
-						handled={false}
-						gapLength={5}
-						dashLength={0}
+				{props.initialLocations?.current && props.initialLocations?.current.length >= 1 && (
+					<StartLocationMarker
+						position={{
+							lat: props.initialLocations.current[0].locationObject.coords.latitude,
+							lon: props.initialLocations.current[0].locationObject.coords.longitude
+						}}
 					/>
 				)}
+
+				{/* Render Dynamic Segments */}
+				{segments.map((segment, index) => {
+					const isLast = index === segments.length - 1
+					return (
+						<PolylineCustom
+							key={`poly-${index}`}
+							ref={isLast ? activePolylineRef : undefined} // Only attach ref to the active segment
+							points={segment.points}
+							strokeColor={segment.color}
+							strokeWidth={4}
+						/>
+					)
+				})}
+
+				{/* Render Transition Markers */}
+				{transitionMarkers.map((tm) =>
+					tm.type === 'pause' ? (
+						<PauseLocationMarker key={tm.id} position={tm.position} />
+					) : (
+						<ResumeLocationMarker key={tm.id} position={tm.position} />
+					)
+				)}
+
+				{/*<FinishLocationMarker position={{ lat: 53.374451, lon: 49.660469 }} />*/}
 			</Yamap>
 		</View>
 	)
-}
+})
 
-export default MapComponent
+MapComponent.displayName = 'MapComponent'
+
+// Memo: Сравниваем пропсы. initialLocations сравниваем по ссылке.
+// Так как в NewTraining мы передаем initialLocations = myLocationsRef.current,
+// а ref.current всегда стабилен (даже если массив внутри мутирует),
+// React.memo вернет true и ререндер не произойдет при обновлении массива.
+export default React.memo(MapComponent, (prev, next) => {
+	return (
+		prev.maxContainerHeight === next.maxContainerHeight &&
+		prev.maxMapHeight === next.maxMapHeight &&
+		prev.minMapHeight === next.minMapHeight &&
+		prev.rounded === next.rounded &&
+		prev.initialMarkerLocation === next.initialMarkerLocation &&
+		prev.userLocationMarkerRef === next.userLocationMarkerRef &&
+		prev.initialLocations === next.initialLocations
+	)
+})

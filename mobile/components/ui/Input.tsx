@@ -2,15 +2,16 @@ import { cn } from '@/helpers/cn'
 import { StyleSheet, Text, TextInput, TextInputProps, View } from 'react-native'
 import { fontFamily } from '@/constants/Fonts'
 import { Colors } from '@/constants/Colors'
-import { ReactNode } from 'react'
+import React, { ReactNode } from 'react'
 import SearchSvg from '@/components/svg/SearchSvg'
 import { Container } from '@/components/ui/Container'
+import ErrorMessage from '@/components/ErrorMessage'
 
 export interface Props extends TextInputProps {
 	containerClassName?: string
 	className?: string
 	svg?: ReactNode
-	error?: string
+	error?: string | boolean
 	isFind?: boolean
 }
 
@@ -46,13 +47,7 @@ export function Input(props: Props) {
 					</View>
 				</View>
 			)}
-			{props.error && (
-				<Container className="mt-[10px]">
-					<Text className="text-white text-sm" style={{ fontFamily: fontFamily.regular }}>
-						{props.error}
-					</Text>
-				</Container>
-			)}
+			<ErrorMessage error={error} />
 		</View>
 	)
 }

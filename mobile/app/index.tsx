@@ -5,7 +5,7 @@ import { Slider } from '@/components/Slider/Slider'
 import { slides } from '@/constants/Slider'
 import { useRouter } from 'expo-router'
 import { Button } from '@/components/ui/Button'
-import { getItem } from '@/store/storage'
+import { getIsAccountExist } from '@/store/storage'
 import { AUTH_MODE } from '@/app/auth'
 
 const HelloPage = () => {
@@ -13,7 +13,7 @@ const HelloPage = () => {
 	const router = useRouter()
 
 	const handleClickEnter = () => {
-		if (getItem('isAccountExist')?.accountExist) {
+		if (getIsAccountExist()?.accountExist) {
 			return router.navigate(`/auth?mode=${AUTH_MODE.AUTH}`)
 		} else {
 			return router.navigate(`/auth?mode=${AUTH_MODE.REGISTRATION}`)

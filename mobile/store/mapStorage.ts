@@ -1,18 +1,59 @@
-import { MMKV } from 'react-native-mmkv'
+import { createMMKV } from 'react-native-mmkv'
+import { InitialRegion } from 'react-native-yamap-plus'
 
-export const mapStorage = new MMKV({
+export const mapStorage = createMMKV({
 	id: 'map-storage'
 })
 
-export const setMapItem = (key: string, value: object) => {
-	mapStorage.set(key, JSON.stringify(value))
+const mapStorageKey = 'MAP_STORAGE_SETTINGS'
+
+const initialMapSettings = {
+	lat: 55.758745, // Moscow
+	lon: 37.619153, // Moscow
+	zoom: 14,
+	azimuth: undefined
+	// tilt: 0
 }
 
-export const getMapItem = (key: string) => {
-	const value = mapStorage.getString(key)
-	return value ? JSON.parse(value) : null
+export const getMapSettings = (): InitialRegion => {
+	const mapStorageStr = mapStorage.getString(mapStorageKey)
+	let parsedStorage = null
+
+	if (mapStorageStr) {
+		parsedStorage = JSON.parse(mapStorageStr) as InitialRegion
+	}
+
+	if (mapStorageStr && parsedStorage) {
+		return parsedStorage
+	} else {
+		mapStorage.set(mapStorageKey, JSON.stringify(initialMapSettings))
+		return initialMapSettings
+	}
 }
 
-export const removeMapItem = (key: string) => {
-	mapStorage.delete(key)
+export const updateMapSettings = (settings: Partial<InitialRegion>) => {
+	const mapStorageStr = mapStorage.getString(mapStorageKey)
+	let parsedStorage = null
+
+	if (mapStorageStr) {
+		parsedStorage = JSON.parse(mapStorageStr) as InitialRegion
+	}
+
+	if (parsedStorage) {
+		const updatedSettings: InitialRegion = {
+			...parsedStorage,
+			...settings
+		}
+		return mapStorage.set(mapStorageKey, JSON.stringify(updatedSettings))
+	} else {
+		const updatedSettings: InitialRegion = {
+			...initialMapSettings,
+			...settings
+		}
+		return mapStorage.set(mapStorageKey, JSON.stringify(updatedSettings))
+	}
+}
+
+export const removeMapStorage = () => {
+	mapStorage.remove(mapStorageKey)
 }

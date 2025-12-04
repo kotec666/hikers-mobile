@@ -1,13 +1,15 @@
 import { create } from 'zustand'
-import { getItem, removeItem, setItem } from '@/store/storage'
-import { refreshAccessTokenRequest, registrationUser } from '@/api/auth'
-import { getFieldsErrors } from '@/helpers/getFieldsErrors'
+import { getAuthData, removeAuthData, setAuthData } from '@/services/tokenService'
+import { refreshTokenAPI } from '@/api/refresh'
+import { getTokenExpirationTime } from '@/helpers/getTokenExpirationTime'
+import { setIsAccountExist } from '@/store/storage'
 
-interface IUser {
-	id: number
-	name?: string
+export interface IUser {
+	id: string
+	name: null | string
 	email: string
-	username?: string
+	username: string
+	avatarFilename: null | string
 }
 
 interface AuthStore {
@@ -16,10 +18,11 @@ interface AuthStore {
 	user: IUser | null
 	accessTokenExpiration: number | null
 
-	login: (token: string, user: { email: string; username?: string; name?: string; id: number }) => void
+	login: (token: string, user: IUser, accessTokenExpiration?: number | null) => void
 	logout: () => void
 	refreshAccessToken: () => Promise<boolean>
 	checkAuth: () => Promise<boolean>
+	setUser: (user: IUser) => void
 }
 
 export const useAuthStore = create<AuthStore>((set, get) => ({
@@ -28,27 +31,25 @@ export const useAuthStore = create<AuthStore>((set, get) => ({
 	user: null,
 	accessTokenExpiration: null,
 
-	login: (token: string, user: { email: string; username?: string; name?: string; id: number }) => {
-		const authData = {
+	login: (token, user, expire) => {
+		const data = {
 			accessToken: token,
-			user: {
-				// firstName: data.firstName,
-				// lastName: data.lastName,
-				// email: data.email,
-				// username: data.username
-				id: user.id,
-				name: user.name,
-				email: user.email,
-				username: user.username
-			},
+			user,
 			isAuthenticated: true,
-			accessTokenExpiration: Date.now() + 30 * 60 * 1000 // 30 min
+			accessTokenExpiration: expire ?? getTokenExpirationTime()
 		}
-		setItem('authData', authData)
-		set(authData)
+
+		setAuthData(data)
+		setIsAccountExist({ accountExist: true })
+		set(data)
 	},
+
+	setUser: (user: IUser) => {
+		set({ user })
+	},
+
 	logout: () => {
-		removeItem('authData')
+		removeAuthData()
 		set({
 			isAuthenticated: false,
 			accessToken: null,
@@ -58,51 +59,44 @@ export const useAuthStore = create<AuthStore>((set, get) => ({
 	},
 
 	refreshAccessToken: async () => {
+		const { accessToken, user } = get()
+		if (!accessToken) return false
+
 		try {
-			const { accessToken } = get()
-			if (!accessToken) {
-				console.error('Ошибка при обновлении access token: токен не существует')
-				return false
-			}
+			const newToken = await refreshTokenAPI(accessToken)
+			const expiration = getTokenExpirationTime()
 
-			console.log('старый бог', accessToken)
-			const data = await refreshAccessTokenRequest({ token: accessToken })
+			setAuthData({
+				accessToken: newToken.token,
+				accessTokenExpiration: expiration,
+				isAuthenticated: true,
+				user
+			})
 
-			const updatedAuthData = {
-				...get(),
-				accessToken: data.token,
-				accessTokenExpiration: Date.now() + 30 * 60 * 1000 // 30 min
-			}
+			set({
+				accessToken: newToken.token,
+				accessTokenExpiration: expiration
+			})
 
-			set(updatedAuthData)
-			setItem('authData', updatedAuthData)
 			return true
-		} catch (e) {
-			console.error('Ошибка при обновлении access token:', e)
+		} catch (err) {
 			get().logout()
 			return false
 		}
 	},
 
 	checkAuth: async () => {
-		const authData = getItem('authData')
-		if (!authData) {
-			return false
-		}
+		const data = getAuthData()
+		if (!data) return false
 
-		const { accessToken, accessTokenExpiration, refreshToken } = authData
+		const { accessToken, accessTokenExpiration } = data
 
 		if (accessToken && accessTokenExpiration && accessTokenExpiration > Date.now()) {
-			set(authData)
+			set(data)
 			return true
 		}
 
-		if (refreshToken) {
-			set(authData)
-			return await get().refreshAccessToken()
-		}
-
-		return false
+		return await get().refreshAccessToken()
 	}
 }))
 

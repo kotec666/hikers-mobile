@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react'
+import React, { useState, useEffect, useLayoutEffect } from 'react'
 import { StyleSheet, View, Pressable, Platform } from 'react-native'
 import Animated, {
 	useSharedValue,
@@ -12,7 +12,7 @@ import NavBarMapSvg from '@/components/svg/NavBarMapSvg'
 import NavBarAccountSvg from '@/components/svg/NavBarAccountSvg'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
 import { Colors } from '@/constants/Colors'
-import { RelativePathString, useRouter } from 'expo-router'
+import { RelativePathString, usePathname, useRouter } from 'expo-router'
 import { BlurView } from 'expo-blur'
 import { cn } from '@/helpers/cn'
 
@@ -53,14 +53,22 @@ const AnimatedButton: React.FC<AnimatedButtonProps> = ({ isActive, onPress, Icon
 
 const NavBar = () => {
 	const insets = useSafeAreaInsets()
-	const [activeId, setActiveId] = useState<number>(1)
+	const [activeId, setActiveId] = useState<number | null>(null)
 	const router = useRouter()
+	const pathname = usePathname()
 
 	const links: { id: number; Icon: React.FC<{ stroke: string }>; href: string }[] = [
 		{ id: 1, Icon: NavBarPostsSvg, href: '/' },
 		{ id: 2, Icon: NavBarMapSvg, href: '/training/newTraining' },
 		{ id: 3, Icon: NavBarAccountSvg, href: '/profile' }
 	]
+
+	useLayoutEffect(() => {
+		const foundedLink = links.find((link) => link.href === pathname)
+		if (foundedLink) {
+			setActiveId(foundedLink.id)
+		}
+	}, [])
 
 	return (
 		<View style={[styles.NavBarContainer, { bottom: insets.bottom }]} pointerEvents="box-none">

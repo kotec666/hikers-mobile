@@ -19,7 +19,6 @@ import { useState } from 'react'
 import Checkbox from '@/components/ui/Checkbox'
 import { LinkCustom } from '@/components/ui/LinkCustom'
 import { useAuthStore } from '@/store/authStore'
-import { setItem } from '@/store/storage'
 import { useLocalSearchParams } from 'expo-router'
 import { Controller, useForm } from 'react-hook-form'
 import { useErrorMessage } from '@/hooks/useErrorMessage'
@@ -27,6 +26,7 @@ import { getFieldsErrors } from '@/helpers/getFieldsErrors'
 import { loginUser, registrationUser } from '@/api/auth'
 import { cn } from '@/helpers/cn'
 import { lengths } from '@shared/lengths'
+import * as Haptics from 'expo-haptics'
 
 export enum AUTH_MODE {
 	AUTH = 'auth',
@@ -73,12 +73,15 @@ const AuthPage = () => {
 		if (data.mode === AUTH_MODE.AUTH) {
 			try {
 				const loginData = await loginUser({ email: authFormState.email, password: authFormState.password })
-				login(loginData.token, { id: 1, username: 'oxxxysergey', name: 'cерёга', email: authFormState.email })
+				const { token, ...restParameters } = loginData
+
+				login(loginData.token, restParameters)
 			} catch (e) {
 				const errors = await e.response.json()
 				console.log(errors)
 				const formattedErrors = getFieldsErrors(errors)
 				setData((s) => ({ ...s, errors: formattedErrors }))
+				Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error)
 				// Alert.alert('Ошибка', 'Неверные учетные данные')
 			} finally {
 				setData((s) => ({ ...s, isLoading: false }))
@@ -88,14 +91,16 @@ const AuthPage = () => {
 		if (data.mode === AUTH_MODE.REGISTRATION) {
 			try {
 				const regData = await registrationUser({ email: authFormState.email, password: authFormState.password })
-				login(regData.token, { id: 1, username: 'oxxxysergey', name: 'cерёга', email: authFormState.email })
-				setItem('isAccountExist', { accountExist: true })
+				const { token, ...restParameters } = regData
+
+				login(regData.token, restParameters)
 			} catch (e) {
 				console.log(e)
 				const errors = await e.response.json()
 				console.log(JSON.stringify(errors))
 				const formattedErrors = getFieldsErrors(errors)
 				setData((s) => ({ ...s, errors: formattedErrors }))
+				Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error)
 				// Alert.alert('Ошибка', 'Неверные учетные данные')
 			} finally {
 				setData((s) => ({ ...s, isLoading: false }))
@@ -175,6 +180,8 @@ const AuthPage = () => {
 											isPassword
 											autoCapitalize="none"
 											placeholder="Введите пароль"
+											textContentType="password"
+											keyboardType="numbers-and-punctuation"
 											svg={
 												<PasswordSvg
 													error={Boolean(error?.message?.length || data.errors?.password)}

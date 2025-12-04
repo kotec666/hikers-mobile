@@ -6,6 +6,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context'
 import { Gesture, GestureDetector } from 'react-native-gesture-handler'
 import { Colors } from '@/constants/Colors'
 import { BlurView } from 'expo-blur'
+import { scheduleOnRN } from 'react-native-worklets'
 
 const BottomSheet = forwardRef<BottomSheetHandle, BottomSheetProps>(
 	({ activeHeight, backDropColor = 'rgba(0,0,0,0.5)', backgroundColor = 'rgba(0, 0, 0, 1)', children }, ref) => {
@@ -25,12 +26,22 @@ const BottomSheet = forwardRef<BottomSheetHandle, BottomSheetProps>(
 			})
 		}, [])
 
-		const closeSheet = useCallback(() => {
-			sheetPositionY.value = withSpring(closedPositionY, {
-				damping: 50,
-				stiffness: 150,
-				mass: 0.5
-			})
+		const closeSheet = useCallback((onFinished?: () => void) => {
+			sheetPositionY.value = withSpring(
+				closedPositionY,
+				{
+					damping: 50,
+					stiffness: 150,
+					mass: 0.5
+				},
+				(finished) => {
+					if (finished) {
+						if (onFinished) {
+							scheduleOnRN(onFinished)
+						}
+					}
+				}
+			)
 		}, [])
 
 		useImperativeHandle(
@@ -101,7 +112,7 @@ const BottomSheet = forwardRef<BottomSheetHandle, BottomSheetProps>(
 
 		return (
 			<>
-				<TouchableWithoutFeedback onPress={closeSheet}>
+				<TouchableWithoutFeedback onPress={() => closeSheet()}>
 					<Animated.View style={[styles.backdrop, backdropStyle, { backgroundColor: backDropColor }]} />
 				</TouchableWithoutFeedback>
 				<GestureDetector gesture={panGestureHandler}>
@@ -127,6 +138,8 @@ const BottomSheet = forwardRef<BottomSheetHandle, BottomSheetProps>(
 	}
 )
 
+BottomSheet.displayName = 'BottomSheet'
+
 export default BottomSheet
 
 const styles = StyleSheet.create({
@@ -138,6 +151,7 @@ const styles = StyleSheet.create({
 		right: 0,
 		bottom: 0,
 		zIndex: 2,
+		elevation: 2,
 		overflow: 'hidden'
 	},
 	contentContainer: {

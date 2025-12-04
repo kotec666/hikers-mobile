@@ -1,7 +1,7 @@
 import ky from 'ky'
 import { Platform } from 'react-native'
 import { api } from '@/constants/Variables'
-import { getItem, removeItem } from '@/store/storage'
+import { getToken, removeAuthData } from '@/services/tokenService'
 import { authStore } from '@/store/authStore'
 
 const baseFetcher = ky.extend({
@@ -14,7 +14,7 @@ const baseFetcher = ky.extend({
 let isRefreshing = false
 let failedQueue: { resolve: (value?: any) => void; reject: (reason?: any) => void }[] = []
 
-const processQueue = (error: any, token?: string) => {
+const processQueue = (error: any, token?: string | null) => {
 	failedQueue.forEach(({ resolve, reject }) => {
 		if (error) {
 			reject(error)
@@ -30,12 +30,11 @@ const fetcher = baseFetcher.extend({
 		beforeRequest: [
 			async (request) => {
 				if (request.url.includes('auth/refresh')) return
-				request.headers.set('Authorization', `Bearer ${getItem('authData')?.accessToken}`)
+				request.headers.set('Authorization', `Bearer ${getToken()}`)
 			}
 		],
 		afterResponse: [
 			async (request, options, response) => {
-				console.log('request.headers', request.headers)
 				// Если ответ успешный, просто возвращаем его
 				if (response.status !== 401) {
 					return response
@@ -45,7 +44,7 @@ const fetcher = baseFetcher.extend({
 				const originalRequest = request
 
 				// Если это запрос на обновление токена, не обрабатываем его
-				if (originalRequest.url.includes('auth/refresh')) {
+				if (originalRequest.url.includes('auth/refresh') || originalRequest.url.includes('auth/login')) {
 					return response
 				}
 
@@ -65,31 +64,21 @@ const fetcher = baseFetcher.extend({
 				isRefreshing = true
 
 				try {
-					const accessToken = getItem('authData')?.accessToken
+					const ok = await authStore.getState().refreshAccessToken()
 
-					if (!accessToken) {
-						throw new Error('No refresh token available')
-					}
+					if (!ok) throw new Error('refresh failed')
 
-					await authStore.getState().refreshAccessToken()
+					const newToken = getToken()
 
-					console.log('Обновлённый токен', getItem('authData')?.accessToken)
-					// Обновляем заголовок авторизации оригинального запроса
-					originalRequest.headers.set('Authorization', `Bearer ${getItem('authData')?.accessToken}`)
+					processQueue(null, newToken)
 
-					// Обрабатываем очередь ожидающих запросов
-					processQueue(null, getItem('authData')?.accessToken)
-
-					// Повторяем оригинальный запрос с новым токеном
+					originalRequest.headers.set('Authorization', `Bearer ${newToken}`)
 					return baseFetcher(originalRequest)
 				} catch (error) {
-					// Если обновление токена не удалось, очищаем данные аутентификации
-					removeItem('authData')
-					authStore.getState().logout()
-
 					// Обрабатываем очередь с ошибкой
-					processQueue(error, undefined)
-
+					processQueue(error, null)
+					// Если обновление токена не удалось, очищаем данные аутентификации
+					removeAuthData()
 					// Перенаправляем на страницу логина или показываем ошибку
 					console.error('Token refresh failed:', error)
 					throw error

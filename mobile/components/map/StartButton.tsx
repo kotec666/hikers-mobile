@@ -1,4 +1,4 @@
-import { PropsWithChildren } from 'react'
+import { memo, PropsWithChildren } from 'react'
 import { cn } from '@/helpers/cn'
 import { Pressable, PressableProps, Text } from 'react-native'
 import { fontFamily } from '@/constants/Fonts'
@@ -7,9 +7,10 @@ export interface Props extends PropsWithChildren {
 	className?: string
 }
 
-export function StartButton(props: Props & PressableProps) {
+const StartButton = memo((props: Props & PressableProps) => {
 	const { children, className } = props
 
+	console.log('render StartButton')
 	return (
 		<Pressable
 			{...props}
@@ -20,4 +21,8 @@ export function StartButton(props: Props & PressableProps) {
 			</Text>
 		</Pressable>
 	)
-}
+})
+
+StartButton.displayName = 'StartButton'
+
+export default StartButton
