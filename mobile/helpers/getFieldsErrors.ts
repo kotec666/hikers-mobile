@@ -47,6 +47,22 @@ const errorFields: ErrorFields = {
         field: 'field_name',
         message: 'Не авторизован',
     },
+    [ERRORS.TIMEOUT_EXPIRED]: {
+        field: 'field_name',
+        message: 'TIMEOUT_EXPIRED',
+    },
+    [ERRORS.USER_IN_NOT_FINISHED_TRAINING]: {
+        field: 'field_name',
+        message: 'USER_IN_NOT_FINISHED_TRAINING',
+    },
+    [ERRORS.USER_IS_TRAINING_PARTICIPANT]: {
+        field: 'field_name',
+        message: 'USER_IS_TRAINING_PARTICIPANT',
+    },
+    [ERRORS.USER_IS_NOT_TRAINING_PARTICIPANT]: {
+        field: 'field_name',
+        message: 'USER_IS_NOT_TRAINING_PARTICIPANT',
+    }
 }
 /* prettier-ignore */
 

@@ -13,6 +13,7 @@ import { PolylineComponentInstanceRef, PolylineCustom } from '@/components/map/P
 import UserLocationMarker, {
 	UserLocationMarkerHandle
 } from '@/components/map/markers/UserLocationMarker/UserLocationMarker'
+import DebugMarker from '@/components/map/markers/DebugMarker'
 
 interface IProps {
 	maxMapHeight?: number
@@ -46,17 +47,25 @@ const MapComponentSegments = forwardRef<MapComponentSegmentsHandle, IProps>((pro
 	const mapRef = useRef<YamapRef>(null)
 	const isAnimationBlockedRef = useRef<boolean>(false)
 	const animationBlockTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
-	const mapInitialRegionSettingsRef = useRef<InitialRegion>(getMapSettings()).current
+	const mapInitialRegionSettingsRef = useRef<InitialRegion>(getMapSettings())
 
 	// Используем useState только для триггера рендера при добавлении НОВЫХ сегментов
 	const [, setForceRender] = useState(0)
+	const [rawPoints, setRawPoints] = useState<IWorkoutLocationStorageItem[]>([]) // @TODO удалить
 
 	const segmentsRef = useRef<Segment[]>([])
 	const transitionMarkersRef = useRef<TransitionMarker[]>([])
 	const processedLocationCountRef = useRef<number>(0)
 
+	const setRawPointsWithTimeout = (locations: IWorkoutLocationStorageItem[]) => {
+		// @TODO удалить
+		return setTimeout(() => setRawPoints(locations), 1000)
+	}
+
 	// ждёт и старые и новые точки (processedCount)
 	const updatePath = useCallback((locations: IWorkoutLocationStorageItem[]) => {
+		setRawPointsWithTimeout(locations) // @TODO удалить
+
 		// Если пришел пустой массив (или меньше чем было), значит сброс
 		if (!locations || locations.length === 0) {
 			segmentsRef.current = []
@@ -179,6 +188,8 @@ const MapComponentSegments = forwardRef<MapComponentSegmentsHandle, IProps>((pro
 			if (lastSegment && lastSegment.polylineRef.current) {
 				lastSegment.polylineRef.current.setNativeProps({ points: workingPoints })
 			}
+
+			setTimeout(() => setForceRender((prev) => prev + 1), 1000) // @TODO удалить
 		}
 	}, [])
 
@@ -278,7 +289,7 @@ const MapComponentSegments = forwardRef<MapComponentSegmentsHandle, IProps>((pro
 				<Yamap
 					ref={mapRef}
 					nightMode
-					initialRegion={mapInitialRegionSettingsRef}
+					initialRegion={mapInitialRegionSettingsRef.current}
 					style={{ flex: 1, maxHeight: props.maxMapHeight, minHeight: props.minMapHeight }}
 					logoPosition={{ horizontal: 'right', vertical: 'top' }}
 					showUserPosition={false}
@@ -291,12 +302,17 @@ const MapComponentSegments = forwardRef<MapComponentSegmentsHandle, IProps>((pro
 					}}
 					onCameraPositionChangeEnd={() => {
 						mapRef.current?.getCameraPosition((pos) => {
-							updateMapSettingsDebounced({
+							const newSettings = {
 								lat: pos.point.lat,
 								lon: pos.point.lon,
 								zoom: pos.zoom,
 								azimuth: pos.azimuth
-							})
+							}
+							updateMapSettingsDebounced(newSettings)
+							mapInitialRegionSettingsRef.current = {
+								...mapInitialRegionSettingsRef.current,
+								...newSettings
+							}
 						})
 					}}
 				>
@@ -327,6 +343,17 @@ const MapComponentSegments = forwardRef<MapComponentSegmentsHandle, IProps>((pro
 							<ResumeLocationMarker key={tm.id} position={tm.position} />
 						)
 					)}
+
+					{rawPoints.map((item, index) => (
+						<DebugMarker
+							key={index}
+							debugInfo={`relTs: ${item.relTs}`}
+							position={{
+								lat: item.locationObject.coords.latitude,
+								lon: item.locationObject.coords.longitude
+							}}
+						/>
+					))}
 
 					{/*<FinishLocationMarker position={{ lat: 53.374451, lon: 49.660469 }} />*/}
 				</Yamap>

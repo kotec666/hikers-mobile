@@ -10,13 +10,66 @@ export interface ITraining {
 	finishedAt: string | null
 }
 
+export interface ITrainingParticipant {
+	id: string
+	email: string
+	name: string | null
+	username: string | null
+	avatarFilename: string | null
+}
+
+export interface ITrainingPoint {
+	alt: number
+	lat: number
+	lng: number
+	paused: boolean
+	rel_ts: number
+	distance: number
+	speed_kmh: number
+}
+
+export interface ITrainingMetrics {
+	timeSec: number
+	avgSpeedMPerSec: number
+	avgTempoSecondsPerKm: number
+	distanceM: number
+	altitudeGainM: number
+	kkcal: number
+}
+
+export interface ITrainingRoute {
+	points: ITrainingPoint[]
+	createdAt: string
+	startedAt: string | null
+	finishedAt: string | null
+}
+
+export interface IParticipantTrainingRoute {
+	id: string
+	colorHex: string
+	user: ITrainingParticipant
+	route: ITrainingRoute
+	metrics: ITrainingMetrics
+}
+
+export interface IExtendedTrainingResponse {
+	id: string
+	type: TrainingType
+	creatorId: string
+	createdAt: string
+	startedAt: string
+	finishedAt: string | null
+	creator: ITrainingParticipant
+	participants: IParticipantTrainingRoute[]
+}
+
 // Получить историю тренировок (завершённые, где пользователь был участником)
 export const getMyHistory = async (): Promise<ITraining[]> => {
 	return (await fetcher.get(`trainings/history`)).json()
 }
 
 // Получить детали тренировки по ID
-export const getExtendedDetails = async (trainingId: string): Promise<ITraining[]> => {
+export const getExtendedDetails = async (trainingId: string): Promise<IExtendedTrainingResponse[]> => {
 	return (await fetcher.get(`trainings/extended/${trainingId}`)).json()
 }
 

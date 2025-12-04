@@ -3,8 +3,8 @@ import * as TaskManager from 'expo-task-manager'
 import { LocationActivityType, LocationObject } from 'expo-location'
 import { getWorkoutMeta, setWorkoutItems } from '@/store/workoutStorage'
 import { locationEmitter } from './locationEmitter'
-import { syncTraining } from '@/api/workout'
 import { mpsToKmph } from '@/helpers/mpsToKmph'
+import { syncTraining } from '@/api/workout'
 
 export const LOCATION_TASK_NAME = 'background-location-task'
 

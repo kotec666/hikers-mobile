@@ -93,7 +93,7 @@ export default function NewTraining() {
 		metricHeightRef,
 		accumulatedDistanceRef,
 		pointsRef,
-		initialMarkerLocationSetRef,
+		acceptLivePointsRef,
 		initialMarkerLocationState,
 		initialLocationsState,
 		isWorkoutStarted,
@@ -226,6 +226,7 @@ export default function NewTraining() {
 			if (!afterReboot) {
 				const newTraining = await startTraining({ type: workoutType, colorHex: randomHexColor() })
 				startAndStoreNewActiveWorkout(workoutType, newTraining.id)
+				acceptLivePointsRef.current = true // включаем live точки сразу после старта
 			}
 
 			await startHeadingTracking()
@@ -337,7 +338,7 @@ export default function NewTraining() {
 			await stopNotificationTimer()
 			// Полный сброс состояния карты и переменных
 			resetWorkoutState()
-			finishTraining()
+			await finishTraining()
 		} catch (e) {
 			console.error('handleClickEndWorkout error: ', e)
 		}
