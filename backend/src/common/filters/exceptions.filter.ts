@@ -2,6 +2,7 @@
 import { ExceptionFilter, Catch, ArgumentsHost, HttpException } from '@nestjs/common';
 import { Response } from 'express';
 import { DatabaseError } from 'pg';
+import { Logger } from 'nestjs-pino';
 
 // Пример формата ошибки на поле _email:${ERRORS.INVALID_EMAIL}
 
@@ -49,6 +50,8 @@ function parsePropertyMessages(messages: string[]): PropertyError[] {
 
 @Catch(HttpException, DatabaseError, Error)
 export class HttpExceptionFilter implements ExceptionFilter {
+	constructor(private readonly logger: Logger) {}
+
 	catch(exception: HttpException | Error, host: ArgumentsHost) {
 		const ctx = host.switchToHttp();
 		const response = ctx.getResponse<Response>();
@@ -71,7 +74,7 @@ export class HttpExceptionFilter implements ExceptionFilter {
 						statusCode,
 						message: message.startsWith('_')
 							? [parsePropertyMessage(message)]
-							: (statusCodeToError[statusCode] ?? ERRORS.UNKNOWN_ERROR),
+							: statusCodeToError[statusCode] ?? ERRORS.UNKNOWN_ERROR,
 					});
 				}
 
@@ -101,11 +104,13 @@ export class HttpExceptionFilter implements ExceptionFilter {
 					message: message.startsWith('_')
 						? [parsePropertyMessage(message)]
 						: ERRORS[message]
-							? message
-							: (statusCodeToError[exceptionStatus] ?? ERRORS.UNKNOWN_ERROR),
+						? message
+						: statusCodeToError[exceptionStatus] ?? ERRORS.UNKNOWN_ERROR,
 				});
 			}
 		}
+
+		this.logger.error(`Unhandled exception: ${JSON.stringify(exception)}`);
 
 		response.status(500).json({
 			statusCode: 500,

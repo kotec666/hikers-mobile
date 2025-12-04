@@ -184,7 +184,7 @@ export class TrainingsService {
 		} else {
 			await this.db.db.insert(trainingRoutes).values({
 				participantId: participant.id,
-				points: metrics, // @TODO distance самому считать, с фронта не будет
+				points: metrics,
 
 				createdAt: new Date(),
 			});
