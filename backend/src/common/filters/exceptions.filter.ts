@@ -74,7 +74,7 @@ export class HttpExceptionFilter implements ExceptionFilter {
 						statusCode,
 						message: message.startsWith('_')
 							? [parsePropertyMessage(message)]
-							: (statusCodeToError[statusCode] ?? ERRORS.UNKNOWN_ERROR),
+							: statusCodeToError[statusCode] ?? ERRORS.UNKNOWN_ERROR,
 					});
 				}
 
@@ -104,13 +104,13 @@ export class HttpExceptionFilter implements ExceptionFilter {
 					message: message.startsWith('_')
 						? [parsePropertyMessage(message)]
 						: ERRORS[message]
-							? message
-							: (statusCodeToError[exceptionStatus] ?? ERRORS.UNKNOWN_ERROR),
+						? message
+						: statusCodeToError[exceptionStatus] ?? ERRORS.UNKNOWN_ERROR,
 				});
 			}
 		}
 
-		this.logger.error('Unhandled exception:', exception);
+		this.logger.error(`Unhandled exception: ${JSON.stringify(exception)}`);
 
 		response.status(500).json({
 			statusCode: 500,

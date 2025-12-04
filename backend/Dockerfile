@@ -8,7 +8,9 @@ RUN apt install -y openssl
 RUN npm install -g @nestjs/cli
 
 COPY ./package.json .
-RUN yarn install --force
+
+# yarn install --force пока не надо
+RUN yarn install
 
 COPY . .
 
