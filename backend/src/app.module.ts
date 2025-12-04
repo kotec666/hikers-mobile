@@ -18,7 +18,8 @@ import { ActivitiesModule } from './modules/activities/activities.module';
 import { ProfileModule } from './modules/profile/profile.module';
 import { TrainingsModule } from './modules/trainings/trainings.module';
 import { config } from 'dotenv';
-config();
+
+config({ quiet: true });
 
 @Module({
 	imports: [

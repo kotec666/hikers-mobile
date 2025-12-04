@@ -15,6 +15,11 @@ async function bootstrap() {
 		bufferLogs: true,
 	});
 
+	useContainer(app.select(AppModule), { fallbackOnErrors: true });
+
+	const logger = app.get(Logger);
+	const port = parseInt(process.env.PORT ?? '3000');
+
 	app.useGlobalPipes(
 		new ValidationPipe({
 			whitelist: true,
@@ -22,18 +27,13 @@ async function bootstrap() {
 			transform: true,
 		}),
 	);
-	app.useGlobalFilters(new HttpExceptionFilter());
+	app.useGlobalFilters(new HttpExceptionFilter(logger));
 
 	app.enableCors({
 		origin: `*`,
 		credentials: true,
 		methods: '*',
 	});
-
-	useContainer(app.select(AppModule), { fallbackOnErrors: true });
-
-	const logger = app.get(Logger);
-	const port = parseInt(process.env.PORT ?? '3000');
 
 	const document = await NestiaSwaggerComposer.document(app, {
 		openapi: '3.1',
