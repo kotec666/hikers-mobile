@@ -1,15 +1,17 @@
 {
 	"name": "frontend",
+	"type": "module",
 	"version": "0.1.0",
 	"private": true,
 	"scripts": {
 		"dev": "next dev",
 		"build": "next build",
 		"start": "next start -p 4173",
-		"lint": "next lint",
+		"lint": "yarn run eslint",
 		"format": "prettier --write \"src/**/*.{ts,tsx}\" --ignore-path src/shared/*"
 	},
 	"dependencies": {
+		"@next/eslint-plugin-next": "^16.0.7",
 		"@types/leaflet": "^1.9.21",
 		"autoprefixer": "10.4.17",
 		"date-fns": "^4.1.0",
@@ -27,10 +29,11 @@
 		"@types/node": "^20",
 		"@types/react": "^19",
 		"@types/react-dom": "^19",
-		"eslint": "^9.32.0",
+		"eslint": "9.39.1",
+		"eslint-config-next": "^16.0.7",
 		"eslint-config-prettier": "^10.1.8",
-		"eslint-plugin-prettier": "^5.5.3",
-		"eslint-plugin-unused-imports": "^4.1.4",
+		"eslint-plugin-prettier": "5.5.4",
+		"eslint-plugin-unused-imports": "4.3.0",
 		"prettier": "^3.6.2",
 		"typescript": "^5",
 		"typescript-eslint": "^8.38.0"
