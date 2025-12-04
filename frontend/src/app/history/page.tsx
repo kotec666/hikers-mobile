@@ -1,12 +1,11 @@
 'use client'
 import React, { useState } from 'react'
-import { MapContainer, Marker, Polyline, Popup, TileLayer } from 'react-leaflet'
 import 'leaflet/dist/leaflet.css'
 import { getExtendedDetails, getMyHistory, ITraining, ITrainingPoint } from '../../../api/workout'
 import { format } from 'date-fns'
-import { FitMapToRoute } from '@/app/history/components/FitToMapRoute'
-import { svgIcon } from '@/app/history/components/mapIcons'
 import './map.css'
+import dynamic from 'next/dynamic'
+const MapComponent = dynamic(() => import('./components/MapComponent'), { ssr: false })
 
 export default function Page() {
 	const [token, setToken] = useState('')
@@ -79,50 +78,7 @@ export default function Page() {
 
 				{/* Map */}
 				<div className="flex-1 h-full">
-					<MapContainer center={[51.505, -0.09]} zoom={13} className="h-full w-full">
-						<TileLayer url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png" />
-						{Boolean(points.length) && (
-							<>
-								<FitMapToRoute points={points} />
-								<Polyline pathOptions={{ color: 'blue' }} positions={points} />
-
-								{points.map((point) => (
-									<Marker
-										key={`${point.lat}-${point.lng}-${point.rel_ts}`}
-										icon={svgIcon}
-										position={[point.lat, point.lng]}
-									>
-										<Popup className="bg-white p-3 rounded-lg shadow-lg">
-											<div className="space-y-1 text-sm">
-												<div>
-													<span className="font-semibold">Высота:</span> {point.alt} м
-												</div>
-												<div>
-													<span className="font-semibold">Координаты:</span> {point.lat},{' '}
-													{point.lng}
-												</div>
-												<div>
-													<span className="font-semibold">Скорость:</span> {point.speed_kmh}{' '}
-													км/ч
-												</div>
-												<div>
-													<span className="font-semibold">Пауза:</span>{' '}
-													{point.paused ? 'Да' : 'Нет'}
-												</div>
-												<div>
-													<span className="font-semibold">Относительное время:</span>{' '}
-													{point.rel_ts}
-												</div>
-												<div>
-													<span className="font-semibold">Дистанция:</span> {point.distance}
-												</div>
-											</div>
-										</Popup>
-									</Marker>
-								))}
-							</>
-						)}
-					</MapContainer>
+					<MapComponent points={points} />
 				</div>
 			</div>
 		</div>
