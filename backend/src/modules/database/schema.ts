@@ -211,8 +211,8 @@ export const trainingRoutes = pgTable('training_routes', {
 		.references(() => trainingParticipants.id),
 	points: jsonb('points').default([]).$type<TrainingRouteNode[]>(),
 	createdAt: timestamp('created_at').defaultNow().notNull(),
-	startedAt: timestamp('started_at'),
-	finishedAt: timestamp('finished_at'),
+	startedAt: timestamp('started_at'), // @TODO а надо ли?
+	finishedAt: timestamp('finished_at'), // @TODO а надо ли?
 });
 
 // Training Metrics

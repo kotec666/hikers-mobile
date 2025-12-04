@@ -141,20 +141,33 @@ export class TrainingsService {
 		}
 
 		const points: TrainingRouteNode[] = [];
-		dto.metrics.reduce((prev, curr) => {
-			points.push({
-				rel_ts: curr.relTs,
-				distance: haversineDistance(curr.lat, curr.lng, prev.lat, prev.lng),
-				speed_kmh: curr.speed_kmh,
-				alt: curr.alt,
+		if (dto.metrics.length > 1) {
+			dto.metrics.reduce((prev, curr) => {
+				points.push({
+					rel_ts: curr.relTs,
+					distance: haversineDistance(curr.lat, curr.lng, prev.lat, prev.lng),
+					speed_kmh: curr.speed_kmh,
+					alt: curr.alt,
 
-				paused: curr.paused,
-				lat: curr.lat,
-				lng: curr.lng,
+					paused: curr.paused,
+					lat: curr.lat,
+					lng: curr.lng,
+				});
+
+				return curr;
 			});
+		} else if (dto.metrics.length === 1) {
+			points.push({
+				rel_ts: dto.metrics[0].relTs,
+				distance: 0,
+				speed_kmh: dto.metrics[0].speed_kmh,
+				alt: dto.metrics[0].alt,
 
-			return curr;
-		});
+				paused: dto.metrics[0].paused,
+				lat: dto.metrics[0].lat,
+				lng: dto.metrics[0].lng,
+			});
+		}
 
 		await this.upsertRoute(training.participant, points);
 
@@ -168,8 +181,7 @@ export class TrainingsService {
 				points: trainingRoutes.points,
 			})
 			.from(trainingRoutes)
-			.innerJoin(trainingParticipants, eq(trainingParticipants.userId, participant.user.id))
-			.where(eq(trainingRoutes.participantId, trainingParticipants.id))
+			.where(eq(trainingRoutes.participantId, participant.id))
 			.limit(1);
 
 		if (trainingRoute) {
@@ -531,17 +543,19 @@ export class TrainingsService {
 		let maxAltitudeM = 0;
 		let pausedTimeMs = 0;
 
-		participant.route?.points?.reduce((prev, curr) => {
-			distanceM += curr.distance;
-			maxAltitudeM = Math.max(curr.alt, maxAltitudeM);
+		if (participant.route?.points && participant.route?.points?.length > 0) {
+			participant.route?.points?.reduce((prev, curr) => {
+				distanceM += curr.distance;
+				maxAltitudeM = Math.max(curr.alt, maxAltitudeM);
 
-			if (prev.paused) {
-				pausedTimeMs += curr.rel_ts - prev.rel_ts;
-				pausedDistanceM += prev.distance;
-			}
+				if (prev.paused) {
+					pausedTimeMs += curr.rel_ts - prev.rel_ts;
+					pausedDistanceM += prev.distance;
+				}
 
-			return curr;
-		});
+				return curr;
+			});
+		}
 
 		distanceM = Math.max(round(distanceM - pausedDistanceM), 0);
 		const distanceKmh = round(distanceM / 1000, 2);
