@@ -1,10 +1,10 @@
 'use client'
 import React, { useState } from 'react'
 import 'leaflet/dist/leaflet.css'
-import { getExtendedDetails, getMyHistory, ITraining, ITrainingPoint } from '../../../api/workout'
 import { format } from 'date-fns'
 import './map.css'
 import dynamic from 'next/dynamic'
+import { getExtendedDetails, getMyHistory, ITraining, ITrainingPoint } from '@/api/workout'
 const MapComponent = dynamic(() => import('./components/MapComponent'), { ssr: false })
 
 export default function Page() {
@@ -31,7 +31,7 @@ export default function Page() {
 					<input
 						value={token}
 						onChange={(e) => setToken(e.target.value)}
-						className="border border-gray-300 rounded-xl px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
+						className="border border-gray-300 rounded-xl px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500 placeholder-gray-600 text-gray-800"
 						placeholder="Введите токен"
 					/>
 				</div>
