@@ -19,7 +19,7 @@ export async function startTracking() {
 	if (!(await isTrackingLocation())) {
 		await Location.startLocationUpdatesAsync(LOCATION_TASK_NAME, {
 			accuracy: Location.Accuracy.BestForNavigation,
-			//timeInterval: 15 * 1000, // 15 sec.
+			// timeInterval: 15 * 1000, // 15 sec.
 			timeInterval: 3 * 1000, // 3 sec.
 			// android behavior
 			foregroundService: {
@@ -28,7 +28,7 @@ export async function startTracking() {
 				notificationColor: 'rgba(0,0,0,0)',
 				killServiceOnDestroy: false
 			},
-			deferredUpdatesDistance: 1,
+			deferredUpdatesDistance: 5,
 			// ios behavior
 			activityType: LocationActivityType.Fitness,
 			pausesUpdatesAutomatically: false,
@@ -104,8 +104,7 @@ TaskManager.defineTask(LOCATION_TASK_NAME, async ({ data, error }) => {
 		const preparedLocations = savedLocations.map((item) => ({
 			relTs: item.relTs,
 			alt: item.locationObject.coords.altitude || 0,
-			//speed_kmh: mpsToKmph(item.locationObject.coords.speed || 0),
-			speed_kmh: item.locationObject.timestamp,
+			speed_kmh: mpsToKmph(item.locationObject.coords.speed || 0),
 			paused: item.isPausedPoint,
 			lat: item.locationObject.coords.latitude,
 			lng: item.locationObject.coords.longitude

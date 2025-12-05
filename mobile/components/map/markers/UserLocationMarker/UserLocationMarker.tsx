@@ -5,7 +5,7 @@ import UserWithCircleSvg from '@/components/svg/UserWithCircleSvg'
 import AccuracyCircle, { AccuracyCircleHandle } from '@/components/map/markers/UserLocationMarker/AccuracyCircle'
 
 interface IProps {
-	initialPosition: Point
+	initialPosition?: Point | null
 	triangleScale?: number
 }
 
@@ -16,7 +16,7 @@ export interface UserLocationMarkerHandle {
 }
 
 const UserLocationMarker = forwardRef<UserLocationMarkerHandle, IProps>((props, ref) => {
-	const initialPoint = useRef(props.initialPosition).current
+	const initialPoint = useRef<Point | null>(props.initialPosition).current
 	const markerRef = useRef<MarkerRef>(null)
 	const accuracyRef = useRef<AccuracyCircleHandle>(null)
 	const timeoutRef = useRef<NodeJS.Timeout | null>(null)
@@ -96,6 +96,6 @@ export default React.memo(
 	UserLocationMarker,
 	(prev, next) =>
 		prev.triangleScale === next.triangleScale &&
-		prev.initialPosition.lat === next.initialPosition.lat &&
-		prev.initialPosition.lon === next.initialPosition.lon
+		prev.initialPosition?.lat === next.initialPosition?.lat &&
+		prev.initialPosition?.lon === next.initialPosition?.lon
 )

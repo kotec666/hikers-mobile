@@ -13,7 +13,6 @@ import { PolylineComponentInstanceRef, PolylineCustom } from '@/components/map/P
 import UserLocationMarker, {
 	UserLocationMarkerHandle
 } from '@/components/map/markers/UserLocationMarker/UserLocationMarker'
-import DebugMarker from '@/components/map/markers/DebugMarker'
 
 interface IProps {
 	maxMapHeight?: number
@@ -48,29 +47,23 @@ const MapComponentSegments = forwardRef<MapComponentSegmentsHandle, IProps>((pro
 	const isAnimationBlockedRef = useRef<boolean>(false)
 	const animationBlockTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
 	const mapInitialRegionSettingsRef = useRef<InitialRegion>(getMapSettings())
+	const latestUserMarkerLocationRef = useRef<Point>(null)
 
 	// Используем useState только для триггера рендера при добавлении НОВЫХ сегментов
 	const [, setForceRender] = useState(0)
-	const [rawPoints, setRawPoints] = useState<IWorkoutLocationStorageItem[]>([]) // @TODO удалить
 
 	const segmentsRef = useRef<Segment[]>([])
 	const transitionMarkersRef = useRef<TransitionMarker[]>([])
 	const processedLocationCountRef = useRef<number>(0)
 
-	const setRawPointsWithTimeout = (locations: IWorkoutLocationStorageItem[]) => {
-		// @TODO удалить
-		return setTimeout(() => setRawPoints(locations), 1000)
-	}
-
 	// ждёт и старые и новые точки (processedCount)
 	const updatePath = useCallback((locations: IWorkoutLocationStorageItem[]) => {
-		setRawPointsWithTimeout(locations) // @TODO удалить
-
 		// Если пришел пустой массив (или меньше чем было), значит сброс
 		if (!locations || locations.length === 0) {
 			segmentsRef.current = []
 			transitionMarkersRef.current = []
 			processedLocationCountRef.current = 0
+			latestUserMarkerLocationRef.current = null
 			setForceRender((prev) => prev + 1)
 			return
 		}
@@ -80,6 +73,13 @@ const MapComponentSegments = forwardRef<MapComponentSegmentsHandle, IProps>((pro
 		if (locations.length <= processedCount) {
 			// Ничего нового (или пришел старый стейт), игнорируем
 			return
+		}
+
+		// Установка актуальной позиции для метки пользователя
+		const latestLocation = locations[locations.length - 1]
+		latestUserMarkerLocationRef.current = {
+			lat: latestLocation.locationObject.coords.latitude,
+			lon: latestLocation.locationObject.coords.longitude
 		}
 
 		// Берем только хвост массива
@@ -188,8 +188,6 @@ const MapComponentSegments = forwardRef<MapComponentSegmentsHandle, IProps>((pro
 			if (lastSegment && lastSegment.polylineRef.current) {
 				lastSegment.polylineRef.current.setNativeProps({ points: workingPoints })
 			}
-
-			setTimeout(() => setForceRender((prev) => prev + 1), 1000) // @TODO удалить
 		}
 	}, [])
 
@@ -271,6 +269,7 @@ const MapComponentSegments = forwardRef<MapComponentSegmentsHandle, IProps>((pro
 
 	const shouldRenderMap =
 		(!!props.maxMapHeight && props.maxMapHeight > 0) || (!!props.maxContainerHeight && props.maxContainerHeight > 0)
+	const markerPosition = latestUserMarkerLocationRef.current || props.initialMarkerLocation
 
 	console.log('Render MapComponent')
 	return (
@@ -316,12 +315,8 @@ const MapComponentSegments = forwardRef<MapComponentSegmentsHandle, IProps>((pro
 						})
 					}}
 				>
-					{/*<DirectionMarkersDebug center={{ lat: 53.374451, lon: 49.460469 }} />*/}
-					{props.initialMarkerLocation && (
-						<UserLocationMarker
-							ref={props.userLocationMarkerRef}
-							initialPosition={props.initialMarkerLocation}
-						/>
+					{markerPosition && (
+						<UserLocationMarker ref={props.userLocationMarkerRef} initialPosition={markerPosition} />
 					)}
 
 					{startPosition && <StartLocationMarker position={startPosition} />}
@@ -343,17 +338,6 @@ const MapComponentSegments = forwardRef<MapComponentSegmentsHandle, IProps>((pro
 							<ResumeLocationMarker key={tm.id} position={tm.position} />
 						)
 					)}
-
-					{rawPoints.map((item, index) => (
-						<DebugMarker
-							key={index}
-							debugInfo={`relTs: ${item.relTs}`}
-							position={{
-								lat: item.locationObject.coords.latitude,
-								lon: item.locationObject.coords.longitude
-							}}
-						/>
-					))}
 
 					{/*<FinishLocationMarker position={{ lat: 53.374451, lon: 49.660469 }} />*/}
 				</Yamap>
