@@ -56,7 +56,7 @@ const securityHeaders = [
 	} // () - none
 ]
 
-export function middleware(request: NextRequest) {
+export function proxy(request: NextRequest) {
 	const { nextUrl } = request
 	const token = request.cookies.get('token')?.value
 	const isDev = env.NODE_ENV === 'development'
