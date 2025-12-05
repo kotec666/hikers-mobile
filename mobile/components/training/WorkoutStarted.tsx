@@ -1,4 +1,4 @@
-import React, { useCallback, useMemo, useState } from 'react'
+import React, { RefObject, useCallback, useMemo, useState } from 'react'
 import EndTrainingModal from '@/components/training/EndTrainingModal'
 import { Container } from '@/components/ui/Container'
 import { Dimensions, Text, View } from 'react-native'
@@ -23,6 +23,7 @@ interface IProps {
 	// altitudeDebug: number | null
 	// altitudeAccuracyDebug: number | null
 	initialMarkerLocation?: Point | null
+	latestUserMarkerLocationRef?: RefObject<Point | null>
 	initialLocationsState: IWorkoutLocationStorageItem[]
 
 	isPaused: boolean
@@ -95,6 +96,7 @@ const WorkoutStarted = (props: IProps) => {
 			<MapComponentSegments
 				ref={props.mapComponentRef}
 				userLocationMarkerRef={props.userLocationMarkerRef}
+				latestUserMarkerLocationRef={props.latestUserMarkerLocationRef}
 				initialMarkerLocation={props.initialMarkerLocation}
 				initialLocations={props.initialLocationsState}
 				maxContainerHeight={mapViewHidden ? maxMapHeight : 0}

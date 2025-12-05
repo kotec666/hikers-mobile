@@ -42,6 +42,7 @@ export function useLocationData(
 	// Refs для UI
 	const mapComponentRef = useRef<MapComponentSegmentsHandle>(null)
 	const userLocationMarkerRef = useRef<UserLocationMarkerHandle>(null)
+	const latestUserMarkerLocationRef = useRef<Point>(null)
 	const isMountedRef = useRef<boolean>(true)
 
 	// Refs для метрик
@@ -212,6 +213,7 @@ export function useLocationData(
 			// UI updates
 			userLocationMarkerRef.current?.setAccuracy(accuracy)
 			userLocationMarkerRef.current?.setMarkerPosition(newLatLon)
+			latestUserMarkerLocationRef.current = newLatLon
 			mapComponentRef.current?.updatePath(pointsRef.current)
 			// Центрируем карту
 			mapComponentRef.current?.setMapCenter(newLatLon, 1.2)
@@ -329,6 +331,7 @@ export function useLocationData(
 					const { latitude, longitude } = last.locationObject.coords
 					const pos = { lat: latitude, lon: longitude }
 					userLocationMarkerRef.current?.setMarkerPosition(pos)
+					latestUserMarkerLocationRef.current = pos
 					mapComponentRef.current?.setMapCenter(pos, 0)
 				}
 			}
@@ -385,6 +388,7 @@ export function useLocationData(
 
 					userLocationMarkerRef.current?.setAccuracy(accuracy)
 					userLocationMarkerRef.current?.setMarkerPosition(pos)
+					latestUserMarkerLocationRef.current = pos
 
 					updateRealtimeMetrics(speed ?? 0)
 				}
@@ -526,6 +530,7 @@ export function useLocationData(
 	return {
 		mapComponentRef,
 		userLocationMarkerRef,
+		latestUserMarkerLocationRef,
 		metricSpeedRef,
 		metricDistanceRef,
 		metricCaloriesRef,

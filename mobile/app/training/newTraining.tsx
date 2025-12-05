@@ -87,6 +87,7 @@ export default function NewTraining() {
 	const {
 		mapComponentRef,
 		userLocationMarkerRef,
+		latestUserMarkerLocationRef,
 		metricSpeedRef,
 		metricDistanceRef,
 		metricCaloriesRef,
@@ -365,6 +366,7 @@ export default function NewTraining() {
 							initialLocationsState={initialLocationsState}
 							initialMarkerLocation={initialMarkerLocationState}
 							userLocationMarkerRef={userLocationMarkerRef}
+							latestUserMarkerLocationRef={latestUserMarkerLocationRef}
 						/>
 					) : (
 						<NewWorkout

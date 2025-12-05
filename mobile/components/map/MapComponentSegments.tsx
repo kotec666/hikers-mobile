@@ -21,6 +21,7 @@ interface IProps {
 	rounded?: number
 	initialMarkerLocation?: Point | null
 	userLocationMarkerRef?: React.RefObject<UserLocationMarkerHandle | null>
+	latestUserMarkerLocationRef?: React.RefObject<Point | null> | undefined
 	initialLocations?: IWorkoutLocationStorageItem[]
 }
 
@@ -47,7 +48,6 @@ const MapComponentSegments = forwardRef<MapComponentSegmentsHandle, IProps>((pro
 	const isAnimationBlockedRef = useRef<boolean>(false)
 	const animationBlockTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
 	const mapInitialRegionSettingsRef = useRef<InitialRegion>(getMapSettings())
-	const latestUserMarkerLocationRef = useRef<Point>(null)
 
 	// Используем useState только для триггера рендера при добавлении НОВЫХ сегментов
 	const [, setForceRender] = useState(0)
@@ -63,7 +63,6 @@ const MapComponentSegments = forwardRef<MapComponentSegmentsHandle, IProps>((pro
 			segmentsRef.current = []
 			transitionMarkersRef.current = []
 			processedLocationCountRef.current = 0
-			latestUserMarkerLocationRef.current = null
 			setForceRender((prev) => prev + 1)
 			return
 		}
@@ -73,13 +72,6 @@ const MapComponentSegments = forwardRef<MapComponentSegmentsHandle, IProps>((pro
 		if (locations.length <= processedCount) {
 			// Ничего нового (или пришел старый стейт), игнорируем
 			return
-		}
-
-		// Установка актуальной позиции для метки пользователя
-		const latestLocation = locations[locations.length - 1]
-		latestUserMarkerLocationRef.current = {
-			lat: latestLocation.locationObject.coords.latitude,
-			lon: latestLocation.locationObject.coords.longitude
 		}
 
 		// Берем только хвост массива
@@ -269,8 +261,8 @@ const MapComponentSegments = forwardRef<MapComponentSegmentsHandle, IProps>((pro
 
 	const shouldRenderMap =
 		(!!props.maxMapHeight && props.maxMapHeight > 0) || (!!props.maxContainerHeight && props.maxContainerHeight > 0)
-	const markerPosition = latestUserMarkerLocationRef.current || props.initialMarkerLocation
 
+	const markerPosition = props.latestUserMarkerLocationRef?.current || props.initialMarkerLocation
 	console.log('Render MapComponent')
 	return (
 		<View
@@ -315,9 +307,7 @@ const MapComponentSegments = forwardRef<MapComponentSegmentsHandle, IProps>((pro
 						})
 					}}
 				>
-					{markerPosition && (
-						<UserLocationMarker ref={props.userLocationMarkerRef} initialPosition={markerPosition} />
-					)}
+					<UserLocationMarker ref={props.userLocationMarkerRef} initialPosition={markerPosition} />
 
 					{startPosition && <StartLocationMarker position={startPosition} />}
 
@@ -355,7 +345,8 @@ export default React.memo(MapComponentSegments, (prev, next) => {
 		prev.minMapHeight === next.minMapHeight &&
 		prev.rounded === next.rounded &&
 		prev.initialMarkerLocation === next.initialMarkerLocation &&
-		prev.userLocationMarkerRef === next.userLocationMarkerRef
+		prev.userLocationMarkerRef === next.userLocationMarkerRef &&
+		prev.latestUserMarkerLocationRef === next.latestUserMarkerLocationRef
 
 	if (!layoutPropsEqual) {
 		return false
