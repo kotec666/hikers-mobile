@@ -16,6 +16,7 @@ import { CommonDto } from 'src/common/dto/common.dto';
 import { TrainingType } from '@shared/enums';
 import { round, clampToPg } from '@helpers';
 import { calculateCalories, haversineDistance } from '@shared/helpers';
+import { desc } from '../database/extensions';
 
 const MAX_TIME_TO_SYNC_AFTER_FINISH_TRAINING = 60 * 1000; // 1 минута
 
@@ -422,7 +423,8 @@ export class TrainingsService {
 				finishedAt: training.finishedAt,
 			})
 			.from(training)
-			.leftJoin(trainingParticipants, eq(trainingParticipants.trainingId, training.id));
+			.leftJoin(trainingParticipants, eq(trainingParticipants.trainingId, training.id))
+			.orderBy(desc(training.finishedAt, 'first'));
 
 		if (types) {
 			query.where(and(inArray(training.type, types), eq(trainingParticipants.userId, userId)));
