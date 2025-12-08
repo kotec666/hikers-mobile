@@ -9,11 +9,13 @@ import MetricCalories, { MetricCaloriesHandle } from '@/components/training/tabs
 import MetricHeight, { MetricHeightHandle } from '@/components/training/tabs/metrics/MetricHeight'
 import { TrainingType } from '@shared/enums'
 import { useWorkoutTimer } from '@/hooks/useWorkoutTimer'
+import MetricAvgSpeed, { MetricAvgSpeedHandle } from '@/components/training/tabs/metrics/MetricAvgSpeed'
 
 interface IProps {
 	workoutType: TrainingType
 	mapViewHidden: boolean
 	isPaused: boolean
+	metricAvgSpeedRef: React.RefObject<MetricAvgSpeedHandle | null>
 	metricSpeedRef: React.RefObject<MetricSpeedHandle | null>
 	metricDistanceRef: React.RefObject<MetricDistanceHandle | null>
 	metricCaloriesRef: React.RefObject<MetricCaloriesHandle | null>
@@ -52,7 +54,7 @@ const MetricsTab = memo((props: IProps) => {
 					<MetricTime isPaused={props.isPaused} workoutTimeFormatted={workoutTime.formatted} />
 				)}
 				<MetricCell mapViewHidden={props.mapViewHidden} align="start">
-					<MetricSpeed ref={props.metricSpeedRef} isPaused={props.isPaused} />
+					<MetricAvgSpeed ref={props.metricAvgSpeedRef} isPaused={props.isPaused} />
 				</MetricCell>
 				<MetricCell mapViewHidden={props.mapViewHidden} align="center">
 					<MetricDistance ref={props.metricDistanceRef} isPaused={props.isPaused} />
@@ -64,8 +66,15 @@ const MetricsTab = memo((props: IProps) => {
 						workoutTimeMs={workoutTime.ms}
 					/>
 				</MetricCell>
-				{!props.mapViewHidden && <MetricCalories ref={props.metricCaloriesRef} isPaused={props.isPaused} />}
-				{!props.mapViewHidden && <MetricHeight ref={props.metricHeightRef} isPaused={props.isPaused} />}
+				<View style={{ display: props.mapViewHidden ? 'none' : 'flex' }}>
+					<MetricSpeed ref={props.metricSpeedRef} isPaused={props.isPaused} />
+				</View>
+				<View style={{ display: props.mapViewHidden ? 'none' : 'flex' }}>
+					<MetricCalories ref={props.metricCaloriesRef} isPaused={props.isPaused} />
+				</View>
+				<View style={{ display: props.mapViewHidden ? 'none' : 'flex' }}>
+					<MetricHeight ref={props.metricHeightRef} isPaused={props.isPaused} />
+				</View>
 			</View>
 		</View>
 	)

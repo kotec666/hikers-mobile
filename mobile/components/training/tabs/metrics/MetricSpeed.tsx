@@ -11,7 +11,7 @@ export interface MetricSpeedHandle {
 }
 
 const MetricSpeed = forwardRef<MetricSpeedHandle, IProps>((props, ref) => {
-	const [speedKmh, setSpeedKmh] = useState('0 км/ч')
+	const [speedKmh, setSpeedKmh] = useState('0км/ч')
 
 	useImperativeHandle(ref, () => ({
 		setSpeed: (speed: number) => {

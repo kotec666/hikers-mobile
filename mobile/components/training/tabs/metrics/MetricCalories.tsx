@@ -8,15 +8,15 @@ interface IProps {
 }
 
 export interface MetricCaloriesHandle {
-	setCalories: (accumulatedDistance: number, timeElapsed: number, workoutType: TrainingType) => void
+	updateCalories: (accumulatedDistance: number, timeElapsed: number, workoutType: TrainingType) => void
 }
 
 const MetricCalories = forwardRef<MetricCaloriesHandle, IProps>((props, ref) => {
 	const [calories, setCalories] = useState(0)
 
 	useImperativeHandle(ref, () => ({
-		setCalories: (accumulatedDistance, timeElapsed, workoutType) => {
-			setCalories(calculateCalories(accumulatedDistance, timeElapsed, workoutType, 70)) // @TODO вес пользователя)
+		updateCalories: (accumulatedDistance, timeElapsed, workoutType) => {
+			setCalories(calculateCalories(timeElapsed, accumulatedDistance, workoutType, 70)) // @TODO вес пользователя
 		}
 	}))
 

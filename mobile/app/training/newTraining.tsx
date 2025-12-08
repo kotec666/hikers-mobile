@@ -89,6 +89,7 @@ export default function NewTraining() {
 		mapComponentRef,
 		userLocationMarkerRef,
 		latestUserMarkerLocationRef,
+		metricAvgSpeedRef,
 		metricSpeedRef,
 		metricDistanceRef,
 		metricCaloriesRef,
@@ -398,6 +399,7 @@ export default function NewTraining() {
 							workoutType={chosenWorkout.type}
 							isPaused={isPaused}
 							mapComponentRef={mapComponentRef}
+							metricAvgSpeedRef={metricAvgSpeedRef}
 							metricSpeedRef={metricSpeedRef}
 							metricDistanceRef={metricDistanceRef}
 							metricCaloriesRef={metricCaloriesRef}

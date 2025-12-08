@@ -13,6 +13,7 @@ import { MetricCaloriesHandle } from '@/components/training/tabs/metrics/MetricC
 import { MetricHeightHandle } from '@/components/training/tabs/metrics/MetricHeight'
 import { calculateTotalDistance } from '@/helpers/distance'
 import { MapComponentSegmentsHandle } from '@/components/map/MapComponentSegments'
+import { MetricAvgSpeedHandle } from '@/components/training/tabs/metrics/MetricAvgSpeed'
 
 export function useLocationTracking() {
 	const onStartTracking = useCallback(async () => {
@@ -46,6 +47,7 @@ export function useLocationData(
 	const isMountedRef = useRef<boolean>(true)
 
 	// Refs для метрик
+	const metricAvgSpeedRef = useRef<MetricAvgSpeedHandle>(null)
 	const metricSpeedRef = useRef<MetricSpeedHandle>(null)
 	const metricDistanceRef = useRef<MetricDistanceHandle>(null)
 	const metricCaloriesRef = useRef<MetricCaloriesHandle>(null)
@@ -168,7 +170,7 @@ export function useLocationData(
 			metricDistanceRef.current?.setDistance(accumulatedDistanceRef.current)
 
 			// 3. Калории
-			let timeElapsed = 0
+			let timeElapsed = 0 // в миллисекундах
 			if (meta) {
 				if (meta.isPaused && meta.lastPauseAt) {
 					timeElapsed = meta.lastPauseAt - meta.startedAt - meta.totalPausedMs
@@ -177,8 +179,19 @@ export function useLocationData(
 				}
 			}
 
-			metricCaloriesRef.current?.setCalories(accumulatedDistanceRef.current, timeElapsed, workoutType)
-			// 4. Высота
+			metricCaloriesRef.current?.updateCalories(accumulatedDistanceRef.current, timeElapsed, workoutType)
+
+			// 4. Средняя скорость
+			let avgKmh = 0
+			if (timeElapsed > 0) {
+				avgKmh = (accumulatedDistanceRef.current * 3600) / timeElapsed // distance(m) → km/h
+			}
+
+			if (!Number.isFinite(avgKmh) || avgKmh < 0) avgKmh = 0
+
+			metricAvgSpeedRef.current?.setAvgSpeed(avgKmh)
+
+			// 5. Высота
 			metricHeightRef.current?.updateHeight(pointsRef.current)
 		},
 		[workoutType, isPausedRef]
@@ -435,8 +448,9 @@ export function useLocationData(
 
 		// 4. Сброс метрик
 		metricSpeedRef.current?.setSpeed(0)
+		metricAvgSpeedRef.current?.setAvgSpeed(0)
 		metricDistanceRef.current?.setDistance(0)
-		metricCaloriesRef.current?.setCalories(0, 0, workoutType)
+		metricCaloriesRef.current?.updateCalories(0, 0, workoutType)
 		metricHeightRef.current?.updateHeight([])
 	}, [workoutType])
 
@@ -531,6 +545,7 @@ export function useLocationData(
 		mapComponentRef,
 		userLocationMarkerRef,
 		latestUserMarkerLocationRef,
+		metricAvgSpeedRef,
 		metricSpeedRef,
 		metricDistanceRef,
 		metricCaloriesRef,

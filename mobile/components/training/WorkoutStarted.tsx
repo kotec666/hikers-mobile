@@ -16,6 +16,7 @@ import { MetricDistanceHandle } from '@/components/training/tabs/metrics/MetricD
 import { MetricCaloriesHandle } from '@/components/training/tabs/metrics/MetricCalories'
 import { MetricHeightHandle } from '@/components/training/tabs/metrics/MetricHeight'
 import MapComponentSegments, { MapComponentSegmentsHandle } from '@/components/map/MapComponentSegments'
+import { MetricAvgSpeedHandle } from '@/components/training/tabs/metrics/MetricAvgSpeed'
 
 interface IProps {
 	// headingDebug: number | null
@@ -34,6 +35,7 @@ interface IProps {
 	mapComponentRef: React.RefObject<MapComponentSegmentsHandle | null>
 	userLocationMarkerRef: React.RefObject<UserLocationMarkerHandle | null>
 
+	metricAvgSpeedRef: React.RefObject<MetricAvgSpeedHandle | null>
 	metricSpeedRef: React.RefObject<MetricSpeedHandle | null>
 	metricDistanceRef: React.RefObject<MetricDistanceHandle | null>
 	metricCaloriesRef: React.RefObject<MetricCaloriesHandle | null>
@@ -108,6 +110,7 @@ const WorkoutStarted = (props: IProps) => {
 							mapViewHidden={mapViewHidden}
 							workoutType={props.workoutType}
 							isPaused={props.isPaused}
+							metricAvgSpeedRef={props.metricAvgSpeedRef}
 							metricSpeedRef={props.metricSpeedRef}
 							metricDistanceRef={props.metricDistanceRef}
 							metricCaloriesRef={props.metricCaloriesRef}
