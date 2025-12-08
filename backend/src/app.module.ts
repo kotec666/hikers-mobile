@@ -23,6 +23,9 @@ config({ quiet: true });
 
 @Module({
 	imports: [
+		LoggerModule.forRoot({
+			assignResponse: true,
+		}),
 		EnvModule,
 		ConfigModule.forRoot({
 			cache: true,
