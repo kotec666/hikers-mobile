@@ -37,7 +37,6 @@ const MetricCell = ({
 const MetricsTab = memo((props: IProps) => {
 	const workoutTime = useWorkoutTimer(props.isPaused)
 
-	console.log('render MetricsTab=====>')
 	return (
 		<View className="gap-4">
 			{props.mapViewHidden && (

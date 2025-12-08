@@ -7,7 +7,6 @@ interface IProps {
 }
 
 const MetricTime = memo((props: IProps) => {
-	console.log('render MetricTime')
 	return <Parameter isPaused={props.isPaused} label="Время" value={props.workoutTimeFormatted} />
 })
 

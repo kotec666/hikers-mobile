@@ -10,7 +10,6 @@ export interface Props extends PropsWithChildren {
 const StartButton = memo((props: Props & PressableProps) => {
 	const { children, className } = props
 
-	console.log('render StartButton')
 	return (
 		<Pressable
 			{...props}

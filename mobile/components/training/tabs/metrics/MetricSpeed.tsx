@@ -21,7 +21,6 @@ const MetricSpeed = forwardRef<MetricSpeedHandle, IProps>((props, ref) => {
 		}
 	}))
 
-	console.log('render MetricSpeed')
 	return <Parameter isPaused={props.isPaused} label="Скорость" value={speedKmh} />
 })
 

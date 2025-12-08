@@ -115,8 +115,6 @@ const MapComponentLight = forwardRef<MapComponentHandleLight, IProps>((props, re
 		}
 	}, [])
 
-	console.log('Render MapComponent')
-
 	return (
 		<View
 			className="flex-1"

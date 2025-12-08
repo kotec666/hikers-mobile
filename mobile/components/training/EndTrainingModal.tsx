@@ -12,8 +12,6 @@ interface IProps {
 }
 
 const EndTrainingModal = memo((props: IProps) => {
-	console.log('render EndTrainingModal')
-
 	const endDebounced = debounce(props.handleClickEnd, 300)
 
 	return (

@@ -49,7 +49,6 @@ const UserProfilePage = () => {
 	const handleGetAndSetData = async () => {
 		try {
 			const profileData = await getUserProfileData(id)
-			console.log('profileData', profileData)
 			setData((s) => ({ ...s, profileData: profileData }))
 		} catch (e) {
 			const errors = await e.response.json()

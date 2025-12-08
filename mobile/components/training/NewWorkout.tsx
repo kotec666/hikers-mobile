@@ -1,4 +1,4 @@
-import React, { memo, useCallback, useRef } from 'react'
+import React, { memo, RefObject, useCallback, useRef } from 'react'
 import { Container } from '@/components/ui/Container'
 import HeaderBack from '@/components/ui/HeaderBack'
 import { Dimensions, FlatList, View } from 'react-native'
@@ -34,6 +34,7 @@ interface IProps {
 	permissionsRef: React.RefObject<AllGeolocationPermissionsHandle | null>
 	mapComponentRef: React.RefObject<MapComponentSegmentsHandle | null>
 	userLocationMarkerRef: React.RefObject<UserLocationMarkerHandle | null>
+	latestUserMarkerLocationRef?: RefObject<Point | null>
 }
 
 const { height: SCREEN_HEIGHT } = Dimensions.get('window')
@@ -58,7 +59,6 @@ const NewWorkout = memo((props: IProps) => {
 		return <IconComponent color={color} />
 	}
 
-	console.log('render NewWorkout')
 	return (
 		<>
 			<Container>
@@ -67,6 +67,7 @@ const NewWorkout = memo((props: IProps) => {
 			<MapComponentSegments
 				ref={props.mapComponentRef}
 				userLocationMarkerRef={props.userLocationMarkerRef}
+				latestUserMarkerLocationRef={props.latestUserMarkerLocationRef}
 				initialMarkerLocation={props.initialMarkerLocation}
 				maxMapHeight={SCREEN_HEIGHT}
 				maxContainerHeight={SCREEN_HEIGHT}

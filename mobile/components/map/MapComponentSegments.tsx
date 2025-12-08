@@ -263,7 +263,7 @@ const MapComponentSegments = forwardRef<MapComponentSegmentsHandle, IProps>((pro
 		(!!props.maxMapHeight && props.maxMapHeight > 0) || (!!props.maxContainerHeight && props.maxContainerHeight > 0)
 
 	const markerPosition = props.latestUserMarkerLocationRef?.current || props.initialMarkerLocation
-	console.log('Render MapComponent')
+
 	return (
 		<View
 			style={{

@@ -43,7 +43,6 @@ const UserWithCircleSvg = React.memo((props: IProps) => {
 		return undefined
 	}, [heading, centerX, centerY])
 
-	console.log('render UserWithCircleSvg')
 	return (
 		<Svg width={width} height={height} viewBox={viewBox}>
 			{rotationTransform && (

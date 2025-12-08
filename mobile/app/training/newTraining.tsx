@@ -64,17 +64,18 @@ export default function NewTraining() {
 	const router = useRouter()
 	const permissionsRef = useRef<AllGeolocationPermissionsHandle>(null)
 	const headingSubscriptionRef = useRef<null | Location.LocationSubscription>(null)
+	const activeLocationSubscriptionRef = useRef<null | Location.LocationSubscription>(null)
 
 	const [chosenWorkout, setChosenWorkout] = useState<IWorkoutModeElement>(WorkoutTypesData[0])
 	// Добавляем флаг ожидания старта после получения прав
 	const isPendingStartRef = useRef(false) // флаг, который отвечает за ожидание запуска тренировки (пока permissions !== granted)
+	const isPendingActiveTrackingRef = useRef(false) // флаг, который отвечает за ожидание запуска трекинга позиции в активном режиме (пока permissions !== granted)
 
 	const onInitialDataLoaded = useCallback((restoredType?: TrainingType) => {
 		if (restoredType) {
 			// Ищем объект тренировки по типу (можно улучшить поиск по ID, если он сохраняется)
 			const found = WorkoutTypesData.find((w) => w.type === restoredType)
 			if (found) {
-				console.log('[restore] Restoring workout type:', found.name)
 				setChosenWorkout(found)
 			}
 		}
@@ -100,6 +101,7 @@ export default function NewTraining() {
 		isWorkoutStarted,
 		isPaused,
 		resetWorkoutState,
+		saveInitialMarkerLocation,
 		setInitialMarkerLocationState,
 		setIsWorkoutStarted,
 		setIsPaused
@@ -150,9 +152,41 @@ export default function NewTraining() {
 		// setHeadingDebug(data.trueHeading ?? data.magHeading)
 	}, HEADING_THROTTLE_MS)
 
-	const startHeadingTracking = async () => {
+	const startHeadingTracking = useCallback(async () => {
 		headingSubscriptionRef.current = await Location.watchHeadingAsync(throttledHeadingUpdate)
-	}
+	}, [throttledHeadingUpdate])
+
+	const startActiveTracking = useCallback(async () => {
+		if (activeLocationSubscriptionRef.current) return // уже запущено
+
+		console.log('[active-tracking] starting active location tracking...')
+		try {
+			activeLocationSubscriptionRef.current = await Location.watchPositionAsync(
+				{
+					accuracy: Location.Accuracy.Balanced,
+					distanceInterval: 1
+				},
+				(location) => {
+					console.log('[active-tracking] received active location: ', location)
+					const { latitude: lat, longitude: lon, accuracy } = location.coords
+					saveInitialMarkerLocation({ lat, lon })
+					mapComponentRef.current?.setMapCenter({ lat, lon })
+					userLocationMarkerRef.current?.setMarkerPosition({ lat, lon })
+					latestUserMarkerLocationRef.current = { lat, lon }
+					userLocationMarkerRef.current?.setAccuracy(accuracy)
+				}
+			)
+		} catch (e) {
+			console.log('[active-tracking] error:', e)
+		}
+	}, [latestUserMarkerLocationRef, mapComponentRef, saveInitialMarkerLocation, userLocationMarkerRef])
+
+	const stopActiveTracking = useCallback(() => {
+		if (activeLocationSubscriptionRef.current) {
+			activeLocationSubscriptionRef.current.remove()
+			activeLocationSubscriptionRef.current = null
+		}
+	}, [])
 
 	const checkPermissions = async () => {
 		const foregroundStatus = await Location.getForegroundPermissionsAsync()
@@ -230,6 +264,7 @@ export default function NewTraining() {
 				acceptLivePointsRef.current = true // включаем live точки сразу после старта
 			}
 
+			stopActiveTracking()
 			await startHeadingTracking()
 			if (isNotificationsGranted && isPhysicalActivityPermissionGranted) {
 				await startNotificationTimer() // опционально, если уведомления разрешены
@@ -278,26 +313,33 @@ export default function NewTraining() {
 		}
 	}, [mapComponentRef, userLocationMarkerRef])
 
-	useEffect(() => {
-		// если не в тренировке, то установит локацию - карта + метка
-		const meta = getWorkoutMeta()
-		if (!meta) {
-			getFastUserPosAndSetWithCenter()
-		}
-	}, [getFastUserPosAndSetWithCenter])
-
 	const allPermissionsGrantedCallback = useCallback(async () => {
-		console.log('allPermissionsGrantedCallback')
-
 		// Если висит флаг ожидания старта - запускаем тренировку автоматически
 		if (isPendingStartRef.current) {
 			await getFastUserPosAndSetWithCenter()
 			return startWorkout(chosenWorkout.type, false)
 		}
+		if (isPendingActiveTrackingRef.current) {
+			startActiveTracking()
+			startHeadingTracking()
+			isPendingActiveTrackingRef.current = false
+		}
 	}, [chosenWorkout.type, getFastUserPosAndSetWithCenter])
 
+	useEffect(() => {
+		const meta = getWorkoutMeta()
+		// Если нет мета - значит тренировка не активна, можно запускать трекинг в активном режиме
+		if (!meta) {
+			isPendingActiveTrackingRef.current = true
+			permissionsRef.current?.checkPermissions()
+		}
+
+		return () => {
+			stopActiveTracking()
+		}
+	}, [stopActiveTracking])
+
 	const handleClickPause = useCallback(async () => {
-		console.log('handleClickPause')
 		try {
 			metricSpeedRef.current?.setSpeed(0)
 			setIsPaused((prevState) => {
@@ -345,8 +387,6 @@ export default function NewTraining() {
 		}
 	}, [resetWorkoutState, stopNotificationTimer, tracking])
 
-	console.log('render NewTraining')
-
 	return (
 		<SafeAreaProvider style={{ paddingTop: insets.top }}>
 			<GestureHandlerRootView style={{ flex: 1 }}>
@@ -364,14 +404,15 @@ export default function NewTraining() {
 							metricHeightRef={metricHeightRef}
 							accumulatedDistanceRef={accumulatedDistanceRef} // Для темпа
 							initialLocationsState={initialLocationsState}
-							initialMarkerLocation={initialMarkerLocationState}
 							userLocationMarkerRef={userLocationMarkerRef}
+							initialMarkerLocation={initialMarkerLocationState}
 							latestUserMarkerLocationRef={latestUserMarkerLocationRef}
 						/>
 					) : (
 						<NewWorkout
-							initialMarkerLocation={initialMarkerLocationState}
 							userLocationMarkerRef={userLocationMarkerRef}
+							initialMarkerLocation={initialMarkerLocationState}
+							latestUserMarkerLocationRef={latestUserMarkerLocationRef}
 							allPermsGranted={allPermissionsGrantedCallback}
 							handleClickStart={handleClickStart}
 							handleChangeWorkout={handleChangeWorkout}

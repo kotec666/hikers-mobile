@@ -53,10 +53,7 @@ const AccuracyCircle = forwardRef<AccuracyCircleHandle, IProps>((props, ref) => 
 		hideCircle: (hidden) => setHiddenCircle(hidden)
 	}))
 
-	console.log(`render AccuracyCircle: 1`)
-
 	if (!initialPoint?.lat || !initialPoint?.lon) return null
-	console.log(`render AccuracyCircle: 2`)
 	return (
 		<CircleCustom
 			ref={circleRef}

@@ -10,7 +10,6 @@ export interface Props extends PropsWithChildren {
 const MapActionButton = memo((props: Props & PressableProps) => {
 	const { children, className } = props
 
-	console.log('render MapActionButton')
 	return (
 		<Pressable
 			{...props}

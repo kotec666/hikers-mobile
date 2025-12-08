@@ -543,6 +543,7 @@ export function useLocationData(
 		isWorkoutStarted,
 		isPaused,
 		resetWorkoutState,
+		saveInitialMarkerLocation,
 		setInitialMarkerLocationState,
 		setIsPaused,
 		setIsWorkoutStarted

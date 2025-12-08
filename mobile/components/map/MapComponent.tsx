@@ -285,7 +285,6 @@ const MapComponent = forwardRef<MapComponentHandle, IProps>((props, ref) => {
 		}
 	}, [])
 
-	console.log('Render MapComponent')
 	return (
 		<View
 			className="flex-1"

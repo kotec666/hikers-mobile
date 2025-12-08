@@ -217,12 +217,6 @@ const MapComponentSegmentsArray = forwardRef<MapComponentSegmentsArrayHandle, IP
 					// 1. Закрываем старый сегмент
 					const finishedPoints = currentSegmentPointsRef.current.map((p) => ({ ...p }))
 
-					console.log(
-						'Adding new point to segment',
-						newPoint,
-						'lastSegmentPausedRef',
-						lastSegmentPausedRef.current
-					)
 					// 2. Стартуем новый
 					currentSegmentPointsRef.current = [newPoint]
 					// Обновляем статус в ref
@@ -338,7 +332,6 @@ const MapComponentSegmentsArray = forwardRef<MapComponentSegmentsArrayHandle, IP
 		}
 	}, [])
 
-	console.log('Render MapComponent')
 	return (
 		<View
 			className="flex-1"

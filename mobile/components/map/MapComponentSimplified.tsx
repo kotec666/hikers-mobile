@@ -291,7 +291,6 @@ const MapComponentSimplified = forwardRef<MapComponentHandle, IProps>((props, re
 
 	const updateMapSettingsDebounced = debounce(updateMapSettings, 300)
 
-	console.log('Render MapComponent')
 	return (
 		<View
 			className="flex-1"

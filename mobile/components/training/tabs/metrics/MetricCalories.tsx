@@ -20,7 +20,6 @@ const MetricCalories = forwardRef<MetricCaloriesHandle, IProps>((props, ref) => 
 		}
 	}))
 
-	console.log('render MetricCalories')
 	return <Parameter isPaused={props.isPaused} label="Ккал" value={calories} />
 })
 

@@ -251,7 +251,6 @@ const AllGeolocationPermissions = forwardRef<AllGeolocationPermissionsHandle, IP
 		checkPermissions: checkForegroundPermission
 	}))
 
-	console.log('render AllGeolocationPermissions')
 	return (
 		<BottomSheet ref={bottomSheetRef} activeHeight={screenHeight * 0.5}>
 			{bottomSheetContent}

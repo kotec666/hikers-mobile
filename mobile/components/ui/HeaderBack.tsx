@@ -21,7 +21,6 @@ const HeaderBack = memo((props: IProps) => {
 		}
 	}
 
-	console.log('render HeaderBack')
 	return (
 		<View className={cn('flex-row gap-x-[16px]', props.className)}>
 			<Pressable onPress={handleClickBack}>

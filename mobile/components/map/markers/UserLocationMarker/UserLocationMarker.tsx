@@ -16,7 +16,7 @@ export interface UserLocationMarkerHandle {
 }
 
 const UserLocationMarker = forwardRef<UserLocationMarkerHandle, IProps>((props, ref) => {
-	const initialPoint = useRef<Point | null>(props.initialPosition).current
+	const initialPoint = props.initialPosition
 	const markerRef = useRef<MarkerRef>(null)
 	const accuracyRef = useRef<AccuracyCircleHandle>(null)
 	const timeoutRef = useRef<NodeJS.Timeout | null>(null)
@@ -74,9 +74,8 @@ const UserLocationMarker = forwardRef<UserLocationMarkerHandle, IProps>((props, 
 		}
 	}, [])
 
-	if (!initialPoint?.lat || !initialPoint?.lon) return null
+	if (!initialPoint || initialPoint.lat == null || initialPoint.lon == null) return null
 
-	console.log('render UserLocationMarker')
 	return (
 		<>
 			<Marker ref={markerRef} point={initialPoint} zIndex={6} rotated={true}>

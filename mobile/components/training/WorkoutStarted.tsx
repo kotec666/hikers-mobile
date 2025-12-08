@@ -73,7 +73,6 @@ const WorkoutStarted = (props: IProps) => {
 		props.handleClickEndWorkout()
 	}, [])
 
-	console.log('render WorkoutStarted')
 	return (
 		<>
 			<EndTrainingModal

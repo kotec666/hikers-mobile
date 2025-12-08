@@ -20,7 +20,6 @@ const MetricHeight = forwardRef<MetricHeightHandle, IProps>((props, ref) => {
 		}
 	}))
 
-	console.log('render MetricHeight')
 	return <Parameter isPaused={props.isPaused} label="Набор высоты" value={height == null ? '-м' : `${height}м`} />
 })
 
