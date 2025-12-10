@@ -124,7 +124,7 @@ export default function Page() {
 					{/* Smoothed Map */}
 					<div className="flex-1 h-1/2 md:h-full relative">
 						<div className="absolute top-4 right-4 z-[500] bg-white/90 backdrop-blur px-3 py-1 rounded shadow text-xs font-bold text-blue-600 border border-blue-200">
-							KALMAN + RDP FILTERED
+							KALMAN FILTERED
 						</div>
 						<MapComponent points={smoothPoints} type="smooth" setMapInstance={setSmoothMap} />
 					</div>
