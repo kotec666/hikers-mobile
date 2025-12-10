@@ -28,7 +28,7 @@ import { useEditActivitiesStore } from '@/store/editActivitiesStore'
 const ALLOWED_ROUTES = {
 	EDIT_PROFILE: '/profile/edit' as RelativePathString,
 	DOCUMENT: '/document' as RelativePathString,
-	TABS: '/(tabs)' as RelativePathString
+	TABS_UI: '/(tabs-ui-kit)' as RelativePathString
 } as const satisfies Record<string, RelativePathString>
 
 type AllowedRoute = (typeof ALLOWED_ROUTES)[keyof typeof ALLOWED_ROUTES]
@@ -121,8 +121,8 @@ const Profile = () => {
 												action: () => handleClickRedirect(ALLOWED_ROUTES.DOCUMENT)
 											},
 											{
-												label: 'Tabs (index)',
-												action: () => handleClickRedirect(ALLOWED_ROUTES.TABS)
+												label: 'Tabs ui',
+												action: () => handleClickRedirect(ALLOWED_ROUTES.TABS_UI)
 											},
 											{ label: 'Выход', action: handleClickExit }
 										]}

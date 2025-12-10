@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react'
-import { FlatList, SafeAreaView, View, Text, RefreshControl } from 'react-native'
+import { FlatList, View, Text, RefreshControl } from 'react-native'
 import { Container } from '@/components/ui/Container'
 import HeaderBack from '@/components/ui/HeaderBack'
 import PeopleListItem from '@/components/find-people/PeopleListItem'
@@ -13,7 +13,7 @@ import { useRouter } from 'expo-router'
 import Modal from '@/components/ui/Modal/Modal'
 import { useToast } from '@/hooks/useToast'
 import { IUser } from '@/store/authStore'
-import {PATH_TO_IMAGE} from "@/constants/PATH_TO_FILES";
+import { PATH_TO_IMAGE } from '@/constants/PATH_TO_FILES'
 
 const MyFriendsPage = () => {
 	const insets = useSafeAreaInsets()
@@ -89,7 +89,7 @@ const MyFriendsPage = () => {
 
 	return (
 		<SafeAreaProvider style={{ paddingTop: insets.top }}>
-			<SafeAreaView style={{ flex: 1 }}>
+			<View style={{ flex: 1 }}>
 				<Modal
 					isOpen={data.isDeleteModalOpened}
 					handleClose={handleCloseDeleteModal}
@@ -119,7 +119,7 @@ const MyFriendsPage = () => {
 								id={item.user.id}
 								name={item.user.name}
 								username={item.user.username}
-                                avatar={item.user.avatarFilename ? `${PATH_TO_IMAGE}${item.user.avatarFilename}` : null}
+								avatar={item.user.avatarFilename ? `${PATH_TO_IMAGE}${item.user.avatarFilename}` : null}
 								icon={{
 									iconSvg: <PeopleRemoveSvg />,
 									iconCb: () => handleOpenDeleteModal(item.user)
@@ -134,7 +134,9 @@ const MyFriendsPage = () => {
 							flex: data.friends.length === 0 ? 1 : undefined
 						}}
 						showsVerticalScrollIndicator={false}
-						refreshControl={<RefreshControl refreshing={data.refreshing} onRefresh={onRefresh} tintColor="#22CB5A" />}
+						refreshControl={
+							<RefreshControl refreshing={data.refreshing} onRefresh={onRefresh} tintColor="#22CB5A" />
+						}
 						ListEmptyComponent={EmptyListComponent}
 					/>
 
@@ -142,7 +144,7 @@ const MyFriendsPage = () => {
 						Запросы в друзья
 					</Button>
 				</Container>
-			</SafeAreaView>
+			</View>
 		</SafeAreaProvider>
 	)
 }

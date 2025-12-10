@@ -1,5 +1,5 @@
 import React, { useState } from 'react'
-import { View, SafeAreaView, ScrollView, Image, Dimensions } from 'react-native'
+import { View, ScrollView, Image, Dimensions } from 'react-native'
 import { SafeAreaProvider, useSafeAreaInsets } from 'react-native-safe-area-context'
 import { Container } from '@/components/ui/Container'
 import { StatusBar } from 'expo-status-bar'
@@ -35,7 +35,7 @@ const Post = () => {
 
 	return (
 		<SafeAreaProvider style={{ paddingTop: insets.top }}>
-			<SafeAreaView style={{ flex: 1, alignItems: 'center' }}>
+			<View style={{ flex: 1, alignItems: 'center' }}>
 				<DeletePostModal open={state.isDeleteModalOpen} handleClose={handleClickDelete} />
 				<Container className="gap-[20px]">
 					<View className="flex-row justify-between items-center">
@@ -67,7 +67,7 @@ const Post = () => {
 					</ScrollView>
 				</Container>
 				<StatusBar style="light" />
-			</SafeAreaView>
+			</View>
 		</SafeAreaProvider>
 	)
 }

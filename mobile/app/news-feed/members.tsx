@@ -1,5 +1,5 @@
 import React from 'react'
-import { FlatList, SafeAreaView, View, Text } from 'react-native'
+import { FlatList, View, Text } from 'react-native'
 import { Container } from '@/components/ui/Container'
 import HeaderBack from '@/components/ui/HeaderBack'
 import PeopleListItem from '@/components/find-people/PeopleListItem'
@@ -38,7 +38,7 @@ const Members = () => {
 
 	return (
 		<SafeAreaProvider style={{ paddingTop: insets.top }}>
-			<SafeAreaView style={{ flex: 1 }}>
+			<View style={{ flex: 1 }}>
 				<Container className="gap-[20px] mt-[20px] flex-1">
 					<HeaderBack>Участники</HeaderBack>
 					<Text className="text-white text-base" style={{ fontFamily: fontFamily.bold }}>
@@ -57,7 +57,7 @@ const Members = () => {
 						showsVerticalScrollIndicator={false}
 					/>
 				</Container>
-			</SafeAreaView>
+			</View>
 		</SafeAreaProvider>
 	)
 }

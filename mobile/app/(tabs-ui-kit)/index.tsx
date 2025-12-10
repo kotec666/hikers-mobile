@@ -1,4 +1,4 @@
-import { Dimensions, Text, View, StyleSheet, SafeAreaView, FlatList } from 'react-native'
+import { Dimensions, Text, View, StyleSheet, FlatList } from 'react-native'
 import { Button } from '@/components/ui/Button'
 import { useRouter } from 'expo-router'
 import React, { useCallback, useRef, useState } from 'react'
@@ -106,7 +106,7 @@ export default function HomeScreen() {
 	return (
 		<SafeAreaProvider style={{ paddingTop: insets.top, paddingBottom: insets.bottom + 50 }}>
 			<GestureHandlerRootView style={styles.root}>
-				<SafeAreaView style={styles.container}>
+				<View style={styles.container}>
 					<Notification
 						text={'Нельзя начать тренировку без предоставления разрешений'}
 						type={NotificationInAppType.SUCCESS}
@@ -317,7 +317,7 @@ export default function HomeScreen() {
 						{/*/>*/}
 					</BottomSheetResizable>
 					<NavBar />
-				</SafeAreaView>
+				</View>
 			</GestureHandlerRootView>
 		</SafeAreaProvider>
 	)

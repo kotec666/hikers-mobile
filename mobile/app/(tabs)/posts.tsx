@@ -1,6 +1,5 @@
 import {
 	FlatList,
-	SafeAreaView,
 	View,
 	Text,
 	Platform,
@@ -28,7 +27,7 @@ enum SearchMode {
 	POSTS = 'posts'
 }
 
-const NewsFeedPage = () => {
+const PostsPage = () => {
 	const insets = useSafeAreaInsets()
 	const [state, setState] = useState<{
 		isSearchActive: boolean
@@ -69,7 +68,7 @@ const NewsFeedPage = () => {
 
 	return (
 		<SafeAreaProvider style={{ paddingTop: insets.top }}>
-			<SafeAreaView style={{ flex: 1 }}>
+			<View style={{ flex: 1 }}>
 				<Container className="gap-[20px] flex-1">
 					<View className="flex-row justify-center items-center gap-[10px] w-full">
 						{state.isSearchActive && (
@@ -174,10 +173,10 @@ const NewsFeedPage = () => {
 						</KeyboardAvoidingView>
 					)}
 				</Container>
-			</SafeAreaView>
+			</View>
 			<StatusBar style="light" />
 		</SafeAreaProvider>
 	)
 }
 
-export default NewsFeedPage
+export default PostsPage

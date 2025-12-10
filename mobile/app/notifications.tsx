@@ -1,5 +1,5 @@
 import { SafeAreaProvider, useSafeAreaInsets } from 'react-native-safe-area-context'
-import { FlatList, SafeAreaView, View, Text } from 'react-native'
+import { FlatList, View, Text } from 'react-native'
 import { Container } from '@/components/ui/Container'
 import HeaderBack from '@/components/ui/HeaderBack'
 import React from 'react'
@@ -38,7 +38,7 @@ const NotificationsPage = () => {
 
 	return (
 		<SafeAreaProvider style={{ paddingTop: insets.top }}>
-			<SafeAreaView style={{ flex: 1 }}>
+			<View style={{ flex: 1 }}>
 				<Container className="gap-[20px] mt-[20px] flex-1">
 					<HeaderBack>Уведомления</HeaderBack>
 					{!data.length ? null : <Button variant="white">Очистить все уведомления</Button>}
@@ -63,7 +63,7 @@ const NotificationsPage = () => {
 						/>
 					)}
 				</Container>
-			</SafeAreaView>
+			</View>
 		</SafeAreaProvider>
 	)
 }

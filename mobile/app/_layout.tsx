@@ -78,9 +78,7 @@ export default function RootLayout() {
 	}
 
 	const authenticatedRoutes = [
-		'profile/index',
 		'find-people',
-		'news-feed/index', // для /news-feed
 		'news-feed/members', // для /news-feed/members
 		'workout-history',
 		'friends/search',
@@ -88,11 +86,10 @@ export default function RootLayout() {
 		'friends/friend-requests',
 		'subscribers/my-subscriptions',
 		'notifications',
-		'training/viewWorkout',
-		'training/newTraining'
+		'training/viewWorkout'
 	]
-	const baseRoutes = ['document']
-	const notAuthenticatedRoutes = ['index', 'auth']
+	const baseRoutes = ['index', 'document']
+	const notAuthenticatedRoutes = ['auth']
 
 	return (
 		<>
@@ -104,6 +101,9 @@ export default function RootLayout() {
 					}
 				}}
 			>
+				{baseRoutes.map((route) => (
+					<Stack.Screen key={route} name={route} options={{ headerShown: false }} />
+				))}
 				<Stack.Protected guard={isAuthenticated}>
 					{authenticatedRoutes.map((route) => (
 						<Stack.Screen key={route} name={route} options={{ headerShown: false }} />
@@ -114,9 +114,6 @@ export default function RootLayout() {
 						<Stack.Screen key={route} name={route} options={{ headerShown: false }} />
 					))}
 				</Stack.Protected>
-				{baseRoutes.map((route) => (
-					<Stack.Screen key={route} name={route} options={{ headerShown: false }} />
-				))}
 			</Stack>
 			<NotificationProvider />
 		</>

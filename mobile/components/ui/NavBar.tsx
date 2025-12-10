@@ -1,20 +1,15 @@
-import React, { useState, useEffect, useLayoutEffect } from 'react'
+import React, { useEffect } from 'react'
 import { StyleSheet, View, Pressable, Platform } from 'react-native'
-import Animated, {
-	useSharedValue,
-	useAnimatedStyle,
-	withSpring,
-	withTiming,
-	interpolateColor
-} from 'react-native-reanimated'
-import NavBarPostsSvg from '@/components/svg/NavBarPostsSvg'
-import NavBarMapSvg from '@/components/svg/NavBarMapSvg'
-import NavBarAccountSvg from '@/components/svg/NavBarAccountSvg'
+import Animated, { useSharedValue, useAnimatedStyle, withTiming, interpolateColor } from 'react-native-reanimated'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
 import { Colors } from '@/constants/Colors'
 import { RelativePathString, usePathname, useRouter } from 'expo-router'
 import { BlurView } from 'expo-blur'
 import { cn } from '@/helpers/cn'
+
+import NavBarPostsSvg from '@/components/svg/NavBarPostsSvg'
+import NavBarMapSvg from '@/components/svg/NavBarMapSvg'
+import NavBarAccountSvg from '@/components/svg/NavBarAccountSvg'
 
 type AnimatedButtonProps = {
 	isActive: boolean
@@ -30,8 +25,7 @@ const AnimatedButton: React.FC<AnimatedButtonProps> = ({ isActive, onPress, Icon
 	}, [isActive])
 
 	const animatedStyle = useAnimatedStyle(() => {
-		const scale = withSpring(isActive ? 1.08 : 1, { damping: 8, stiffness: 150 })
-
+		const scale = withTiming(isActive ? 1.1 : 1, { duration: 250 })
 		const backgroundColor = interpolateColor(progress.value, [0, 1], ['transparent', Colors.white])
 
 		return {
@@ -53,25 +47,58 @@ const AnimatedButton: React.FC<AnimatedButtonProps> = ({ isActive, onPress, Icon
 
 const NavBar = () => {
 	const insets = useSafeAreaInsets()
-	const [activeId, setActiveId] = useState<number | null>(null)
 	const router = useRouter()
 	const pathname = usePathname()
 
-	const links: { id: number; Icon: React.FC<{ stroke: string }>; href: string }[] = [
-		{ id: 1, Icon: NavBarPostsSvg, href: '/' },
-		{ id: 2, Icon: NavBarMapSvg, href: '/training/newTraining' },
-		{ id: 3, Icon: NavBarAccountSvg, href: '/profile' }
+	// 0 — показываем NavBar
+	// 1 — скрываем NavBar
+	const hidden = useSharedValue(0)
+
+	useEffect(() => {
+		if (pathname.startsWith('/newTraining')) {
+			hidden.value = withTiming(1, { duration: 300 })
+		} else {
+			hidden.value = withTiming(0, { duration: 300 })
+		}
+	}, [pathname])
+
+	const animatedContainer = useAnimatedStyle(() => ({
+		opacity: 1 - hidden.value,
+		transform: [
+			{ translateY: hidden.value * 80 } // сдвигаем вниз
+		]
+	}))
+
+	const links = [
+		{
+			href: '/posts',
+			Icon: NavBarPostsSvg,
+			id: 'posts'
+		},
+		{
+			href: '/newTraining',
+			Icon: NavBarMapSvg,
+			id: 'newTraining'
+		},
+		{
+			href: '/profile',
+			Icon: NavBarAccountSvg,
+			id: 'profile'
+		}
 	]
 
-	useLayoutEffect(() => {
-		const foundedLink = links.find((link) => link.href === pathname)
-		if (foundedLink) {
-			setActiveId(foundedLink.id)
-		}
-	}, [])
+	const getActiveId = () => {
+		const found = links.find((l) => pathname.startsWith(l.href))
+		return found?.id
+	}
+
+	const activeId = getActiveId()
 
 	return (
-		<View style={[styles.NavBarContainer, { bottom: insets.bottom }]} pointerEvents="box-none">
+		<Animated.View
+			style={[styles.NavBarContainer, animatedContainer, { bottom: insets.bottom }]}
+			pointerEvents="box-none"
+		>
 			<View
 				style={styles.NavBarButtonsContainer}
 				className={cn('', {
@@ -89,15 +116,12 @@ const NavBar = () => {
 					<AnimatedButton
 						key={link.id}
 						isActive={activeId === link.id}
-						onPress={() => {
-							setActiveId(link.id)
-							router.push(link.href as RelativePathString)
-						}}
+						onPress={() => router.push(link.href as RelativePathString)}
 						Icon={link.Icon}
 					/>
 				))}
 			</View>
-		</View>
+		</Animated.View>
 	)
 }
 
@@ -107,8 +131,8 @@ const styles = StyleSheet.create({
 	NavBarContainer: {
 		paddingHorizontal: 16,
 		width: '100%',
-		left: '50%',
-		transform: [{ translateX: '-50%' }],
+		// left: '50%',
+		// transform: [{ translateX: '-50%' }],
 		position: 'absolute',
 		height: 100,
 		alignItems: 'center',

@@ -47,7 +47,11 @@ export default function ViewWorkout() {
 					className="absolute w-full h-full inset-0 justify-between pb-4"
 					style={{ paddingTop: insets.top + 40 }}
 				>
-					<Pressable onPress={() => router.back()}>
+					<Pressable
+						onPress={() => {
+							router.replace('/(tabs)/newTraining')
+						}}
+					>
 						<ArrowBackSvg />
 					</Pressable>
 					<View className="flex-row w-full justify-between items-center">

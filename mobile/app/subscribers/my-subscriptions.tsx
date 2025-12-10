@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react'
-import { FlatList, SafeAreaView, View, Text, RefreshControl } from 'react-native'
+import { FlatList, View, Text, RefreshControl } from 'react-native'
 import { Container } from '@/components/ui/Container'
 import HeaderBack from '@/components/ui/HeaderBack'
 import PeopleListItem from '@/components/find-people/PeopleListItem'
@@ -9,7 +9,7 @@ import RoundedMinusSvg from '@/components/svg/RoundedMinusSvg'
 import { getFieldsErrors } from '@/helpers/getFieldsErrors'
 import { getSubscriptionsList, ISubscribe, unsubscribeFromUser } from '@/api/subscribers'
 import { useToast } from '@/hooks/useToast'
-import {PATH_TO_IMAGE} from "@/constants/PATH_TO_FILES";
+import { PATH_TO_IMAGE } from '@/constants/PATH_TO_FILES'
 
 /**
  * Мои подписки, на кого подписан я
@@ -69,7 +69,7 @@ const MySubscriptionsPage = () => {
 
 	return (
 		<SafeAreaProvider style={{ paddingTop: insets.top }}>
-			<SafeAreaView style={{ flex: 1 }}>
+			<View style={{ flex: 1 }}>
 				<Container className="gap-[20px] mt-[20px] flex-1">
 					<HeaderBack>Подписки</HeaderBack>
 					<FlatList
@@ -79,7 +79,7 @@ const MySubscriptionsPage = () => {
 								id={item.user.id}
 								username={item.user.username}
 								name={item.user.name}
-                                avatar={item.user.avatarFilename ? `${PATH_TO_IMAGE}${item.user.avatarFilename}` : null}
+								avatar={item.user.avatarFilename ? `${PATH_TO_IMAGE}${item.user.avatarFilename}` : null}
 								icon={{
 									iconSvg: <RoundedMinusSvg />,
 									iconCb: () => handleUnsubscribe(item.user.id)
@@ -94,11 +94,13 @@ const MySubscriptionsPage = () => {
 						}}
 						showsVerticalScrollIndicator={false}
 						keyExtractor={(item) => item.user.id}
-						refreshControl={<RefreshControl refreshing={data.refreshing} onRefresh={onRefresh} tintColor="#22CB5A" />}
+						refreshControl={
+							<RefreshControl refreshing={data.refreshing} onRefresh={onRefresh} tintColor="#22CB5A" />
+						}
 						ListEmptyComponent={EmptyListComponent}
 					/>
 				</Container>
-			</SafeAreaView>
+			</View>
 		</SafeAreaProvider>
 	)
 }

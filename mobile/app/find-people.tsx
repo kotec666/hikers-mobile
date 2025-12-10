@@ -1,5 +1,5 @@
 import React from 'react'
-import { FlatList, SafeAreaView, View } from 'react-native'
+import { FlatList, View } from 'react-native'
 import { SafeAreaProvider, useSafeAreaInsets } from 'react-native-safe-area-context'
 import HeaderBack from '@/components/ui/HeaderBack'
 import { Container } from '@/components/ui/Container'
@@ -9,6 +9,7 @@ import PeopleListItem from '@/components/find-people/PeopleListItem'
 import PeopleRemoveSvg from '@/components/svg/PeopleRemoveSvg'
 import PeopleAddSvg from '@/components/svg/PeopleAddSvg'
 import RoundedCheckMark from '@/components/svg/RoundedCheckMark'
+import { useRouter } from 'expo-router'
 
 export enum FRIEND_STATUS {
 	ADDED = 'added',
@@ -42,14 +43,20 @@ const FindPeople = () => {
 		{ id: 20, name: 'Джефф Безос last', avatar: false, icon: <PeopleRemoveSvg /> }
 	]
 
+	const router = useRouter()
+
 	return (
 		<SafeAreaProvider style={{ paddingTop: insets.top }}>
-			<SafeAreaView style={{ flex: 1 }}>
+			<View style={{ flex: 1 }}>
 				<Container className="gap-[20px] mt-[20px] flex-1">
 					<HeaderBack>Совместная тренировка</HeaderBack>
 
 					<View className="flex-row gap-[10px]">
-						<Button variant="white" className="w-min px-[30px]">
+						<Button
+							variant="white"
+							className="w-min px-[30px]"
+							onPress={() => router.push('/(tabs)/profile')}
+						>
 							Поиск
 						</Button>
 						<Button variant="black" className="w-min px-[30px]">
@@ -71,7 +78,7 @@ const FindPeople = () => {
 						showsVerticalScrollIndicator={false}
 					/>
 				</Container>
-			</SafeAreaView>
+			</View>
 		</SafeAreaProvider>
 	)
 }

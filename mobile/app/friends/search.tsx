@@ -1,5 +1,5 @@
 import { SafeAreaProvider, useSafeAreaInsets } from 'react-native-safe-area-context'
-import { FlatList, SafeAreaView, View, Text } from 'react-native'
+import { FlatList, View, Text } from 'react-native'
 import { Container } from '@/components/ui/Container'
 import HeaderBack from '@/components/ui/HeaderBack'
 import PeopleListItem from '@/components/find-people/PeopleListItem'
@@ -38,7 +38,7 @@ const FriendsSearchPage = () => {
 
 	return (
 		<SafeAreaProvider style={{ paddingTop: insets.top }}>
-			<SafeAreaView style={{ flex: 1 }}>
+			<View style={{ flex: 1 }}>
 				<Container className="gap-[20px] mt-[20px] flex-1">
 					<HeaderBack>Поиск друга</HeaderBack>
 					<Input isFind placeholder="Введите никнейм друга" />
@@ -63,7 +63,7 @@ const FriendsSearchPage = () => {
 						/>
 					)}
 				</Container>
-			</SafeAreaView>
+			</View>
 		</SafeAreaProvider>
 	)
 }

@@ -19,8 +19,12 @@ export async function startTracking() {
 	if (!(await isTrackingLocation())) {
 		await Location.startLocationUpdatesAsync(LOCATION_TASK_NAME, {
 			accuracy: Location.Accuracy.BestForNavigation,
-			// timeInterval: 15 * 1000, // 15 sec.
 			timeInterval: 3 * 1000, // 3 sec.
+			distanceInterval: 5,
+			// Когда можно отдавать "пакет" точек сразу,
+			// снижает энергопотребление (особенно на iOS).
+			deferredUpdatesDistance: 20,
+			deferredUpdatesInterval: 5000, // 5 сек
 			// android behavior
 			foregroundService: {
 				notificationTitle: 'Отслеживание местоположения',
@@ -28,11 +32,10 @@ export async function startTracking() {
 				notificationColor: 'rgba(0,0,0,0)',
 				killServiceOnDestroy: false
 			},
-			deferredUpdatesDistance: 5,
 			// ios behavior
 			activityType: LocationActivityType.Fitness,
 			pausesUpdatesAutomatically: false,
-			showsBackgroundLocationIndicator: true
+			showsBackgroundLocationIndicator: false
 		})
 		console.log('[tracking]', 'started background location task')
 	} else {
@@ -92,7 +95,9 @@ TaskManager.defineTask(LOCATION_TASK_NAME, async ({ data, error }) => {
 	if (!meta) return
 	if (data) {
 		const { locations } = data as { locations: LocationObject[] }
-		console.log('Received background locations', locations) // @TODO фильтрация неточных точек + Ramer-Douglas-Peucker algorithm + Kalman filter
+		if (!locations || locations.length === 0) return
+
+		console.log('Received background locations', locations)
 		const savedLocations = setWorkoutItems(locations)
 
 		console.log('savedLocations', savedLocations)
@@ -107,7 +112,11 @@ TaskManager.defineTask(LOCATION_TASK_NAME, async ({ data, error }) => {
 			speed_kmh: mpsToKmph(item.locationObject.coords.speed || 0),
 			paused: item.isPausedPoint,
 			lat: item.locationObject.coords.latitude,
-			lng: item.locationObject.coords.longitude
+			lng: item.locationObject.coords.longitude,
+			locationObject: {
+				coords: item.locationObject.coords,
+				timestamp: item.locationObject.timestamp
+			}
 		}))
 
 		syncTraining(meta.id, preparedLocations)

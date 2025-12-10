@@ -217,7 +217,9 @@ export default function NewTraining() {
 		const foregroundStatus = await Location.getForegroundPermissionsAsync()
 		if (!foregroundStatus.granted) return null
 
-		const last = await Location.getLastKnownPositionAsync()
+		const last = await Location.getLastKnownPositionAsync({
+			maxAge: 0
+		})
 		if (last) return last
 
 		return await Location.getCurrentPositionAsync({

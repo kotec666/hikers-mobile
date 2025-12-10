@@ -1,5 +1,5 @@
 import { SafeAreaProvider, useSafeAreaInsets } from 'react-native-safe-area-context'
-import { Dimensions, SafeAreaView, ScrollView, Text, View } from 'react-native'
+import { Dimensions, ScrollView, Text, View } from 'react-native'
 import { Container } from '@/components/ui/Container'
 import HeaderBack from '@/components/ui/HeaderBack'
 import React, { useCallback, useEffect, useRef, useState } from 'react'
@@ -64,7 +64,7 @@ const AchievementsPage = () => {
 	return (
 		<GestureHandlerRootView style={{ flex: 1 }}>
 			<SafeAreaProvider style={{ paddingTop: insets.top, paddingBottom: insets.bottom + 20 }}>
-				<SafeAreaView style={{ flex: 1 }}>
+				<View style={{ flex: 1 }}>
 					<Container className="gap-[20px] mt-[20px] flex-1">
 						<HeaderBack>Мои достижения</HeaderBack>
 						<ScrollView style={{ flex: 1, width: '100%' }}>
@@ -107,7 +107,7 @@ const AchievementsPage = () => {
 					<BottomSheet ref={bottomSheetRef} activeHeight={screenHeight * 0.5}>
 						{bottomSheetContent}
 					</BottomSheet>
-				</SafeAreaView>
+				</View>
 			</SafeAreaProvider>
 		</GestureHandlerRootView>
 	)

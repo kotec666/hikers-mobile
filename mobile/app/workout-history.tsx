@@ -1,5 +1,5 @@
 import React from 'react'
-import { SectionList, SafeAreaView, View, Text } from 'react-native'
+import { SectionList, View, Text } from 'react-native'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
 import HeaderBack from '@/components/ui/HeaderBack'
 import { Container } from '@/components/ui/Container'
@@ -102,7 +102,7 @@ const WorkoutHistory = () => {
 	)
 
 	return (
-		<SafeAreaView style={{ flex: 1, paddingTop: insets.top }}>
+		<View style={{ flex: 1, paddingTop: insets.top }}>
 			<Container className="gap-[20px] mt-[20px] flex-1">
 				<HeaderBack>История тренировок</HeaderBack>
 				<Select
@@ -130,7 +130,7 @@ const WorkoutHistory = () => {
 					showsVerticalScrollIndicator={false}
 				/>
 			</Container>
-		</SafeAreaView>
+		</View>
 	)
 }
 

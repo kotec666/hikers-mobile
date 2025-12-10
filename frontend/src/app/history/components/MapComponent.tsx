@@ -5,9 +5,17 @@ import { svgIcon } from './mapIcons'
 import React from 'react'
 import { ITrainingPoint } from '@/api/workout'
 
-export default function MapComponent({ points }: { points: ITrainingPoint[] }) {
+export default function MapComponent({
+	points,
+	type,
+	setMapInstance
+}: {
+	points: ITrainingPoint[]
+	type: 'raw' | 'smooth'
+	setMapInstance: (map: L.Map | null) => void
+}) {
 	return (
-		<MapContainer center={[51.505, -0.09]} zoom={13} className="h-full w-full">
+		<MapContainer ref={(ref) => setMapInstance(ref)} center={[51.505, -0.09]} zoom={13} className="h-full w-full">
 			<TileLayer url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png" />
 			{Boolean(points.length) && (
 				<>
@@ -16,7 +24,7 @@ export default function MapComponent({ points }: { points: ITrainingPoint[] }) {
 
 					{points.map((point) => (
 						<Marker
-							key={`${point.lat}-${point.lng}-${point.rel_ts}`}
+							key={`${point.lat}-${point.lng}-${point.rel_ts}-${type}`}
 							icon={svgIcon}
 							position={[point.lat, point.lng]}
 						>
@@ -26,7 +34,24 @@ export default function MapComponent({ points }: { points: ITrainingPoint[] }) {
 										<span className="font-semibold">Высота:</span> {point.alt} м
 									</div>
 									<div>
-										<span className="font-semibold">Координаты:</span> {point.lat}, {point.lng}
+										<span className="font-semibold">Точность:</span>{' '}
+										{point?.locationObject?.coords.accuracy} м
+									</div>
+									<div>
+										<span className="font-semibold">Точность (высота):</span>{' '}
+										{point?.locationObject?.coords.altitudeAccuracy} м
+									</div>
+									<div>
+										<span className="font-semibold">Timestamp:</span>{' '}
+										{point?.locationObject?.timestamp}
+									</div>
+									<div>
+										<span className="font-semibold">Скорость:</span>{' '}
+										{point?.locationObject?.coords.speed} м/с
+									</div>
+									<div>
+										<span className="font-semibold">Координаты (lat, lon):</span> {point.lat},{' '}
+										{point.lng}
 									</div>
 									<div>
 										<span className="font-semibold">Скорость:</span> {point.speed_kmh} км/ч
