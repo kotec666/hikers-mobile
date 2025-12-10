@@ -1,7 +1,7 @@
 ﻿import { TrainingType } from '@shared/enums';
 import { UserDto } from '../user/user.dto';
 import { IsArray, IsEnum } from 'class-validator';
-import { TrainingRouteNode } from '../database/schema';
+import { DebugTrainingRouteNode } from '../database/schema';
 import { IsHexColor } from '@validation/decorators';
 import { ERRORS } from '@shared/errors';
 
@@ -20,6 +20,21 @@ export interface TrainingRouteNodeClient {
 
 	lat: number;
 	lng: number;
+}
+
+export interface DebugTrainingRouteNodeClient extends TrainingRouteNodeClient {
+	locationObject: {
+		coords: {
+			latitude: number;
+			longitude: number;
+			altitude: number | null;
+			accuracy: number | null;
+			altitudeAccuracy: number | null;
+			heading: number | null;
+			speed: number | null;
+		};
+		timestamp: number;
+	};
 }
 
 export namespace TrainingDto {
@@ -57,7 +72,7 @@ export namespace TrainingDto {
 	export class Sync {
 		// @TODO валидировать
 		@IsArray()
-		metrics: TrainingRouteNodeClient[];
+		metrics: DebugTrainingRouteNodeClient[];
 	}
 }
 
@@ -76,7 +91,7 @@ export namespace TrainingParticipantDto {
 
 export namespace TrainingRouteDto {
 	export type Entity = {
-		points: TrainingRouteNode[] | null;
+		points: DebugTrainingRouteNode[] | null;
 
 		createdAt: Date;
 		startedAt: Date | null;

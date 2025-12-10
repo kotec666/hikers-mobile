@@ -44,6 +44,21 @@ export interface TrainingRouteNode {
 	lng: number;
 }
 
+export interface DebugTrainingRouteNode extends TrainingRouteNode {
+	locationObject: {
+		coords: {
+			latitude: number;
+			longitude: number;
+			altitude: number | null;
+			accuracy: number | null;
+			altitudeAccuracy: number | null;
+			heading: number | null;
+			speed: number | null;
+		};
+		timestamp: number;
+	};
+}
+
 /**
  * MODELS
  */
@@ -209,10 +224,10 @@ export const trainingRoutes = pgTable('training_routes', {
 	participantId: uuid('participant_id')
 		.notNull()
 		.references(() => trainingParticipants.id),
-	points: jsonb('points').default([]).$type<TrainingRouteNode[]>(),
+	points: jsonb('points').default([]).$type<DebugTrainingRouteNode[]>(), // @TODO вернуть TrainingRouteNode после тестов
 	createdAt: timestamp('created_at').defaultNow().notNull(),
-	startedAt: timestamp('started_at'),
-	finishedAt: timestamp('finished_at'),
+	startedAt: timestamp('started_at'), // @TODO а надо ли?
+	finishedAt: timestamp('finished_at'), // @TODO а надо ли?
 });
 
 // Training Metrics

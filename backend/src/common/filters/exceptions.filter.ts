@@ -52,7 +52,7 @@ function parsePropertyMessages(messages: string[]): PropertyError[] {
 export class HttpExceptionFilter implements ExceptionFilter {
 	constructor(private readonly logger: Logger) {}
 
-	catch(exception: HttpException | Error, host: ArgumentsHost) {
+	catch(exception: HttpException | DatabaseError | Error, host: ArgumentsHost) {
 		const ctx = host.switchToHttp();
 		const response = ctx.getResponse<Response>();
 		// const request = ctx.getRequest<Request>();
@@ -74,15 +74,12 @@ export class HttpExceptionFilter implements ExceptionFilter {
 						statusCode,
 						message: message.startsWith('_')
 							? [parsePropertyMessage(message)]
-							: statusCodeToError[statusCode] ?? ERRORS.UNKNOWN_ERROR,
+							: (statusCodeToError[statusCode] ?? ERRORS.UNKNOWN_ERROR),
 					});
 				}
 
 				default: {
-					return response.status(500).json({
-						statusCode: 500,
-						message: ERRORS.INTERNAL,
-					});
+					break;
 				}
 			}
 		} else if (exception instanceof HttpException) {
@@ -104,8 +101,8 @@ export class HttpExceptionFilter implements ExceptionFilter {
 					message: message.startsWith('_')
 						? [parsePropertyMessage(message)]
 						: ERRORS[message]
-						? message
-						: statusCodeToError[exceptionStatus] ?? ERRORS.UNKNOWN_ERROR,
+							? message
+							: (statusCodeToError[exceptionStatus] ?? ERRORS.UNKNOWN_ERROR),
 				});
 			}
 		}
