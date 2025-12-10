@@ -1,11 +1,11 @@
 ﻿import { BadRequestException, GoneException, Injectable, NotFoundException } from '@nestjs/common';
 import { DatabaseService } from '../database/database.service';
 import {
+	DebugTrainingRouteNode,
 	training,
 	trainingInvites,
 	trainingMetrics,
 	trainingParticipants,
-	TrainingRouteNode,
 	trainingRoutes,
 	users,
 } from '../database/schema';
@@ -141,7 +141,7 @@ export class TrainingsService {
 			}
 		}
 
-		const points: TrainingRouteNode[] = [];
+		const points: DebugTrainingRouteNode[] = [];
 		if (dto.metrics.length > 1) {
 			dto.metrics.reduce((prev, curr) => {
 				points.push({
@@ -153,6 +153,7 @@ export class TrainingsService {
 					paused: curr.paused,
 					lat: curr.lat,
 					lng: curr.lng,
+					locationObject: curr.locationObject,
 				});
 
 				return curr;
@@ -167,6 +168,8 @@ export class TrainingsService {
 				paused: dto.metrics[0].paused,
 				lat: dto.metrics[0].lat,
 				lng: dto.metrics[0].lng,
+
+				locationObject: dto.metrics[0].locationObject,
 			});
 		}
 
@@ -175,7 +178,10 @@ export class TrainingsService {
 		return { success: true };
 	}
 
-	private async upsertRoute(participant: TrainingParticipantDto.Entity, metrics: TrainingRouteNode[]): Promise<void> {
+	private async upsertRoute(
+		participant: TrainingParticipantDto.Entity,
+		metrics: DebugTrainingRouteNode[],
+	): Promise<void> {
 		const [trainingRoute] = await this.db.db
 			.select({
 				id: trainingRoutes.id,

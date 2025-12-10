@@ -148,6 +148,13 @@
       "when": 1763389153896,
       "tag": "0020_feat_post_likes_table",
       "breakpoints": true
+    },
+    {
+      "idx": 21,
+      "version": "7",
+      "when": 1765373171958,
+      "tag": "0021_debug_training_nodes",
+      "breakpoints": true
     }
   ]
 }
