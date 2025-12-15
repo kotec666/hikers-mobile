@@ -49,8 +49,8 @@ initializeNotifications(promise)
 initializeBackgroundLocationTask(promise)
 
 const WorkoutTypesData = [
-	{ id: 1, type: TrainingType.RUN, name: 'Забег', IconComponent: WorkoutRunning },
-	{ id: 2, type: TrainingType.RUN, name: 'Ходьба', IconComponent: WorkoutWalking },
+	{ id: 1, type: TrainingType.WALK, name: 'Ходьба', IconComponent: WorkoutWalking },
+	{ id: 2, type: TrainingType.RUN, name: 'Забег', IconComponent: WorkoutRunning },
 	{ id: 3, type: TrainingType.BICYCLE, name: 'Велосипед last', IconComponent: WorkoutBicycle }
 ]
 

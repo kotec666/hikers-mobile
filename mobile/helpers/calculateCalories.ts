@@ -29,9 +29,9 @@ export const calculateCalories = (
 		else MET = 15
 	}
 
-	// if (type === TrainingType.WALK) {
-	// 	MET = 3.5
-	// }
+	if (type === TrainingType.WALK) {
+		MET = 3.5
+	}
 
 	if (type === TrainingType.BICYCLE) {
 		if (speedKmh < 16) MET = 4

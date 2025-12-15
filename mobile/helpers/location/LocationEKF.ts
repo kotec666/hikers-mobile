@@ -1,5 +1,5 @@
 /* ============================================================
- *  LocationEKF — Production GPS EKF (Variant B)
+ *  LocationEKF — Production GPS EKF
  * ============================================================ */
 
 const EARTH_RADIUS = 6378137
@@ -102,7 +102,7 @@ export class LocationEKF {
 			return this.currentLatLng()
 		}
 
-		const acc = Math.max(accuracy, this.minAccuracy)
+		const acc = Math.max(accuracy ?? this.minAccuracy, this.minAccuracy)
 
 		/* ---------- hard gating ---------- */
 
