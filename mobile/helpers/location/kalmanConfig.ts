@@ -1,22 +1,24 @@
 import { TrainingType } from '@shared/enums'
 
-export const KALMAN_DECAY_BY_ACTIVITY: Record<TrainingType, number> = {
-	// [TrainingType.WALK]: 3,
-	[TrainingType.RUN]: 6,
-	[TrainingType.BICYCLE]: 11,
-	[TrainingType.TRACK]: 10
-} as const
-
-export const MIN_ACCURACY_BY_ACTIVITY: Record<TrainingType, number> = {
-	[TrainingType.RUN]: 3,
-	[TrainingType.BICYCLE]: 5,
-	[TrainingType.TRACK]: 4
-} as const
-
-export const MAX_SPEED_BY_ACTIVITY: Record<TrainingType, number> = {
-	[TrainingType.RUN]: 6, // м/с ≈ 21 км/ч
-	[TrainingType.BICYCLE]: 15, // м/с ≈ 54 км/ч
-	[TrainingType.TRACK]: 8
+export const EKF_PARAMS_BY_ACTIVITY = {
+	[TrainingType.WALK]: {
+		processNoise: 0.6,
+		minAccuracy: 6,
+		maxSpeed: 2.2 // ~8 км/ч
+	},
+	[TrainingType.RUN]: {
+		processNoise: 1,
+		minAccuracy: 5,
+		maxSpeed: 6 // ~22 км/ч
+	},
+	[TrainingType.TRACK]: {
+		processNoise: 1.6,
+		minAccuracy: 4,
+		maxSpeed: 8 // ~28,8 км/ч
+	},
+	[TrainingType.BICYCLE]: {
+		processNoise: 2.8,
+		minAccuracy: 6,
+		maxSpeed: 15 // ~54 км/ч
+	}
 }
-
-export const JITTER_FACTOR = 1.5

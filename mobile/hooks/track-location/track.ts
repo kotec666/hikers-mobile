@@ -5,20 +5,13 @@ import { getWorkoutMeta, setWorkoutItems } from '@/store/workoutStorage'
 import { locationEmitter } from './locationEmitter'
 import { mpsToKmph } from '@/helpers/mpsToKmph'
 import { syncTraining } from '@/api/workout'
-import { GPSKalmanFilter } from '@/helpers/location/GPSKalmanFilter'
-import {
-	KALMAN_DECAY_BY_ACTIVITY,
-	MIN_ACCURACY_BY_ACTIVITY,
-	MAX_SPEED_BY_ACTIVITY,
-	JITTER_FACTOR
-} from '@/helpers/location/kalmanConfig'
-import { haversineDistance } from '@shared/helpers'
 import { TaskManagerError } from 'expo-task-manager'
+import { LocationEKF } from '@/helpers/location/LocationEKF'
+import { EKF_PARAMS_BY_ACTIVITY } from '@/helpers/location/kalmanConfig'
 import { TrainingType } from '@shared/enums'
 
-let kalmanFilter: GPSKalmanFilter | null = null
-let lastMetaId: string | null = null
-let lastMetaType: TrainingType | null = null
+let ekf: LocationEKF | null = null
+let ekfActivityType: TrainingType | null = null
 
 export const LOCATION_TASK_NAME = 'background-location-task'
 let innerAppMountedPromiseRef: Promise<void> | null = null // Variable to hold the promise resolver logic
@@ -57,9 +50,8 @@ export async function startTracking() {
 
 export async function stopTracking() {
 	await Location.stopLocationUpdatesAsync(LOCATION_TASK_NAME)
-	kalmanFilter = null
-	lastMetaId = null
-	lastMetaType = null
+	ekf = null
+	ekfActivityType = null
 	console.log('[tracking]', 'stopped background location task')
 }
 
@@ -107,47 +99,30 @@ TaskManager.defineTask(
 		// }
 
 		const meta = getWorkoutMeta()
-		if (!meta) return
+		if (!meta || !data?.locations?.length) return
 
-		// Reset фильтра при смене тренировки или типа активности
-		if (!kalmanFilter || meta.id !== lastMetaId || meta.type !== lastMetaType) {
-			const decay = KALMAN_DECAY_BY_ACTIVITY[meta.type]
-			const minAccuracy = MIN_ACCURACY_BY_ACTIVITY[meta.type]
-			kalmanFilter = new GPSKalmanFilter(decay, minAccuracy)
-			lastMetaId = meta.id
-			lastMetaType = meta.type
+		if (!ekf || ekfActivityType !== meta.type) {
+			const params = EKF_PARAMS_BY_ACTIVITY[meta.type]
+			ekf = new LocationEKF(params.processNoise, params.minAccuracy, params.maxSpeed)
+			ekfActivityType = meta.type
 		}
 
-		if (!data?.locations?.length) return
-
 		const filteredLocations: LocationObject[] = data.locations.map((loc) => {
-			if (!kalmanFilter) return loc
-
-			const { latitude, longitude, accuracy, speed } = loc.coords
+			const { latitude, longitude, accuracy, speed, heading } = loc.coords
 			const timestamp = loc.timestamp
 
-			if ([latitude, longitude, timestamp].some((v) => v == null)) return loc
-			const safeAccuracy = accuracy ?? MIN_ACCURACY_BY_ACTIVITY[meta.type] // not null
-
-			const dt = timestamp - kalmanFilter.getTimestamp()
-			const cappedDt = Math.min(dt, 120_000) // максимум 2 минуты для анти-спайка
-
-			const distance = haversineDistance(kalmanFilter.getLat(), kalmanFilter.getLng(), latitude, longitude)
-			const maxPossibleDist = ((MAX_SPEED_BY_ACTIVITY[meta.type] * cappedDt) / 1000) * JITTER_FACTOR // при долгом отсутствии GPS фильтр “перескакивает” на новое положение. Это поведение намеренное, но стоит задокументировать.
-
-			// Анти-спайк
-			if (distance > maxPossibleDist) {
-				kalmanFilter.reset(latitude, longitude, safeAccuracy, timestamp)
+			if (latitude == null || longitude == null || timestamp == null) {
 				return loc
 			}
 
-			// Reset при стоянии
-			if (speed != null && speed < 0.3 && dt > 5_000) {
-				kalmanFilter.reset(latitude, longitude, safeAccuracy, timestamp)
-				return loc
-			}
-
-			const filtered = kalmanFilter.filter(latitude, longitude, safeAccuracy, timestamp, speed)
+			const filtered = ekf!.update({
+				lat: latitude,
+				lng: longitude,
+				accuracy,
+				timestamp,
+				speed,
+				headingDeg: heading
+			})
 
 			return {
 				...loc,
