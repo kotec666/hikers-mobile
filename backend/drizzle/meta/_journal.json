@@ -155,6 +155,13 @@
       "when": 1765373171958,
       "tag": "0021_debug_training_nodes",
       "breakpoints": true
+    },
+    {
+      "idx": 22,
+      "version": "7",
+      "when": 1765784361107,
+      "tag": "0022_training_type_walk",
+      "breakpoints": true
     }
   ]
 }
