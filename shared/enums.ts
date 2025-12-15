@@ -1,6 +1,7 @@
 ﻿/** Тип тренировки */
 export enum TrainingType {
 	RUN = 'run',
+	WALK = 'walk',
 	TRACK = 'track',
 	BICYCLE = 'bicycle',
 }
