@@ -9,7 +9,8 @@ export const initializeNotifications = async (innerAppMountedPromise: Promise<vo
 			shouldPlaySound: false,
 			shouldSetBadge: false,
 			shouldShowBanner: true,
-			shouldShowList: false
+			shouldShowList: false,
+			shouldShowAlert: true
 		})
 	})
 }
