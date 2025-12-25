@@ -52,6 +52,7 @@ const Profile = () => {
 
 	const handleClickExit = () => {
 		logout()
+		router.replace('/')
 	}
 
 	const posts = [

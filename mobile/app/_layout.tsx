@@ -38,7 +38,6 @@ notifee.onBackgroundEvent(async ({ type, detail }) => {
 notifee.registerForegroundService((_notification) => {
 	return new Promise((resolve) => {
 		// console.log('[Notifee] foreground service started:', notification.id)
-		// Можно выполнять любую долгую задачу, например, трекинг GPS
 		resolve()
 	})
 })

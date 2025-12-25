@@ -1,7 +1,12 @@
 import { createMMKV } from 'react-native-mmkv'
 import { LocationObject } from 'expo-location'
 import { TrainingType } from '@shared/enums'
-import { deserializeLocations, POINT_BYTE_SIZE, serializeLocation } from '@/helpers/binarySerializer'
+import {
+	deserializeGetterType,
+	deserializeLocations,
+	POINT_BYTE_SIZE,
+	serializeLocation
+} from '@/helpers/binarySerializer'
 
 export const workoutStorage = createMMKV({
 	id: 'workout-storage'
@@ -21,7 +26,7 @@ export interface IWorkoutStorage {
 }
 
 export interface IWorkout {
-	id: string
+	id: string | null
 	isPaused: boolean
 	type: TrainingType
 	startedAt: number
@@ -32,16 +37,18 @@ export interface IWorkout {
 
 // Внутренняя структура метаданных
 export interface IWorkoutMeta {
-	id: string
+	id: string | null
 	isPaused: boolean
 	type: TrainingType
 	startedAt: number
 	totalPausedMs: number
 	lastPauseAt: null | number
 	chunkCount: number
+	nextPointId: number
 }
 
 export interface IWorkoutLocationStorageItem {
+	pointId: number
 	relTs: number
 	locationObject: LocationObject
 	isPausedPoint: boolean
@@ -54,6 +61,19 @@ export const getWorkoutMeta = (): IWorkoutMeta | null => {
 		return JSON.parse(metaStr) as IWorkoutMeta
 	}
 	return null
+}
+
+export const getNotSavedWorkouts = (): IWorkout[] => {
+	const notSavedStr = workoutStorage.getString(KEY_NOT_SAVED)
+	if (notSavedStr) {
+		try {
+			return JSON.parse(notSavedStr) as IWorkout[]
+		} catch (e) {
+			console.error('Failed to parse notSavedWorkouts:', e)
+			return []
+		}
+	}
+	return []
 }
 
 /**
@@ -90,7 +110,7 @@ export const setActiveWorkoutPauseState = (isPaused: boolean): void => {
 	}
 }
 
-export const startAndStoreNewActiveWorkout = (type: TrainingType, createdTrainingId: string) => {
+export const startAndStoreNewActiveWorkout = (type: TrainingType, createdTrainingId: string | null) => {
 	clearActiveWorkoutData()
 
 	const newMeta: IWorkoutMeta = {
@@ -100,7 +120,8 @@ export const startAndStoreNewActiveWorkout = (type: TrainingType, createdTrainin
 		isPaused: false,
 		totalPausedMs: 0,
 		lastPauseAt: null,
-		chunkCount: 1
+		chunkCount: 1,
+		nextPointId: 0
 	}
 
 	workoutStorage.set(KEY_ACTIVE_META, JSON.stringify(newMeta))
@@ -132,7 +153,7 @@ export const setWorkoutItems = (workoutItems: LocationObject[]): IWorkoutLocatio
 	let currentBuffer: Uint8Array | undefined = rawBuffer
 		? new Uint8Array(rawBuffer as unknown as ArrayLike<number>)
 		: undefined
-	let metaDirty = false
+	// let metaDirty = false
 
 	// Массив для сохранения созданных элементов
 	const savedItems: IWorkoutLocationStorageItem[] = []
@@ -154,6 +175,7 @@ export const setWorkoutItems = (workoutItems: LocationObject[]): IWorkoutLocatio
 
 		const relTs = workoutItem.timestamp - meta.startedAt
 		const workoutItemToSave: IWorkoutLocationStorageItem = {
+			pointId: meta.nextPointId++,
 			relTs,
 			isSavedToServer: false,
 			locationObject: workoutItem,
@@ -193,7 +215,7 @@ export const setWorkoutItems = (workoutItems: LocationObject[]): IWorkoutLocatio
 
 			// Обновляем мету
 			meta.chunkCount = currentChunkIdx + 1
-			metaDirty = true
+			// metaDirty = true
 		}
 
 		// --- добавляем текущую точку в (возможно новый) чанк ---
@@ -209,12 +231,78 @@ export const setWorkoutItems = (workoutItems: LocationObject[]): IWorkoutLocatio
 		workoutStorage.set(chunkKey, exactBytes as ArrayBuffer)
 	}
 
-	if (metaDirty) {
+	// if (metaDirty) { из-за nextPointId++ теперь сохранение меты каждый раз
+	// 	workoutStorage.set(KEY_ACTIVE_META, JSON.stringify(meta))
+	// }
+
+	if (savedItems.length > 0) {
 		workoutStorage.set(KEY_ACTIVE_META, JSON.stringify(meta))
 	}
 
 	// Возвращаем массив сохраненных элементов
 	return savedItems
+}
+
+export const markPointsAsSaved = (pointIds: number[]) => {
+	if (pointIds.length === 0) return
+
+	const meta = getWorkoutMeta()
+	if (!meta) return
+
+	const idSet = new Set(pointIds)
+	const minId = Math.min(...pointIds)
+	const maxId = Math.max(...pointIds)
+
+	for (let chunkIndex = 0; chunkIndex < meta.chunkCount; chunkIndex++) {
+		const key = `${KEY_ACTIVE_BIN_CHUNK_PREFIX}${chunkIndex}`
+		const buffer = workoutStorage.getBuffer(key)
+		if (!buffer) continue
+
+		const view = new DataView(buffer)
+		const pointCount = Math.floor(buffer.byteLength / POINT_BYTE_SIZE)
+
+		let mutated = false
+
+		for (let i = 0; i < pointCount; i++) {
+			const baseOffset = i * POINT_BYTE_SIZE
+			const pointId = view.getUint32(baseOffset)
+
+			if (pointId < minId || pointId > maxId || !idSet.has(pointId)) {
+				continue
+			}
+
+			const flagsOffset = baseOffset + 32
+			const flags = view.getUint8(flagsOffset)
+
+			// bit1 = saved
+			if ((flags & 2) === 0) {
+				view.setUint8(flagsOffset, flags | 2)
+				mutated = true
+			}
+		}
+
+		if (mutated) {
+			workoutStorage.set(key, buffer)
+		}
+	}
+}
+
+export const getUnsavedActiveWorkoutPoints = (): IWorkoutLocationStorageItem[] => {
+	const meta = getWorkoutMeta()
+	if (!meta) return []
+
+	const result: IWorkoutLocationStorageItem[] = []
+
+	for (let chunkIndex = 0; chunkIndex < meta.chunkCount; chunkIndex++) {
+		const key = `${KEY_ACTIVE_BIN_CHUNK_PREFIX}${chunkIndex}`
+		const buffer = workoutStorage.getBuffer(key)
+		if (!buffer) continue
+		const points = deserializeLocations(new Uint8Array(buffer), meta?.startedAt, deserializeGetterType.NOT_SAVED)
+
+		result.push(...points)
+	}
+
+	return result
 }
 
 export const removeAllWorkoutStorage = () => {
@@ -223,7 +311,7 @@ export const removeAllWorkoutStorage = () => {
 
 // --- Helpers ---
 
-const clearActiveWorkoutData = () => {
+export const clearActiveWorkoutData = () => {
 	const metaStr = workoutStorage.getString(KEY_ACTIVE_META)
 	if (metaStr) {
 		try {
@@ -264,7 +352,7 @@ export const getWorkoutChunk = (chunkIndex: number, startedAt: number): IWorkout
 	const chunkBuffer = workoutStorage.getBuffer(chunkKey)
 
 	if (chunkBuffer) {
-		return deserializeLocations(new Uint8Array(chunkBuffer), startedAt)
+		return deserializeLocations(new Uint8Array(chunkBuffer), startedAt, deserializeGetterType.ALL)
 	}
 	return []
 }
@@ -275,7 +363,11 @@ const getActiveWorkoutFromStorage = (meta: IWorkoutMeta): IWorkout => {
 	for (let i = 0; i < meta.chunkCount; i++) {
 		const chunkBuffer = workoutStorage.getBuffer(`${KEY_ACTIVE_BIN_CHUNK_PREFIX}${i}`)
 		if (chunkBuffer) {
-			const chunkPoints = deserializeLocations(new Uint8Array(chunkBuffer), meta.startedAt)
+			const chunkPoints = deserializeLocations(
+				new Uint8Array(chunkBuffer),
+				meta.startedAt,
+				deserializeGetterType.ALL
+			)
 			locations = locations.concat(chunkPoints)
 		}
 	}

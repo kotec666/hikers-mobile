@@ -1,6 +1,6 @@
 import fetcher from '@/api/fetcher'
 import { TrainingType } from '@shared/enums'
-import { LocationObject, LocationObjectCoords } from 'expo-location'
+import { LocationObject } from 'expo-location'
 
 export interface ITraining {
 	id: string
@@ -95,7 +95,7 @@ export const finishTraining = async (): Promise<{ success: boolean }> => {
 
 // Передать метрики по тренировке (можно частями)
 export const syncTraining = async (
-	trainingId: string,
+	trainingId: string | null,
 	metrics: {
 		relTs: number
 		alt: number
@@ -106,6 +106,7 @@ export const syncTraining = async (
 		locationObject: Omit<LocationObject, 'mocked'>
 	}[]
 ): Promise<{ success: boolean }> => {
+	if (!trainingId) return { success: false }
 	return (
 		await fetcher.patch(`trainings/sync/${trainingId}`, {
 			json: {

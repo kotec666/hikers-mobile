@@ -49,7 +49,8 @@ export default function ViewWorkout() {
 				>
 					<Pressable
 						onPress={() => {
-							router.replace('/(tabs)/newTraining')
+							// router.replace('/(tabs)/newTraining')
+							router.replace('/workout-history')
 						}}
 					>
 						<ArrowBackSvg />

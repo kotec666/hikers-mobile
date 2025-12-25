@@ -1,4 +1,4 @@
-import React, { memo, RefObject, useCallback, useRef } from 'react'
+import React, { memo, RefObject, useCallback, useEffect, useRef, useState } from 'react'
 import { Container } from '@/components/ui/Container'
 import HeaderBack from '@/components/ui/HeaderBack'
 import { Dimensions, FlatList, View } from 'react-native'
@@ -16,6 +16,11 @@ import { TrainingType } from '@shared/enums'
 import { UserLocationMarkerHandle } from '@/components/map/markers/UserLocationMarker/UserLocationMarker'
 import { Point } from 'react-native-yamap-plus'
 import MapComponentSegments, { MapComponentSegmentsHandle } from '@/components/map/MapComponentSegments'
+import { BottomSheetHandle } from '@/components/ui/BottomSheet/types'
+import BottomSheet from '@/components/ui/BottomSheet/BottomSheet'
+import UnsavedTrainings from '@/components/BottomSheets/UnsavedTrainings'
+import { getNotSavedWorkouts, getWorkoutMeta } from '@/store/workoutStorage'
+import * as Network from 'expo-network'
 
 export interface IWorkoutModeElement {
 	id: number
@@ -37,11 +42,47 @@ interface IProps {
 	latestUserMarkerLocationRef?: RefObject<Point | null>
 }
 
-const { height: SCREEN_HEIGHT } = Dimensions.get('window')
+const { height: SCREEN_HEIGHT } = Dimensions.get('screen')
+const { height: WINDOW_HEIGHT } = Dimensions.get('window')
 
 const NewWorkout = memo((props: IProps) => {
 	const router = useRouter()
 	const insets = useSafeAreaInsets()
+	const bottomSheetRef = useRef<BottomSheetHandle>(null)
+	const unsavedWorkoutsShownRef = useRef<boolean>(false)
+	const networkState = Network.useNetworkState()
+	const hasInternet = networkState.isInternetReachable === true
+
+	const openBottomSheet = useCallback(() => {
+		if (bottomSheetRef.current) {
+			bottomSheetRef.current.openSheet()
+		}
+	}, [])
+
+	useEffect(() => {
+		if (unsavedWorkoutsShownRef.current || !hasInternet) return
+
+		const meta = getWorkoutMeta()
+		if (meta) return
+
+		const notSavedWorkouts = getNotSavedWorkouts()
+
+		if (notSavedWorkouts.length === 0) return
+		openBottomSheet()
+		unsavedWorkoutsShownRef.current = true
+	}, [hasInternet, openBottomSheet])
+
+	useEffect(() => {
+		return () => {
+			unsavedWorkoutsShownRef.current = false
+		}
+	}, [])
+
+	const closeBottomSheet = useCallback(() => {
+		if (bottomSheetRef.current) {
+			bottomSheetRef.current?.closeSheet()
+		}
+	}, [])
 
 	const bottomSheetResizableRef = useRef<BottomSheetResizableRef>(null)
 
@@ -69,8 +110,8 @@ const NewWorkout = memo((props: IProps) => {
 				userLocationMarkerRef={props.userLocationMarkerRef}
 				latestUserMarkerLocationRef={props.latestUserMarkerLocationRef}
 				initialMarkerLocation={props.initialMarkerLocation}
-				maxMapHeight={SCREEN_HEIGHT}
-				maxContainerHeight={SCREEN_HEIGHT}
+				maxMapHeight={WINDOW_HEIGHT}
+				maxContainerHeight={WINDOW_HEIGHT}
 			/>
 			<View
 				style={{
@@ -94,6 +135,13 @@ const NewWorkout = memo((props: IProps) => {
 				ref={props.permissionsRef}
 				allPermissionsGrantedCallback={props.allPermsGranted}
 			/>
+			<BottomSheet ref={bottomSheetRef} activeHeight={SCREEN_HEIGHT * 0.5}>
+				<UnsavedTrainings
+					handleClickClose={closeBottomSheet}
+					handleClickDelete={() => {}}
+					handleClickSave={() => {}}
+				/>
+			</BottomSheet>
 			<BottomSheetResizable ref={bottomSheetResizableRef}>
 				<Container className="flex-1">
 					<FlatList

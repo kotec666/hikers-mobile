@@ -151,7 +151,7 @@ const AuthPage = () => {
 												/>
 											}
 											autoCapitalize="none"
-											onChangeText={onChange}
+											onChangeText={(text) => onChange(text.replace(/\s/g, ''))} // Удаляем пробелы
 											value={value}
 											onBlur={onBlur}
 										/>
@@ -188,7 +188,7 @@ const AuthPage = () => {
 												/>
 											}
 											error={error?.message || data.errors?.password}
-											onChangeText={onChange}
+											onChangeText={(text) => onChange(text.replace(/\s/g, ''))} // Удаляем пробелы
 											value={value}
 											onBlur={onBlur}
 										/>

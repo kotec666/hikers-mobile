@@ -38,6 +38,12 @@
 		"plugins": [
 			"expo-router",
 			[
+				"expo-sensors",
+				{
+					"motionPermission": "Разрешите хайкерс доступ к датчикам устройства"
+				}
+			],
+			[
 				"expo-splash-screen",
 				{
 					"image": "./assets/images/splash-icon.png",
@@ -49,7 +55,7 @@
 			[
 				"expo-location",
 				{
-					"locationAlwaysAndWhenInUsePermission": "Включите определение вашего местоположения для hikers",
+					"locationAlwaysAndWhenInUsePermission": "Включите определение вашего местоположения для хайкерс",
 					"isAndroidForegroundServiceEnabled": true,
 					"isAndroidBackgroundLocationEnabled": true,
 					"isIosBackgroundLocationEnabled": true

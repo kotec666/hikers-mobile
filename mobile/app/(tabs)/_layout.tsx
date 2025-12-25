@@ -1,8 +1,11 @@
-import { Tabs } from 'expo-router'
+import { Tabs, Stack } from 'expo-router'
 import NavBar from '@/components/ui/NavBar'
 import { Colors } from '@/constants/Colors'
+import { useAuthStore } from '@/store/authStore'
 
 export default function TabLayout() {
+	const { isAuthenticated } = useAuthStore()
+
 	return (
 		<Tabs
 			initialRouteName="profile"
@@ -19,9 +22,11 @@ export default function TabLayout() {
 			}}
 			tabBar={() => <NavBar />}
 		>
-			<Tabs.Screen name="profile" />
-			<Tabs.Screen name="posts" />
-			<Tabs.Screen name="newTraining" />
+			<Stack.Protected guard={isAuthenticated}>
+				<Tabs.Screen name="profile" />
+				<Tabs.Screen name="posts" />
+				<Tabs.Screen name="newTraining" />
+			</Stack.Protected>
 		</Tabs>
 	)
 }

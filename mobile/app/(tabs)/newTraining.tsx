@@ -12,6 +12,7 @@ import * as Notification from 'expo-notifications'
 import * as Location from 'expo-location'
 import * as TaskManager from 'expo-task-manager'
 import {
+	getUnsavedActiveWorkoutPoints,
 	getWorkoutMeta,
 	moveActiveWorkoutToNotSaved,
 	setActiveWorkoutPauseState,
@@ -28,8 +29,9 @@ import { useWorkoutNotification } from '@/hooks/useWorkoutNotification'
 import { initializeBackgroundLocationTask, isTrackingLocation, startTracking } from '@/hooks/track-location/track'
 import { useLocationData, useLocationTracking } from '@/hooks/track-location'
 import { updateMapSettings } from '@/store/mapStorage'
-import { finishTraining, startTraining } from '@/api/workout'
+import { finishTraining, startTraining, syncTraining } from '@/api/workout'
 import { randomHexColor } from '@/helpers/randomHexColor'
+import { prepareLocationsForSync } from '@/helpers/prepareLocationsForSync'
 
 // Debugging
 TaskManager.getRegisteredTasksAsync().then((tasks) => {
@@ -262,8 +264,15 @@ export default function NewTraining() {
 			isPendingStartRef.current = false // сбрасываем, когда начинаем тренировку
 
 			if (!afterReboot) {
-				const newTraining = await startTraining({ type: workoutType, colorHex: randomHexColor() })
-				startAndStoreNewActiveWorkout(workoutType, newTraining.id)
+				let newTrainingId = null
+				try {
+					const newTraining = await startTraining({ type: workoutType, colorHex: randomHexColor() })
+					newTrainingId = newTraining.id
+				} catch (e) {
+					console.log('[start-workout-error]:', e)
+					newTrainingId = null
+				}
+				startAndStoreNewActiveWorkout(workoutType, newTrainingId)
 				acceptLivePointsRef.current = true // включаем live точки сразу после старта
 			}
 
@@ -373,18 +382,39 @@ export default function NewTraining() {
 	const handleClickEndWorkout = useCallback(async () => {
 		// @TODO требуется проверка на то что тренировка завершилась слишком рано
 		try {
-			router.push('/training/viewWorkout')
+			router.push('/training/viewWorkout') // @TODO в зависимости от интернета редирект либо сюда, либо в профиль
 			await tracking.stopTracking()
 
 			if (headingSubscriptionRef.current) {
 				headingSubscriptionRef.current.remove()
 				headingSubscriptionRef.current = null
 			}
-			moveActiveWorkoutToNotSaved()
+			// moveActiveWorkoutToNotSaved() @TODO
+			// clearActiveWorkoutData() @TODO
 			await stopNotificationTimer()
 			// Полный сброс состояния карты и переменных
 			resetWorkoutState()
-			await finishTraining()
+
+			const meta = getWorkoutMeta()
+			const unsavedPoints = getUnsavedActiveWorkoutPoints()
+			if (meta?.id) {
+				// Тренировка существует на бэкенде
+				if (unsavedPoints.length) {
+					const preparedLocations = prepareLocationsForSync(unsavedPoints)
+					await syncTraining(meta.id, preparedLocations)
+				}
+			} else {
+				// Тренировка не существует на бэкенде
+				const newTraining = await startTraining({ type: chosenWorkout.type, colorHex: randomHexColor() })
+				if (unsavedPoints.length) {
+					const preparedLocations = prepareLocationsForSync(unsavedPoints)
+					await syncTraining(newTraining.id, preparedLocations)
+				}
+			}
+
+			try {
+				await finishTraining()
+			} catch {}
 		} catch (e) {
 			console.error('handleClickEndWorkout error: ', e)
 		}

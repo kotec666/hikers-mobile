@@ -1,15 +1,17 @@
 import * as Location from 'expo-location'
 import * as TaskManager from 'expo-task-manager'
 import { LocationActivityType, LocationObject } from 'expo-location'
-import { getWorkoutMeta, markPointsAsSaved, setWorkoutItems } from '@/store/workoutStorage'
+import { getWorkoutMeta, setWorkoutItems } from '@/store/workoutStorage'
 import { locationEmitter } from './locationEmitter'
 import { TaskManagerError } from 'expo-task-manager'
 import { mpsToKmph } from '@/helpers/mpsToKmph'
-import { syncTraining } from '@/api/workout'
-import { prepareLocationsForSync } from '@/helpers/prepareLocationsForSync'
+// import { DeadReckoningEngine } from '@/helpers/location/DeadReckoningEngine'
 
 export const LOCATION_TASK_NAME = 'background-location-task'
 let innerAppMountedPromiseRef: Promise<void> | null = null // Variable to hold the promise resolver logic
+// let deadReckoning: DeadReckoningEngine | null = null
+// let accelerometerSensorRemover: () => void = () => {}
+// let orientationAngle: number = 0
 
 export async function isTrackingLocation(): Promise<boolean> {
 	return await Location.hasStartedLocationUpdatesAsync(LOCATION_TASK_NAME)
@@ -45,6 +47,7 @@ export async function startTracking() {
 
 export async function stopTracking() {
 	await Location.stopLocationUpdatesAsync(LOCATION_TASK_NAME)
+	// accelerometerSensorRemover()
 	console.log('[tracking]', 'stopped background location task')
 }
 
@@ -60,17 +63,60 @@ TaskManager.defineTask(
 
 		const meta = getWorkoutMeta()
 		if (!meta || !data?.locations?.length) return
+		// const last = data.locations.at(-1)
+		//
+		// if (!deadReckoning) {
+		// 	deadReckoning = new DeadReckoningEngine()
+		// 	if (!last) return
+		//
+		// 	deadReckoning.setGeoAnchor({
+		// 		lat: last.coords.latitude,
+		// 		lng: last.coords.longitude,
+		// 		alt: last.coords.altitude ?? 0
+		// 	})
+		// }
+
+		// OPTIONAL:
+		// если есть heading от GPS
+		// if (last?.coords?.heading != null) {
+		// 	deadReckoning.alignOrientation(last.coords.heading)
+		// }
+
+		// accelerometerSensorRemover = startPdrSensors(deadReckoning, (geo, orientationAngle) => {
+		// 	console.log('новые координаты от pdr', geo)
+		// 	// новые координаты от pdr
+		// 	const savedLocations = setWorkoutItems([
+		// 		{
+		// 			coords: {
+		// 				...geo,
+		// 				accuracy: last?.coords.accuracy || 1,
+		// 				altitudeAccuracy: last?.coords?.altitudeAccuracy || 1,
+		// 				speed: last?.coords?.speed || 1,
+		// 				heading: orientationAngle
+		// 			},
+		// 			timestamp: Date.now()
+		// 		}
+		// 	])
+		// 	locationEmitter.emit(savedLocations)
+		// })
 
 		const savedLocations = setWorkoutItems(data.locations)
 		locationEmitter.emit(savedLocations)
 
-		const preparedLocations = prepareLocationsForSync(savedLocations)
+		// const preparedLocations = savedLocations.map((item) => ({
+		// 	relTs: item.relTs,
+		// 	alt: item.locationObject.coords.altitude || 0,
+		// 	speed_kmh: mpsToKmph(item.locationObject.coords.speed || 0),
+		// 	paused: item.isPausedPoint,
+		// 	lat: item.locationObject.coords.latitude,
+		// 	lng: item.locationObject.coords.longitude,
+		// 	locationObject: {
+		// 		coords: item.locationObject.coords,
+		// 		timestamp: item.locationObject.timestamp
+		// 	}
+		// }))
 
-		try {
-			if (preparedLocations.length === 0) return
-			await syncTraining(meta.id, preparedLocations)
-			markPointsAsSaved(preparedLocations.map((item) => item.pointId))
-		} catch {}
+		// 	syncTraining(meta.id, preparedLocations)
 	}
 )
 
