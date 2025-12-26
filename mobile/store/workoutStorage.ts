@@ -63,6 +63,67 @@ export const getWorkoutMeta = (): IWorkoutMeta | null => {
 	return null
 }
 
+export const deleteUnsavedTrainingByStartedAt = (startedAt: number): void => {
+	const notSavedStr = workoutStorage.getString(KEY_NOT_SAVED)
+	if (!notSavedStr) return
+
+	let notSavedWorkouts: IWorkout[]
+	try {
+		notSavedWorkouts = JSON.parse(notSavedStr) as IWorkout[]
+	} catch (e) {
+		console.error('[workoutStorage] Failed to parse NOT_SAVED_WORKOUTS:', e)
+		return
+	}
+
+	const originalLength = notSavedWorkouts.length
+	const filteredWorkouts = notSavedWorkouts.filter((workout) => workout.startedAt !== startedAt)
+
+	if (filteredWorkouts.length === originalLength) {
+		console.warn('[workoutStorage] Unsaved workout not found for deletion, startedAt:', startedAt)
+		return
+	}
+
+	if (filteredWorkouts.length === 0) {
+		// если список стал пустым — можно удалить ключ целиком
+		workoutStorage.remove(KEY_NOT_SAVED)
+	} else {
+		workoutStorage.set(KEY_NOT_SAVED, JSON.stringify(filteredWorkouts))
+	}
+}
+
+export const assignIdToAnUnsavedWorkout = (startedAt: number, id: string): void => {
+	const notSavedStr = workoutStorage.getString(KEY_NOT_SAVED)
+	if (!notSavedStr) return
+
+	let notSavedWorkouts: IWorkout[]
+	try {
+		notSavedWorkouts = JSON.parse(notSavedStr) as IWorkout[]
+	} catch (e) {
+		console.error('[workoutStorage] Failed to parse NOT_SAVED_WORKOUTS:', e)
+		return
+	}
+
+	let updated = false
+
+	const updatedWorkouts = notSavedWorkouts.map((workout) => {
+		if (workout.startedAt === startedAt) {
+			updated = true
+			return {
+				...workout,
+				id
+			}
+		}
+		return workout
+	})
+
+	if (!updated) {
+		console.warn('[workoutStorage] Unsaved workout not found for startedAt:', startedAt)
+		return
+	}
+
+	workoutStorage.set(KEY_NOT_SAVED, JSON.stringify(updatedWorkouts))
+}
+
 export const getNotSavedWorkouts = (): IWorkout[] => {
 	const notSavedStr = workoutStorage.getString(KEY_NOT_SAVED)
 	if (notSavedStr) {
@@ -74,6 +135,10 @@ export const getNotSavedWorkouts = (): IWorkout[] => {
 		}
 	}
 	return []
+}
+
+export const getUnsavedWorkoutByStartedAt = (startedAt: number): IWorkout | null => {
+	return getNotSavedWorkouts().find((w) => w.startedAt === startedAt) ?? null
 }
 
 /**
@@ -241,6 +306,61 @@ export const setWorkoutItems = (workoutItems: LocationObject[]): IWorkoutLocatio
 
 	// Возвращаем массив сохраненных элементов
 	return savedItems
+}
+
+export const markUnsavedWorkoutPointsAsSaved = (startedAt: number, pointIds: number[]): void => {
+	if (pointIds.length === 0) return
+
+	const notSavedStr = workoutStorage.getString(KEY_NOT_SAVED)
+	if (!notSavedStr) return
+
+	let notSavedWorkouts: IWorkout[]
+	try {
+		notSavedWorkouts = JSON.parse(notSavedStr) as IWorkout[]
+	} catch (e) {
+		console.error('[workoutStorage] Failed to parse NOT_SAVED_WORKOUTS:', e)
+		return
+	}
+
+	const idSet = new Set(pointIds)
+	let updated = false
+
+	const updatedWorkouts = notSavedWorkouts.map((workout) => {
+		if (workout.startedAt !== startedAt) {
+			return workout
+		}
+
+		let locationsUpdated = false
+
+		const updatedLocations = workout.locations.map((point) => {
+			if (!point.isSavedToServer && idSet.has(point.pointId)) {
+				locationsUpdated = true
+				return {
+					...point,
+					isSavedToServer: true
+				}
+			}
+			return point
+		})
+
+		if (!locationsUpdated) {
+			return workout
+		}
+
+		updated = true
+
+		return {
+			...workout,
+			locations: updatedLocations
+		}
+	})
+
+	if (!updated) {
+		console.warn('[workoutStorage] No unsaved points found for startedAt:', startedAt)
+		return
+	}
+
+	workoutStorage.set(KEY_NOT_SAVED, JSON.stringify(updatedWorkouts))
 }
 
 export const markPointsAsSaved = (pointIds: number[]) => {

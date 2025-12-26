@@ -19,8 +19,20 @@ import MapComponentSegments, { MapComponentSegmentsHandle } from '@/components/m
 import { BottomSheetHandle } from '@/components/ui/BottomSheet/types'
 import BottomSheet from '@/components/ui/BottomSheet/BottomSheet'
 import UnsavedTrainings from '@/components/BottomSheets/UnsavedTrainings'
-import { getNotSavedWorkouts, getWorkoutMeta } from '@/store/workoutStorage'
+import {
+	assignIdToAnUnsavedWorkout,
+	deleteUnsavedTrainingByStartedAt,
+	getNotSavedWorkouts,
+	getUnsavedWorkoutByStartedAt,
+	getWorkoutMeta,
+	markUnsavedWorkoutPointsAsSaved
+} from '@/store/workoutStorage'
 import * as Network from 'expo-network'
+import { finishTraining, startTraining, syncTraining } from '@/api/workout'
+import { randomHexColor } from '@/helpers/randomHexColor'
+import { prepareLocationsForSync } from '@/helpers/prepareLocationsForSync'
+import { chunkArray } from '@/helpers/chunkArray'
+import { useToast } from '@/hooks/useToast'
 
 export interface IWorkoutModeElement {
 	id: number
@@ -48,10 +60,13 @@ const { height: WINDOW_HEIGHT } = Dimensions.get('window')
 const NewWorkout = memo((props: IProps) => {
 	const router = useRouter()
 	const insets = useSafeAreaInsets()
+	const toast = useToast()
 	const bottomSheetRef = useRef<BottomSheetHandle>(null)
 	const unsavedWorkoutsShownRef = useRef<boolean>(false)
+	const isSyncInProgressRef = useRef<boolean>(false)
 	const networkState = Network.useNetworkState()
 	const hasInternet = networkState.isInternetReachable === true
+	const [isSaving, setIsSaving] = useState(false)
 
 	const openBottomSheet = useCallback(() => {
 		if (bottomSheetRef.current) {
@@ -100,6 +115,98 @@ const NewWorkout = memo((props: IProps) => {
 		return <IconComponent color={color} />
 	}
 
+	const saveUnsavedTrainings = async () => {
+		if (!hasInternet) {
+			console.warn('[sync] No internet, skip sync')
+			toast.error('Нет доступа к интернету, сохранение невозможно')
+			return closeBottomSheet()
+		}
+
+		if (isSyncInProgressRef.current || isSaving) return
+
+		isSyncInProgressRef.current = true
+		setIsSaving(true)
+
+		try {
+			const notSavedWorkouts = getNotSavedWorkouts()
+
+			for (const initialWorkout of notSavedWorkouts) {
+				let trainingId = initialWorkout.id
+
+				// 1. Создание тренировки на сервере (если нужно)
+				if (!trainingId) {
+					const newTraining = await startTraining({
+						type: initialWorkout.type,
+						colorHex: randomHexColor()
+					})
+
+					trainingId = newTraining.id
+					assignIdToAnUnsavedWorkout(initialWorkout.startedAt, trainingId)
+				}
+
+				while (true) {
+					const workout = getUnsavedWorkoutByStartedAt(initialWorkout.startedAt)
+					if (!workout) break
+
+					const unsavedPoints = workout.locations.filter((point) => !point.isSavedToServer)
+
+					// 2. Все точки уже сохранены
+					if (unsavedPoints.length === 0) {
+						try {
+							await finishTraining()
+							deleteUnsavedTrainingByStartedAt(workout.startedAt)
+						} catch (e) {
+							console.error('[sync] finishTraining failed', e)
+						}
+						break
+					}
+
+					// 3. Берём первый батч из текущего состояния
+					const [batch] = chunkArray(unsavedPoints)
+
+					const syncResult = await syncTraining(trainingId, prepareLocationsForSync(batch))
+
+					if (!syncResult?.success) {
+						console.warn('[sync] Training partially synced, will retry later:', workout.startedAt)
+						break
+					}
+
+					const prevCount = unsavedPoints.length
+
+					// 4. Маркируем успешно сохранённые точки
+					markUnsavedWorkoutPointsAsSaved(
+						workout.startedAt,
+						batch.map((p) => p.pointId)
+					)
+
+					const updated = getUnsavedWorkoutByStartedAt(workout.startedAt)
+					const nextCount = updated?.locations.filter((p) => !p.isSavedToServer).length ?? 0
+
+					if (nextCount >= prevCount) {
+						console.error('[sync] No progress, abort loop')
+						break
+					}
+				}
+			}
+
+			toast.success('Тренировка успешно сохранена')
+			closeBottomSheet()
+		} catch (e) {
+			console.error('[sync] Unexpected error', e)
+			toast.error('Ошибка при сохранении тренировки')
+		} finally {
+			isSyncInProgressRef.current = false
+			setIsSaving(false)
+		}
+	}
+
+	const deleteUnsavedWorkouts = () => {
+		const notSavedWorkouts = getNotSavedWorkouts()
+		for (const notSavedWorkout of notSavedWorkouts) {
+			deleteUnsavedTrainingByStartedAt(notSavedWorkout.startedAt)
+		}
+	}
+
 	return (
 		<>
 			<Container>
@@ -137,9 +244,10 @@ const NewWorkout = memo((props: IProps) => {
 			/>
 			<BottomSheet ref={bottomSheetRef} activeHeight={SCREEN_HEIGHT * 0.5}>
 				<UnsavedTrainings
+					isSaving={isSaving}
 					handleClickClose={closeBottomSheet}
-					handleClickDelete={() => {}}
-					handleClickSave={() => {}}
+					handleClickSave={saveUnsavedTrainings}
+					handleClickDelete={deleteUnsavedWorkouts}
 				/>
 			</BottomSheet>
 			<BottomSheetResizable ref={bottomSheetResizableRef}>

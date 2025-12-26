@@ -4,12 +4,13 @@ import { fontFamily } from '@/constants/Fonts'
 import { Button } from '@/components/ui/Button'
 
 interface IProps {
+	isSaving: boolean
 	handleClickSave: () => void
 	handleClickDelete: () => void
 	handleClickClose: () => void
 }
 
-const UnfinishedTraining = (props: IProps) => {
+const UnsavedTrainings = (props: IProps) => {
 	return (
 		<View className="flex-1 items-center justify-start p-[16px] gap-[40px] w-full">
 			<View className="items-center">
@@ -21,13 +22,18 @@ const UnfinishedTraining = (props: IProps) => {
 				</Text>
 			</View>
 			<View className="w-full gap-[10px]">
-				<Button variant="white" onPress={props.handleClickSave}>
+				<Button
+					variant="white"
+					onPress={props.handleClickSave}
+					isLoading={props.isSaving}
+					disabled={props.isSaving}
+				>
 					Сохранить тренировку
 				</Button>
-				<Button variant="white" onPress={props.handleClickDelete}>
+				<Button variant="white" onPress={props.handleClickDelete} disabled={props.isSaving}>
 					Удалить тренировку
 				</Button>
-				<Button variant="white" onPress={props.handleClickClose}>
+				<Button variant="white" onPress={props.handleClickClose} disabled={props.isSaving}>
 					Не сейчас
 				</Button>
 			</View>
@@ -35,4 +41,4 @@ const UnfinishedTraining = (props: IProps) => {
 	)
 }
 
-export default UnfinishedTraining
+export default UnsavedTrainings
