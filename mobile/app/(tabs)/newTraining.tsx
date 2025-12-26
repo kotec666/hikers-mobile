@@ -12,7 +12,8 @@ import * as Notification from 'expo-notifications'
 import * as Location from 'expo-location'
 import * as TaskManager from 'expo-task-manager'
 import {
-	getUnsavedActiveWorkoutPoints,
+	clearActiveWorkoutData,
+	getActiveWorkoutPoints,
 	getWorkoutMeta,
 	moveActiveWorkoutToNotSaved,
 	setActiveWorkoutPauseState,
@@ -32,6 +33,9 @@ import { updateMapSettings } from '@/store/mapStorage'
 import { finishTraining, startTraining, syncTraining } from '@/api/workout'
 import { randomHexColor } from '@/helpers/randomHexColor'
 import { prepareLocationsForSync } from '@/helpers/prepareLocationsForSync'
+import * as Network from 'expo-network'
+import { deserializeGetterType } from '@/helpers/binarySerializer'
+import { isWorkoutTooShort } from '@/helpers/isWorkoutTooShort'
 
 // Debugging
 TaskManager.getRegisteredTasksAsync().then((tasks) => {
@@ -67,6 +71,8 @@ export default function NewTraining() {
 	const permissionsRef = useRef<AllGeolocationPermissionsHandle>(null)
 	const headingSubscriptionRef = useRef<null | Location.LocationSubscription>(null)
 	const activeLocationSubscriptionRef = useRef<null | Location.LocationSubscription>(null)
+	const networkState = Network.useNetworkState()
+	const hasInternet = networkState.isInternetReachable === true
 
 	const [chosenWorkout, setChosenWorkout] = useState<IWorkoutModeElement>(WorkoutTypesData[0])
 	// Добавляем флаг ожидания старта после получения прав
@@ -380,45 +386,60 @@ export default function NewTraining() {
 	const pauseDebounced = useCallback(debounce(handleClickPause, PAUSE_DEBOUNCE_MS), [])
 
 	const handleClickEndWorkout = useCallback(async () => {
-		// @TODO требуется проверка на то что тренировка завершилась слишком рано
 		try {
-			router.push('/training/viewWorkout') // @TODO в зависимости от интернета редирект либо сюда, либо в профиль
+			// @TODO требуется проверка на то что тренировка завершилась слишком рано и что происходит
+			if (isWorkoutTooShort()) {
+				toast.info('Тренировка завершена слишком рано')
+				// return // или предложить пользователю подтвердить
+			}
+
+			if (hasInternet) {
+				router.push('/training/viewWorkout')
+			} else {
+				router.push('/profile')
+			}
 			await tracking.stopTracking()
 
 			if (headingSubscriptionRef.current) {
 				headingSubscriptionRef.current.remove()
 				headingSubscriptionRef.current = null
 			}
-			// moveActiveWorkoutToNotSaved() @TODO
-			// clearActiveWorkoutData() @TODO
 			await stopNotificationTimer()
 			// Полный сброс состояния карты и переменных
 			resetWorkoutState()
 
-			const meta = getWorkoutMeta()
-			const unsavedPoints = getUnsavedActiveWorkoutPoints()
-			if (meta?.id) {
-				// Тренировка существует на бэкенде
-				if (unsavedPoints.length) {
-					const preparedLocations = prepareLocationsForSync(unsavedPoints)
-					await syncTraining(meta.id, preparedLocations)
-				}
-			} else {
-				// Тренировка не существует на бэкенде
-				const newTraining = await startTraining({ type: chosenWorkout.type, colorHex: randomHexColor() })
-				if (unsavedPoints.length) {
-					const preparedLocations = prepareLocationsForSync(unsavedPoints)
-					await syncTraining(newTraining.id, preparedLocations)
-				}
-			}
+			// Догрузка несохраненных точек
+			if (hasInternet) {
+				const meta = getWorkoutMeta()
+				const unsavedPoints = getActiveWorkoutPoints(deserializeGetterType.NOT_SAVED)
 
-			try {
-				await finishTraining()
-			} catch {}
+				if (meta?.id) {
+					// Тренировка существует на бэкенде
+					if (unsavedPoints.length) {
+						const preparedLocations = prepareLocationsForSync(unsavedPoints)
+						await syncTraining(meta.id, preparedLocations)
+					}
+				} else {
+					// Тренировка не существует на бэкенде
+					const newTraining = await startTraining({ type: chosenWorkout.type, colorHex: randomHexColor() })
+					if (unsavedPoints.length) {
+						const preparedLocations = prepareLocationsForSync(unsavedPoints)
+						await syncTraining(newTraining.id, preparedLocations)
+					}
+				}
+
+				try {
+					await finishTraining()
+					clearActiveWorkoutData()
+				} catch {}
+			} else {
+				toast.info('Нет доступа к интернету, тренировку можно будет сохранить позже')
+				moveActiveWorkoutToNotSaved()
+			}
 		} catch (e) {
 			console.error('handleClickEndWorkout error: ', e)
 		}
-	}, [resetWorkoutState, stopNotificationTimer, tracking])
+	}, [chosenWorkout.type, hasInternet, resetWorkoutState, router, stopNotificationTimer, toast, tracking])
 
 	return (
 		<SafeAreaProvider style={{ paddingTop: insets.top }}>

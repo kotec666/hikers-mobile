@@ -27,12 +27,12 @@ import {
 	getWorkoutMeta,
 	markUnsavedWorkoutPointsAsSaved
 } from '@/store/workoutStorage'
-import * as Network from 'expo-network'
 import { finishTraining, startTraining, syncTraining } from '@/api/workout'
 import { randomHexColor } from '@/helpers/randomHexColor'
 import { prepareLocationsForSync } from '@/helpers/prepareLocationsForSync'
 import { chunkArray } from '@/helpers/chunkArray'
 import { useToast } from '@/hooks/useToast'
+import * as Network from 'expo-network'
 
 export interface IWorkoutModeElement {
 	id: number
@@ -205,6 +205,8 @@ const NewWorkout = memo((props: IProps) => {
 		for (const notSavedWorkout of notSavedWorkouts) {
 			deleteUnsavedTrainingByStartedAt(notSavedWorkout.startedAt)
 		}
+		toast.success('Все несохраненные тренировки удалены успешно')
+		closeBottomSheet()
 	}
 
 	return (

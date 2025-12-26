@@ -407,7 +407,7 @@ export const markPointsAsSaved = (pointIds: number[]) => {
 	}
 }
 
-export const getUnsavedActiveWorkoutPoints = (): IWorkoutLocationStorageItem[] => {
+export const getActiveWorkoutPoints = (deserializeGetterType: deserializeGetterType): IWorkoutLocationStorageItem[] => {
 	const meta = getWorkoutMeta()
 	if (!meta) return []
 
@@ -417,7 +417,7 @@ export const getUnsavedActiveWorkoutPoints = (): IWorkoutLocationStorageItem[] =
 		const key = `${KEY_ACTIVE_BIN_CHUNK_PREFIX}${chunkIndex}`
 		const buffer = workoutStorage.getBuffer(key)
 		if (!buffer) continue
-		const points = deserializeLocations(new Uint8Array(buffer), meta?.startedAt, deserializeGetterType.NOT_SAVED)
+		const points = deserializeLocations(new Uint8Array(buffer), meta?.startedAt, deserializeGetterType)
 
 		result.push(...points)
 	}
