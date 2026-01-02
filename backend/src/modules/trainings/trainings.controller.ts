@@ -69,8 +69,11 @@ export class TrainingsController {
 	 * @security token
 	 */
 	@Post('finish')
-	public async finish(@User() user: TokenDto.Payload): Promise<CommonDto.BooleanResponse> {
-		return this.service.finish(user.id);
+	public async finish(
+		@User() user: TokenDto.Payload,
+		@Body() dto: TrainingDto.Finish,
+	): Promise<CommonDto.BooleanResponse> {
+		return this.service.finish(user.id, dto);
 	}
 
 	/**
@@ -89,7 +92,7 @@ export class TrainingsController {
 
 	/**
 	 * @tag Trainings
-	 * @summary Удалить незавершенную тренировку (не будет отображена в истории тренировок)
+	 * @summary Удалить незавершенные тренировки (не будут отображены в истории тренировок)
 	 * @security token
 	 */
 	@Delete('delete-not-finished')

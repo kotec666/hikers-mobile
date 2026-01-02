@@ -1,4 +1,4 @@
-﻿import { BadRequestException, GoneException, Injectable, NotFoundException } from '@nestjs/common';
+﻿import { BadRequestException, ConflictException, GoneException, Injectable, NotFoundException } from '@nestjs/common';
 import { DatabaseService } from '../database/database.service';
 import {
 	DebugTrainingRouteNode,
@@ -33,10 +33,16 @@ export class TrainingsService {
 			throw new BadRequestException(ERRORS.USER_IN_NOT_FINISHED_TRAINING);
 		}
 
+		if (typeof dto.ts !== 'undefined') {
+			if (Date.now() < dto.ts) {
+				throw new ConflictException(`_ts:${ERRORS.DATE_IN_THE_FUTURE}`);
+			}
+		}
+
 		const upsertQuery = {
 			type: dto.type,
 			userCreatorId: userId,
-			startedAt: new Date(),
+			startedAt: dto.ts ? new Date(dto.ts) : new Date(),
 		};
 		const returningQuery = {
 			id: training.id,
@@ -93,18 +99,24 @@ export class TrainingsService {
 		});
 	}
 
-	public async finish(userId: string): Promise<CommonDto.BooleanResponse> {
+	public async finish(userId: string, dto: TrainingDto.Finish): Promise<CommonDto.BooleanResponse> {
 		// Создатель может завершить только активную треню - находим её
 		const [activeTraining] = await this.getActive(userId, true);
 		if (!activeTraining) {
 			throw new NotFoundException(ERRORS.NOT_FOUND);
 		}
 
+		if (typeof dto.ts !== 'undefined' && activeTraining.startedAt) {
+			if (dto.ts < activeTraining.startedAt.getTime()) {
+				throw new ConflictException(`_ts:${ERRORS.DATE_IN_THE_PAST}`);
+			}
+		}
+
 		return await this.db.db.transaction(async (tx) => {
 			await tx
 				.update(training)
 				.set({
-					finishedAt: new Date(),
+					finishedAt: dto.ts ? new Date(dto.ts) : new Date(),
 				})
 				.where(eq(training.id, activeTraining.id));
 
