@@ -390,7 +390,7 @@ export default function NewTraining() {
 			// @TODO требуется проверка на то что тренировка завершилась слишком рано и что происходит
 			if (isWorkoutTooShort()) {
 				toast.info('Тренировка завершена слишком рано')
-				// return // или предложить пользователю подтвердить
+				return clearActiveWorkoutData()
 			}
 
 			if (hasInternet) {
@@ -421,7 +421,11 @@ export default function NewTraining() {
 					}
 				} else {
 					// Тренировка не существует на бэкенде
-					const newTraining = await startTraining({ type: chosenWorkout.type, colorHex: randomHexColor() })
+					const newTraining = await startTraining({
+						type: chosenWorkout.type,
+						colorHex: randomHexColor(),
+						ts: meta?.startedAt
+					})
 					if (unsavedPoints.length) {
 						const preparedLocations = prepareLocationsForSync(unsavedPoints)
 						await syncTraining(newTraining.id, preparedLocations)
@@ -443,42 +447,42 @@ export default function NewTraining() {
 
 	return (
 		<SafeAreaProvider style={{ paddingTop: insets.top }}>
-			<GestureHandlerRootView style={{ flex: 1 }}>
-				<View style={styles.container}>
-					{isWorkoutStarted ? (
-						<WorkoutStarted
-							handleClickPause={pauseDebounced}
-							handleClickEndWorkout={handleClickEndWorkout}
-							workoutType={chosenWorkout.type}
-							isPaused={isPaused}
-							mapComponentRef={mapComponentRef}
-							metricAvgSpeedRef={metricAvgSpeedRef}
-							metricSpeedRef={metricSpeedRef}
-							metricDistanceRef={metricDistanceRef}
-							metricCaloriesRef={metricCaloriesRef}
-							metricHeightRef={metricHeightRef}
-							accumulatedDistanceRef={accumulatedDistanceRef} // Для темпа
-							initialLocationsState={initialLocationsState}
-							userLocationMarkerRef={userLocationMarkerRef}
-							initialMarkerLocation={initialMarkerLocationState}
-							latestUserMarkerLocationRef={latestUserMarkerLocationRef}
-						/>
-					) : (
-						<NewWorkout
-							userLocationMarkerRef={userLocationMarkerRef}
-							initialMarkerLocation={initialMarkerLocationState}
-							latestUserMarkerLocationRef={latestUserMarkerLocationRef}
-							allPermsGranted={allPermissionsGrantedCallback}
-							handleClickStart={handleClickStart}
-							handleChangeWorkout={handleChangeWorkout}
-							chosenWorkout={chosenWorkout}
-							WorkoutTypesData={WorkoutTypesData}
-							permissionsRef={permissionsRef}
-							mapComponentRef={mapComponentRef}
-						/>
-					)}
-				</View>
-			</GestureHandlerRootView>
+			{/*<GestureHandlerRootView style={{ flex: 1 }}>*/}
+			<View style={styles.container}>
+				{isWorkoutStarted ? (
+					<WorkoutStarted
+						handleClickPause={pauseDebounced}
+						handleClickEndWorkout={handleClickEndWorkout}
+						workoutType={chosenWorkout.type}
+						isPaused={isPaused}
+						mapComponentRef={mapComponentRef}
+						metricAvgSpeedRef={metricAvgSpeedRef}
+						metricSpeedRef={metricSpeedRef}
+						metricDistanceRef={metricDistanceRef}
+						metricCaloriesRef={metricCaloriesRef}
+						metricHeightRef={metricHeightRef}
+						accumulatedDistanceRef={accumulatedDistanceRef} // Для темпа
+						initialLocationsState={initialLocationsState}
+						userLocationMarkerRef={userLocationMarkerRef}
+						initialMarkerLocation={initialMarkerLocationState}
+						latestUserMarkerLocationRef={latestUserMarkerLocationRef}
+					/>
+				) : (
+					<NewWorkout
+						userLocationMarkerRef={userLocationMarkerRef}
+						initialMarkerLocation={initialMarkerLocationState}
+						latestUserMarkerLocationRef={latestUserMarkerLocationRef}
+						allPermsGranted={allPermissionsGrantedCallback}
+						handleClickStart={handleClickStart}
+						handleChangeWorkout={handleChangeWorkout}
+						chosenWorkout={chosenWorkout}
+						WorkoutTypesData={WorkoutTypesData}
+						permissionsRef={permissionsRef}
+						mapComponentRef={mapComponentRef}
+					/>
+				)}
+			</View>
+			{/*</GestureHandlerRootView>*/}
 		</SafeAreaProvider>
 	)
 }

@@ -137,7 +137,8 @@ const NewWorkout = memo((props: IProps) => {
 				if (!trainingId) {
 					const newTraining = await startTraining({
 						type: initialWorkout.type,
-						colorHex: randomHexColor()
+						colorHex: randomHexColor(),
+						ts: initialWorkout.startedAt
 					})
 
 					trainingId = newTraining.id
@@ -153,7 +154,7 @@ const NewWorkout = memo((props: IProps) => {
 					// 2. Все точки уже сохранены
 					if (unsavedPoints.length === 0) {
 						try {
-							await finishTraining()
+							await finishTraining({ ts: workout.locations[-1].relTs + workout.startedAt })
 							deleteUnsavedTrainingByStartedAt(workout.startedAt)
 						} catch (e) {
 							console.error('[sync] finishTraining failed', e)

@@ -10,7 +10,6 @@ import { getFieldsErrors } from '@/helpers/getFieldsErrors'
 import BottomSheet from '@/components/ui/BottomSheet/BottomSheet'
 import { BottomSheetHandle } from '@/components/ui/BottomSheet/types'
 import AchievementDetailed from '@/components/BottomSheets/AchievementDetailed'
-import { GestureHandlerRootView } from 'react-native-gesture-handler'
 import { useLocalSearchParams } from 'expo-router'
 
 const { height: screenHeight } = Dimensions.get('screen')
@@ -56,38 +55,38 @@ const UserAchievementsPage = () => {
 	}
 
 	return (
-		<GestureHandlerRootView style={{ flex: 1 }}>
-			<SafeAreaProvider style={{ paddingTop: insets.top, paddingBottom: insets.bottom + 20 }}>
-				<View style={{ flex: 1 }}>
-					<Container className="gap-[20px] mt-[20px] flex-1">
-						<HeaderBack>Достижения</HeaderBack>
-						<ScrollView style={{ flex: 1, width: '100%' }}>
-							<View className="gap-[10px]">
-								{state.claimedAchievements.length && (
-									<Text className="text-base text-white" style={{ fontFamily: fontFamily.bold }}>
-										Полученные
-									</Text>
-								)}
-								{state.claimedAchievements.map((achievement) => (
-									<AchievementsListItem
-										key={achievement.id}
-										id={achievement.id}
-										progress={achievement.progress}
-										title={achievement.title}
-										colorHex={achievement.colorHex}
-										iconFilename={achievement.iconFilename}
-										handleClickAchievement={handleClickAchievement}
-									/>
-								))}
-							</View>
-						</ScrollView>
-					</Container>
-					<BottomSheet ref={bottomSheetRef} activeHeight={screenHeight * 0.5}>
-						{bottomSheetContent}
-					</BottomSheet>
-				</View>
-			</SafeAreaProvider>
-		</GestureHandlerRootView>
+		// <GestureHandlerRootView style={{ flex: 1 }}>
+		<SafeAreaProvider style={{ paddingTop: insets.top, paddingBottom: insets.bottom + 20 }}>
+			<View style={{ flex: 1 }}>
+				<Container className="gap-[20px] mt-[20px] flex-1">
+					<HeaderBack>Достижения</HeaderBack>
+					<ScrollView style={{ flex: 1, width: '100%' }}>
+						<View className="gap-[10px]">
+							{state.claimedAchievements.length && (
+								<Text className="text-base text-white" style={{ fontFamily: fontFamily.bold }}>
+									Полученные
+								</Text>
+							)}
+							{state.claimedAchievements.map((achievement) => (
+								<AchievementsListItem
+									key={achievement.id}
+									id={achievement.id}
+									progress={achievement.progress}
+									title={achievement.title}
+									colorHex={achievement.colorHex}
+									iconFilename={achievement.iconFilename}
+									handleClickAchievement={handleClickAchievement}
+								/>
+							))}
+						</View>
+					</ScrollView>
+				</Container>
+				<BottomSheet ref={bottomSheetRef} activeHeight={screenHeight * 0.5}>
+					{bottomSheetContent}
+				</BottomSheet>
+			</View>
+		</SafeAreaProvider>
+		// </GestureHandlerRootView>
 	)
 }
 

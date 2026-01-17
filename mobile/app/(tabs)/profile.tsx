@@ -2,7 +2,6 @@ import React, { useEffect, useState } from 'react'
 import { SafeAreaProvider, useSafeAreaInsets } from 'react-native-safe-area-context'
 import { Container } from '@/components/ui/Container'
 import { ScrollView, View, Text, RefreshControl } from 'react-native'
-import { UserAvatar } from '@/components/ui/UserAvatar'
 import SettingsSvg from '@/components/svg/SettingsSvg'
 import MoreOptionsButton from '@/components/ui/MoreOptionsButton/MoreOptionsButton'
 import { fontFamily } from '@/constants/Fonts'
@@ -13,11 +12,11 @@ import RedirectAchievementsInfo from '@/components/ui/Profile/RedirectAchievemen
 import PostListItem from '@/components/ui/Post/PostListItem'
 import { RelativePathString, useRouter } from 'expo-router'
 import { useAuthStore } from '@/store/authStore'
-import NavBar from '@/components/ui/NavBar'
 import { getProfileData, IProfile } from '@/api/profile'
 import { getFieldsErrors } from '@/helpers/getFieldsErrors'
 import { PATH_TO_IMAGE } from '@/constants/PATH_TO_FILES'
 import { useEditActivitiesStore } from '@/store/editActivitiesStore'
+import { AnimatedProfilePicture } from '@/components/ui/Profile/AnimatedProfilePicture'
 
 /**
  *
@@ -89,7 +88,6 @@ const Profile = () => {
 
 	return (
 		<>
-			<NavBar />
 			<SafeAreaProvider style={{ paddingTop: insets.top, paddingBottom: insets.bottom }}>
 				<ScrollView
 					refreshControl={
@@ -100,11 +98,10 @@ const Profile = () => {
 						<View className="gap-[20px]">
 							<View className="gap-[16px]">
 								<View className="flex-row justify-between w-full">
-									<UserAvatar
+									<AnimatedProfilePicture
+										size={117}
 										bordered
-										className="w-[117px] h-[117px]"
-										iconSize={{ width: 60, height: 60 }}
-										avatar={`${PATH_TO_IMAGE}${user?.avatarFilename}`}
+										imageUrl={`${PATH_TO_IMAGE}${user?.avatarFilename}`}
 									/>
 									<MoreOptionsButton
 										icon={<SettingsSvg />}

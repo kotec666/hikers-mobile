@@ -62,54 +62,54 @@ const AchievementsPage = () => {
 	}
 
 	return (
-		<GestureHandlerRootView style={{ flex: 1 }}>
-			<SafeAreaProvider style={{ paddingTop: insets.top, paddingBottom: insets.bottom + 20 }}>
-				<View style={{ flex: 1 }}>
-					<Container className="gap-[20px] mt-[20px] flex-1">
-						<HeaderBack>Мои достижения</HeaderBack>
-						<ScrollView style={{ flex: 1, width: '100%' }}>
-							<View className="gap-[10px]">
-								{state.claimedAchievements.length && (
-									<Text className="text-base text-white" style={{ fontFamily: fontFamily.bold }}>
-										Полученные
-									</Text>
-								)}
-								{state.claimedAchievements.map((achievement) => (
-									<AchievementsListItem
-										key={achievement.id}
-										id={achievement.id}
-										progress={achievement.progress}
-										title={achievement.title}
-										colorHex={achievement.colorHex}
-										iconFilename={achievement.iconFilename}
-										handleClickAchievement={handleClickAchievement}
-									/>
-								))}
-								{state.unClaimedAchievements.length && (
-									<Text className="text-base text-white" style={{ fontFamily: fontFamily.bold }}>
-										Не полученные
-									</Text>
-								)}
-								{state.unClaimedAchievements.map((achievement) => (
-									<AchievementsListItem
-										key={achievement.id}
-										id={achievement.id}
-										progress={achievement.progress}
-										title={achievement.title}
-										colorHex={achievement.colorHex}
-										iconFilename={achievement.iconFilename}
-										handleClickAchievement={handleClickAchievement}
-									/>
-								))}
-							</View>
-						</ScrollView>
-					</Container>
-					<BottomSheet ref={bottomSheetRef} activeHeight={screenHeight * 0.5}>
-						{bottomSheetContent}
-					</BottomSheet>
-				</View>
-			</SafeAreaProvider>
-		</GestureHandlerRootView>
+		// <GestureHandlerRootView style={{ flex: 1 }}>
+		<SafeAreaProvider style={{ paddingTop: insets.top, paddingBottom: insets.bottom + 20 }}>
+			<View style={{ flex: 1 }}>
+				<Container className="gap-[20px] mt-[20px] flex-1">
+					<HeaderBack>Мои достижения</HeaderBack>
+					<ScrollView style={{ flex: 1, width: '100%' }}>
+						<View className="gap-[10px]">
+							{state.claimedAchievements.length && (
+								<Text className="text-base text-white" style={{ fontFamily: fontFamily.bold }}>
+									Полученные
+								</Text>
+							)}
+							{state.claimedAchievements.map((achievement) => (
+								<AchievementsListItem
+									key={achievement.id}
+									id={achievement.id}
+									progress={achievement.progress}
+									title={achievement.title}
+									colorHex={achievement.colorHex}
+									iconFilename={achievement.iconFilename}
+									handleClickAchievement={handleClickAchievement}
+								/>
+							))}
+							{state.unClaimedAchievements.length && (
+								<Text className="text-base text-white" style={{ fontFamily: fontFamily.bold }}>
+									Не полученные
+								</Text>
+							)}
+							{state.unClaimedAchievements.map((achievement) => (
+								<AchievementsListItem
+									key={achievement.id}
+									id={achievement.id}
+									progress={achievement.progress}
+									title={achievement.title}
+									colorHex={achievement.colorHex}
+									iconFilename={achievement.iconFilename}
+									handleClickAchievement={handleClickAchievement}
+								/>
+							))}
+						</View>
+					</ScrollView>
+				</Container>
+				<BottomSheet ref={bottomSheetRef} activeHeight={screenHeight * 0.5}>
+					{bottomSheetContent}
+				</BottomSheet>
+			</View>
+		</SafeAreaProvider>
+		// </GestureHandlerRootView>
 	)
 }
 

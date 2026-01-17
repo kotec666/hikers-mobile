@@ -1,7 +1,6 @@
 import React, { useEffect, useState } from 'react'
 import { RefreshControl, ScrollView, Text, View } from 'react-native'
 import { Container } from '@/components/ui/Container'
-import { UserAvatar } from '@/components/ui/UserAvatar'
 import { fontFamily } from '@/constants/Fonts'
 import SocialStats from '@/components/ui/Profile/SocialStats'
 import { Button } from '@/components/ui/Button'
@@ -19,6 +18,7 @@ import { useToast } from '@/hooks/useToast'
 import Modal from '@/components/ui/Modal/Modal'
 import { addAsFriend, deleteFriendById, revokeFriendInviteByUserId } from '@/api/friends'
 import { FriendStatus } from '@shared/enums'
+import { AnimatedProfilePicture } from '@/components/ui/Profile/AnimatedProfilePicture'
 
 /**
  *
@@ -203,11 +203,10 @@ const UserProfilePage = () => {
 						<View className="gap-[20px]">
 							<View className="gap-[16px]">
 								<View className="flex-row justify-between w-full">
-									<UserAvatar
+									<AnimatedProfilePicture
+										size={117}
 										bordered
-										className="w-[117px] h-[117px]"
-										iconSize={{ width: 60, height: 60 }}
-										avatar={`${PATH_TO_IMAGE}${data.profileData?.user?.avatarFilename}`}
+										imageUrl={`${PATH_TO_IMAGE}${data.profileData?.user?.avatarFilename}`}
 									/>
 									{/*<MoreOptionsButton*/}
 									{/*	icon={<MoreOptionsSvg />}*/}

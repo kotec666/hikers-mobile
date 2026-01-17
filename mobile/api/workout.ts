@@ -80,7 +80,11 @@ export const getTrainingInfo = async (trainingId: string): Promise<ITraining[]> 
 }
 
 // Начать тренировку
-export const startTraining = async (data: { type: TrainingType; colorHex: string }): Promise<ITraining> => {
+export const startTraining = async (data: {
+	type: TrainingType
+	colorHex: string
+	ts?: number
+}): Promise<ITraining> => {
 	return (
 		await fetcher.post(`trainings/start`, {
 			json: data
@@ -89,8 +93,12 @@ export const startTraining = async (data: { type: TrainingType; colorHex: string
 }
 
 // Завершить тренировку
-export const finishTraining = async (): Promise<{ success: boolean }> => {
-	return (await fetcher.post('trainings/finish')).json()
+export const finishTraining = async (data?: { ts?: number }): Promise<{ success: boolean }> => {
+	return (
+		await fetcher.post('trainings/finish', {
+			json: data
+		})
+	).json()
 }
 
 // Передать метрики по тренировке (можно частями)

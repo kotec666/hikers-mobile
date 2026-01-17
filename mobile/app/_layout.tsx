@@ -11,6 +11,8 @@ import { NotificationProvider } from '@/components/providers/NotificationProvide
 import notifee, { EventType } from '@notifee/react-native'
 import { setActiveWorkoutPauseState } from '@/store/workoutStorage'
 import { getAuthData } from '@/services/tokenService'
+import { GestureHandlerRootView } from 'react-native-gesture-handler'
+import PortalProvider from '@/components/Portal/PortalProvider'
 
 YamapInstance.setLocale('ru_RU')
 YamapInstance.init(process.env.EXPO_PUBLIC_YAMAP_KEY || '')
@@ -91,30 +93,32 @@ export default function RootLayout() {
 	const notAuthenticatedRoutes = ['auth']
 
 	return (
-		<>
-			<Stack
-				screenOptions={{
-					headerShown: false,
-					contentStyle: {
-						backgroundColor: Colors['black-0d']
-					}
-				}}
-			>
-				{baseRoutes.map((route) => (
-					<Stack.Screen key={route} name={route} options={{ headerShown: false }} />
-				))}
-				<Stack.Protected guard={isAuthenticated}>
-					{authenticatedRoutes.map((route) => (
+		<GestureHandlerRootView className="flex-1">
+			<PortalProvider>
+				<Stack
+					screenOptions={{
+						headerShown: false,
+						contentStyle: {
+							backgroundColor: Colors['black-0d']
+						}
+					}}
+				>
+					{baseRoutes.map((route) => (
 						<Stack.Screen key={route} name={route} options={{ headerShown: false }} />
 					))}
-				</Stack.Protected>
-				<Stack.Protected guard={!isAuthenticated}>
-					{notAuthenticatedRoutes.map((route) => (
-						<Stack.Screen key={route} name={route} options={{ headerShown: false }} />
-					))}
-				</Stack.Protected>
-			</Stack>
-			<NotificationProvider />
-		</>
+					<Stack.Protected guard={isAuthenticated}>
+						{authenticatedRoutes.map((route) => (
+							<Stack.Screen key={route} name={route} options={{ headerShown: false }} />
+						))}
+					</Stack.Protected>
+					<Stack.Protected guard={!isAuthenticated}>
+						{notAuthenticatedRoutes.map((route) => (
+							<Stack.Screen key={route} name={route} options={{ headerShown: false }} />
+						))}
+					</Stack.Protected>
+				</Stack>
+				<NotificationProvider />
+			</PortalProvider>
+		</GestureHandlerRootView>
 	)
 }

@@ -36,12 +36,12 @@ const ProfileEditActivity = () => {
 
 	return (
 		<SafeAreaProvider style={{ paddingTop: insets.top, paddingBottom: insets.bottom }}>
-			<GestureHandlerRootView style={{ flex: 1 }}>
-				<Container className="gap-[20px]">
-					<HeaderBack>Топ 3 активности на показ</HeaderBack>
-				</Container>
-				{Boolean(data.activities?.length) && <ActivityInfo activities={data.activities || []} isChooseMode />}
-			</GestureHandlerRootView>
+			{/*<GestureHandlerRootView style={{ flex: 1 }}>*/}
+			<Container className="gap-[20px]">
+				<HeaderBack>Топ 3 активности на показ</HeaderBack>
+			</Container>
+			{Boolean(data.activities?.length) && <ActivityInfo activities={data.activities || []} isChooseMode />}
+			{/*</GestureHandlerRootView>*/}
 		</SafeAreaProvider>
 	)
 }
