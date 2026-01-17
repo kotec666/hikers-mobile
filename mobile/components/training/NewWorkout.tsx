@@ -154,7 +154,9 @@ const NewWorkout = memo((props: IProps) => {
 					// 2. Все точки уже сохранены
 					if (unsavedPoints.length === 0) {
 						try {
-							await finishTraining({ ts: workout.locations[-1].relTs + workout.startedAt })
+							await finishTraining({
+								ts: workout.locations[workout.locations.length - 1].relTs + workout.startedAt
+							})
 							deleteUnsavedTrainingByStartedAt(workout.startedAt)
 						} catch (e) {
 							console.error('[sync] finishTraining failed', e)

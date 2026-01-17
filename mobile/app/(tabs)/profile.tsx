@@ -17,6 +17,7 @@ import { getFieldsErrors } from '@/helpers/getFieldsErrors'
 import { PATH_TO_IMAGE } from '@/constants/PATH_TO_FILES'
 import { useEditActivitiesStore } from '@/store/editActivitiesStore'
 import { AnimatedProfilePicture } from '@/components/ui/Profile/AnimatedProfilePicture'
+import * as Network from 'expo-network'
 
 /**
  *
@@ -37,6 +38,9 @@ const Profile = () => {
 	const router = useRouter()
 	const { logout, user, setUser } = useAuthStore()
 	const { newActivitiesOrder } = useEditActivitiesStore()
+	const networkState = Network.useNetworkState()
+	const hasInternet = networkState.isInternetReachable === true
+
 	const [data, setData] = useState<{
 		profileData?: IProfile
 		refreshing: boolean
@@ -132,7 +136,7 @@ const Profile = () => {
 											className="text-[19px] text-white"
 											style={{ fontFamily: fontFamily.bold }}
 										>
-											{user?.name}
+											{user?.name} [{hasInternet ? 'есть интернет' : 'нет интернета'}]
 										</Text>
 									)}
 									{user?.username && (
