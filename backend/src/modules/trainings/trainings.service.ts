@@ -99,15 +99,15 @@ export class TrainingsService {
 		});
 	}
 
-	public async finish(userId: string, dto: TrainingDto.Finish): Promise<CommonDto.BooleanResponse> {
+	public async finish(userId: string, ts?: number): Promise<CommonDto.BooleanResponse> {
 		// Создатель может завершить только активную треню - находим её
 		const [activeTraining] = await this.getActive(userId, true);
 		if (!activeTraining) {
 			throw new NotFoundException(ERRORS.NOT_FOUND);
 		}
 
-		if (typeof dto.ts !== 'undefined' && activeTraining.startedAt) {
-			if (dto.ts < activeTraining.startedAt.getTime()) {
+		if (typeof ts !== 'undefined' && activeTraining.startedAt) {
+			if (ts < activeTraining.startedAt.getTime()) {
 				throw new ConflictException(`_ts:${ERRORS.DATE_IN_THE_PAST}`);
 			}
 		}
@@ -116,7 +116,7 @@ export class TrainingsService {
 			await tx
 				.update(training)
 				.set({
-					finishedAt: dto.ts ? new Date(dto.ts) : new Date(),
+					finishedAt: ts ? new Date(ts) : new Date(),
 				})
 				.where(eq(training.id, activeTraining.id));
 

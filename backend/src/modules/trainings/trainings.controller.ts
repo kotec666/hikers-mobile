@@ -71,9 +71,9 @@ export class TrainingsController {
 	@Post('finish')
 	public async finish(
 		@User() user: TokenDto.Payload,
-		@Body() dto: TrainingDto.Finish,
+		@Body() dto?: TrainingDto.Finish,
 	): Promise<CommonDto.BooleanResponse> {
-		return this.service.finish(user.id, dto);
+		return this.service.finish(user.id, dto?.ts);
 	}
 
 	/**
