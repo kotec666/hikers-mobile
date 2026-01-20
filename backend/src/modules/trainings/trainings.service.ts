@@ -203,9 +203,19 @@ export class TrainingsService {
 			.where(eq(trainingRoutes.participantId, participant.id))
 			.limit(1);
 
-		if (trainingRoute) {
-			const updatedPoints = (trainingRoute.points || []).concat(metrics);
+		const updatedPoints = (trainingRoute?.points ?? []).concat(metrics);
+		// Сортируем в порядке возрастания rel_ts
+		updatedPoints.sort((a, b) => {
+			if (a.rel_ts > b.rel_ts) {
+				return 1;
+			}
+			if (a.rel_ts < b.rel_ts) {
+				return -1;
+			}
+			return 0;
+		});
 
+		if (trainingRoute) {
 			await this.db.db
 				.update(trainingRoutes)
 				.set({
@@ -215,7 +225,7 @@ export class TrainingsService {
 		} else {
 			await this.db.db.insert(trainingRoutes).values({
 				participantId: participant.id,
-				points: metrics,
+				points: updatedPoints,
 
 				createdAt: new Date(),
 			});
