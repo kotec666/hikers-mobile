@@ -18,6 +18,7 @@ import { ActivitiesModule } from './modules/activities/activities.module';
 import { ProfileModule } from './modules/profile/profile.module';
 import { TrainingsModule } from './modules/trainings/trainings.module';
 import { config } from 'dotenv';
+import { PostsModule } from './modules/posts/posts.module';
 
 config({ quiet: true });
 
@@ -78,6 +79,7 @@ config({ quiet: true });
 		ActivitiesModule,
 		ProfileModule,
 		TrainingsModule,
+		PostsModule,
 	],
 	providers: [UniqueEmailValidator],
 })
