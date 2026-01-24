@@ -11,6 +11,7 @@ import {
 	smallint,
 	index,
 	uniqueIndex,
+	unique,
 	jsonb,
 	pgEnum,
 } from 'drizzle-orm/pg-core';
@@ -274,9 +275,12 @@ export const posts = pgTable(
 		title: varchar('title', { length: 255 }).notNull(),
 		description: text('description'),
 		createdAt: timestamp('created_at').defaultNow().notNull(),
-		updatedAt: timestamp('updated_at').defaultNow(),
+		updatedAt: timestamp('updated_at'),
 	},
-	(table) => [index('post_usr_idx').on(table.userCreatorId)],
+	(table) => [
+		index('post_usr_idx').on(table.userCreatorId),
+		unique('post_one_per_participant').on(table.trainingId, table.userCreatorId),
+	],
 );
 
 // Post Likes

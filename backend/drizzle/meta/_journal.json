@@ -162,6 +162,13 @@
       "when": 1765784361107,
       "tag": "0022_training_type_walk",
       "breakpoints": true
+    },
+    {
+      "idx": 23,
+      "version": "7",
+      "when": 1769262541471,
+      "tag": "0023_posts_unique_pair_and_nullable_updated_at",
+      "breakpoints": true
     }
   ]
 }
