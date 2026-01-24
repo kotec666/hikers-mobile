@@ -3,6 +3,8 @@ import { UniqueEmailValidator } from './unique-email.validator';
 import { UserActivity } from '@shared/enums';
 import { ERRORS } from '@shared/errors';
 import { validate } from 'uuid';
+import { TrainingParticipantValidator } from './training-participant.validator';
+import { FinishedTrainingValidator } from './finished-training.validator';
 
 export function IsUUID(validationOptions?: ValidationOptions) {
 	return function (object: object, propertyName: string) {
@@ -49,6 +51,32 @@ export function HasDigit(validationOptions?: ValidationOptions) {
 					return `_${propertyName}:${ERRORS.DIGIT_REQUIRED}`;
 				},
 			},
+		});
+	};
+}
+
+export function IsTrainingFinished(validationOptions?: ValidationOptions) {
+	return function (object: object, propertyName: string) {
+		registerDecorator({
+			name: 'IsTrainingFinished',
+			target: object.constructor,
+			propertyName: propertyName,
+			options: validationOptions,
+			async: true,
+			validator: FinishedTrainingValidator,
+		});
+	};
+}
+
+export function IsTrainingParticipant(validationOptions?: ValidationOptions) {
+	return function (object: object, propertyName: string) {
+		registerDecorator({
+			name: 'IsTrainingParticipant',
+			target: object.constructor,
+			propertyName: propertyName,
+			options: validationOptions,
+			async: true,
+			validator: TrainingParticipantValidator,
 		});
 	};
 }
