@@ -1,9 +1,9 @@
 ﻿import { Controller, Delete, Get, Param, Post, UseInterceptors } from '@nestjs/common';
 import { SubscribersService } from './subscribers.service';
-import { UserInterceptor } from 'src/common/interceptors/user.interceptor';
+import { UserInterceptor } from '../../common/interceptors/user.interceptor';
 import { SubscriberDto, SubscriptionDto } from './subscribers.dto';
-import { CommonDto } from 'src/common/dto/common.dto';
-import { User, UserData } from 'src/common/decorators/user.decorator';
+import { CommonDto } from '../../common/dto/common.dto';
+import { User, UserData } from '../../common/decorators/user.decorator';
 import { IsUUID } from '@validation/uuid.validatior';
 
 @Controller('subscribers')

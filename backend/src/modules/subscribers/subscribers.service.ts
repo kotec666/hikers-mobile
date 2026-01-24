@@ -3,7 +3,7 @@ import { DatabaseService } from '../database/database.service';
 import { users, userSubscribers } from '../database/schema';
 import { SubscriberDto, SubscriptionDto } from './subscribers.dto';
 import { and, count, eq } from 'drizzle-orm';
-import { CommonDto } from 'src/common/dto/common.dto';
+import { CommonDto } from '../../common/dto/common.dto';
 import { ERRORS } from '@shared/errors';
 
 @Injectable()

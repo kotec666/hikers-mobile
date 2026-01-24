@@ -1,7 +1,7 @@
 ﻿import { Body, Controller, Get, Param, Patch, UploadedFile, UseInterceptors } from '@nestjs/common';
 import { ProfileService } from './profile.service';
-import { UserInterceptor } from 'src/common/interceptors/user.interceptor';
-import { User, UserData } from 'src/common/decorators/user.decorator';
+import { UserInterceptor } from '../../common/interceptors/user.interceptor';
+import { User, UserData } from '../../common/decorators/user.decorator';
 import { ProfileDto } from './profile.dto';
 import { FileInterceptor } from '@nestjs/platform-express';
 

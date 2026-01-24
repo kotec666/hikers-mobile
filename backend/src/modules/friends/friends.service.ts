@@ -5,7 +5,7 @@ import { userFriends, userFriendsInvites } from '../database/schema';
 import { eq, and, or, count } from 'drizzle-orm';
 import { ERRORS } from '@shared/errors';
 import { UserService } from '../user/user.service';
-import { CommonDto } from 'src/common/dto/common.dto';
+import { CommonDto } from '../../common/dto/common.dto';
 import { FriendStatus } from '@shared/enums';
 
 @Injectable()
