@@ -299,18 +299,15 @@ export const postLikes = pgTable(
 );
 
 // Post Media (many-to-many)
-export const postMedia = pgTable(
-	'post_media',
-	{
-		postId: uuid('post_id')
-			.notNull()
-			.references(() => posts.id),
-		mediaFilename: varchar('media_filename', { length: 255 })
-			.notNull()
-			.references(() => media.filename),
-	},
-	(table) => [primaryKey({ columns: [table.postId, table.mediaFilename] })],
-);
+export const postMedia = pgTable('post_media', {
+	id: uuid('id').primaryKey().defaultRandom(),
+	postId: uuid('post_id')
+		.notNull()
+		.references(() => posts.id),
+	mediaFilename: varchar('media_filename', { length: 255 })
+		.notNull()
+		.references(() => media.filename),
+});
 
 // Notifications
 export const notifications = pgTable(

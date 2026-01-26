@@ -169,6 +169,13 @@
       "when": 1769262541471,
       "tag": "0023_posts_unique_pair_and_nullable_updated_at",
       "breakpoints": true
+    },
+    {
+      "idx": 24,
+      "version": "7",
+      "when": 1769436156462,
+      "tag": "0024_add_post_media_id_pkey",
+      "breakpoints": true
     }
   ]
 }
