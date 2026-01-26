@@ -32,7 +32,7 @@ import { randomHexColor } from '@/helpers/randomHexColor'
 import { prepareLocationsForSync } from '@/helpers/prepareLocationsForSync'
 import { chunkArray } from '@/helpers/chunkArray'
 import { useToast } from '@/hooks/useToast'
-import * as Network from 'expo-network'
+import { addNetworkStateListener } from 'expo-network'
 
 export interface IWorkoutModeElement {
 	id: number
@@ -64,9 +64,18 @@ const NewWorkout = memo((props: IProps) => {
 	const bottomSheetRef = useRef<BottomSheetHandle>(null)
 	const unsavedWorkoutsShownRef = useRef<boolean>(false)
 	const isSyncInProgressRef = useRef<boolean>(false)
-	const networkState = Network.useNetworkState()
-	const hasInternet = networkState.isInternetReachable === true
 	const [isSaving, setIsSaving] = useState(false)
+	const isInternetReachableRef = useRef<boolean | undefined>(false)
+
+	useEffect(() => {
+		const subscription = addNetworkStateListener(({ type, isConnected, isInternetReachable }) => {
+			isInternetReachableRef.current = Boolean(isConnected && isInternetReachable)
+		})
+
+		return () => {
+			subscription.remove()
+		}
+	}, [])
 
 	const openBottomSheet = useCallback(() => {
 		if (bottomSheetRef.current) {
@@ -75,7 +84,7 @@ const NewWorkout = memo((props: IProps) => {
 	}, [])
 
 	useEffect(() => {
-		if (unsavedWorkoutsShownRef.current || !hasInternet) return
+		if (unsavedWorkoutsShownRef.current || !isInternetReachableRef.current) return
 
 		const meta = getWorkoutMeta()
 		if (meta) return
@@ -85,7 +94,7 @@ const NewWorkout = memo((props: IProps) => {
 		if (notSavedWorkouts.length === 0) return
 		openBottomSheet()
 		unsavedWorkoutsShownRef.current = true
-	}, [hasInternet, openBottomSheet])
+	}, [isInternetReachableRef, openBottomSheet])
 
 	useEffect(() => {
 		return () => {
@@ -116,7 +125,7 @@ const NewWorkout = memo((props: IProps) => {
 	}
 
 	const saveUnsavedTrainings = async () => {
-		if (!hasInternet) {
+		if (!isInternetReachableRef.current) {
 			console.warn('[sync] No internet, skip sync')
 			toast.error('Нет доступа к интернету, сохранение невозможно')
 			return closeBottomSheet()

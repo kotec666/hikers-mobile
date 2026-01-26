@@ -14,6 +14,7 @@ export const workoutStorage = createMMKV({
 
 // Keys
 const KEY_NOT_SAVED = 'NOT_SAVED_WORKOUTS'
+const KEY_SHORT_WORKOUTS = 'SHORT_WORKOUTS'
 const KEY_ACTIVE_META = 'ACTIVE_WORKOUT_META'
 const KEY_ACTIVE_BIN_CHUNK_PREFIX = 'BIN_CHUNK_'
 
@@ -22,6 +23,7 @@ export const CHUNK_POINT_COUNT = 200
 
 export interface IWorkoutStorage {
 	notSavedWorkouts: IWorkout[]
+	shortWorkouts: IWorkout[] // список коротких тренировок, которые нужно удалить, когда появится интернет на устройстве
 	activeWorkout: IWorkout | null
 }
 
@@ -137,6 +139,19 @@ export const getNotSavedWorkouts = (): IWorkout[] => {
 	return []
 }
 
+export const getShortWorkouts = (): IWorkout[] => {
+	const shortWorkoutsStr = workoutStorage.getString(KEY_SHORT_WORKOUTS)
+	if (shortWorkoutsStr) {
+		try {
+			return JSON.parse(shortWorkoutsStr) as IWorkout[]
+		} catch (e) {
+			console.error('Failed to parse shortWorkouts:', e)
+			return []
+		}
+	}
+	return []
+}
+
 export const getUnsavedWorkoutByStartedAt = (startedAt: number): IWorkout | null => {
 	return getNotSavedWorkouts().find((w) => w.startedAt === startedAt) ?? null
 }
@@ -201,6 +216,20 @@ export const moveActiveWorkoutToNotSaved = () => {
 
 		const updatedNotSaved = [...notSavedWorkouts, fullActive]
 		workoutStorage.set(KEY_NOT_SAVED, JSON.stringify(updatedNotSaved))
+
+		clearActiveWorkoutData()
+	}
+}
+
+export const moveActiveWorkoutToShortWorkouts = () => {
+	const fullActive = getFullActiveWorkout()
+
+	if (fullActive) {
+		const shortWorkoutsStr = workoutStorage.getString(KEY_SHORT_WORKOUTS)
+		const shortWorkouts = shortWorkoutsStr ? (JSON.parse(shortWorkoutsStr) as IWorkout[]) : []
+
+		const updatedShortWorkouts = [...shortWorkouts, fullActive]
+		workoutStorage.set(KEY_SHORT_WORKOUTS, JSON.stringify(updatedShortWorkouts))
 
 		clearActiveWorkoutData()
 	}
@@ -423,6 +452,15 @@ export const getActiveWorkoutPoints = (deserializeGetterType: deserializeGetterT
 	}
 
 	return result
+}
+
+export const removeAllShortWorkouts = (): void => {
+	const shortWorkoutsStr = workoutStorage.getString(KEY_SHORT_WORKOUTS)
+	if (!shortWorkoutsStr) {
+		return
+	}
+
+	workoutStorage.remove(KEY_SHORT_WORKOUTS)
 }
 
 export const removeAllWorkoutStorage = () => {

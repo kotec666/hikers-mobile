@@ -1,6 +1,5 @@
 import { AppState, PermissionsAndroid, Platform, StyleSheet, View } from 'react-native'
 import { SafeAreaProvider, useSafeAreaInsets } from 'react-native-safe-area-context'
-import { GestureHandlerRootView } from 'react-native-gesture-handler'
 import React, { useCallback, useEffect, useRef, useState } from 'react'
 import WorkoutRunning from '@/components/svg/WorkoutRunning'
 import WorkoutWalking from '@/components/svg/WorkoutWalking'
@@ -14,8 +13,11 @@ import * as TaskManager from 'expo-task-manager'
 import {
 	clearActiveWorkoutData,
 	getActiveWorkoutPoints,
+	getShortWorkouts,
 	getWorkoutMeta,
 	moveActiveWorkoutToNotSaved,
+	moveActiveWorkoutToShortWorkouts,
+	removeAllShortWorkouts,
 	setActiveWorkoutPauseState,
 	setWorkoutItems,
 	startAndStoreNewActiveWorkout
@@ -30,12 +32,12 @@ import { useWorkoutNotification } from '@/hooks/useWorkoutNotification'
 import { initializeBackgroundLocationTask, isTrackingLocation, startTracking } from '@/hooks/track-location/track'
 import { useLocationData, useLocationTracking } from '@/hooks/track-location'
 import { updateMapSettings } from '@/store/mapStorage'
-import { finishTraining, startTraining, syncTraining } from '@/api/workout'
+import { deleteNotFinishedTraining, finishTraining, startTraining, syncTraining } from '@/api/workout'
 import { randomHexColor } from '@/helpers/randomHexColor'
 import { prepareLocationsForSync } from '@/helpers/prepareLocationsForSync'
-import * as Network from 'expo-network'
 import { deserializeGetterType } from '@/helpers/binarySerializer'
 import { isWorkoutTooShort } from '@/helpers/isWorkoutTooShort'
+import { addNetworkStateListener } from 'expo-network'
 
 // Debugging
 TaskManager.getRegisteredTasksAsync().then((tasks) => {
@@ -71,8 +73,17 @@ export default function NewTraining() {
 	const permissionsRef = useRef<AllGeolocationPermissionsHandle>(null)
 	const headingSubscriptionRef = useRef<null | Location.LocationSubscription>(null)
 	const activeLocationSubscriptionRef = useRef<null | Location.LocationSubscription>(null)
-	const networkState = Network.useNetworkState()
-	const hasInternet = networkState.isInternetReachable === true
+	const isInternetReachableRef = useRef<boolean | undefined>(false)
+
+	useEffect(() => {
+		const subscription = addNetworkStateListener(({ type, isConnected, isInternetReachable }) => {
+			isInternetReachableRef.current = Boolean(isConnected && isInternetReachable)
+		})
+
+		return () => {
+			subscription.remove()
+		}
+	}, [])
 
 	const [chosenWorkout, setChosenWorkout] = useState<IWorkoutModeElement>(WorkoutTypesData[0])
 	// Добавляем флаг ожидания старта после получения прав
@@ -243,6 +254,14 @@ export default function NewTraining() {
 
 	const startWorkout = async (workoutType: TrainingType, afterReboot: boolean) => {
 		try {
+			const shortWorkouts = getShortWorkouts()
+			const isShortWorkoutsExist = shortWorkouts.length
+
+			if (isInternetReachableRef.current && isShortWorkoutsExist) {
+				removeAllShortWorkouts() // (storage)
+				await deleteNotFinishedTraining()
+			}
+
 			const {
 				foregroundStatus,
 				backgroundStatus,
@@ -386,18 +405,9 @@ export default function NewTraining() {
 	const pauseDebounced = useCallback(debounce(handleClickPause, PAUSE_DEBOUNCE_MS), [])
 
 	const handleClickEndWorkout = useCallback(async () => {
-		try {
-			// @TODO требуется проверка на то что тренировка завершилась слишком рано и что происходит
-			if (isWorkoutTooShort()) {
-				toast.info('Тренировка завершена слишком рано')
-				return clearActiveWorkoutData()
-			}
+		console.log('isInternetReachableRef.current при завершении:', isInternetReachableRef.current)
 
-			if (hasInternet) {
-				router.push('/training/viewWorkout')
-			} else {
-				router.push('/profile')
-			}
+		try {
 			await tracking.stopTracking()
 
 			if (headingSubscriptionRef.current) {
@@ -408,9 +418,27 @@ export default function NewTraining() {
 			// Полный сброс состояния карты и переменных
 			resetWorkoutState()
 
+			const meta = getWorkoutMeta()
+
+			if (isWorkoutTooShort()) {
+				toast.info('Тренировка завершена слишком рано')
+				if (isInternetReachableRef.current && meta?.id) {
+					// тренировка существует на бэкенде
+					await deleteNotFinishedTraining()
+					return clearActiveWorkoutData()
+				} else if (!meta?.id) {
+					// тренировка не существует на бэкенде
+					return clearActiveWorkoutData()
+				} else if (!isInternetReachableRef.current && meta?.id) {
+					// нет интернета, но тренировка существует на бэкенде
+					return moveActiveWorkoutToShortWorkouts()
+				}
+			} else {
+				router.push('/training/viewWorkout') // - offline - просмотр тренировки до определенного момента, без сохранения
+			}
+
 			// Догрузка несохраненных точек
-			if (hasInternet) {
-				const meta = getWorkoutMeta()
+			if (isInternetReachableRef.current) {
 				const unsavedPoints = getActiveWorkoutPoints(deserializeGetterType.NOT_SAVED)
 
 				if (meta?.id) {
@@ -443,7 +471,7 @@ export default function NewTraining() {
 		} catch (e) {
 			console.error('handleClickEndWorkout error: ', e)
 		}
-	}, [chosenWorkout.type, hasInternet, resetWorkoutState, router, stopNotificationTimer, toast, tracking])
+	}, [chosenWorkout.type, resetWorkoutState, router, stopNotificationTimer, toast, tracking])
 
 	return (
 		<SafeAreaProvider style={{ paddingTop: insets.top }}>

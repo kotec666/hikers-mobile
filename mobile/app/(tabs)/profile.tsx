@@ -17,7 +17,7 @@ import { getFieldsErrors } from '@/helpers/getFieldsErrors'
 import { PATH_TO_IMAGE } from '@/constants/PATH_TO_FILES'
 import { useEditActivitiesStore } from '@/store/editActivitiesStore'
 import { AnimatedProfilePicture } from '@/components/ui/Profile/AnimatedProfilePicture'
-import * as Network from 'expo-network'
+import { addNetworkStateListener } from 'expo-network'
 
 /**
  *
@@ -38,8 +38,18 @@ const Profile = () => {
 	const router = useRouter()
 	const { logout, user, setUser } = useAuthStore()
 	const { newActivitiesOrder } = useEditActivitiesStore()
-	const networkState = Network.useNetworkState()
-	const hasInternet = networkState.isInternetReachable === true
+	const [isInternetReachable, setIsInternetReachable] = useState<boolean | undefined>(false)
+
+	useEffect(() => {
+		const subscription = addNetworkStateListener(({ type, isConnected, isInternetReachable }) => {
+			console.log(Boolean(isConnected && isInternetReachable))
+			setIsInternetReachable(Boolean(isConnected && isInternetReachable))
+		})
+
+		return () => {
+			subscription.remove()
+		}
+	}, [])
 
 	const [data, setData] = useState<{
 		profileData?: IProfile
@@ -136,7 +146,7 @@ const Profile = () => {
 											className="text-[19px] text-white"
 											style={{ fontFamily: fontFamily.bold }}
 										>
-											{user?.name} [{hasInternet ? 'есть интернет' : 'нет интернета'}]
+											{user?.name} [{isInternetReachable ? 'есть интернет' : 'нет интернета'}]
 										</Text>
 									)}
 									{user?.username && (
