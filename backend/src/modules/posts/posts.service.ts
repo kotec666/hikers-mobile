@@ -1,7 +1,7 @@
 ﻿import { ForbiddenException, Injectable, NotFoundException } from '@nestjs/common';
 import { DatabaseService } from '../database/database.service';
 import { PostDto } from './posts.dto';
-import { posts, trainingParticipants, users } from '../database/schema';
+import { postMedia, posts, trainingParticipants, users } from '../database/schema';
 import { eq } from 'drizzle-orm';
 import { ERRORS } from '@shared/errors';
 import { TrainingsService } from '../trainings/trainings.service';
@@ -41,14 +41,18 @@ export class PostsService {
 			throw new NotFoundException(ERRORS.NOT_FOUND);
 		}
 
+		const media = await this.db.db
+			.select({ mediaFilename: postMedia.mediaFilename })
+			.from(postMedia)
+			.where(eq(postMedia.postId, id));
+
 		// Пока что все посты закреплены за своей тренировкой
 		const training = await this.trainings.getExtendedById(post.trainingId!);
-		return { ...post, training };
+
+		return { ...post, training, fileNames: media.map((i) => i.mediaFilename) };
 	}
 
 	public async create(userId: string, dto: PostDto.Creation): Promise<PostDto.Entity> {
-		const filesKeys: string[] = [];
-
 		const [participant] = await this.db.db
 			.select({
 				id: trainingParticipants.id,
@@ -67,17 +71,6 @@ export class PostsService {
 			throw new ForbiddenException(ERRORS.FORBIDDEN);
 		}
 
-		if (typeof dto.files !== 'undefined') {
-			for (const file of dto.files) {
-				if (!(file satisfies Express.Multer.File)) {
-					continue;
-				}
-
-				const uploadedFileKey = await this.files.uploadFile(file);
-				filesKeys.push(uploadedFileKey);
-			}
-		}
-
 		const [post] = await this.db.db
 			.insert(posts)
 			.values({
@@ -90,8 +83,35 @@ export class PostsService {
 			.returning({ id: posts.id })
 			.onConflictDoNothing();
 
+		// @TODO ловить ошибку на медиа
+		if (typeof dto.files !== 'undefined') {
+			await this.attachFiles(post.id, dto.files);
+		}
 		// @TODO try...catch на кетч ошибки загруженные файлы откатывать
 
 		return await this.getById(post.id);
+	}
+
+	public async attachFiles(postId: string, files: Express.Multer.File[]): Promise<string[]> {
+		const mediaIds: string[] = [];
+
+		for (const file of files) {
+			if (!(file satisfies Express.Multer.File)) {
+				continue;
+			}
+
+			const mediaFilename = await this.files.uploadFile(file);
+			const [media] = await this.db.db
+				.insert(postMedia)
+				.values({
+					postId,
+					mediaFilename,
+				})
+				.returning({ id: postMedia.id });
+
+			mediaIds.push(media.id);
+		}
+
+		return mediaIds;
 	}
 }

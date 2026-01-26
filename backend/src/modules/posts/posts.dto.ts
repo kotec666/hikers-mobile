@@ -17,7 +17,9 @@ export namespace PostDto {
 		createdAt: Date;
 		updatedAt: Date | null;
 
-		// @TODO фотки, лайки
+		fileNames: string[];
+
+		// @TODO  лайки
 	};
 
 	/** Form-Data запрос */
