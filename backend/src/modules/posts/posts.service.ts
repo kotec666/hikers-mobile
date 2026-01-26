@@ -1,11 +1,13 @@
 ﻿import { ForbiddenException, Injectable, NotFoundException } from '@nestjs/common';
 import { DatabaseService } from '../database/database.service';
 import { PostDto } from './posts.dto';
-import { postMedia, posts, trainingParticipants, users } from '../database/schema';
+import { postLikes, postMedia, posts, trainingParticipants, users } from '../database/schema';
 import { eq } from 'drizzle-orm';
 import { ERRORS } from '@shared/errors';
 import { TrainingsService } from '../trainings/trainings.service';
 import { StaticService } from '../static/static.service';
+import { CommonDto } from 'src/common/dto/common.dto';
+import { UserDto } from '../user/user.dto';
 
 @Injectable()
 export class PostsService {
@@ -41,15 +43,13 @@ export class PostsService {
 			throw new NotFoundException(ERRORS.NOT_FOUND);
 		}
 
-		const media = await this.db.db
-			.select({ mediaFilename: postMedia.mediaFilename })
-			.from(postMedia)
-			.where(eq(postMedia.postId, id));
+		const likes = await this.getLikes(id);
+		const fileNames = await this.getFileNames(id);
 
 		// Пока что все посты закреплены за своей тренировкой
 		const training = await this.trainings.getExtendedById(post.trainingId!);
 
-		return { ...post, training, fileNames: media.map((i) => i.mediaFilename) };
+		return { ...post, training, fileNames, likes };
 	}
 
 	public async create(userId: string, dto: PostDto.Creation): Promise<PostDto.Entity> {
@@ -113,5 +113,41 @@ export class PostsService {
 		}
 
 		return mediaIds;
+	}
+
+	public async likePost(postId: string, userId: string): Promise<CommonDto.BooleanResponse> {
+		await this.db.db.insert(postLikes).values({
+			postId,
+			userId,
+		});
+
+		return { success: true };
+	}
+
+	public async getLikes(postId: string): Promise<UserDto.Entity[]> {
+		const likedUsers = await this.db.db
+			.select({
+				id: users.id,
+				username: users.username,
+				name: users.name,
+				email: users.email,
+				avatarFilename: users.avatarFilename,
+			})
+			.from(postLikes)
+			.where(eq(postLikes.postId, postId))
+			.innerJoin(users, eq(users.id, postLikes.userId));
+
+		return likedUsers;
+	}
+
+	public async getFileNames(postId: string): Promise<string[]> {
+		const fileNames = await this.db.db
+			.select({
+				mediaFilename: postMedia.mediaFilename,
+			})
+			.from(postMedia)
+			.where(eq(postMedia.postId, postId));
+
+		return fileNames.map((i) => i.mediaFilename);
 	}
 }

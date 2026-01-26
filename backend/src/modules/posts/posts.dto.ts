@@ -18,8 +18,7 @@ export namespace PostDto {
 		updatedAt: Date | null;
 
 		fileNames: string[];
-
-		// @TODO  лайки
+		likes: UserDto.Entity[];
 	};
 
 	/** Form-Data запрос */
