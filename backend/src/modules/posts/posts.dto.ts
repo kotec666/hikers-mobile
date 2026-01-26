@@ -1,6 +1,6 @@
 ﻿import { ERRORS } from '@shared/errors';
-import { IsTrainingFinished, IsTrainingParticipant } from '@validation/decorators';
-import { IsUUID, Length } from 'class-validator';
+import { FinishedTrainingParticipant, isFile, TypedArray } from '@validation/decorators';
+import { IsOptional, IsUUID, Length } from 'class-validator';
 import { UserDto } from '../user/user.dto';
 import { TrainingDto } from '../trainings/trainings.dto';
 import { lengths } from '@shared/lengths';
@@ -20,16 +20,20 @@ export namespace PostDto {
 		// @TODO фотки, лайки
 	};
 
+	/** Form-Data запрос */
 	export class Creation {
-		@IsUUID(undefined, { message: `_trainingParticipantId:${ERRORS.BAD_REQUEST}` })
-		@IsTrainingParticipant()
-		@IsTrainingFinished()
+		@IsUUID('4', { message: `_trainingParticipantId:${ERRORS.BAD_REQUEST}` })
+		@FinishedTrainingParticipant()
 		trainingParticipantId: string;
 
 		@Length(lengths.post.title.min, lengths.post.title.max, { message: `_title:${ERRORS.INVALID_LENGTH}` })
 		title: string;
-		description: string;
 
-		// @TODO фотки
+		@IsOptional()
+		description?: string;
+
+		@IsOptional()
+		@TypedArray(isFile)
+		files?: Express.Multer.File[];
 	}
 }

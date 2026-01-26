@@ -5,11 +5,13 @@ import { posts, trainingParticipants, users } from '../database/schema';
 import { eq } from 'drizzle-orm';
 import { ERRORS } from '@shared/errors';
 import { TrainingsService } from '../trainings/trainings.service';
+import { StaticService } from '../static/static.service';
 
 @Injectable()
 export class PostsService {
 	constructor(
 		private readonly db: DatabaseService,
+		private readonly files: StaticService,
 		private readonly trainings: TrainingsService,
 	) {}
 
@@ -45,6 +47,8 @@ export class PostsService {
 	}
 
 	public async create(userId: string, dto: PostDto.Creation): Promise<PostDto.Entity> {
+		const filesKeys: string[] = [];
+
 		const [participant] = await this.db.db
 			.select({
 				id: trainingParticipants.id,
@@ -63,6 +67,17 @@ export class PostsService {
 			throw new ForbiddenException(ERRORS.FORBIDDEN);
 		}
 
+		if (typeof dto.files !== 'undefined') {
+			for (const file of dto.files) {
+				if (!(file satisfies Express.Multer.File)) {
+					continue;
+				}
+
+				const uploadedFileKey = await this.files.uploadFile(file);
+				filesKeys.push(uploadedFileKey);
+			}
+		}
+
 		const [post] = await this.db.db
 			.insert(posts)
 			.values({
@@ -74,6 +89,8 @@ export class PostsService {
 			})
 			.returning({ id: posts.id })
 			.onConflictDoNothing();
+
+		// @TODO try...catch на кетч ошибки загруженные файлы откатывать
 
 		return await this.getById(post.id);
 	}
