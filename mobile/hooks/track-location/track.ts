@@ -68,8 +68,10 @@ TaskManager.defineTask(
 
 		try {
 			if (preparedLocations.length === 0) return
-			await syncTraining(meta.id, preparedLocations)
-			markPointsAsSaved(preparedLocations.map((item) => item.pointId))
+			const result = await syncTraining(meta.id, preparedLocations)
+			if (result.success) {
+				markPointsAsSaved(preparedLocations.map((item) => item.pointId))
+			}
 		} catch {}
 	}
 )

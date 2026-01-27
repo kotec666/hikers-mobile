@@ -84,7 +84,7 @@ const NewWorkout = memo((props: IProps) => {
 		if (notSavedWorkouts.length === 0) return
 		openBottomSheet()
 		unsavedWorkoutsShownRef.current = true
-	}, [isInternetConnectedRef, openBottomSheet])
+	}, [isInternetConnectedRef, isInternetConnectedRef.current, openBottomSheet])
 
 	useEffect(() => {
 		return () => {
@@ -174,7 +174,6 @@ const NewWorkout = memo((props: IProps) => {
 					}
 
 					const prevCount = unsavedPoints.length
-
 					// 4. Маркируем успешно сохранённые точки
 					markUnsavedWorkoutPointsAsSaved(
 						workout.startedAt,
