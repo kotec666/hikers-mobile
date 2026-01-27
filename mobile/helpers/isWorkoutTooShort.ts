@@ -1,7 +1,7 @@
 import { getActiveWorkoutPoints, getWorkoutMeta } from '@/store/workoutStorage'
 import { deserializeGetterType } from '@/helpers/binarySerializer'
 
-const MIN_WORKOUT_DURATION_MS = 2 * 60 * 1000 // минимум 2 минуты
+const MIN_WORKOUT_DURATION_MS = 30 * 1000 // 30 секунд
 const MIN_POINTS_COUNT = 5 // минимум 5 точек GPS
 
 export const isWorkoutTooShort = (): boolean => {

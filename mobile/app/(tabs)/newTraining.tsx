@@ -37,7 +37,7 @@ import { randomHexColor } from '@/helpers/randomHexColor'
 import { prepareLocationsForSync } from '@/helpers/prepareLocationsForSync'
 import { deserializeGetterType } from '@/helpers/binarySerializer'
 import { isWorkoutTooShort } from '@/helpers/isWorkoutTooShort'
-import { addNetworkStateListener } from 'expo-network'
+import { useInternetConnectionRef } from '@/hooks/useInternetConnectionRef'
 
 // Debugging
 TaskManager.getRegisteredTasksAsync().then((tasks) => {
@@ -73,17 +73,7 @@ export default function NewTraining() {
 	const permissionsRef = useRef<AllGeolocationPermissionsHandle>(null)
 	const headingSubscriptionRef = useRef<null | Location.LocationSubscription>(null)
 	const activeLocationSubscriptionRef = useRef<null | Location.LocationSubscription>(null)
-	const isInternetReachableRef = useRef<boolean | undefined>(false)
-
-	useEffect(() => {
-		const subscription = addNetworkStateListener(({ type, isConnected, isInternetReachable }) => {
-			isInternetReachableRef.current = Boolean(isConnected && isInternetReachable)
-		})
-
-		return () => {
-			subscription.remove()
-		}
-	}, [])
+	const isInternetConnectedRef = useInternetConnectionRef()
 
 	const [chosenWorkout, setChosenWorkout] = useState<IWorkoutModeElement>(WorkoutTypesData[0])
 	// Добавляем флаг ожидания старта после получения прав
@@ -257,7 +247,7 @@ export default function NewTraining() {
 			const shortWorkouts = getShortWorkouts()
 			const isShortWorkoutsExist = shortWorkouts.length
 
-			if (isInternetReachableRef.current && isShortWorkoutsExist) {
+			if (isInternetConnectedRef.current && isShortWorkoutsExist) {
 				removeAllShortWorkouts() // (storage)
 				await deleteNotFinishedTraining()
 			}
@@ -405,7 +395,7 @@ export default function NewTraining() {
 	const pauseDebounced = useCallback(debounce(handleClickPause, PAUSE_DEBOUNCE_MS), [])
 
 	const handleClickEndWorkout = useCallback(async () => {
-		console.log('isInternetReachableRef.current при завершении:', isInternetReachableRef.current)
+		console.log('isInternetReachableRef.current при завершении:', isInternetConnectedRef.current)
 
 		try {
 			await tracking.stopTracking()
@@ -422,14 +412,14 @@ export default function NewTraining() {
 
 			if (isWorkoutTooShort()) {
 				toast.info('Тренировка завершена слишком рано')
-				if (isInternetReachableRef.current && meta?.id) {
+				if (isInternetConnectedRef.current && meta?.id) {
 					// тренировка существует на бэкенде
 					await deleteNotFinishedTraining()
 					return clearActiveWorkoutData()
 				} else if (!meta?.id) {
 					// тренировка не существует на бэкенде
 					return clearActiveWorkoutData()
-				} else if (!isInternetReachableRef.current && meta?.id) {
+				} else if (!isInternetConnectedRef.current && meta?.id) {
 					// нет интернета, но тренировка существует на бэкенде
 					return moveActiveWorkoutToShortWorkouts()
 				}
@@ -438,7 +428,7 @@ export default function NewTraining() {
 			}
 
 			// Догрузка несохраненных точек
-			if (isInternetReachableRef.current) {
+			if (isInternetConnectedRef.current) {
 				const unsavedPoints = getActiveWorkoutPoints(deserializeGetterType.NOT_SAVED)
 
 				if (meta?.id) {
@@ -471,7 +461,7 @@ export default function NewTraining() {
 		} catch (e) {
 			console.error('handleClickEndWorkout error: ', e)
 		}
-	}, [chosenWorkout.type, resetWorkoutState, router, stopNotificationTimer, toast, tracking])
+	}, [chosenWorkout.type, isInternetConnectedRef, resetWorkoutState, router, stopNotificationTimer, toast, tracking])
 
 	return (
 		<SafeAreaProvider style={{ paddingTop: insets.top }}>
