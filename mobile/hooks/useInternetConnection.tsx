@@ -1,38 +1,83 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useState, useRef } from 'react'
 import { getNetworkStateAsync, addNetworkStateListener } from 'expo-network'
 
+const CHECK_URL = 'https://clients3.google.com/generate_204'
+const TIMEOUT_MS = 3000
+
 export const useInternetConnection = () => {
-	const [isConnected, setIsConnected] = useState<boolean>(false)
-	const [isLoading, setIsLoading] = useState<boolean>(true)
+	const [isConnected, setIsConnected] = useState(false)
+	const [isLoading, setIsLoading] = useState(true)
+
+	const mountedRef = useRef(true)
+	const checkInProgressRef = useRef(false)
+
+	const checkInternetReachable = async () => {
+		if (checkInProgressRef.current) return
+
+		checkInProgressRef.current = true
+
+		try {
+			const controller = new AbortController()
+			const timeout = setTimeout(() => controller.abort(), TIMEOUT_MS)
+
+			const res = await fetch(CHECK_URL, {
+				method: 'GET',
+				signal: controller.signal
+			})
+
+			clearTimeout(timeout)
+
+			if (mountedRef.current) {
+				setIsConnected(res.status === 204 || res.ok)
+			}
+		} catch {
+			if (mountedRef.current) {
+				setIsConnected(false)
+			}
+		} finally {
+			if (mountedRef.current) {
+				setIsLoading(false)
+			}
+			checkInProgressRef.current = false
+		}
+	}
 
 	useEffect(() => {
-		let isMounted = true
-
-		const checkInitialConnection = async () => {
+		mountedRef.current = true
+		;(async () => {
 			try {
-				const initialStatus = await getNetworkStateAsync()
-				if (isMounted) {
-					setIsConnected(Boolean(initialStatus.isConnected && initialStatus.isInternetReachable))
+				const state = await getNetworkStateAsync()
+
+				if (!mountedRef.current) return
+
+				if (!state.isConnected) {
+					setIsConnected(false)
+					setIsLoading(false)
+					return
+				}
+
+				await checkInternetReachable()
+			} catch (e) {
+				if (mountedRef.current) {
+					setIsConnected(false)
 					setIsLoading(false)
 				}
-			} catch (error) {
-				if (isMounted) {
-					setIsLoading(false)
-					console.error('Failed to get network state:', error)
-				}
 			}
-		}
+		})()
 
-		checkInitialConnection()
+		const subscription = addNetworkStateListener(({ isConnected }) => {
+			if (!mountedRef.current) return
 
-		const subscription = addNetworkStateListener(({ isConnected, isInternetReachable }) => {
-			if (isMounted) {
-				setIsConnected(Boolean(isConnected && isInternetReachable))
+			if (!isConnected) {
+				setIsConnected(false)
+				return
 			}
+
+			checkInternetReachable()
 		})
 
 		return () => {
-			isMounted = false
+			mountedRef.current = false
 			subscription.remove()
 		}
 	}, [])

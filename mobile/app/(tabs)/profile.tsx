@@ -69,8 +69,12 @@ const Profile = () => {
 			setData((s) => ({ ...s, profileData: profileData }))
 			setUser(profileData.user)
 		} catch (e) {
+			if (!e.response) {
+				// Network error
+				return
+			}
+			//console.log('errors:', e.toString() === 'TypeError: Network request failed')
 			const errors = await e.response.json()
-			console.log(errors)
 			getFieldsErrors(errors)
 		} finally {
 			setData((s) => ({ ...s, refreshing: false }))

@@ -248,8 +248,12 @@ export default function NewTraining() {
 			const isShortWorkoutsExist = shortWorkouts.length
 
 			if (isInternetConnectedRef.current && isShortWorkoutsExist) {
-				removeAllShortWorkouts() // (storage)
-				await deleteNotFinishedTraining()
+				try {
+					const result = await deleteNotFinishedTraining()
+					if (result.success) {
+						removeAllShortWorkouts() // (storage)
+					}
+				} catch {}
 			}
 
 			const {
@@ -395,8 +399,6 @@ export default function NewTraining() {
 	const pauseDebounced = useCallback(debounce(handleClickPause, PAUSE_DEBOUNCE_MS), [])
 
 	const handleClickEndWorkout = useCallback(async () => {
-		console.log('isInternetReachableRef.current при завершении:', isInternetConnectedRef.current)
-
 		try {
 			await tracking.stopTracking()
 
@@ -414,8 +416,10 @@ export default function NewTraining() {
 				toast.info('Тренировка завершена слишком рано')
 				if (isInternetConnectedRef.current && meta?.id) {
 					// тренировка существует на бэкенде
-					await deleteNotFinishedTraining()
-					return clearActiveWorkoutData()
+					const result = await deleteNotFinishedTraining()
+					if (result.success) {
+						return clearActiveWorkoutData()
+					}
 				} else if (!meta?.id) {
 					// тренировка не существует на бэкенде
 					return clearActiveWorkoutData()
@@ -451,8 +455,10 @@ export default function NewTraining() {
 				}
 
 				try {
-					await finishTraining()
-					clearActiveWorkoutData()
+					const result = await finishTraining()
+					if (result.success) {
+						clearActiveWorkoutData()
+					}
 				} catch {}
 			} else {
 				toast.info('Нет доступа к интернету, тренировку можно будет сохранить позже')

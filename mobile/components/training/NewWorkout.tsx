@@ -134,14 +134,18 @@ const NewWorkout = memo((props: IProps) => {
 
 				// 1. Создание тренировки на сервере (если нужно)
 				if (!trainingId) {
-					const newTraining = await startTraining({
-						type: initialWorkout.type,
-						colorHex: randomHexColor(),
-						ts: initialWorkout.startedAt
-					})
+					try {
+						const newTraining = await startTraining({
+							type: initialWorkout.type,
+							colorHex: randomHexColor(),
+							ts: initialWorkout.startedAt
+						})
 
-					trainingId = newTraining.id
-					assignIdToAnUnsavedWorkout(initialWorkout.startedAt, trainingId)
+						trainingId = newTraining.id
+						assignIdToAnUnsavedWorkout(initialWorkout.startedAt, trainingId)
+					} catch {
+						toast.error('Произошла ошибка при старте тренировки')
+					}
 				}
 
 				while (true) {
@@ -153,12 +157,15 @@ const NewWorkout = memo((props: IProps) => {
 					// 2. Все точки уже сохранены
 					if (unsavedPoints.length === 0) {
 						try {
-							await finishTraining({
+							const result = await finishTraining({
 								ts: workout.locations[workout.locations.length - 1].relTs + workout.startedAt
 							})
-							deleteUnsavedTrainingByStartedAt(workout.startedAt)
+							if (result.success) {
+								deleteUnsavedTrainingByStartedAt(workout.startedAt)
+							}
 						} catch (e) {
 							console.error('[sync] finishTraining failed', e)
+							toast.error('Произошла ошибка при завершении тренировки')
 						}
 						break
 					}
@@ -193,6 +200,10 @@ const NewWorkout = memo((props: IProps) => {
 			toast.success('Тренировка успешно сохранена')
 			closeBottomSheet()
 		} catch (e) {
+			if (!e.response) {
+				toast.error('Нет доступа к интернету, сохранение невозможно')
+				return
+			}
 			console.error('[sync] Unexpected error', e)
 			toast.error('Ошибка при сохранении тренировки')
 		} finally {
