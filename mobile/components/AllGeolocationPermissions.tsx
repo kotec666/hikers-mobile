@@ -8,10 +8,10 @@ import AllowBackgroundGeolocation from '@/components/BottomSheets/AllowBackgroun
 import AllowDeniedGeolocation from '@/components/BottomSheets/AllowDeniedGeolocation'
 import * as Location from 'expo-location'
 import * as Notification from 'expo-notifications'
+import * as Application from 'expo-application'
 import AllowTrackPhysicalActivity from '@/components/BottomSheets/AllowTrackPhysicalActivity'
 import AllowNotifications from '@/components/BottomSheets/AllowNotifications'
 import AllowDeniedNotifications from '@/components/BottomSheets/AllowDeniedNotifications'
-
 const { height: screenHeight } = Dimensions.get('screen')
 
 interface IProps {
@@ -40,6 +40,7 @@ const AllGeolocationPermissions = forwardRef<AllGeolocationPermissionsHandle, IP
 	const [bottomSheetContent, setBottomSheetContent] = useState<React.ReactNode>(null)
 	const appStateRef = useRef(AppState.currentState)
 	const wasInSettingsRef = useRef(false)
+	const appId = Application.applicationId
 
 	const openBottomSheet = useCallback((newContent: React.ReactNode) => {
 		setBottomSheetContent(newContent)
@@ -74,14 +75,26 @@ const AllGeolocationPermissions = forwardRef<AllGeolocationPermissionsHandle, IP
 		return () => subscription.remove()
 	}, []) // appState
 
-	const openAppSettings = async () => {
+	// const openGpsSetting = async () => {
+	// 	await Linking.sendIntent('android.settings.APP_NOTIFICATION_SETTINGS', [
+	// 		{ key: 'android.provider.extra.APP_PACKAGE', value: appId || '' }
+	// 	])
+	// }
+
+	const openAppSettings = async (isNotificationSetting = false) => {
 		closeBottomSheet()
 		wasInSettingsRef.current = true
 		try {
 			if (Platform.OS === 'ios') {
 				await Linking.openURL('app-settings:')
 			} else {
-				await Linking.openSettings()
+				if (isNotificationSetting) {
+					await Linking.sendIntent('android.settings.APP_NOTIFICATION_SETTINGS', [
+						{ key: 'android.provider.extra.APP_PACKAGE', value: appId || '' }
+					])
+				} else {
+					await Linking.openSettings()
+				}
 			}
 		} catch (error) {
 			console.error('Error opening settings:', error)
@@ -192,7 +205,9 @@ const AllGeolocationPermissions = forwardRef<AllGeolocationPermissionsHandle, IP
 					<AllowNotifications allow={allowNotificationPermission} close={closeBottomSheet} />
 				)
 			} else if (!granted && !canAskAgain) {
-				return openBottomSheet(<AllowDeniedNotifications allow={openAppSettings} close={closeBottomSheet} />)
+				return openBottomSheet(
+					<AllowDeniedNotifications allow={() => openAppSettings(true)} close={closeBottomSheet} />
+				)
 			}
 		} else {
 			// for ios

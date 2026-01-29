@@ -38,7 +38,6 @@ import { prepareLocationsForSync } from '@/helpers/prepareLocationsForSync'
 import { deserializeGetterType } from '@/helpers/binarySerializer'
 import { isWorkoutTooShort } from '@/helpers/isWorkoutTooShort'
 import { useInternetConnectionRef } from '@/hooks/useInternetConnectionRef'
-
 // Debugging
 TaskManager.getRegisteredTasksAsync().then((tasks) => {
 	console.log(tasks)
@@ -471,7 +470,6 @@ export default function NewTraining() {
 
 	return (
 		<SafeAreaProvider style={{ paddingTop: insets.top }}>
-			{/*<GestureHandlerRootView style={{ flex: 1 }}>*/}
 			<View style={styles.container}>
 				{isWorkoutStarted ? (
 					<WorkoutStarted
@@ -506,7 +504,6 @@ export default function NewTraining() {
 					/>
 				)}
 			</View>
-			{/*</GestureHandlerRootView>*/}
 		</SafeAreaProvider>
 	)
 }
