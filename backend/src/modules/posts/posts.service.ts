@@ -17,6 +17,49 @@ export class PostsService {
 		private readonly trainings: TrainingsService,
 	) {}
 
+	public async getByUser(userId: string, page: number, limit: number): Promise<PostDto.Entity[]> {
+		const offset = Math.max(0, (page - 1) * limit);
+
+		const rows = await this.db.db
+			.select({
+				id: posts.id,
+				title: posts.title,
+				description: posts.description,
+				trainingId: posts.trainingId,
+				createdAt: posts.createdAt,
+				updatedAt: posts.updatedAt,
+
+				userCreator: {
+					id: users.id,
+					email: users.email,
+					name: users.name,
+					username: users.username,
+					avatarFilename: users.avatarFilename,
+				},
+			})
+			.from(posts)
+			// @TODO доделать чтобы участие в постах тоже засчитывало
+			.where(eq(posts.userCreatorId, userId))
+			.innerJoin(users, eq(users.id, posts.userCreatorId))
+			.orderBy(desc(posts.createdAt))
+			.offset(offset)
+			.limit(limit);
+
+		// @TODO костыль переделать
+		const postEntities: PostDto.Entity[] = [];
+		for (const row of rows) {
+			const likes = await this.getLikes(row.id);
+			const fileNames = await this.getFileNames(row.id);
+
+			// Пока что все посты закреплены за своей тренировкой
+			const training = await this.trainings.getExtendedById(row.trainingId!);
+
+			postEntities.push({ ...row, training, fileNames, likes });
+		}
+
+		return postEntities;
+	}
+
 	public async getFeed(userId: string, page: number, limit: number): Promise<PostDto.Entity[]> {
 		const offset = Math.max(0, (page - 1) * limit);
 

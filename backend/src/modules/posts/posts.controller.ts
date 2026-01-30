@@ -38,8 +38,21 @@ export class PostsController {
 		@NotNegative('page') @Query('page') page = 1,
 		@NotNegative('limit') @Query('limit') limit = 10,
 	): Promise<PostDto.Entity[]> {
-		console.log(page, limit);
 		return await this.service.getFeed(user.id, page, limit);
+	}
+
+	/**
+	 * @tag Posts
+	 * @summary Посты из профиля пользователя
+	 * @security token
+	 */
+	@Get('by-user/:id')
+	public async getByUser(
+		@IsUUID('id') @Param('id') id: string,
+		@NotNegative('page') @Query('page') page = 1,
+		@NotNegative('limit') @Query('limit') limit = 10,
+	): Promise<PostDto.Entity[]> {
+		return await this.service.getByUser(id, page, limit);
 	}
 
 	/**
