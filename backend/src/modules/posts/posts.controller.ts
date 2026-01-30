@@ -1,10 +1,11 @@
-﻿import { Body, Controller, Get, Param, Post, UploadedFiles, UseInterceptors } from '@nestjs/common';
+﻿import { Body, Controller, Get, Param, Post, Query, UploadedFiles, UseInterceptors } from '@nestjs/common';
 import { UserInterceptor } from '../../common/interceptors/user.interceptor';
 import { User, UserData } from '../../common/decorators/user.decorator';
 import { PostsService } from './posts.service';
 import { PostDto } from './posts.dto';
 import { FilesInterceptor } from '@nestjs/platform-express';
-import { IsUUID } from '@validation/uuid.validatior';
+import { IsUUID } from '@validation/parameter-decorators';
+import { NotNegative } from '@validation/query-decorators';
 
 @Controller('posts')
 @UseInterceptors(UserInterceptor)
@@ -23,7 +24,22 @@ export class PostsController {
 		@Body() dto: PostDto.Creation,
 		@UploadedFiles() files: Array<Express.Multer.File>,
 	): Promise<PostDto.Entity> {
-		return this.service.create(user.id, { ...dto, files });
+		return await this.service.create(user.id, { ...dto, files });
+	}
+
+	/**
+	 * @tag Posts
+	 * @summary Лента постов
+	 * @security token
+	 */
+	@Get('feed')
+	public async getFeed(
+		@User() user: UserData,
+		@NotNegative('page') @Query('page') page = 1,
+		@NotNegative('limit') @Query('limit') limit = 10,
+	): Promise<PostDto.Entity[]> {
+		console.log(page, limit);
+		return await this.service.getFeed(user.id, page, limit);
 	}
 
 	/**
@@ -33,6 +49,6 @@ export class PostsController {
 	 */
 	@Get(':id')
 	public async getById(@IsUUID('id') @Param('id') id: string): Promise<PostDto.Entity> {
-		return this.service.getById(id);
+		return await this.service.getById(id);
 	}
 }

@@ -1,5 +1,5 @@
 ﻿import { ERRORS } from '@shared/errors';
-import { FinishedTrainingParticipant, isFile, TypedArray } from '@validation/decorators';
+import { FinishedTrainingParticipant, isFile, TypedArray } from '@validation/property-decorators';
 import { IsOptional, IsUUID, Length } from 'class-validator';
 import { UserDto } from '../user/user.dto';
 import { TrainingDto } from '../trainings/trainings.dto';
