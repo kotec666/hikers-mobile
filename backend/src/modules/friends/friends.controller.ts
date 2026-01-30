@@ -3,7 +3,7 @@ import { UserInterceptor } from '../../common/interceptors/user.interceptor';
 import { FriendsService } from './friends.service';
 import { User, UserData } from '../../common/decorators/user.decorator';
 import { FriendDto } from './friends.dto';
-import { IsUUID } from '@validation/uuid.validatior';
+import { IsUUID } from '@validation/parameter-decorators';
 import { CommonDto } from '../../common/dto/common.dto';
 
 @Controller('friends')

@@ -4,7 +4,7 @@ import { UserInterceptor } from '../../common/interceptors/user.interceptor';
 import { SubscriberDto, SubscriptionDto } from './subscribers.dto';
 import { CommonDto } from '../../common/dto/common.dto';
 import { User, UserData } from '../../common/decorators/user.decorator';
-import { IsUUID } from '@validation/uuid.validatior';
+import { IsUUID } from '@validation/parameter-decorators';
 
 @Controller('subscribers')
 @UseInterceptors(UserInterceptor)

@@ -2,7 +2,7 @@
 import { UserDto } from '../user/user.dto';
 import { IsArray, IsEnum, IsNumber, IsOptional } from 'class-validator';
 import { DebugTrainingRouteNode } from '../database/schema';
-import { IsHexColor } from '@validation/decorators';
+import { IsHexColor } from '@validation/property-decorators';
 import { ERRORS } from '@shared/errors';
 
 /**
