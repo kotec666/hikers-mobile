@@ -1,9 +1,11 @@
+import { config } from 'dotenv';
 import { Module } from '@nestjs/common';
 import { ConfigModule } from '@nestjs/config';
 import { JwtModule } from '@nestjs/jwt';
 import { LoggerModule } from 'nestjs-pino';
 import { FinishedTrainingParticipantValidator } from '@validation/finished-training-participant.validator';
 import { UniqueEmailValidator } from '@validation/unique-email.validator';
+import { AppController } from './app.controller';
 import { DatabaseModule } from './modules/database/database.module';
 import { defaultEnv } from './modules/env/env.validation';
 import { EnvService } from './modules/env/env.service';
@@ -18,12 +20,12 @@ import { SubscribersModule } from './modules/subscribers/subscribers.module';
 import { ActivitiesModule } from './modules/activities/activities.module';
 import { ProfileModule } from './modules/profile/profile.module';
 import { TrainingsModule } from './modules/trainings/trainings.module';
-import { config } from 'dotenv';
 import { PostsModule } from './modules/posts/posts.module';
 
 config({ quiet: true });
 
 @Module({
+	controllers: [AppController],
 	imports: [
 		LoggerModule.forRoot({
 			assignResponse: true,
