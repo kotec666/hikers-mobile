@@ -18,10 +18,12 @@ import { ActivitiesModule } from './modules/activities/activities.module';
 import { ProfileModule } from './modules/profile/profile.module';
 import { TrainingsModule } from './modules/trainings/trainings.module';
 import { config } from 'dotenv';
+import { AppController } from './app.controller';
 
 config({ quiet: true });
 
 @Module({
+	controllers: [AppController],
 	imports: [
 		LoggerModule.forRoot({
 			assignResponse: true,
