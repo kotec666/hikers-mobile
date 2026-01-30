@@ -35,8 +35,8 @@ export class PostsController {
 	@Get('feed')
 	public async getFeed(
 		@User() user: UserData,
-		@NotNegative('page') @Query('page') page = 1,
-		@NotNegative('limit') @Query('limit') limit = 10,
+		@NotNegative('page') @Query('page') page: number,
+		@NotNegative('limit') @Query('limit') limit: number,
 	): Promise<PostDto.Entity[]> {
 		return await this.service.getFeed(user.id, page, limit);
 	}
@@ -49,8 +49,8 @@ export class PostsController {
 	@Get('by-user/:id')
 	public async getByUser(
 		@IsUUID('id') @Param('id') id: string,
-		@NotNegative('page') @Query('page') page = 1,
-		@NotNegative('limit') @Query('limit') limit = 10,
+		@NotNegative('page') @Query('page') page: number,
+		@NotNegative('limit') @Query('limit') limit: number,
 	): Promise<PostDto.Entity[]> {
 		return await this.service.getByUser(id, page, limit);
 	}
