@@ -1,9 +1,6 @@
 import { AppState, PermissionsAndroid, Platform, StyleSheet, View } from 'react-native'
 import { SafeAreaProvider, useSafeAreaInsets } from 'react-native-safe-area-context'
 import React, { useCallback, useEffect, useRef, useState } from 'react'
-import WorkoutRunning from '@/components/svg/WorkoutRunning'
-import WorkoutWalking from '@/components/svg/WorkoutWalking'
-import WorkoutBicycle from '@/components/svg/WorkoutBicycle'
 import { useToast } from '@/hooks/useToast'
 import WorkoutStarted from '@/components/training/WorkoutStarted'
 import NewWorkout, { IWorkoutModeElement } from '@/components/training/NewWorkout'
@@ -15,6 +12,7 @@ import {
 	getActiveWorkoutPoints,
 	getShortWorkouts,
 	getWorkoutMeta,
+	IWorkoutMeta,
 	moveActiveWorkoutToNotSaved,
 	moveActiveWorkoutToShortWorkouts,
 	removeAllShortWorkouts,
@@ -25,7 +23,6 @@ import {
 import { useRouter } from 'expo-router'
 import { initializeNotifications } from '@/helpers/notifications'
 import { AllGeolocationPermissionsHandle } from '@/components/AllGeolocationPermissions'
-import { TrainingType } from '../../../shared/enums'
 import { debounce } from '@/helpers/debounce'
 import { throttle } from '@/helpers/throttle'
 import { useWorkoutNotification } from '@/hooks/useWorkoutNotification'
@@ -38,6 +35,14 @@ import { prepareLocationsForSync } from '@/helpers/prepareLocationsForSync'
 import { deserializeGetterType } from '@/helpers/binarySerializer'
 import { isWorkoutTooShort } from '@/helpers/isWorkoutTooShort'
 import { useInternetConnectionRef } from '@/hooks/useInternetConnectionRef'
+import { formatTime } from '@/helpers/formatTime'
+import { calculateCalories } from '@/helpers/calculateCalories'
+import { calculatePace } from '@/helpers/calculatePace'
+import { getWorkoutHeight } from '@/helpers/getWorkoutHeight'
+import { useWorkoutResultsAfterFinishStore } from '@/store/workoutResultsAfterFinishStore'
+import { formatDistance } from '@/helpers/distance'
+import { WorkoutTypesData } from '@/constants/WorkoutTypes'
+import { TrainingType } from '@shared/enums'
 // Debugging
 TaskManager.getRegisteredTasksAsync().then((tasks) => {
 	console.log(tasks)
@@ -55,12 +60,6 @@ const promise = new Promise<void>((resolve) => {
 initializeNotifications(promise)
 initializeBackgroundLocationTask(promise)
 
-const WorkoutTypesData = [
-	{ id: 1, type: TrainingType.WALK, name: 'Ходьба', IconComponent: WorkoutWalking },
-	{ id: 2, type: TrainingType.RUN, name: 'Забег', IconComponent: WorkoutRunning },
-	{ id: 3, type: TrainingType.BICYCLE, name: 'Велосипед last', IconComponent: WorkoutBicycle }
-]
-
 const HEADING_THROTTLE_MS = 750
 const PAUSE_DEBOUNCE_MS = 300
 const INITIAL_MAP_ZOOM = 14
@@ -68,6 +67,8 @@ const INITIAL_MAP_ZOOM = 14
 export default function NewTraining() {
 	const insets = useSafeAreaInsets()
 	const toast = useToast()
+	const { setStartedAt, setType, setPoints, setMetrics } = useWorkoutResultsAfterFinishStore()
+
 	const router = useRouter()
 	const permissionsRef = useRef<AllGeolocationPermissionsHandle>(null)
 	const headingSubscriptionRef = useRef<null | Location.LocationSubscription>(null)
@@ -397,6 +398,48 @@ export default function NewTraining() {
 
 	const pauseDebounced = useCallback(debounce(handleClickPause, PAUSE_DEBOUNCE_MS), [])
 
+	const calculateMetricsWhenFinished = (meta: IWorkoutMeta | null) => {
+		if (!meta) return
+
+		// Время
+		let timeElapsed = 0 // в миллисекундах
+		if (meta) {
+			if (meta.isPaused && meta.lastPauseAt) {
+				timeElapsed = meta.lastPauseAt - meta.startedAt - meta.totalPausedMs
+			} else {
+				timeElapsed = Date.now() - meta.startedAt - meta.totalPausedMs
+			}
+		}
+
+		// Ср. скорость
+		let avgKmh = 0
+
+		if (timeElapsed > 0) {
+			avgKmh = (accumulatedDistanceRef.current * 3600) / timeElapsed // distance(m) → km/h
+		}
+
+		if (!Number.isFinite(avgKmh) || avgKmh < 0) avgKmh = 0
+
+		const totalAvgSpeed = Math.round(avgKmh) + 'км/ч'
+		const totalTimeFormatted = formatTime(timeElapsed)
+		const totalCalories = calculateCalories(timeElapsed, accumulatedDistanceRef.current, chosenWorkout.type, 70) // @TODO вес пользователя
+		const totalDistance = formatDistance(accumulatedDistanceRef.current)
+		const totalAvgPace = calculatePace(timeElapsed, accumulatedDistanceRef.current)
+		const totalHeight = getWorkoutHeight(pointsRef.current)
+
+		setStartedAt(meta.startedAt)
+		setType(chosenWorkout)
+		setPoints(pointsRef.current)
+		return setMetrics({
+			totalAvgSpeed,
+			totalTimeFormatted,
+			totalCalories,
+			totalDistance,
+			totalAvgPace,
+			totalHeight
+		})
+	}
+
 	const handleClickEndWorkout = useCallback(async () => {
 		try {
 			await tracking.stopTracking()
@@ -406,8 +449,6 @@ export default function NewTraining() {
 				headingSubscriptionRef.current = null
 			}
 			await stopNotificationTimer()
-			// Полный сброс состояния карты и переменных
-			resetWorkoutState()
 
 			const meta = getWorkoutMeta()
 
@@ -417,16 +458,22 @@ export default function NewTraining() {
 					// тренировка существует на бэкенде
 					const result = await deleteNotFinishedTraining()
 					if (result.success) {
+						// удаление сразу
 						return clearActiveWorkoutData()
 					}
 				} else if (!meta?.id) {
 					// тренировка не существует на бэкенде
+					// удаление сразу
 					return clearActiveWorkoutData()
 				} else if (!isInternetConnectedRef.current && meta?.id) {
 					// нет интернета, но тренировка существует на бэкенде
+					// для последующего удаления с фронта и бэкенда
 					return moveActiveWorkoutToShortWorkouts()
 				}
 			} else {
+				calculateMetricsWhenFinished(meta)
+				// Полный сброс состояния карты и переменных
+				resetWorkoutState()
 				router.push('/training/viewWorkout') // - offline - просмотр тренировки до определенного момента, без сохранения
 			}
 

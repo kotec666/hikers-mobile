@@ -1,130 +1,169 @@
-import React from 'react'
-import { DataSet, LineChart, lineDataItem } from 'react-native-gifted-charts'
+import React, { useState } from 'react'
+import {
+	Circle,
+	DashPathEffect,
+	useFont,
+	vec,
+	Text as SKText,
+	Line as SKLine,
+	AnimatedProp
+} from '@shopify/react-native-skia'
+import { useDerivedValue, type SharedValue } from 'react-native-reanimated'
+import { CartesianChart, Line, useChartPressState, useChartTransformState } from 'victory-native'
+import { View } from 'react-native'
 import { Colors } from '@/constants/Colors'
-import { Dimensions, View, Text } from 'react-native'
-import { fontFamily } from '@/constants/Fonts'
+import { DATA } from './utils/data'
 
-const { width } = Dimensions.get('screen')
+const manrope = require('@/assets/fonts/Manrope-Regular-400.otf')
 
-const LineChartComponent = () => {
-	const elevationData: lineDataItem[] = [
-		{ value: 50, label: '10:29' },
-		{ value: 120, label: '10:39' },
-		{ value: 80, label: '10:49' },
-		{ value: 160, label: '10:59' },
-		{ value: 90, label: '11:09' },
-		{ value: 200, label: '11:19' },
-		{ value: 210, label: '12:19' },
-		{ value: 220, label: '13:19' },
-		{ value: 260, label: '14:19' },
-		{ value: 290, label: '15:19' }
-	]
+export const LineChart = () => {
+	const font = useFont(manrope, 12)
+	const { state, isActive } = useChartPressState({ x: 0, y: { highTmp: 0 } })
+	const { state: transformState } = useChartTransformState()
+	const [chartData, setChartData] = useState(DATA)
 
-	const paceData: lineDataItem[] = [
-		{ value: 60, label: '10:39' },
-		{ value: 140, label: '10:39' },
-		{ value: 100, label: '10:49' },
-		{ value: 150, label: '10:59' },
-		{ value: 120, label: '11:09' },
-		{ value: 200, label: '11:19' },
-		{ value: 250, label: '12:19' },
-		{ value: 260, label: '13:19' },
-		{ value: 265, label: '14:19' },
-		{ value: 295, label: '15:19' }
-	]
-
-	const datasetsWithPress: DataSet[] = [
-		{
-			data: paceData,
-			color: '#CCFF33',
-			thickness: 3,
-			dataPointsColor: '#CCFF33',
-			startFillColor: 'rgba(204,255,51,0.3)',
-			endFillColor: 'rgba(204,255,51,0.0)',
-			startOpacity: 0.4,
-			endOpacity: 0.1,
-			curved: false
-		},
-		{
-			data: elevationData,
-			color: '#FF6A33',
-			thickness: 3,
-			dataPointsColor: '#FF6A33',
-			startFillColor: 'rgba(255,106,51,0.3)',
-			endFillColor: 'rgba(255,106,51,0.0)',
-			startOpacity: 0.4,
-			endOpacity: 0.1,
-			curved: false
-		}
-	]
-
-	const pointerLabelWidth = 150
 	return (
-		<LineChart
-			initialSpacing={10}
-			endSpacing={30}
-			isAnimated
-			width={width - 120}
-			animateOnDataChange
-			animationDuration={1000}
-			onDataChangeAnimationDuration={300}
-			areaChart
-			hideDataPoints={false}
-			dataSet={datasetsWithPress}
-			hideRules={false}
-			yAxisTextStyle={{ color: 'white', fontSize: 12 }}
-			xAxisLabelTextStyle={{ color: 'white', fontSize: 12 }}
-			xAxisColor={Colors['black-44']}
-			yAxisColor={Colors['black-44']}
-			rulesColor={Colors['black-44']}
-			showVerticalLines
-			pointerConfig={{
-				pointerStripUptoDataPoint: true,
-				pointerColor: 'transparent',
-				showPointerStrip: true,
-				pointerLabelWidth: pointerLabelWidth,
-				pointerLabelComponent: (items: lineDataItem[]) => {
-					if (!items?.length) return null
+		<View className="w-full items-center flex-1">
+			<View style={{ width: '100%', height: '100%' }}>
+				<CartesianChart
+					data={chartData}
+					xKey="day"
+					yKeys={['highTmp']}
+					yAxis={[
+						{
+							font,
+							enableRescaling: true,
+							labelColor: 'white',
+							lineColor: 'white',
+							linePathEffect: <DashPathEffect intervals={[4, 4]} />
+						}
+					]}
+					xAxis={{
+						font,
+						enableRescaling: true,
+						labelColor: 'white',
+						lineColor: 'white',
+						linePathEffect: <DashPathEffect intervals={[4, 4]} />
+					}}
+					domainPadding={{ top: 30 }}
+					transformConfig={{
+						pan: {
+							enabled: true,
+							dimensions: ['x']
+						}
+					}}
+					viewport={{
+						x: [15, 30],
+						y: [40, 85]
+					}}
+					chartPressState={state}
+					transformState={transformState}
+				>
+					{({ points, chartBounds }) => {
+						return (
+							<>
+								<>
+									{isActive && (
+										<>
+											<ActiveValueIndicator
+												xPosition={state.x.position}
+												yPosition={state.y.highTmp.position}
+												bottom={chartBounds.bottom}
+												top={chartBounds.top}
+												activeValue={state.y.highTmp.value}
+												textColor={'#FFF'}
+												lineColor={'#71717a'}
+												indicatorColor={Colors['white']}
+											/>
+										</>
+									)}
+								</>
 
-					return (
-						<View
-							className="min-w-[120px] bg-black-25 border-[1px] border-white/20 rounded-[5px] items-start justify-center self-center"
-							style={{
-								minWidth: pointerLabelWidth,
-								padding: 10
-							}}
-						>
-							{items.map((item, index) => {
-								const dotColor = index === 0 ? '#CCFF33' : '#FF6A33'
+								<Line
+									points={points.highTmp}
+									color="lightgreen"
+									strokeWidth={3}
+									animate={{ type: 'timing', duration: 500 }}
+									curveType="natural"
+									connectMissingData
+								/>
 
-								return (
-									<View key={index} className="flex-row items-center gap-[7px]">
-										<View
-											className="w-[10px] h-[10px] rounded-full"
-											style={{
-												backgroundColor: dotColor
-											}}
-										/>
-										<Text
-											className="text-sm text-white"
-											style={{
-												fontFamily: fontFamily.bold,
-												flexShrink: 1
-											}}
-										>
-											{index === 0 ? 'Вы' : 'Steve'}: {item.label}, {item.value}
-										</Text>
-									</View>
-								)
-							})}
-						</View>
-					)
-				},
-				activatePointersOnLongPress: true,
-				autoAdjustPointerLabelPosition: true
-			}}
-		/>
+								{/*<Area*/}
+								{/*	points={points.highTmp}*/}
+								{/*	y0={chartBounds.bottom}*/}
+								{/*	animate={{ type: 'timing', duration: 500 }}*/}
+								{/*>*/}
+								{/*	<LinearGradient*/}
+								{/*		start={vec(chartBounds.bottom, 200)}*/}
+								{/*		end={vec(chartBounds.bottom, chartBounds.bottom)}*/}
+								{/*		colors={['green', '#90ee9050']}*/}
+								{/*	/>*/}
+								{/*</Area>*/}
+
+								{points.highTmp.map((point, index) => (
+									<Circle
+										key={index}
+										cx={point.x}
+										cy={point.y as AnimatedProp<number>}
+										r={4}
+										color={Colors['green-20d']}
+									/>
+								))}
+							</>
+						)
+					}}
+				</CartesianChart>
+			</View>
+		</View>
 	)
 }
 
-export default LineChartComponent
+const ActiveValueIndicator = ({
+	xPosition,
+	yPosition,
+	top,
+	bottom,
+	activeValue,
+	textColor,
+	lineColor,
+	indicatorColor,
+	topOffset = 0
+}: {
+	xPosition: SharedValue<number>
+	yPosition: SharedValue<number>
+	activeValue: SharedValue<number>
+	bottom: number
+	top: number
+	textColor: string
+	lineColor: string
+	indicatorColor: string
+	topOffset?: number
+}) => {
+	const FONT_SIZE = 16
+	const font = useFont(manrope, FONT_SIZE)
+	const start = useDerivedValue(() => vec(xPosition.value, bottom))
+	const end = useDerivedValue(() => vec(xPosition.value, top + 1.5 * FONT_SIZE + topOffset))
+	// Text label
+	const activeValueDisplay = useDerivedValue(() => '$' + activeValue.value.toFixed(2))
+	const activeValueWidth = useDerivedValue(
+		() =>
+			font?.getGlyphWidths?.(font.getGlyphIDs(activeValueDisplay.value)).reduce((sum, value) => sum + value, 0) ||
+			0
+	)
+	const activeValueX = useDerivedValue(() => xPosition.value - activeValueWidth.value / 2)
+
+	return (
+		<>
+			<SKLine p1={start} p2={end} color={lineColor} strokeWidth={1} />
+			<Circle cx={xPosition} cy={yPosition} r={8} color={indicatorColor} opacity={0.5} />
+			<Circle cx={xPosition} cy={yPosition} r={8} color="hsla(0, 0, 100%, 0.25)" />
+			<SKText
+				color={textColor}
+				font={font}
+				text={activeValueDisplay}
+				x={activeValueX}
+				y={top + FONT_SIZE + topOffset}
+			/>
+		</>
+	)
+}

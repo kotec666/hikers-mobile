@@ -10,11 +10,11 @@ const AllowDeniedNotifications = (props: { allow: () => void; close: () => void 
 			<View className="items-center gap-[20px]">
 				<NotificationsPermissionSvg width={36} height={36} />
 				<View className="items-center">
-					<Text style={{ fontFamily: fontFamily.regular }} className="text-white text-lg text-center">
+					<Text style={{ fontFamily: fontFamily.bold }} className="text-white text-lg text-center">
 						Без разрешения пуш-уведомлений
 					</Text>
-					<Text style={{ fontFamily: fontFamily.regular }} className="text-white text-lg text-center">
-						начать тренировку не получится
+					<Text style={{ fontFamily: fontFamily.bold }} className="text-white text-lg text-center">
+						начать тренировку не получитсяH
 					</Text>
 				</View>
 			</View>

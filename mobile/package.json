@@ -20,9 +20,11 @@
 	"dependencies": {
 		"@legendapp/list": "^2.0.16",
 		"@notifee/react-native": "^9.1.8",
+		"@shopify/react-native-skia": "^2.4.18",
 		"@typescript-eslint/eslint-plugin": "^8.40.0",
 		"@typescript-eslint/parser": "^8.40.0",
 		"clsx": "^2.1.1",
+		"date-fns": "^4.1.0",
 		"expo": "~54.0.32",
 		"expo-blur": "~15.0.8",
 		"expo-build-properties": "~1.0.10",
@@ -49,7 +51,6 @@
 		"react-hook-form": "^7.64.0",
 		"react-native": "0.81.5",
 		"react-native-gesture-handler": "~2.28.0",
-		"react-native-gifted-charts": "^1.4.64",
 		"react-native-mmkv": "4.0.1",
 		"react-native-nitro-modules": "^0.31.8",
 		"react-native-reanimated": "4.1.5",
@@ -59,6 +60,7 @@
 		"react-native-worklets": "0.5.1",
 		"react-native-yamap-plus": "6.1.0",
 		"tailwind-merge": "^3.3.1",
+		"victory-native": "^41.20.2",
 		"zustand": "^5.0.8"
 	},
 	"devDependencies": {

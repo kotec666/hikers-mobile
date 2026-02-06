@@ -1,13 +1,14 @@
 import { useEffect, useState, useRef } from 'react'
 import { getNetworkStateAsync, addNetworkStateListener } from 'expo-network'
+import { checkConnectivity } from '@/api/204'
 
-const CHECK_URL = 'https://clients3.google.com/generate_204'
 const TIMEOUT_MS = 3000
 
 export const useInternetConnection = () => {
 	const [isConnected, setIsConnected] = useState(false)
 	const [isLoading, setIsLoading] = useState(true)
 
+	const controllerRef = useRef<AbortController | null>(null)
 	const mountedRef = useRef(true)
 	const checkInProgressRef = useRef(false)
 
@@ -16,16 +17,14 @@ export const useInternetConnection = () => {
 
 		checkInProgressRef.current = true
 
+		controllerRef.current?.abort()
+		const controller = new AbortController()
+		controllerRef.current = controller
+
+		const timeout = setTimeout(() => controller.abort(), TIMEOUT_MS)
+
 		try {
-			const controller = new AbortController()
-			const timeout = setTimeout(() => controller.abort(), TIMEOUT_MS)
-
-			const res = await fetch(CHECK_URL, {
-				method: 'GET',
-				signal: controller.signal
-			})
-
-			clearTimeout(timeout)
+			const res = await checkConnectivity(controller)
 
 			if (mountedRef.current) {
 				setIsConnected(res.status === 204 || res.ok)
@@ -35,6 +34,8 @@ export const useInternetConnection = () => {
 				setIsConnected(false)
 			}
 		} finally {
+			clearTimeout(timeout)
+
 			if (mountedRef.current) {
 				setIsLoading(false)
 			}
@@ -70,6 +71,7 @@ export const useInternetConnection = () => {
 
 			if (!isConnected) {
 				setIsConnected(false)
+				setIsLoading(false)
 				return
 			}
 
@@ -78,6 +80,7 @@ export const useInternetConnection = () => {
 
 		return () => {
 			mountedRef.current = false
+			controllerRef.current?.abort()
 			subscription.remove()
 		}
 	}, [])

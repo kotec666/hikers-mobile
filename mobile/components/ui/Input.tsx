@@ -1,10 +1,9 @@
 import { cn } from '@/helpers/cn'
-import { StyleSheet, Text, TextInput, TextInputProps, View } from 'react-native'
+import { StyleSheet, TextInput, TextInputProps, View } from 'react-native'
 import { fontFamily } from '@/constants/Fonts'
 import { Colors } from '@/constants/Colors'
 import React, { ReactNode } from 'react'
 import SearchSvg from '@/components/svg/SearchSvg'
-import { Container } from '@/components/ui/Container'
 import ErrorMessage from '@/components/ErrorMessage'
 
 export interface Props extends TextInputProps {
@@ -26,13 +25,16 @@ export function Input(props: Props) {
 					error
 						? { borderColor: Colors['red-8b'], color: Colors['red-ff'], backgroundColor: Colors['red-55'] }
 						: { borderColor: Colors['black-44'], color: 'white', backgroundColor: 'transparent' },
-					isFind ? { paddingRight: 42 } : { paddingRight: 15 }
+					isFind ? { paddingRight: 42 } : { paddingRight: 15 },
+					restProps.multiline ? { height: 100 } : {}
 				]}
 				className={cn(
-					'h-[50px] border-[1px] rounded-full relative placeholder:text-gray-ab placeholder:text-[15px]',
+					'border-[1px] relative placeholder:text-gray-ab placeholder:text-[15px]',
 					{
 						'text-red-ff bg-red-55': error,
-						'text-white bg-black-25': !error
+						'text-white bg-black-25': !error,
+						'h-[50px] rounded-full': !restProps.multiline,
+						'rounded-[4px]': restProps.multiline
 					},
 					className
 				)}

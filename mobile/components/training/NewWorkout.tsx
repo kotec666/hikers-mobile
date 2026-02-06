@@ -66,6 +66,7 @@ const NewWorkout = memo((props: IProps) => {
 	const isSyncInProgressRef = useRef<boolean>(false)
 	const [isSaving, setIsSaving] = useState(false)
 	const isInternetConnectedRef = useInternetConnectionRef()
+	const [notSavedWorkoutsCount, setNotSavedWorkoutsCount] = useState(0)
 
 	const openBottomSheet = useCallback(() => {
 		if (bottomSheetRef.current) {
@@ -82,6 +83,7 @@ const NewWorkout = memo((props: IProps) => {
 		const notSavedWorkouts = getNotSavedWorkouts()
 
 		if (notSavedWorkouts.length === 0) return
+		setNotSavedWorkoutsCount(notSavedWorkouts.length)
 		openBottomSheet()
 		unsavedWorkoutsShownRef.current = true
 	}, [isInternetConnectedRef, isInternetConnectedRef.current, openBottomSheet])
@@ -258,6 +260,7 @@ const NewWorkout = memo((props: IProps) => {
 			/>
 			<BottomSheet ref={bottomSheetRef} activeHeight={SCREEN_HEIGHT * 0.5}>
 				<UnsavedTrainings
+					unsavedTrainingsCount={notSavedWorkoutsCount}
 					isSaving={isSaving}
 					handleClickClose={closeBottomSheet}
 					handleClickSave={saveUnsavedTrainings}

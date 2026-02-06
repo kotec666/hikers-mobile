@@ -28,7 +28,8 @@ import { useInternetConnection } from '@/hooks/useInternetConnection'
 const ALLOWED_ROUTES = {
 	EDIT_PROFILE: '/profile/edit' as RelativePathString,
 	DOCUMENT: '/document' as RelativePathString,
-	TABS_UI: '/(tabs-ui-kit)' as RelativePathString
+	TABS_UI: '/(tabs-ui-kit)' as RelativePathString,
+	WORKOUT_FINISH: '/training/viewWorkout' as RelativePathString
 } as const satisfies Record<string, RelativePathString>
 
 type AllowedRoute = (typeof ALLOWED_ROUTES)[keyof typeof ALLOWED_ROUTES]
@@ -128,6 +129,10 @@ const Profile = () => {
 											{
 												label: 'Tabs ui',
 												action: () => handleClickRedirect(ALLOWED_ROUTES.TABS_UI)
+											},
+											{
+												label: 'To viewWorkout',
+												action: () => handleClickRedirect(ALLOWED_ROUTES.WORKOUT_FINISH)
 											},
 											{ label: 'Выход', action: handleClickExit }
 										]}

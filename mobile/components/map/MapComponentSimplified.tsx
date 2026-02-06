@@ -1,9 +1,8 @@
 import { Animation, InitialRegion, Point, Yamap, YamapRef } from 'react-native-yamap-plus'
 import React, { forwardRef, useCallback, useEffect, useImperativeHandle, useRef, useState } from 'react'
 import { View } from 'react-native'
-import { IWorkoutLocationStorageItem, removeAllWorkoutStorage } from '@/store/workoutStorage'
+import { IWorkoutLocationStorageItem } from '@/store/workoutStorage'
 import { Colors } from '@/constants/Colors'
-import { Button } from '@/components/ui/Button'
 import { debounce } from '@/helpers/debounce'
 import PauseLocationMarker from '@/components/map/markers/PauseLocationMarker'
 import ResumeLocationMarker from '@/components/map/markers/ResumeLocationMarker'
@@ -300,9 +299,6 @@ const MapComponentSimplified = forwardRef<MapComponentHandle, IProps>((props, re
 				maxHeight: props.maxContainerHeight ?? 'auto'
 			}}
 		>
-			<Button variant="white" onPress={() => removeAllWorkoutStorage()}>
-				REMOVE ALL WORKOUT STORAGE
-			</Button>
 			<Yamap
 				ref={mapRef}
 				nightMode
