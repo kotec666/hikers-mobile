@@ -43,7 +43,7 @@ export class PostsController {
 
 	/**
 	 * @tag Posts
-	 * @summary Посты из профиля пользователя
+	 * @summary Посты из чужого профиля
 	 * @security token
 	 */
 	@Get('by-user/:id')
@@ -54,6 +54,20 @@ export class PostsController {
 		@NotNegative('limit') @Query('limit') limit: number,
 	): Promise<PostDto.Entity[]> {
 		return await this.service.getByUser(user.id, id, page, limit);
+	}
+
+	/**
+	 * @tag Posts
+	 * @summary Посты из профиля пользователя
+	 * @security token
+	 */
+	@Get('my')
+	public async getMy(
+		@User() user: UserData,
+		@NotNegative('page') @Query('page') page: number,
+		@NotNegative('limit') @Query('limit') limit: number,
+	): Promise<PostDto.Entity[]> {
+		return await this.service.getByUser(user.id, user.id, page, limit);
 	}
 
 	/**
