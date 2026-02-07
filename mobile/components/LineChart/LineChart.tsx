@@ -9,16 +9,46 @@ import {
 	AnimatedProp
 } from '@shopify/react-native-skia'
 import { useDerivedValue, type SharedValue } from 'react-native-reanimated'
-import { CartesianChart, Line, useChartPressState, useChartTransformState } from 'victory-native'
+import { CartesianChart, ChartPressState, Line, useChartPressState, useChartTransformState } from 'victory-native'
 import { View } from 'react-native'
 import { Colors } from '@/constants/Colors'
-import { DATA } from './utils/data'
 
 const manrope = require('@/assets/fonts/Manrope-Regular-400.otf')
 
+type PacePoint = {
+	t: number // seconds from start
+	pace: number // seconds per km
+}
+
+// 0 → 25 минут, точка каждые 5 сек
+const DATA: PacePoint[] = Array.from({ length: 50 }, (_, i) => {
+	const t = i * 5
+
+	// базовый темп ~6:00/км с небольшими колебаниями
+	const basePace = 360
+	const variation = Math.sin(i / 15) * 25 + Math.random() * 10
+
+	return {
+		t,
+		pace: basePace + variation
+	}
+})
+
+const formatPace = (sec: number) => {
+	const m = Math.floor(sec / 60)
+	const s = Math.floor(sec % 60)
+	return `${m}'${String(s).padStart(2, '0')}"`
+}
+
+const formatTime = (sec: number) => {
+	const m = Math.floor(sec / 60)
+	const s = sec % 60
+	return `${String(m).padStart(2, '0')}:${String(s).padStart(2, '0')}`
+}
+
 export const LineChart = () => {
 	const font = useFont(manrope, 12)
-	const { state, isActive } = useChartPressState({ x: 0, y: { highTmp: 0 } })
+	const { state, isActive } = useChartPressState({ x: 0, y: { pace: 0 } })
 	const { state: transformState } = useChartTransformState()
 	const [chartData, setChartData] = useState(DATA)
 
@@ -27,14 +57,15 @@ export const LineChart = () => {
 			<View style={{ width: '100%', height: '100%' }}>
 				<CartesianChart
 					data={chartData}
-					xKey="day"
-					yKeys={['highTmp']}
+					xKey="t"
+					yKeys={['pace']}
 					yAxis={[
 						{
 							font,
 							enableRescaling: true,
 							labelColor: 'white',
 							lineColor: 'white',
+							formatYLabel: (v) => formatPace(v),
 							linePathEffect: <DashPathEffect intervals={[4, 4]} />
 						}
 					]}
@@ -43,6 +74,7 @@ export const LineChart = () => {
 						enableRescaling: true,
 						labelColor: 'white',
 						lineColor: 'white',
+						formatXLabel: (v) => formatTime(v),
 						linePathEffect: <DashPathEffect intervals={[4, 4]} />
 					}}
 					domainPadding={{ top: 30 }}
@@ -52,10 +84,14 @@ export const LineChart = () => {
 							dimensions: ['x']
 						}
 					}}
-					viewport={{
-						x: [15, 30],
-						y: [40, 85]
-					}}
+					// viewport={{
+					// 	x: [15, 30],
+					// 	y: [40, 85]
+					// }}
+					// viewport={{
+					// 	x: [0, 1200], // 0–20 мин
+					// 	y: [300, 480] // 5:00–8:00 /км
+					// }}
 					chartPressState={state}
 					transformState={transformState}
 				>
@@ -67,20 +103,21 @@ export const LineChart = () => {
 										<>
 											<ActiveValueIndicator
 												xPosition={state.x.position}
-												yPosition={state.y.highTmp.position}
+												yPosition={state.y.pace.position}
 												bottom={chartBounds.bottom}
 												top={chartBounds.top}
-												activeValue={state.y.highTmp.value}
+												activeValue={state.y.pace.value}
 												textColor={'#FFF'}
 												lineColor={'#71717a'}
 												indicatorColor={Colors['white']}
+												state={state}
 											/>
 										</>
 									)}
 								</>
 
 								<Line
-									points={points.highTmp}
+									points={points.pace}
 									color="lightgreen"
 									strokeWidth={3}
 									animate={{ type: 'timing', duration: 500 }}
@@ -100,7 +137,7 @@ export const LineChart = () => {
 								{/*	/>*/}
 								{/*</Area>*/}
 
-								{points.highTmp.map((point, index) => (
+								{points.pace.map((point, index) => (
 									<Circle
 										key={index}
 										cx={point.x}
@@ -127,7 +164,8 @@ const ActiveValueIndicator = ({
 	textColor,
 	lineColor,
 	indicatorColor,
-	topOffset = 0
+	topOffset = 0,
+	state
 }: {
 	xPosition: SharedValue<number>
 	yPosition: SharedValue<number>
@@ -138,13 +176,46 @@ const ActiveValueIndicator = ({
 	lineColor: string
 	indicatorColor: string
 	topOffset?: number
+	state: ChartPressState<{
+		x: number
+		y: {
+			pace: number
+		}
+	}>
 }) => {
 	const FONT_SIZE = 16
 	const font = useFont(manrope, FONT_SIZE)
 	const start = useDerivedValue(() => vec(xPosition.value, bottom))
 	const end = useDerivedValue(() => vec(xPosition.value, top + 1.5 * FONT_SIZE + topOffset))
+
 	// Text label
-	const activeValueDisplay = useDerivedValue(() => '$' + activeValue.value.toFixed(2))
+	const activeValueDisplay = useDerivedValue(() => {
+		const pace = activeValue.value
+		if (!Number.isFinite(pace)) return ''
+
+		// --- pace (sec/km) ---
+		const paceMin = Math.floor(pace / 60)
+		const paceSec = Math.floor(pace % 60)
+		const paceSecStr = paceSec < 10 ? `0${paceSec}` : `${paceSec}`
+
+		// --- time (sec from start) ---
+		const rawTime = state.x.value.value
+		if (rawTime == null) return `${paceMin}'${paceSecStr}"`
+
+		const totalSec = Number(rawTime)
+		if (!Number.isFinite(totalSec)) return `${paceMin}'${paceSecStr}"`
+
+		const hours = Math.floor(totalSec / 3600)
+		const minutes = Math.floor((totalSec % 3600) / 60)
+		const seconds = Math.floor(totalSec % 60)
+
+		const minStr = minutes < 10 ? `0${minutes}` : `${minutes}`
+		const secStr = seconds < 10 ? `0${seconds}` : `${seconds}`
+
+		const timeStr = hours > 0 ? `${hours}:${minStr}:${secStr}` : `${minutes}:${secStr}`
+
+		return `${paceMin}'${paceSecStr}"  ${timeStr}`
+	})
 	const activeValueWidth = useDerivedValue(
 		() =>
 			font?.getGlyphWidths?.(font.getGlyphIDs(activeValueDisplay.value)).reduce((sum, value) => sum + value, 0) ||
