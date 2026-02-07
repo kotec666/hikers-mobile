@@ -2,7 +2,7 @@
 import { DatabaseService } from '../database/database.service';
 import { PostDto } from './posts.dto';
 import { postLikes, postMedia, posts, trainingParticipants, users } from '../database/schema';
-import { desc, eq, ne } from 'drizzle-orm';
+import { desc, eq, ne, count, and } from 'drizzle-orm';
 import { ERRORS } from '@shared/errors';
 import { TrainingsService } from '../trainings/trainings.service';
 import { StaticService } from '../static/static.service';
@@ -50,14 +50,16 @@ export class PostsService {
 		// @TODO костыль переделать
 		const postEntities: PostDto.Entity[] = [];
 		for (const row of rows) {
-			const likes = await this.getLikes(row.id);
+			const isLiked = await this.isLiked(userId, row.id);
+			const likesCount = await this.getLikesCount(row.id);
+
 			const fileNames = await this.getFileNames(row.id);
 
 			// Пока что все посты закреплены за своей тренировкой
 			const training = await this.trainings.getExtendedById(row.trainingId!);
 			const isSubscribed = await this.subscribers.isSubscribed(userId, row.userCreator.id);
 
-			postEntities.push({ ...row, isSubscribed, training, fileNames, likes });
+			postEntities.push({ ...row, isSubscribed, likesCount, isLiked, training, fileNames });
 		}
 
 		return postEntities;
@@ -93,14 +95,16 @@ export class PostsService {
 		// @TODO костыль переделать
 		const postEntities: PostDto.Entity[] = [];
 		for (const row of rows) {
-			const likes = await this.getLikes(row.id);
+			const isLiked = await this.isLiked(userId, row.id);
+			const likesCount = await this.getLikesCount(row.id);
+
 			const fileNames = await this.getFileNames(row.id);
 
 			// Пока что все посты закреплены за своей тренировкой
 			const training = await this.trainings.getExtendedById(row.trainingId!);
 			const isSubscribed = await this.subscribers.isSubscribed(userId, row.userCreator.id);
 
-			postEntities.push({ ...row, isSubscribed, training, fileNames, likes });
+			postEntities.push({ ...row, isSubscribed, likesCount, isLiked, training, fileNames });
 		}
 
 		return postEntities;
@@ -132,14 +136,16 @@ export class PostsService {
 			throw new NotFoundException(ERRORS.NOT_FOUND);
 		}
 
-		const likes = await this.getLikes(id);
+		const isLiked = await this.isLiked(userId, id);
+		const likesCount = await this.getLikesCount(id);
+
 		const fileNames = await this.getFileNames(id);
 
 		// Пока что все посты закреплены за своей тренировкой
 		const training = await this.trainings.getExtendedById(post.trainingId!);
 		const isSubscribed = await this.subscribers.isSubscribed(userId, post.userCreator.id);
 
-		return { ...post, isSubscribed, training, fileNames, likes };
+		return { ...post, isSubscribed, likesCount, isLiked, training, fileNames };
 	}
 
 	public async create(userId: string, dto: PostDto.Creation): Promise<PostDto.Entity> {
@@ -212,6 +218,24 @@ export class PostsService {
 		});
 
 		return { success: true };
+	}
+
+	public async isLiked(userId: string, postId: string): Promise<boolean> {
+		const [row] = await this.db.db
+			.select({ id: postLikes.userId })
+			.from(postLikes)
+			.where(and(eq(postLikes.postId, postId), eq(postLikes.userId, userId)));
+
+		return !!row;
+	}
+
+	public async getLikesCount(postId: string): Promise<number> {
+		const [row] = await this.db.db
+			.select({ count: count(postLikes.userId) })
+			.from(postLikes)
+			.where(eq(postLikes.postId, postId));
+
+		return row.count;
 	}
 
 	public async getLikes(postId: string): Promise<UserDto.Entity[]> {

@@ -22,7 +22,9 @@ export namespace PostDto {
 		updatedAt: Date | null;
 
 		fileNames: string[];
-		likes: UserDto.Entity[];
+
+		isLiked: boolean;
+		likesCount: number;
 	};
 
 	/** Form-Data запрос */
