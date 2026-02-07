@@ -48,11 +48,12 @@ export class PostsController {
 	 */
 	@Get('by-user/:id')
 	public async getByUser(
+		@User() user: UserData,
 		@IsUUID('id') @Param('id') id: string,
 		@NotNegative('page') @Query('page') page: number,
 		@NotNegative('limit') @Query('limit') limit: number,
 	): Promise<PostDto.Entity[]> {
-		return await this.service.getByUser(id, page, limit);
+		return await this.service.getByUser(user.id, id, page, limit);
 	}
 
 	/**
@@ -61,7 +62,7 @@ export class PostsController {
 	 * @security token
 	 */
 	@Get(':id')
-	public async getById(@IsUUID('id') @Param('id') id: string): Promise<PostDto.Entity> {
-		return await this.service.getById(id);
+	public async getById(@User() user: UserData, @IsUUID('id') @Param('id') id: string): Promise<PostDto.Entity> {
+		return await this.service.getById(user.id, id);
 	}
 }

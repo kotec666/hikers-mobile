@@ -8,6 +8,7 @@ import { TrainingsService } from '../trainings/trainings.service';
 import { StaticService } from '../static/static.service';
 import { CommonDto } from 'src/common/dto/common.dto';
 import { UserDto } from '../user/user.dto';
+import { SubscribersService } from '../subscribers/subscribers.service';
 
 @Injectable()
 export class PostsService {
@@ -15,9 +16,10 @@ export class PostsService {
 		private readonly db: DatabaseService,
 		private readonly files: StaticService,
 		private readonly trainings: TrainingsService,
+		private readonly subscribers: SubscribersService,
 	) {}
 
-	public async getByUser(userId: string, page: number, limit: number): Promise<PostDto.Entity[]> {
+	public async getByUser(userId: string, someUserId: string, page: number, limit: number): Promise<PostDto.Entity[]> {
 		const offset = Math.max(0, (page - 1) * limit);
 
 		const rows = await this.db.db
@@ -39,7 +41,7 @@ export class PostsService {
 			})
 			.from(posts)
 			// @TODO доделать чтобы участие в постах тоже засчитывало
-			.where(eq(posts.userCreatorId, userId))
+			.where(eq(posts.userCreatorId, someUserId))
 			.innerJoin(users, eq(users.id, posts.userCreatorId))
 			.orderBy(desc(posts.createdAt))
 			.offset(offset)
@@ -53,8 +55,9 @@ export class PostsService {
 
 			// Пока что все посты закреплены за своей тренировкой
 			const training = await this.trainings.getExtendedById(row.trainingId!);
+			const isSubscribed = await this.subscribers.isSubscribed(userId, row.userCreator.id);
 
-			postEntities.push({ ...row, training, fileNames, likes });
+			postEntities.push({ ...row, isSubscribed, training, fileNames, likes });
 		}
 
 		return postEntities;
@@ -95,14 +98,15 @@ export class PostsService {
 
 			// Пока что все посты закреплены за своей тренировкой
 			const training = await this.trainings.getExtendedById(row.trainingId!);
+			const isSubscribed = await this.subscribers.isSubscribed(userId, row.userCreator.id);
 
-			postEntities.push({ ...row, training, fileNames, likes });
+			postEntities.push({ ...row, isSubscribed, training, fileNames, likes });
 		}
 
 		return postEntities;
 	}
 
-	public async getById(id: string): Promise<PostDto.Entity> {
+	public async getById(userId: string, id: string): Promise<PostDto.Entity> {
 		const [post] = await this.db.db
 			.select({
 				id: posts.id,
@@ -133,8 +137,9 @@ export class PostsService {
 
 		// Пока что все посты закреплены за своей тренировкой
 		const training = await this.trainings.getExtendedById(post.trainingId!);
+		const isSubscribed = await this.subscribers.isSubscribed(userId, post.userCreator.id);
 
-		return { ...post, training, fileNames, likes };
+		return { ...post, isSubscribed, training, fileNames, likes };
 	}
 
 	public async create(userId: string, dto: PostDto.Creation): Promise<PostDto.Entity> {
@@ -174,7 +179,7 @@ export class PostsService {
 		}
 		// @TODO try...catch на кетч ошибки загруженные файлы откатывать
 
-		return await this.getById(post.id);
+		return await this.getById(userId, post.id);
 	}
 
 	public async attachFiles(postId: string, files: Express.Multer.File[]): Promise<string[]> {

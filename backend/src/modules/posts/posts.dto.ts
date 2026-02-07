@@ -8,6 +8,10 @@ import { lengths } from '@shared/lengths';
 export namespace PostDto {
 	export type Entity = {
 		id: string;
+
+		/** Подписан ли на автора поста */
+		isSubscribed: boolean;
+
 		userCreator: UserDto.Entity;
 		training: TrainingDto.ExtendedEntity;
 
