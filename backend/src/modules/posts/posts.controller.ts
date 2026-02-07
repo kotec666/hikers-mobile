@@ -6,6 +6,7 @@ import { PostDto } from './posts.dto';
 import { FilesInterceptor } from '@nestjs/platform-express';
 import { IsUUID } from '@validation/parameter-decorators';
 import { NotNegative } from '@validation/query-decorators';
+import { CommonDto } from 'src/common/dto/common.dto';
 
 @Controller('posts')
 @UseInterceptors(UserInterceptor)
@@ -78,5 +79,31 @@ export class PostsController {
 	@Get(':id')
 	public async getById(@User() user: UserData, @IsUUID('id') @Param('id') id: string): Promise<PostDto.Entity> {
 		return await this.service.getById(user.id, id);
+	}
+
+	/**
+	 * @tag Posts
+	 * @summary Поставить лайк пост
+	 * @security token
+	 */
+	@Get(':id/like')
+	public async like(
+		@User() user: UserData,
+		@IsUUID('id') @Param('id') id: string,
+	): Promise<CommonDto.BooleanResponse> {
+		return await this.service.likePost(user.id, id);
+	}
+
+	/**
+	 * @tag Posts
+	 * @summary Убрать лайк с поста
+	 * @security token
+	 */
+	@Get(':id/unlike')
+	public async unlike(
+		@User() user: UserData,
+		@IsUUID('id') @Param('id') id: string,
+	): Promise<CommonDto.BooleanResponse> {
+		return await this.service.unlikePost(user.id, id);
 	}
 }

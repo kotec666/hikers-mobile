@@ -211,7 +211,13 @@ export class PostsService {
 		return mediaIds;
 	}
 
-	public async likePost(postId: string, userId: string): Promise<CommonDto.BooleanResponse> {
+	public async unlikePost(userId: string, postId: string): Promise<CommonDto.BooleanResponse> {
+		await this.db.db.delete(postLikes).where(and(eq(postLikes.postId, postId), eq(postLikes.userId, userId)));
+
+		return { success: true };
+	}
+
+	public async likePost(userId: string, postId: string): Promise<CommonDto.BooleanResponse> {
 		await this.db.db.insert(postLikes).values({
 			postId,
 			userId,
