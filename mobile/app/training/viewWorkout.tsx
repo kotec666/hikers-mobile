@@ -1,9 +1,9 @@
-import { Pressable, Image, View, Text, ScrollView } from 'react-native'
+import { Pressable, Image, View, Text, ScrollView, TouchableOpacity, Platform } from 'react-native'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
 import { Container } from '@/components/ui/Container'
 import { useRouter } from 'expo-router'
 import ArrowBackSvg from '@/components/svg/ArrowBackSvg'
-import React, { useState } from 'react'
+import React, { useRef, useState } from 'react'
 import { fontFamily } from '@/constants/Fonts'
 import Parameter from '@/components/training/Parameter'
 import { Button } from '@/components/ui/Button'
@@ -21,6 +21,14 @@ import { Controller, useForm } from 'react-hook-form'
 import { useErrorMessage } from '@/hooks/useErrorMessage'
 import { getFieldsErrors } from '@/helpers/getFieldsErrors'
 import { LineChart } from '@/components/LineChart/LineChart'
+import EditAvatarModalContent, { ImagePickMode } from '@/components/profile/EditAvatarModalContent'
+import * as ImagePicker from 'expo-image-picker'
+import Modal from '@/components/ui/Modal/Modal'
+import { cn } from '@/helpers/cn'
+import CameraSvg from '@/components/svg/CameraSvg'
+import GallerySvg from '@/components/svg/GallerySvg'
+import ImagePickerButton from '@/components/ui/ImagePickerButton'
+import { useToast } from '@/hooks/useToast'
 
 interface IPostFormState {
 	title: string
@@ -30,6 +38,7 @@ interface IPostFormState {
 export default function ViewWorkout() {
 	const router = useRouter()
 	const insets = useSafeAreaInsets()
+	const toast = useToast()
 	const { isConnected: isInternetConnected } = useInternetConnection()
 	const {
 		handleSubmit,
@@ -39,7 +48,9 @@ export default function ViewWorkout() {
 	const { ErrorMessages } = useErrorMessage()
 
 	const results = useWorkoutResultsAfterFinishStore((state) => state)
-
+	const pointsRef = useRef(results.points || [])
+	const [isPhotoModalOpen, setIsPhotoModalOpen] = useState(false)
+	const [postImages, setPostImages] = useState<string[]>([])
 	const [state, setState] = useState<{
 		switchChartView: 'map' | 'chart'
 		isLoading: boolean
@@ -62,24 +73,6 @@ export default function ViewWorkout() {
 			username: 'stevejobs2',
 			name: 'Стив Джобс 2nd',
 			avatar: null
-		},
-		{
-			id: '3',
-			username: 'stevejobs3',
-			name: 'Стив Джобс 3rd',
-			avatar: null
-		},
-		{
-			id: '4',
-			username: 'stevejobs4',
-			name: 'Стив Джобс 4th',
-			avatar: null
-		},
-		{
-			id: '5',
-			username: 'stevejobs5',
-			name: 'Стив Джобс 5th',
-			avatar: null
 		}
 	]
 
@@ -101,214 +94,271 @@ export default function ViewWorkout() {
 		}
 	}
 
+	const pickPostImage = async (mode: ImagePickMode) => {
+		setIsPhotoModalOpen(false)
+		try {
+			let result = {} as ImagePicker.ImagePickerResult
+
+			if (mode === ImagePickMode.GALLERY) {
+				await ImagePicker.requestMediaLibraryPermissionsAsync()
+				result = await ImagePicker.launchImageLibraryAsync({
+					mediaTypes: ['images'],
+					allowsEditing: true,
+					quality: 0.7
+				})
+			} else {
+				await ImagePicker.requestCameraPermissionsAsync()
+				result = await ImagePicker.launchCameraAsync({
+					allowsEditing: true,
+					quality: 0.7
+				})
+			}
+
+			if (!result.canceled) {
+				setPostImages((prev) => [...prev, result.assets[0].uri])
+			}
+		} catch (e: any) {
+			toast.error('Ошибка при загрузке изображения')
+		}
+	}
+
+	const handleDeletePostImage = (index: number) => {
+		setPostImages((prev) => prev.filter((_, i) => i !== index))
+	}
+
 	return (
-		<ScrollView style={{ flex: 1, paddingBottom: insets.bottom + 50 }} contentContainerStyle={{ flexGrow: 1 }}>
-			<View className="relative" style={{ height: 300 }}>
-				<Image
-					className="w-full h-full"
-					source={require('@/assets/images/view-training.webp')}
-					resizeMode="cover"
-				/>
-				<Container
-					className="absolute w-full h-full inset-0 justify-between pb-4"
-					style={{ paddingTop: insets.top + 40 }}
-				>
-					<Pressable
-						onPress={() => {
-							router.replace('/workout-history')
-						}}
+		<>
+			<Modal
+				isOpen={isPhotoModalOpen}
+				handleClose={() => setIsPhotoModalOpen(false)}
+				label="Фото поста"
+				labelSize={16}
+			>
+				<View className="flex-row gap-[10px] justify-between">
+					<ImagePickerButton
+						title="Камера"
+						icon={<CameraSvg />}
+						onPress={() => pickPostImage(ImagePickMode.CAMERA)}
+					/>
+					<ImagePickerButton
+						title="Галерея"
+						icon={<GallerySvg />}
+						onPress={() => pickPostImage(ImagePickMode.GALLERY)}
+					/>
+				</View>
+			</Modal>
+
+			<ScrollView style={{ flex: 1, paddingBottom: insets.bottom + 50 }} contentContainerStyle={{ flexGrow: 1 }}>
+				<View className="relative" style={{ height: 300 }}>
+					<Image
+						className="w-full h-full"
+						source={require('@/assets/images/view-training.webp')}
+						resizeMode="cover"
+					/>
+					<Container
+						className="absolute w-full h-full inset-0 justify-between pb-4"
+						style={{ paddingTop: insets.top + 40 }}
 					>
-						<ArrowBackSvg />
-					</Pressable>
-					<View className="flex-row w-full justify-between items-center">
-						<View className="flex-row items-center gap-[10px]">
-							<View className="bg-white rounded-xl items-center justify-center w-[40px] h-[40px]">
-								{renderIcon(results?.type?.IconComponent, '#000')}
-								{/* <PeopleRunningSvg width={21} height={21} /> */}
-							</View>
-							<Text className="text-white text-[23px]" style={{ fontFamily: fontFamily.bold }}>
-								{results.metrics?.totalDistanceFormatted}
-							</Text>
-						</View>
-						<Text className="text-white text-[13px]" style={{ fontFamily: fontFamily.medium }}>
-							Сегодня, {results.startedAt && format(results.startedAt, 'HH:mm')} -{' '}
-							{format(Date.now(), 'HH:mm')}
-						</Text>
-					</View>
-				</Container>
-			</View>
-
-			<Container className="mt-[20px]" style={{ paddingBottom: insets.bottom + 20 }}>
-				<View className="gap-[15px]">
-					<View className="bg-black-25 rounded-[25px] p-[15px] gap-[15px]">
-						<Text className="text-base text-white" style={{ fontFamily: fontFamily.bold }}>
-							Сведения о тренировке
-						</Text>
-						<View className="w-full flex-row justify-between">
-							<View className="gap-[15px]">
-								<Parameter label="Время" value={results.metrics?.totalTimeFormatted} />
-								<Parameter label="Дистанция" value={results.metrics?.totalDistanceFormatted} />
-								<Parameter label="Ккал" value={results.metrics?.totalCalories} />
-							</View>
-							<View className="gap-[15px]">
-								<Parameter label="Высота" value={results.metrics?.totalHeight} />
-								<Parameter label="Ср. скорость" value={results.metrics?.totalAvgSpeed} />
-								<Parameter label="Cр. темп" value={results.metrics?.totalAvgPace} />
-							</View>
-						</View>
-					</View>
-
-					<View className="flex-row gap-[10px]">
-						<Button
-							onPress={() => setState((s) => ({ ...s, switchChartView: 'map' }))}
-							buttonContainerClassName="flex-col flex-1"
-							variant="black"
+						<Pressable
+							onPress={() => {
+								router.replace('/workout-history')
+							}}
 						>
-							Карта
-						</Button>
-						<Button
-							onPress={() => setState((s) => ({ ...s, switchChartView: 'chart' }))}
-							buttonContainerClassName="flex-col flex-1"
-							variant="white"
-						>
-							График
-						</Button>
-					</View>
-					{state.switchChartView === 'map' && <MapComponent minMapHeight={320} rounded={25} />}
-					{state.switchChartView === 'chart' && (
-						<View className="rounded-[25px] p-[15px] items-center justify-center bg-black-25 h-[320px]">
-							<View className="w-full pb-[15px]">
-								<Text className="text-base text-white" style={{ fontFamily: fontFamily.bold }}>
-									График темпа
+							<ArrowBackSvg />
+						</Pressable>
+						<View className="flex-row w-full justify-between items-center">
+							<View className="flex-row items-center gap-[10px]">
+								<View className="bg-white rounded-xl items-center justify-center w-[40px] h-[40px]">
+									{renderIcon(results?.type?.IconComponent, '#000')}
+									{/* <PeopleRunningSvg width={21} height={21} /> */}
+								</View>
+								<Text className="text-white text-[23px]" style={{ fontFamily: fontFamily.bold }}>
+									{results.metrics?.totalDistanceFormatted}
 								</Text>
 							</View>
-							<LineChart points={results.points} />
+							<Text className="text-white text-[13px]" style={{ fontFamily: fontFamily.medium }}>
+								Сегодня, {results.startedAt && format(results.startedAt, 'HH:mm')} -{' '}
+								{format(Date.now(), 'HH:mm')}
+							</Text>
+						</View>
+					</Container>
+				</View>
+
+				<Container className="mt-[20px]" style={{ paddingBottom: insets.bottom + 20 }}>
+					<View className="gap-[15px]">
+						<View className="bg-black-25 rounded-[25px] p-[15px] gap-[15px]">
+							<Text className="text-base text-white" style={{ fontFamily: fontFamily.bold }}>
+								Сведения о тренировке
+							</Text>
+							<View className="w-full flex-row justify-between">
+								<View className="gap-[15px]">
+									<Parameter label="Время" value={results.metrics?.totalTimeFormatted} />
+									<Parameter label="Дистанция" value={results.metrics?.totalDistanceFormatted} />
+									<Parameter label="Ккал" value={results.metrics?.totalCalories} />
+								</View>
+								<View className="gap-[15px]">
+									<Parameter label="Высота" value={results.metrics?.totalHeight} />
+									<Parameter label="Ср. скорость" value={results.metrics?.totalAvgSpeed} />
+									<Parameter label="Cр. темп" value={results.metrics?.totalAvgPace} />
+								</View>
+							</View>
+						</View>
+
+						<View className="flex-row gap-[10px]">
+							<Button
+								onPress={() => setState((s) => ({ ...s, switchChartView: 'map' }))}
+								buttonContainerClassName="flex-col flex-1"
+								variant="black"
+							>
+								Карта
+							</Button>
+							<Button
+								onPress={() => setState((s) => ({ ...s, switchChartView: 'chart' }))}
+								buttonContainerClassName="flex-col flex-1"
+								variant="white"
+							>
+								График
+							</Button>
+						</View>
+						{state.switchChartView === 'map' && (
+							<MapComponent minMapHeight={320} rounded={25} initialLocations={pointsRef} />
+						)}
+						{state.switchChartView === 'chart' && (
+							<View className="rounded-[25px] p-[15px] items-center justify-center bg-black-25 h-[320px]">
+								<View className="w-full pb-[15px]">
+									<Text className="text-base text-white" style={{ fontFamily: fontFamily.bold }}>
+										График темпа
+									</Text>
+								</View>
+								<LineChart points={results.points} />
+							</View>
+						)}
+					</View>
+					{isInternetConnected ? (
+						<>
+							<View className="mt-[20px] gap-[15px]">
+								<Text className="text-white text-base" style={{ fontFamily: fontFamily.bold }}>
+									Участники
+								</Text>
+								<View className="gap-[15px]">
+									{data.map((user) => (
+										<PeopleListItem
+											key={user.id}
+											id={user.id}
+											username={user.username}
+											name={user.name}
+											// avatar={item.user.avatarFilename ? `${PATH_TO_IMAGE}${item.user.avatarFilename}` : null}
+											avatar={user.avatar}
+											icon={{
+												iconSvg: <EyeSvg color={Colors['green-main']} opened={true} />,
+												//iconCb: () => handleUnsubscribe(item.user.id)
+												iconCb: () => {}
+											}}
+										/>
+									))}
+								</View>
+							</View>
+							<View className="mt-[20px] gap-[15px]">
+								<Text className="text-white text-base" style={{ fontFamily: fontFamily.bold }}>
+									Публикация
+								</Text>
+								<View className="gap-[10px]">
+									<Controller
+										name="title"
+										control={control}
+										rules={{
+											required: {
+												value: true,
+												message: ErrorMessages.required
+											},
+											minLength: {
+												value: lengths.user.email.min,
+												message: ErrorMessages.optionalMin(lengths.user.email.min)
+											},
+											maxLength: {
+												value: lengths.user.email.max,
+												message: ErrorMessages.optionalMax(lengths.user.email.max)
+											}
+										}}
+										render={({ field: { onChange, onBlur, value }, fieldState: { error } }) => (
+											<Input
+												placeholder="Введите заголовок"
+												error={error?.message || state.errors?.title}
+												onChangeText={onChange}
+												value={value}
+												onBlur={onBlur}
+											/>
+										)}
+									/>
+									<Controller
+										name="desc"
+										control={control}
+										rules={{
+											required: {
+												value: true,
+												message: ErrorMessages.required
+											},
+											minLength: {
+												value: lengths.user.email.min,
+												message: ErrorMessages.optionalMin(lengths.user.email.min)
+											},
+											maxLength: {
+												value: lengths.user.email.max,
+												message: ErrorMessages.optionalMax(lengths.user.email.max)
+											}
+										}}
+										render={({ field: { onChange, onBlur, value }, fieldState: { error } }) => (
+											<Input
+												multiline
+												placeholder="Введите описание"
+												error={error?.message || state.errors?.desc}
+												onChangeText={onChange}
+												value={value}
+												onBlur={onBlur}
+											/>
+										)}
+									/>
+								</View>
+								<View className="flex-row flex-wrap -mx-[7.5px] gap-y-[15px] mt-[10px]">
+									{postImages.map((uri, index) => (
+										<View key={uri} className="w-1/2 px-[7.5px] relative">
+											<Image
+												source={{ uri }}
+												className="w-full aspect-square rounded-[15px] border-[1px] border-white/20"
+												resizeMode="cover"
+											/>
+											<View className="absolute right-[12px] top-[12px] rounded-full w-[28px] h-[28px] bg-black/40 items-center justify-center">
+												<CloseCross handleClose={() => handleDeletePostImage(index)} />
+											</View>
+										</View>
+									))}
+								</View>
+								<View className="gap-[10px] mt-[15px]">
+									<Button variant="white" onPress={() => setIsPhotoModalOpen(true)}>
+										Добавить фото
+									</Button>
+									<Button
+										variant="green"
+										onPress={handleSubmit(onSubmit)}
+										isLoading={state.isLoading}
+									>
+										Поделиться
+									</Button>
+								</View>
+							</View>
+						</>
+					) : (
+						<View className="my-[16px]">
+							<Text
+								style={{ fontFamily: fontFamily.medium }}
+								className="text-gray-ab text-base text-center"
+							>
+								Нет подключения к интернету, создать пост можно будет позже
+							</Text>
 						</View>
 					)}
-				</View>
-				{isInternetConnected ? (
-					<>
-						<View className="mt-[20px] gap-[15px]">
-							<Text className="text-white text-base" style={{ fontFamily: fontFamily.bold }}>
-								Участники
-							</Text>
-							<View className="gap-[15px]">
-								{data.map((user) => (
-									<PeopleListItem
-										key={user.id}
-										id={user.id}
-										username={user.username}
-										name={user.name}
-										// avatar={item.user.avatarFilename ? `${PATH_TO_IMAGE}${item.user.avatarFilename}` : null}
-										avatar={user.avatar}
-										icon={{
-											iconSvg: <EyeSvg color={Colors['green-main']} opened={true} />,
-											//iconCb: () => handleUnsubscribe(item.user.id)
-											iconCb: () => {}
-										}}
-									/>
-								))}
-							</View>
-						</View>
-						<View className="mt-[20px] gap-[15px]">
-							<Text className="text-white text-base" style={{ fontFamily: fontFamily.bold }}>
-								Публикация
-							</Text>
-							<View className="gap-[10px]">
-								<Controller
-									name="title"
-									control={control}
-									rules={{
-										required: {
-											value: true,
-											message: ErrorMessages.required
-										},
-										minLength: {
-											value: lengths.user.email.min,
-											message: ErrorMessages.optionalMin(lengths.user.email.min)
-										},
-										maxLength: {
-											value: lengths.user.email.max,
-											message: ErrorMessages.optionalMax(lengths.user.email.max)
-										}
-									}}
-									render={({ field: { onChange, onBlur, value }, fieldState: { error } }) => (
-										<Input
-											placeholder="Введите заголовок"
-											error={error?.message || state.errors?.title}
-											onChangeText={onChange}
-											value={value}
-											onBlur={onBlur}
-										/>
-									)}
-								/>
-								<Controller
-									name="desc"
-									control={control}
-									rules={{
-										required: {
-											value: true,
-											message: ErrorMessages.required
-										},
-										minLength: {
-											value: lengths.user.email.min,
-											message: ErrorMessages.optionalMin(lengths.user.email.min)
-										},
-										maxLength: {
-											value: lengths.user.email.max,
-											message: ErrorMessages.optionalMax(lengths.user.email.max)
-										}
-									}}
-									render={({ field: { onChange, onBlur, value }, fieldState: { error } }) => (
-										<Input
-											multiline
-											placeholder="Введите описание"
-											error={error?.message || state.errors?.desc}
-											onChangeText={onChange}
-											value={value}
-											onBlur={onBlur}
-										/>
-									)}
-								/>
-							</View>
-							<View className="flex-row gap-[15px]">
-								<View className="flex-1 h-[150px] ">
-									<Image
-										className="w-full h-full rounded-[15px] border-[1px] border-white/20 relative"
-										source={require('@/assets/images/carousel/carousel-1.webp')}
-										resizeMode="cover"
-									/>
-									<View className="absolute right-[12px] top-[12px] rounded-full w-[28px] h-[28px] bg-black/20 items-center justify-center overflow-hidden">
-										<CloseCross />
-									</View>
-								</View>
-								<View className="flex-1 h-[150px] ">
-									<Image
-										className="w-full h-full rounded-[15px] border-[1px] border-white/20 relative"
-										source={require('@/assets/images/carousel/carousel-1.webp')}
-										resizeMode="cover"
-									/>
-									<View className="absolute right-[12px] top-[12px] rounded-full w-[28px] h-[28px] bg-black/20 items-center justify-center overflow-hidden">
-										<CloseCross />
-									</View>
-								</View>
-							</View>
-							<View className="gap-[10px] mt-[15px]">
-								<Button variant="white">Добавить фото</Button>
-								<Button variant="green" onPress={handleSubmit(onSubmit)} isLoading={state.isLoading}>
-									Поделиться
-								</Button>
-							</View>
-						</View>
-					</>
-				) : (
-					<View className="my-[16px]">
-						<Text style={{ fontFamily: fontFamily.medium }} className="text-gray-ab text-base text-center">
-							Нет подключения к интернету, создать пост можно будет позже
-						</Text>
-					</View>
-				)}
-			</Container>
-		</ScrollView>
+				</Container>
+			</ScrollView>
+		</>
 	)
 }

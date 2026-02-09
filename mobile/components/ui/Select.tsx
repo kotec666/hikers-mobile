@@ -5,9 +5,10 @@ import { Colors } from '@/constants/Colors'
 import React, { useState } from 'react'
 import { Container } from '@/components/ui/Container'
 import ArrowDownSvg from '@/components/svg/ArrowDownSvg'
-import { FlatList, GestureHandlerRootView } from 'react-native-gesture-handler'
+import { FlatList } from 'react-native-gesture-handler'
 import PeopleRunningSvg from '@/components/svg/PeopleRunningSvg'
 import { BlurView } from 'expo-blur'
+import Animated, { Easing, useSharedValue, useAnimatedStyle, withTiming } from 'react-native-reanimated'
 
 export interface SelectOption {
 	value: string
@@ -30,13 +31,40 @@ const { height } = Dimensions.get('screen')
 export function Select(props: SelectProps) {
 	const { className, options, value, onChange, placeholder, error, disabled, containerClassName } = props
 	const [isOpen, setIsOpen] = useState(false)
+	const [showDropdown, setShowDropdown] = useState(false)
 
 	const selectedOption = options.find((option) => option.value === value)
 	const displayValue = selectedOption?.label || placeholder
 
 	const handleSelect = (optionValue: string) => {
 		onChange?.(optionValue)
-		setIsOpen(false)
+		toggleOpen()
+	}
+
+	const animatedHeight = useSharedValue(0)
+
+	const maxHeight = Math.min(height / 2, options.length * 70)
+
+	const animatedStyle = useAnimatedStyle(() => ({
+		height: withTiming(animatedHeight.value, {
+			duration: 300,
+			easing: Easing.out(Easing.quad)
+		}),
+		opacity: withTiming(animatedHeight.value > 0 ? 1 : 0, {
+			duration: 200
+		})
+	}))
+
+	const toggleOpen = () => {
+		if (!isOpen) {
+			setShowDropdown(true)
+			animatedHeight.value = maxHeight
+			setIsOpen(true)
+		} else {
+			animatedHeight.value = 0
+			setIsOpen(false)
+			setTimeout(() => setShowDropdown(false), 300)
+		}
 	}
 
 	return (
@@ -58,7 +86,7 @@ export function Select(props: SelectProps) {
 					},
 					className
 				)}
-				onPress={() => !disabled && setIsOpen((prevState) => !prevState)}
+				onPress={() => !disabled && toggleOpen()}
 				disabled={disabled}
 			>
 				<Text style={[styles.text, { color: value ? 'white' : Colors['black-5c'] }]} numberOfLines={1}>
@@ -67,12 +95,15 @@ export function Select(props: SelectProps) {
 				<ArrowDownSvg />
 			</TouchableOpacity>
 
-			{isOpen && (
-				<View
-					className="absolute border-[1px] border-white/20 rounded-[25px] left-0 gap-[15px] w-full overflow-hidden"
-					style={{ top: 60, backgroundColor: Platform.OS === 'ios' ? 'none' : 'black', zIndex: 2 }}
-				>
-					{Platform.OS === 'ios' ? (
+			<Animated.View
+				className="absolute border-[1px] border-white/20 rounded-[25px] left-0 gap-[15px] w-full overflow-hidden"
+				style={[
+					{ top: 60, backgroundColor: Platform.OS === 'ios' ? 'none' : 'black', zIndex: 2 },
+					animatedStyle
+				]}
+			>
+				{showDropdown &&
+					(Platform.OS === 'ios' ? (
 						<BlurView
 							tint="dark"
 							intensity={10}
@@ -82,7 +113,7 @@ export function Select(props: SelectProps) {
 								options={options}
 								handleSelect={handleSelect}
 								value={value}
-								handleClose={() => setIsOpen(false)}
+								handleClose={() => toggleOpen()}
 							/>
 						</BlurView>
 					) : (
@@ -90,11 +121,10 @@ export function Select(props: SelectProps) {
 							options={options}
 							handleSelect={handleSelect}
 							value={value}
-							handleClose={() => setIsOpen(false)}
+							handleClose={() => toggleOpen()}
 						/>
-					)}
-				</View>
-			)}
+					))}
+			</Animated.View>
 
 			{error && (
 				<Container className="mt-[10px]">
@@ -120,7 +150,6 @@ const SelectContainer = ({
 }) => {
 	return (
 		<>
-			{/*<GestureHandlerRootView style={{ flex: 1, maxHeight: height / 4 }}>*/}
 			<FlatList
 				data={options}
 				keyExtractor={(item) => item.value}
@@ -137,7 +166,6 @@ const SelectContainer = ({
 				)}
 				showsVerticalScrollIndicator={false}
 			/>
-			{/*</GestureHandlerRootView>*/}
 			<TouchableOpacity onPress={handleClose}>
 				<View
 					className="w-full border-[1px] border-white/20 rounded-[25px] h-[50px] items-center justify-center"
