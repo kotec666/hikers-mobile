@@ -22,4 +22,4 @@ Disallow: /
 # Disallow: /_next
 # Disallow: /api
 
-Sitemap: https://hikers.su/sitemap.xml
+Sitemap: https://hikers.run/sitemap.xml

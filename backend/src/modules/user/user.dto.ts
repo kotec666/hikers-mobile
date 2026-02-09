@@ -1,5 +1,5 @@
 import { IsEmail, Length } from 'class-validator';
-import { HasDigit, UniqueEmail } from '@validation/decorators';
+import { HasDigit, UniqueEmail } from '@validation/property-decorators';
 import { ERRORS } from '@shared/errors';
 import { lengths } from '@shared/lengths';
 

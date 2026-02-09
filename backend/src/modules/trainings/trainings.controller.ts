@@ -5,7 +5,7 @@ import { User } from 'src/common/decorators/user.decorator';
 import { TokenDto } from '../token/token.dto';
 import { UserInterceptor } from 'src/common/interceptors/user.interceptor';
 import { CommonDto } from 'src/common/dto/common.dto';
-import { IsUUID } from '@validation/uuid.validatior';
+import { IsUUID } from '@validation/parameter-decorators';
 import { TrainingType } from '@shared/enums';
 import { ParseEnumArray } from '@validation/param.decorators';
 
@@ -69,8 +69,11 @@ export class TrainingsController {
 	 * @security token
 	 */
 	@Post('finish')
-	public async finish(@User() user: TokenDto.Payload): Promise<CommonDto.BooleanResponse> {
-		return this.service.finish(user.id);
+	public async finish(
+		@User() user: TokenDto.Payload,
+		@Body() dto?: TrainingDto.Finish,
+	): Promise<CommonDto.BooleanResponse> {
+		return this.service.finish(user.id, dto?.ts);
 	}
 
 	/**
@@ -89,7 +92,7 @@ export class TrainingsController {
 
 	/**
 	 * @tag Trainings
-	 * @summary Удалить незавершенную тренировку (не будет отображена в истории тренировок)
+	 * @summary Удалить незавершенные тренировки (не будут отображены в истории тренировок)
 	 * @security token
 	 */
 	@Delete('delete-not-finished')

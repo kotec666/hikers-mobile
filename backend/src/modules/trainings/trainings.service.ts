@@ -1,4 +1,4 @@
-﻿import { BadRequestException, GoneException, Injectable, NotFoundException } from '@nestjs/common';
+﻿import { BadRequestException, ConflictException, GoneException, Injectable, NotFoundException } from '@nestjs/common';
 import { DatabaseService } from '../database/database.service';
 import {
 	DebugTrainingRouteNode,
@@ -12,7 +12,7 @@ import {
 import { TrainingDto, TrainingMetricsDto, TrainingParticipantDto } from './trainings.dto';
 import { eq, and, isNull, isNotNull, inArray } from 'drizzle-orm';
 import { ERRORS } from '@shared/errors';
-import { CommonDto } from 'src/common/dto/common.dto';
+import { CommonDto } from '../../common/dto/common.dto';
 import { TrainingType } from '@shared/enums';
 import { round, clampToPg } from '@helpers';
 import { calculateCalories, haversineDistance } from '@shared/helpers';
@@ -33,10 +33,16 @@ export class TrainingsService {
 			throw new BadRequestException(ERRORS.USER_IN_NOT_FINISHED_TRAINING);
 		}
 
+		if (typeof dto.ts !== 'undefined') {
+			if (Date.now() < dto.ts) {
+				throw new ConflictException(`_ts:${ERRORS.DATE_IN_THE_FUTURE}`);
+			}
+		}
+
 		const upsertQuery = {
 			type: dto.type,
 			userCreatorId: userId,
-			startedAt: new Date(),
+			startedAt: dto.ts ? new Date(dto.ts) : new Date(),
 		};
 		const returningQuery = {
 			id: training.id,
@@ -93,18 +99,24 @@ export class TrainingsService {
 		});
 	}
 
-	public async finish(userId: string): Promise<CommonDto.BooleanResponse> {
+	public async finish(userId: string, ts?: number): Promise<CommonDto.BooleanResponse> {
 		// Создатель может завершить только активную треню - находим её
 		const [activeTraining] = await this.getActive(userId, true);
 		if (!activeTraining) {
 			throw new NotFoundException(ERRORS.NOT_FOUND);
 		}
 
+		if (typeof ts !== 'undefined' && activeTraining.startedAt) {
+			if (ts < activeTraining.startedAt.getTime()) {
+				throw new ConflictException(`_ts:${ERRORS.DATE_IN_THE_PAST}`);
+			}
+		}
+
 		return await this.db.db.transaction(async (tx) => {
 			await tx
 				.update(training)
 				.set({
-					finishedAt: new Date(),
+					finishedAt: ts ? new Date(ts) : new Date(),
 				})
 				.where(eq(training.id, activeTraining.id));
 
@@ -191,9 +203,19 @@ export class TrainingsService {
 			.where(eq(trainingRoutes.participantId, participant.id))
 			.limit(1);
 
-		if (trainingRoute) {
-			const updatedPoints = (trainingRoute.points || []).concat(metrics);
+		const updatedPoints = (trainingRoute?.points ?? []).concat(metrics);
+		// Сортируем в порядке возрастания rel_ts
+		updatedPoints.sort((a, b) => {
+			if (a.rel_ts > b.rel_ts) {
+				return 1;
+			}
+			if (a.rel_ts < b.rel_ts) {
+				return -1;
+			}
+			return 0;
+		});
 
+		if (trainingRoute) {
 			await this.db.db
 				.update(trainingRoutes)
 				.set({
@@ -203,7 +225,7 @@ export class TrainingsService {
 		} else {
 			await this.db.db.insert(trainingRoutes).values({
 				participantId: participant.id,
-				points: metrics,
+				points: updatedPoints,
 
 				createdAt: new Date(),
 			});

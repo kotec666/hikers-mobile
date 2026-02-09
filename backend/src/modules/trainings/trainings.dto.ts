@@ -1,8 +1,8 @@
 ﻿import { TrainingType } from '@shared/enums';
 import { UserDto } from '../user/user.dto';
-import { IsArray, IsEnum } from 'class-validator';
+import { IsArray, IsEnum, IsNumber, IsOptional } from 'class-validator';
 import { DebugTrainingRouteNode } from '../database/schema';
-import { IsHexColor } from '@validation/decorators';
+import { IsHexColor } from '@validation/property-decorators';
 import { ERRORS } from '@shared/errors';
 
 /**
@@ -67,6 +67,18 @@ export namespace TrainingDto {
 
 		@IsHexColor()
 		colorHex: string;
+
+		/** Время старта. Для оффлайн тренировок */
+		@IsOptional()
+		@IsNumber(undefined, { message: `_ts:${ERRORS.BAD_REQUEST}` })
+		ts?: number;
+	}
+
+	export class Finish {
+		/** Время финиша. Для оффлайн тренировок */
+		@IsOptional()
+		@IsNumber(undefined, { message: `_ts:${ERRORS.BAD_REQUEST}` })
+		ts?: number;
 	}
 
 	export class Sync {

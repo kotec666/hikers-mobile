@@ -6,7 +6,7 @@ import { UserDto } from '../user/user.dto';
 import { lengths } from '@shared/lengths';
 import { ERRORS } from '@shared/errors';
 import { FriendStatus, UserActivity } from '@shared/enums';
-import { isUserActivityEnumValue, isUUID, TypedArray } from '@validation/decorators';
+import { isUserActivityEnumValue, isUUID, TypedArray } from '@validation/property-decorators';
 
 export namespace ProfileDto {
 	export type Entity = {

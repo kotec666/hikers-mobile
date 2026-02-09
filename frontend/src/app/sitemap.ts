@@ -3,11 +3,11 @@ import { MetadataRoute } from 'next'
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
 	const urls = [
 		{
-			api: 'https://hikers.su/api',
-			web: 'https://hikers.su'
+			api: 'https://hikers.run/api',
+			web: 'https://hikers.run'
 		},
 		{
-			api: 'https://hikers.su/api',
+			api: 'https://hikers.run/api',
 			web: 'localhost:3000'
 		}
 	]
