@@ -6,9 +6,10 @@ export interface IMetrics {
 	totalAvgSpeed: string
 	totalTimeFormatted: string
 	totalCalories: number
-	totalDistance: string
+	totalDistanceFormatted: string // в виде строки, отформатированной через helper formatDistance
 	totalAvgPace: string
 	totalHeight: number | null
+	totalDistance: number // в метрах
 }
 
 interface IWorkoutResultsStore {
@@ -41,6 +42,6 @@ export const useWorkoutResultsAfterFinishStore = create<IWorkoutResultsStore>((s
 		set({ points })
 	},
 	clearAll: () => {
-		set({ type: null, metrics: null, points: null })
+		set({ type: null, metrics: null, points: null, startedAt: null })
 	}
 }))

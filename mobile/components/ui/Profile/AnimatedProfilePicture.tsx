@@ -1,5 +1,5 @@
 import { BlurView } from 'expo-blur'
-import React, { useCallback, useState } from 'react'
+import React, { useCallback, useEffect, useState } from 'react'
 import { Dimensions, Image, Text, TouchableOpacity, View, StyleSheet, StyleProp, ViewStyle } from 'react-native'
 import { Gesture, GestureDetector } from 'react-native-gesture-handler'
 import Animated, {
@@ -50,6 +50,12 @@ const DummyAvatar = ({
 }
 
 export const AnimatedProfilePicture = ({ size = 40, imageUrl, bordered }: Props) => {
+	const [imageError, setImageError] = useState(false)
+
+	useEffect(() => {
+		setImageError(false)
+	}, [imageUrl])
+
 	const isOpen = useSharedValue(false)
 
 	const translateX = useSharedValue(0)
@@ -74,7 +80,8 @@ export const AnimatedProfilePicture = ({ size = 40, imageUrl, bordered }: Props)
 	const AVAILABLE_WIDTH = SCREEN_WIDTH - OPEN_HORIZONTAL_PADDING * 2
 	const MAX_SCALE = Math.min(AVAILABLE_WIDTH / size, SCREEN_HEIGHT / size)
 
-	const hasImage = typeof imageUrl === 'string' && !imageUrl.includes('undefined') && !imageUrl.includes('null')
+	const hasImage =
+		typeof imageUrl === 'string' && !imageUrl.includes('undefined') && !imageUrl.includes('null') && !imageError
 
 	const resetValues = useCallback(() => {
 		isOpen.value = false
@@ -233,6 +240,7 @@ export const AnimatedProfilePicture = ({ size = 40, imageUrl, bordered }: Props)
 										height: '100%',
 										borderRadius: size / 2
 									}}
+									onError={() => setImageError(true)}
 								/>
 							) : (
 								<DummyAvatar size={size / 2} bordered={bordered} />
@@ -265,6 +273,7 @@ export const AnimatedProfilePicture = ({ size = 40, imageUrl, bordered }: Props)
 									height: '100%',
 									borderRadius: size / 2
 								}}
+								onError={() => setImageError(true)}
 							/>
 						) : (
 							<DummyAvatar size={size / 2} bordered={bordered} />

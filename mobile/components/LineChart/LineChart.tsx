@@ -1,4 +1,4 @@
-import React, { useState } from 'react'
+import React from 'react'
 import {
 	Circle,
 	DashPathEffect,
@@ -6,12 +6,16 @@ import {
 	vec,
 	Text as SKText,
 	Line as SKLine,
-	AnimatedProp
+	AnimatedProp,
+	LinearGradient
 } from '@shopify/react-native-skia'
 import { useDerivedValue, type SharedValue } from 'react-native-reanimated'
-import { CartesianChart, ChartPressState, Line, useChartPressState, useChartTransformState } from 'victory-native'
-import { View } from 'react-native'
+import { CartesianChart, ChartPressState, Line, useChartPressState, useChartTransformState, Area } from 'victory-native'
+import { View, Text } from 'react-native'
 import { Colors } from '@/constants/Colors'
+import { IWorkoutLocationStorageItem } from '@/store/workoutStorage'
+import { haversineDistance } from '@shared/helpers'
+import { fontFamily } from '@/constants/Fonts'
 
 const manrope = require('@/assets/fonts/Manrope-Regular-400.otf')
 
@@ -19,20 +23,6 @@ type PacePoint = {
 	t: number // seconds from start
 	pace: number // seconds per km
 }
-
-// 0 → 25 минут, точка каждые 5 сек
-const DATA: PacePoint[] = Array.from({ length: 50 }, (_, i) => {
-	const t = i * 5
-
-	// базовый темп ~6:00/км с небольшими колебаниями
-	const basePace = 360
-	const variation = Math.sin(i / 15) * 25 + Math.random() * 10
-
-	return {
-		t,
-		pace: basePace + variation
-	}
-})
 
 const formatPace = (sec: number) => {
 	const m = Math.floor(sec / 60)
@@ -46,110 +36,190 @@ const formatTime = (sec: number) => {
 	return `${String(m).padStart(2, '0')}:${String(s).padStart(2, '0')}`
 }
 
-export const LineChart = () => {
+// Длительность	Шаг	Точек
+// 10 мин	5 сек	~120
+// 30 мин	15 сек	~120
+// 1 час	30 сек	~120
+// 2 часа	60 сек	~120
+// 5 часов	5 мин	~60
+const getStepSeconds = (totalSeconds: number) => {
+	const TARGET_POINTS = 120
+
+	const raw = Math.ceil(totalSeconds / TARGET_POINTS)
+
+	if (raw <= 5) return 5
+	if (raw <= 10) return 10
+	if (raw <= 15) return 15
+	if (raw <= 30) return 30
+	if (raw <= 60) return 60
+	if (raw <= 120) return 120
+	return 300 // 5 мин
+}
+
+const buildPaceChartData = (points: IWorkoutLocationStorageItem[]): PacePoint[] => {
+	if (points.length < 2) return []
+
+	const totalSeconds = (points.at(-1)!.relTs - points[0].relTs) / 1000
+
+	const stepSeconds = getStepSeconds(totalSeconds)
+
+	let accDistance = 0
+	let accTime = 0
+	let lastTs = points[0].relTs
+	let prev = points[0]
+
+	const result: PacePoint[] = []
+
+	for (let i = 1; i < points.length; i++) {
+		const curr = points[i]
+		if (curr.isPausedPoint) continue
+
+		const dt = (curr.relTs - lastTs) / 1000
+		if (dt <= 0) continue
+
+		const d = haversineDistance(
+			prev.locationObject.coords.latitude,
+			prev.locationObject.coords.longitude,
+			curr.locationObject.coords.latitude,
+			curr.locationObject.coords.longitude
+		)
+
+		accTime += dt
+		accDistance += d
+
+		if (accTime >= stepSeconds && accDistance > 10) {
+			const pace = accTime / (accDistance / 1000)
+
+			// фильтр мусора
+			if (pace > 150 && pace < 900) {
+				result.push({
+					t: curr.relTs / 1000,
+					pace
+				})
+			}
+
+			accTime = 0
+			accDistance = 0
+		}
+
+		prev = curr
+		lastTs = curr.relTs
+	}
+
+	return result
+}
+
+export const LineChart = (props: { points: IWorkoutLocationStorageItem[] | null }) => {
 	const font = useFont(manrope, 12)
 	const { state, isActive } = useChartPressState({ x: 0, y: { pace: 0 } })
 	const { state: transformState } = useChartTransformState()
-	const [chartData, setChartData] = useState(DATA)
+	const chartData = React.useMemo(() => {
+		if (!props.points) return []
+		return buildPaceChartData(props.points)
+	}, [props.points])
 
 	return (
 		<View className="w-full items-center flex-1">
 			<View style={{ width: '100%', height: '100%' }}>
-				<CartesianChart
-					data={chartData}
-					xKey="t"
-					yKeys={['pace']}
-					yAxis={[
-						{
+				{chartData.length === 0 ? (
+					<View className="flex-1 items-center justify-center">
+						<Text style={{ fontFamily: fontFamily.medium }} className="text-gray-ab text-base text-center">
+							Недостаточно данных для отображения графика
+						</Text>
+					</View>
+				) : (
+					<CartesianChart
+						data={chartData}
+						xKey="t"
+						yKeys={['pace']}
+						yAxis={[
+							{
+								font,
+								enableRescaling: true,
+								labelColor: 'white',
+								lineColor: 'white',
+								formatYLabel: (v) => formatPace(v),
+								linePathEffect: <DashPathEffect intervals={[4, 4]} />
+							}
+						]}
+						xAxis={{
 							font,
 							enableRescaling: true,
 							labelColor: 'white',
 							lineColor: 'white',
-							formatYLabel: (v) => formatPace(v),
+							formatXLabel: (v) => formatTime(v),
 							linePathEffect: <DashPathEffect intervals={[4, 4]} />
-						}
-					]}
-					xAxis={{
-						font,
-						enableRescaling: true,
-						labelColor: 'white',
-						lineColor: 'white',
-						formatXLabel: (v) => formatTime(v),
-						linePathEffect: <DashPathEffect intervals={[4, 4]} />
-					}}
-					domainPadding={{ top: 30 }}
-					transformConfig={{
-						pan: {
-							enabled: true,
-							dimensions: ['x']
-						}
-					}}
-					// viewport={{
-					// 	x: [15, 30],
-					// 	y: [40, 85]
-					// }}
-					// viewport={{
-					// 	x: [0, 1200], // 0–20 мин
-					// 	y: [300, 480] // 5:00–8:00 /км
-					// }}
-					chartPressState={state}
-					transformState={transformState}
-				>
-					{({ points, chartBounds }) => {
-						return (
-							<>
+						}}
+						domainPadding={{ top: 30 }}
+						transformConfig={{
+							pan: {
+								enabled: true,
+								dimensions: ['x']
+							}
+						}}
+						chartPressState={state}
+						transformState={transformState}
+					>
+						{({ points, chartBounds }) => {
+							return (
 								<>
-									{isActive && (
-										<>
-											<ActiveValueIndicator
-												xPosition={state.x.position}
-												yPosition={state.y.pace.position}
-												bottom={chartBounds.bottom}
-												top={chartBounds.top}
-												activeValue={state.y.pace.value}
-												textColor={'#FFF'}
-												lineColor={'#71717a'}
-												indicatorColor={Colors['white']}
-												state={state}
-											/>
-										</>
-									)}
-								</>
+									<>
+										{isActive && (
+											<>
+												<ActiveValueIndicator
+													xPosition={state.x.position}
+													yPosition={state.y.pace.position}
+													bottom={chartBounds.bottom}
+													top={chartBounds.top}
+													activeValue={state.y.pace.value}
+													textColor={'#FFF'}
+													lineColor={'#71717a'}
+													indicatorColor={Colors['white']}
+													state={state}
+												/>
+											</>
+										)}
+									</>
 
-								<Line
-									points={points.pace}
-									color="lightgreen"
-									strokeWidth={3}
-									animate={{ type: 'timing', duration: 500 }}
-									curveType="natural"
-									connectMissingData
-								/>
+									<Area
+										points={points.pace}
+										y0={chartBounds.bottom}
+										curveType="natural"
+										animate={{ type: 'timing', duration: 500 }}
+									>
+										<LinearGradient
+											start={vec(0, chartBounds.top)}
+											end={vec(0, chartBounds.bottom)}
+											colors={[
+												'rgba(144, 238, 144, 0.45)', // сверху (под линией)
+												'rgba(144, 238, 144, 0.05)' // вниз — почти прозрачный
+											]}
+										/>
+									</Area>
 
-								{/*<Area*/}
-								{/*	points={points.highTmp}*/}
-								{/*	y0={chartBounds.bottom}*/}
-								{/*	animate={{ type: 'timing', duration: 500 }}*/}
-								{/*>*/}
-								{/*	<LinearGradient*/}
-								{/*		start={vec(chartBounds.bottom, 200)}*/}
-								{/*		end={vec(chartBounds.bottom, chartBounds.bottom)}*/}
-								{/*		colors={['green', '#90ee9050']}*/}
-								{/*	/>*/}
-								{/*</Area>*/}
-
-								{points.pace.map((point, index) => (
-									<Circle
-										key={index}
-										cx={point.x}
-										cy={point.y as AnimatedProp<number>}
-										r={4}
-										color={Colors['green-20d']}
+									<Line
+										points={points.pace}
+										color="lightgreen"
+										strokeWidth={3}
+										animate={{ type: 'timing', duration: 500 }}
+										curveType="natural"
+										connectMissingData
 									/>
-								))}
-							</>
-						)
-					}}
-				</CartesianChart>
+
+									{points.pace.map((point, index) => (
+										<Circle
+											key={index}
+											cx={point.x}
+											cy={point.y as AnimatedProp<number>}
+											r={4}
+											color={Colors['green-20d']}
+										/>
+									))}
+								</>
+							)
+						}}
+					</CartesianChart>
+				)}
 			</View>
 		</View>
 	)

@@ -127,7 +127,7 @@ export default function ViewWorkout() {
 								{/* <PeopleRunningSvg width={21} height={21} /> */}
 							</View>
 							<Text className="text-white text-[23px]" style={{ fontFamily: fontFamily.bold }}>
-								{results.metrics?.totalDistance}
+								{results.metrics?.totalDistanceFormatted}
 							</Text>
 						</View>
 						<Text className="text-white text-[13px]" style={{ fontFamily: fontFamily.medium }}>
@@ -147,7 +147,7 @@ export default function ViewWorkout() {
 						<View className="w-full flex-row justify-between">
 							<View className="gap-[15px]">
 								<Parameter label="Время" value={results.metrics?.totalTimeFormatted} />
-								<Parameter label="Дистанция" value={results.metrics?.totalDistance} />
+								<Parameter label="Дистанция" value={results.metrics?.totalDistanceFormatted} />
 								<Parameter label="Ккал" value={results.metrics?.totalCalories} />
 							</View>
 							<View className="gap-[15px]">
@@ -177,12 +177,12 @@ export default function ViewWorkout() {
 					{state.switchChartView === 'map' && <MapComponent minMapHeight={320} rounded={25} />}
 					{state.switchChartView === 'chart' && (
 						<View className="rounded-[25px] p-[15px] items-center justify-center bg-black-25 h-[320px]">
-							<View className="w-full ">
+							<View className="w-full pb-[15px]">
 								<Text className="text-base text-white" style={{ fontFamily: fontFamily.bold }}>
 									График темпа
 								</Text>
 							</View>
-							<LineChart />
+							<LineChart points={results.points} />
 						</View>
 					)}
 				</View>
@@ -302,9 +302,11 @@ export default function ViewWorkout() {
 						</View>
 					</>
 				) : (
-					<Text style={{ fontFamily: fontFamily.medium }} className="text-gray-ab text-base text-center">
-						Нет подключения к интернету, создать пост можно будет позже
-					</Text>
+					<View className="my-[16px]">
+						<Text style={{ fontFamily: fontFamily.medium }} className="text-gray-ab text-base text-center">
+							Нет подключения к интернету, создать пост можно будет позже
+						</Text>
+					</View>
 				)}
 			</Container>
 		</ScrollView>

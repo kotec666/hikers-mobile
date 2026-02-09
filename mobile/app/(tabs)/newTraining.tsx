@@ -423,7 +423,7 @@ export default function NewTraining() {
 		const totalAvgSpeed = Math.round(avgKmh) + 'км/ч'
 		const totalTimeFormatted = formatTime(timeElapsed)
 		const totalCalories = calculateCalories(timeElapsed, accumulatedDistanceRef.current, chosenWorkout.type, 70) // @TODO вес пользователя
-		const totalDistance = formatDistance(accumulatedDistanceRef.current)
+		const totalDistanceFormatted = formatDistance(accumulatedDistanceRef.current)
 		const totalAvgPace = calculatePace(timeElapsed, accumulatedDistanceRef.current)
 		const totalHeight = getWorkoutHeight(pointsRef.current)
 
@@ -434,9 +434,10 @@ export default function NewTraining() {
 			totalAvgSpeed,
 			totalTimeFormatted,
 			totalCalories,
-			totalDistance,
+			totalDistanceFormatted,
 			totalAvgPace,
-			totalHeight
+			totalHeight,
+			totalDistance: accumulatedDistanceRef.current
 		})
 	}
 
