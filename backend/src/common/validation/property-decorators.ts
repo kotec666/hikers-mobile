@@ -3,6 +3,7 @@ import { UniqueEmailValidator } from './unique-email.validator';
 import { UserActivity } from '@shared/enums';
 import { ERRORS } from '@shared/errors';
 import { validate } from 'uuid';
+import { FinishedTrainingParticipantValidator } from './finished-training-participant.validator';
 
 export function IsUUID(validationOptions?: ValidationOptions) {
 	return function (object: object, propertyName: string) {
@@ -49,6 +50,19 @@ export function HasDigit(validationOptions?: ValidationOptions) {
 					return `_${propertyName}:${ERRORS.DIGIT_REQUIRED}`;
 				},
 			},
+		});
+	};
+}
+
+export function FinishedTrainingParticipant(validationOptions?: ValidationOptions) {
+	return function (object: object, propertyName: string) {
+		registerDecorator({
+			name: 'FinishedTrainingParticipant',
+			target: object.constructor,
+			propertyName: propertyName,
+			options: validationOptions,
+			async: true,
+			validator: FinishedTrainingParticipantValidator,
 		});
 	};
 }
@@ -122,4 +136,8 @@ export function isUserActivityEnumValue(item: any): boolean {
 
 export function isUUID(item: any): boolean {
 	return validate(item);
+}
+
+export function isFile(item: any): boolean {
+	return item satisfies Express.Multer.File;
 }

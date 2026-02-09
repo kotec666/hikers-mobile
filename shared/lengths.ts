@@ -17,4 +17,22 @@ export const lengths = {
 			max: 127,
 		},
 	},
+	post: {
+		title: {
+			min: 0,
+			max: 255,
+		},
+	},
+	achievements: {
+		title: {
+			min: 0,
+			max: 255,
+		},
+	},
+	notifications: {
+		title: {
+			min: 0,
+			max: 255,
+		},
+	},
 };

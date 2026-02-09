@@ -1,7 +1,11 @@
+import { config } from 'dotenv';
 import { Module } from '@nestjs/common';
 import { ConfigModule } from '@nestjs/config';
 import { JwtModule } from '@nestjs/jwt';
 import { LoggerModule } from 'nestjs-pino';
+import { FinishedTrainingParticipantValidator } from '@validation/finished-training-participant.validator';
+import { UniqueEmailValidator } from '@validation/unique-email.validator';
+import { AppController } from './app.controller';
 import { DatabaseModule } from './modules/database/database.module';
 import { defaultEnv } from './modules/env/env.validation';
 import { EnvService } from './modules/env/env.service';
@@ -11,14 +15,12 @@ import { TokenModule } from './modules/token/token.module';
 import { AuthModule } from './modules/auth/auth.module';
 import { UserModule } from './modules/user/user.module';
 import { AchievementsModule } from './modules/achievements/achievements.module';
-import { UniqueEmailValidator } from '@validation/unique-email.validator';
 import { FriendsModule } from './modules/friends/friends.module';
 import { SubscribersModule } from './modules/subscribers/subscribers.module';
 import { ActivitiesModule } from './modules/activities/activities.module';
 import { ProfileModule } from './modules/profile/profile.module';
 import { TrainingsModule } from './modules/trainings/trainings.module';
-import { config } from 'dotenv';
-import { AppController } from './app.controller';
+import { PostsModule } from './modules/posts/posts.module';
 
 config({ quiet: true });
 
@@ -80,7 +82,8 @@ config({ quiet: true });
 		ActivitiesModule,
 		ProfileModule,
 		TrainingsModule,
+		PostsModule,
 	],
-	providers: [UniqueEmailValidator],
+	providers: [UniqueEmailValidator, FinishedTrainingParticipantValidator],
 })
 export class AppModule {}

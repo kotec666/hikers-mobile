@@ -12,7 +12,7 @@ import {
 import { TrainingDto, TrainingMetricsDto, TrainingParticipantDto } from './trainings.dto';
 import { eq, and, isNull, isNotNull, inArray } from 'drizzle-orm';
 import { ERRORS } from '@shared/errors';
-import { CommonDto } from 'src/common/dto/common.dto';
+import { CommonDto } from '../../common/dto/common.dto';
 import { TrainingType } from '@shared/enums';
 import { round, clampToPg } from '@helpers';
 import { calculateCalories, haversineDistance } from '@shared/helpers';

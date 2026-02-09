@@ -5,7 +5,7 @@ import { User } from 'src/common/decorators/user.decorator';
 import { TokenDto } from '../token/token.dto';
 import { UserInterceptor } from 'src/common/interceptors/user.interceptor';
 import { CommonDto } from 'src/common/dto/common.dto';
-import { IsUUID } from '@validation/uuid.validatior';
+import { IsUUID } from '@validation/parameter-decorators';
 import { TrainingType } from '@shared/enums';
 import { ParseEnumArray } from '@validation/param.decorators';
 

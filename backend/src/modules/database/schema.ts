@@ -11,6 +11,7 @@ import {
 	smallint,
 	index,
 	uniqueIndex,
+	unique,
 	jsonb,
 	pgEnum,
 } from 'drizzle-orm/pg-core';
@@ -274,9 +275,12 @@ export const posts = pgTable(
 		title: varchar('title', { length: 255 }).notNull(),
 		description: text('description'),
 		createdAt: timestamp('created_at').defaultNow().notNull(),
-		updatedAt: timestamp('updated_at').defaultNow(),
+		updatedAt: timestamp('updated_at'),
 	},
-	(table) => [index('post_usr_idx').on(table.userCreatorId)],
+	(table) => [
+		index('post_usr_idx').on(table.userCreatorId),
+		unique('post_one_per_participant').on(table.trainingId, table.userCreatorId),
+	],
 );
 
 // Post Likes
@@ -295,18 +299,15 @@ export const postLikes = pgTable(
 );
 
 // Post Media (many-to-many)
-export const postMedia = pgTable(
-	'post_media',
-	{
-		postId: uuid('post_id')
-			.notNull()
-			.references(() => posts.id),
-		mediaFilename: varchar('media_filename', { length: 255 })
-			.notNull()
-			.references(() => media.filename),
-	},
-	(table) => [primaryKey({ columns: [table.postId, table.mediaFilename] })],
-);
+export const postMedia = pgTable('post_media', {
+	id: uuid('id').primaryKey().defaultRandom(),
+	postId: uuid('post_id')
+		.notNull()
+		.references(() => posts.id),
+	mediaFilename: varchar('media_filename', { length: 255 })
+		.notNull()
+		.references(() => media.filename),
+});
 
 // Notifications
 export const notifications = pgTable(
