@@ -1,6 +1,6 @@
 import React, { useCallback, useEffect, useRef, useState } from 'react'
 import { SafeAreaProvider, useSafeAreaInsets } from 'react-native-safe-area-context'
-import { View, Text, RefreshControl, ActivityIndicator, ScrollView } from 'react-native'
+import { View, Text, RefreshControl, ActivityIndicator, ScrollView, Dimensions } from 'react-native'
 import SettingsSvg from '@/components/svg/SettingsSvg'
 import MoreOptionsButton from '@/components/ui/MoreOptionsButton/MoreOptionsButton'
 import { fontFamily } from '@/constants/Fonts'
@@ -20,6 +20,9 @@ import { useInternetConnection } from '@/hooks/useInternetConnection'
 import { LegendList, LegendListRef } from '@legendapp/list'
 import { getPostsMy, IPost } from '@/api/posts'
 import { Colors } from '@/constants/Colors'
+import MapComponent, { MapComponentHandle } from '@/components/map/MapComponent'
+import { adaptLocations } from '@/helpers/adaptPointsToIWorkoutLocationStorageItem'
+import { MapComponentSegmentsHandle } from '@/components/map/MapComponentSegments'
 
 /**
  *
@@ -171,6 +174,7 @@ const Profile = () => {
 				workoutType={item.training.type}
 				title={item.title}
 				description={item.description}
+				images={item.fileNames}
 				metrics={item.training.participants.find((participant) => participant.id === user?.id)?.metrics}
 				likeData={{
 					isLiked: item.isLiked,
@@ -178,6 +182,13 @@ const Profile = () => {
 					postId: item.id
 				}}
 				participants={item.training.participants}
+				mapComponent={
+					<MapComponent
+						rounded={25}
+						interactiveDisabled
+						initialLocations={{ current: adaptLocations(item.training.participants[0].route.points) }}
+					/>
+				}
 			/>
 		),
 		[]

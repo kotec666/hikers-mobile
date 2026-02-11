@@ -7,7 +7,7 @@ export const prepareLocationsForSync = (locations: IWorkoutLocationStorageItem[]
 		relTs: item.relTs,
 		alt: item.locationObject.coords.altitude || 0,
 		speed_kmh: mpsToKmph(item.locationObject.coords.speed || 0),
-		paused: item.isPausedPoint,
+		paused: item.paused,
 		lat: item.locationObject.coords.latitude,
 		lng: item.locationObject.coords.longitude,
 		locationObject: {

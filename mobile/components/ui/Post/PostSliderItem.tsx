@@ -1,18 +1,20 @@
 import React from 'react'
-import { Dimensions, Image, ImageSourcePropType, View } from 'react-native'
+import { Image, View } from 'react-native'
+import { PATH_TO_IMAGE } from '@/constants/PATH_TO_FILES'
 
-const { width, height } = Dimensions.get('screen')
-
-const PostSliderItem = (props: { index: number; image: ImageSourcePropType; isOnlyOneInList: boolean }) => {
+const PostSliderItem = (props: {
+	image: string
+	isOnlyOneInList: boolean
+	width: number
+	SLIDE_ASPECT_RATIO: number
+}) => {
 	// container padding = paddingLeft 16px + paddingRight 16px
-	const SliderContainerItemWidth = props.isOnlyOneInList ? width - 32 : width - 64
-	const SLIDE_ASPECT_RATIO = height / 3.83
 
 	return (
-		<View style={{ width: SliderContainerItemWidth }}>
+		<View style={{ width: props.width }}>
 			<Image
-				style={{ height: SLIDE_ASPECT_RATIO }}
-				source={props.image}
+				style={{ height: props.SLIDE_ASPECT_RATIO }}
+				source={{ uri: `${PATH_TO_IMAGE}${props.image}` }}
 				className="rounded-[25px] border-[1px] border-white/20 w-full"
 				resizeMode="cover"
 			/>

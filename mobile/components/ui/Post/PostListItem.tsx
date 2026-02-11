@@ -29,6 +29,8 @@ interface IProps {
 	}
 	participants?: IParticipant[]
 	onToggleSubscribe?: (authorId: string, current?: boolean) => void
+	mapComponent?: React.ReactNode
+	images?: string[]
 }
 
 const PostListItem = (props: IProps) => {
@@ -52,6 +54,8 @@ const PostListItem = (props: IProps) => {
 				title={props.title}
 				description={props.description}
 				metrics={props.metrics}
+				images={props.images}
+				mapComponent={props.mapComponent}
 			/>
 			<PostListItemBottom
 				authorName={props.authorName}

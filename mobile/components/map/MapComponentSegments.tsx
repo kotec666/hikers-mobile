@@ -98,7 +98,7 @@ const MapComponentSegments = forwardRef<MapComponentSegmentsHandle, IProps>((pro
 				lat: loc.locationObject.coords.latitude,
 				lon: loc.locationObject.coords.longitude
 			}
-			const isPaused = loc.isPausedPoint
+			const isPaused = loc.paused
 			const expectedColor = isPaused ? pausedLineColor : activeLineColor
 
 			if (!lastSegment) {

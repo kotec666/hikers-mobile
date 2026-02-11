@@ -4,7 +4,6 @@ import { LocationActivityType, LocationObject } from 'expo-location'
 import { getWorkoutMeta, setWorkoutItems } from '@/store/workoutStorage'
 import { locationEmitter } from './locationEmitter'
 import { TaskManagerError } from 'expo-task-manager'
-import { mpsToKmph } from '@/helpers/mpsToKmph'
 // import { DeadReckoningEngine } from '@/helpers/location/DeadReckoningEngine'
 
 export const LOCATION_TASK_NAME = 'background-location-task'
@@ -107,7 +106,7 @@ TaskManager.defineTask(
 		// 	relTs: item.relTs,
 		// 	alt: item.locationObject.coords.altitude || 0,
 		// 	speed_kmh: mpsToKmph(item.locationObject.coords.speed || 0),
-		// 	paused: item.isPausedPoint,
+		// 	paused: item.paused,
 		// 	lat: item.locationObject.coords.latitude,
 		// 	lng: item.locationObject.coords.longitude,
 		// 	locationObject: {

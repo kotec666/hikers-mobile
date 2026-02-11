@@ -513,6 +513,8 @@ export default function NewTraining() {
 			}
 		} catch (e) {
 			console.error('handleClickEndWorkout error: ', e)
+			const errors = e.response.json()
+			console.log(errors)
 		}
 	}, [chosenWorkout.type, isInternetConnectedRef, resetWorkoutState, router, stopNotificationTimer, toast, tracking])
 

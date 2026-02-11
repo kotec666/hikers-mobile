@@ -4,7 +4,6 @@ import { LocationActivityType, LocationObject } from 'expo-location'
 import { getWorkoutMeta, markPointsAsSaved, setWorkoutItems } from '@/store/workoutStorage'
 import { locationEmitter } from './locationEmitter'
 import { TaskManagerError } from 'expo-task-manager'
-import { mpsToKmph } from '@/helpers/mpsToKmph'
 import { syncTraining } from '@/api/workout'
 import { prepareLocationsForSync } from '@/helpers/prepareLocationsForSync'
 
@@ -44,8 +43,10 @@ export async function startTracking() {
 }
 
 export async function stopTracking() {
-	await Location.stopLocationUpdatesAsync(LOCATION_TASK_NAME)
-	console.log('[tracking]', 'stopped background location task')
+	if (await isTrackingLocation()) {
+		await Location.stopLocationUpdatesAsync(LOCATION_TASK_NAME)
+		console.log('[tracking]', 'stopped background location task')
+	}
 }
 
 TaskManager.defineTask(

@@ -72,7 +72,7 @@ const buildPaceChartData = (points: IWorkoutLocationStorageItem[]): PacePoint[] 
 
 	for (let i = 1; i < points.length; i++) {
 		const curr = points[i]
-		if (curr.isPausedPoint) continue
+		if (curr.paused) continue
 
 		const dt = (curr.relTs - lastTs) / 1000
 		if (dt <= 0) continue

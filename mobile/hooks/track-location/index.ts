@@ -239,7 +239,7 @@ export function useLocationData(
 				for (const item of incomingFiltered) {
 					if (previousPoint) {
 						// Считаем дистанцию только когда обе точки не являются паузой
-						if (!previousPoint.isPausedPoint && !item.isPausedPoint) {
+						if (!previousPoint.paused && !item.paused) {
 							batchDistance += getDist(previousPoint, item)
 						}
 					}

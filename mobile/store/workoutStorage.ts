@@ -53,7 +53,7 @@ export interface IWorkoutLocationStorageItem {
 	pointId: number
 	relTs: number
 	locationObject: LocationObject
-	isPausedPoint: boolean
+	paused: boolean
 	isSavedToServer: boolean
 }
 
@@ -273,7 +273,7 @@ export const setWorkoutItems = (workoutItems: LocationObject[]): IWorkoutLocatio
 			relTs,
 			isSavedToServer: false,
 			locationObject: workoutItem,
-			isPausedPoint: meta.isPaused
+			paused: meta.isPaused
 		}
 
 		savedItems.push(workoutItemToSave)

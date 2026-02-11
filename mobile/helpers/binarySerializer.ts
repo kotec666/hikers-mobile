@@ -25,7 +25,7 @@ export const serializeLocation = (item: IWorkoutLocationStorageItem): Uint8Array
 	const buffer = new ArrayBuffer(POINT_BYTE_SIZE)
 	const view = new DataView(buffer)
 
-	const { locationObject, relTs, isPausedPoint, isSavedToServer, pointId } = item
+	const { locationObject, relTs, paused, isSavedToServer, pointId } = item
 	const { coords } = locationObject
 
 	let offset = 0
@@ -57,7 +57,7 @@ export const serializeLocation = (item: IWorkoutLocationStorageItem): Uint8Array
 
 	// flags (bit0 = paused, bit1 = saved)
 	let flags = 0
-	if (isPausedPoint) flags |= 1
+	if (paused) flags |= 1
 	if (isSavedToServer) flags |= 2
 	view.setUint8(offset, flags)
 
@@ -114,7 +114,7 @@ export const deserializeLocations = (
 
 		const flags = view.getUint8(offset)
 
-		const isPausedPoint = (flags & 1) !== 0
+		const paused = (flags & 1) !== 0
 		const isSavedToServer = (flags & 2) !== 0
 
 		if (getterType === deserializeGetterType.NOT_SAVED) {
@@ -139,7 +139,7 @@ export const deserializeLocations = (
 			pointId,
 			locationObject,
 			relTs,
-			isPausedPoint,
+			paused,
 			isSavedToServer
 		})
 	}

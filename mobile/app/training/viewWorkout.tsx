@@ -142,6 +142,7 @@ export default function ViewWorkout() {
 			router.replace('/(tabs)/profile')
 		} catch (e) {
 			const errors = await e.response.json()
+			console.log(errors.message)
 			const formattedErrors = getFieldsErrors(errors)
 			setState((s) => ({ ...s, errors: formattedErrors }))
 		} finally {

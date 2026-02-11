@@ -29,6 +29,8 @@ import { Colors } from '@/constants/Colors'
 import { useAuthStore } from '@/store/authStore'
 import { useLocalSearchParams } from 'expo-router'
 import { subscribeToUser, unsubscribeFromUser } from '@/api/subscribers'
+import MapComponent from '@/components/map/MapComponent'
+import { adaptLocations } from '@/helpers/adaptPointsToIWorkoutLocationStorageItem'
 
 enum SearchMode {
 	PEOPLE = 'people',
@@ -154,6 +156,7 @@ const PostsPage = () => {
 				description={item.description}
 				metrics={userMetrics}
 				participants={item.training.participants}
+				images={item.fileNames}
 				subscribeData={{
 					authorId: item.userCreator.id,
 					isSubscribed: item.isSubscribed
@@ -164,6 +167,13 @@ const PostsPage = () => {
 					likesCount: item.likesCount
 				}}
 				onToggleSubscribe={handleToggleSubscribe}
+				mapComponent={
+					<MapComponent
+						rounded={25}
+						interactiveDisabled
+						initialLocations={{ current: adaptLocations(item.training.participants[0].route.points) }}
+					/>
+				}
 			/>
 		)
 	}, [])

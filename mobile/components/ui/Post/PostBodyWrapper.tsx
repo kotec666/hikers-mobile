@@ -15,18 +15,16 @@ interface IProps {
 	postId?: string
 	title?: string
 	description?: string | null
+	images?: string[]
 	metrics?: ITrainingMetrics
+	mapComponent?: React.ReactNode
 }
 
 const PostBodyWrapper = (props: IProps) => {
 	const router = useRouter()
-	const PostSliderItems = [
-		{ id: 1, image: require('@/assets/images/carousel/carousel-2.webp') },
-		{ id: 2, image: require('@/assets/images/carousel/carousel-2.webp') },
-		{ id: 3, image: require('@/assets/images/carousel/carousel-2.webp') }
-	]
+	const IS_FEED_LIST_ITEM = props.mode === 'FEED_LIST_ITEM' // Из ленты либо детальный просмотр
 
-	const IS_FEED_LIST_ITEM = props.mode === 'FEED_LIST_ITEM'
+	const MapSlide = props.mapComponent ? props.mapComponent : null
 
 	return (
 		<>
@@ -36,7 +34,7 @@ const PostBodyWrapper = (props: IProps) => {
 						<PostListItemBody title={props.title} description={props.description} metrics={props.metrics} />
 					</TouchableOpacity>
 					<View>
-						<PostListItemSlider data={PostSliderItems} />
+						<PostListItemSlider images={props.images} firstElement={MapSlide} />
 					</View>
 				</>
 			) : (
