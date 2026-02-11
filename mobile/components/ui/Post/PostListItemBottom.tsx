@@ -109,7 +109,10 @@ const PostListItemBottom = (props: IProps) => {
 								<Text className="text-gray-ab text-sm" style={{ fontFamily: fontFamily.medium }}>
 									и ещё
 								</Text>
-								<Text className="text-blue-3d text-sm" style={{ fontFamily: fontFamily.medium }}>
+								<Text
+									className="text-blue-3d text-sm"
+									style={{ fontFamily: fontFamily.medium, fontVariant: ['tabular-nums'] }}
+								>
 									{participantsCount - 1}
 								</Text>
 							</>
