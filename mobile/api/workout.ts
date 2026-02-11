@@ -47,8 +47,8 @@ export interface ITrainingRoute {
 
 export interface IParticipantTrainingRoute {
 	id: string
-	colorHex: string
 	user: ITrainingParticipant
+	colorHex: string
 	route: ITrainingRoute
 	metrics: ITrainingMetrics
 }
@@ -70,7 +70,7 @@ export const getMyHistory = async (): Promise<ITraining[]> => {
 }
 
 // Получить детали тренировки по ID
-export const getExtendedDetails = async (trainingId: string): Promise<IExtendedTrainingResponse[]> => {
+export const getExtendedDetails = async (trainingId: string): Promise<IExtendedTrainingResponse> => {
 	return (await fetcher.get(`trainings/extended/${trainingId}`)).json()
 }
 

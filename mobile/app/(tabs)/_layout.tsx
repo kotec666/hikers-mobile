@@ -2,6 +2,7 @@ import { Tabs, Stack } from 'expo-router'
 import NavBar from '@/components/ui/NavBar'
 import { Colors } from '@/constants/Colors'
 import { useAuthStore } from '@/store/authStore'
+import { NotificationProvider } from '@/components/providers/NotificationProvider'
 
 export default function TabLayout() {
 	const { isAuthenticated } = useAuthStore()
@@ -27,6 +28,7 @@ export default function TabLayout() {
 				<Tabs.Screen name="posts" />
 				<Tabs.Screen name="newTraining" />
 			</Stack.Protected>
+			<NotificationProvider />
 		</Tabs>
 	)
 }

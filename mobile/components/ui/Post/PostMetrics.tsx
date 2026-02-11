@@ -4,7 +4,7 @@ import { fontFamily } from '@/constants/Fonts'
 
 interface IProps {
 	label: string
-	text: string
+	text?: string | number
 }
 
 const PostMetrics = (props: IProps) => {

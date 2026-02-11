@@ -3,7 +3,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context'
 import { Container } from '@/components/ui/Container'
 import { useRouter } from 'expo-router'
 import ArrowBackSvg from '@/components/svg/ArrowBackSvg'
-import React, { useRef, useState } from 'react'
+import React, { useEffect, useRef, useState } from 'react'
 import { fontFamily } from '@/constants/Fonts'
 import Parameter from '@/components/training/Parameter'
 import { Button } from '@/components/ui/Button'
@@ -21,19 +21,36 @@ import { Controller, useForm } from 'react-hook-form'
 import { useErrorMessage } from '@/hooks/useErrorMessage'
 import { getFieldsErrors } from '@/helpers/getFieldsErrors'
 import { LineChart } from '@/components/LineChart/LineChart'
-import EditAvatarModalContent, { ImagePickMode } from '@/components/profile/EditAvatarModalContent'
+import { ImagePickMode } from '@/components/profile/EditAvatarModalContent'
 import * as ImagePicker from 'expo-image-picker'
 import Modal from '@/components/ui/Modal/Modal'
-import { cn } from '@/helpers/cn'
 import CameraSvg from '@/components/svg/CameraSvg'
 import GallerySvg from '@/components/svg/GallerySvg'
 import ImagePickerButton from '@/components/ui/ImagePickerButton'
 import { useToast } from '@/hooks/useToast'
+import { createPost } from '@/api/posts'
+import { useAuthStore } from '@/store/authStore'
+import { getExtendedDetails } from '@/api/workout'
 
 interface IPostFormState {
 	title: string
-	desc: string
+	description: string
 }
+
+const data = [
+	{
+		id: '1',
+		username: 'stevejobs1',
+		name: 'Стив Джобс 1st',
+		avatar: null
+	},
+	{
+		id: '2',
+		username: 'stevejobs2',
+		name: 'Стив Джобс 2nd',
+		avatar: null
+	}
+]
 
 export default function ViewWorkout() {
 	const router = useRouter()
@@ -47,6 +64,7 @@ export default function ViewWorkout() {
 	} = useForm<IPostFormState>()
 	const { ErrorMessages } = useErrorMessage()
 
+	const { user } = useAuthStore()
 	const results = useWorkoutResultsAfterFinishStore((state) => state)
 	const pointsRef = useRef(results.points || [])
 	const [isPhotoModalOpen, setIsPhotoModalOpen] = useState(false)
@@ -61,30 +79,67 @@ export default function ViewWorkout() {
 		errors: {} as { [key: string]: string | boolean | undefined }
 	})
 
-	const data = [
-		{
-			id: '1',
-			username: 'stevejobs1',
-			name: 'Стив Джобс 1st',
-			avatar: null
-		},
-		{
-			id: '2',
-			username: 'stevejobs2',
-			name: 'Стив Джобс 2nd',
-			avatar: null
+	useEffect(() => {
+		if (results.trainingId) {
+			;(async () => {
+				/// await
+			})()
 		}
-	]
+	}, [results.trainingId])
 
 	const renderIcon = (IconComponent?: React.ComponentType<any>, color?: string) => {
 		if (!IconComponent) return null
 		return <IconComponent color={color} width={21} height={21} />
 	}
 
+	const handlePostImages = (postImages: string[], formData: FormData) => {
+		if (postImages.length) {
+			const filesArray: any[] = []
+
+			postImages.forEach((postImage, index) => {
+				if (postImage.startsWith('file://')) {
+					const filename = postImage.split('/').pop()
+					const match = /\.(\w+)$/.exec(filename || '')
+					const type = match ? `image/${match[1]}` : 'image/jpeg'
+
+					filesArray.push({
+						uri: postImage,
+						type,
+						name: filename || `post-image-${index}.jpg`
+					})
+				} else {
+					// Если это уже загруженное изображение (URL), отправляем как строку
+					// Для URL просто добавляем строку в массив
+					filesArray.push(postImage)
+				}
+			})
+
+			formData.append('files[]', filesArray as unknown as Blob)
+		}
+	}
+
+	const getParticipantId = async (trainingId: string | null, userId: string | undefined): Promise<string | null> => {
+		if (!trainingId || !userId) return null
+		const extendedTraining = await getExtendedDetails(trainingId)
+		return extendedTraining.participants.find((participant) => participant.user.id === userId)?.id || null
+	}
+
 	const onSubmit = async (postFormState: IPostFormState) => {
 		setState((s) => ({ ...s, isLoading: true, errors: undefined }))
 		try {
-			console.log(postFormState)
+			const formData = new FormData()
+			const participantId = await getParticipantId(results.trainingId, user?.id)
+			if (participantId) {
+				formData.append('trainingParticipantId', participantId)
+			}
+			formData.append('title', postFormState.title)
+			if (postFormState.description) {
+				formData.append('description', postFormState.description)
+			}
+			handlePostImages(postImages, formData)
+			await createPost(formData)
+			toast.success('Пост опубликован')
+			router.replace('/(tabs)/profile')
 		} catch (e) {
 			const errors = await e.response.json()
 			const formattedErrors = getFieldsErrors(errors)
@@ -272,12 +327,12 @@ export default function ViewWorkout() {
 												message: ErrorMessages.required
 											},
 											minLength: {
-												value: lengths.user.email.min,
-												message: ErrorMessages.optionalMin(lengths.user.email.min)
+												value: lengths.post.title.min,
+												message: ErrorMessages.optionalMin(lengths.post.title.min)
 											},
 											maxLength: {
-												value: lengths.user.email.max,
-												message: ErrorMessages.optionalMax(lengths.user.email.max)
+												value: lengths.post.title.max,
+												message: ErrorMessages.optionalMax(lengths.post.title.max)
 											}
 										}}
 										render={({ field: { onChange, onBlur, value }, fieldState: { error } }) => (
@@ -291,27 +346,13 @@ export default function ViewWorkout() {
 										)}
 									/>
 									<Controller
-										name="desc"
+										name="description"
 										control={control}
-										rules={{
-											required: {
-												value: true,
-												message: ErrorMessages.required
-											},
-											minLength: {
-												value: lengths.user.email.min,
-												message: ErrorMessages.optionalMin(lengths.user.email.min)
-											},
-											maxLength: {
-												value: lengths.user.email.max,
-												message: ErrorMessages.optionalMax(lengths.user.email.max)
-											}
-										}}
 										render={({ field: { onChange, onBlur, value }, fieldState: { error } }) => (
 											<Input
 												multiline
 												placeholder="Введите описание"
-												error={error?.message || state.errors?.desc}
+												error={error?.message || state.errors?.description}
 												onChangeText={onChange}
 												value={value}
 												onBlur={onBlur}

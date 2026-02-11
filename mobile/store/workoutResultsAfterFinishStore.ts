@@ -9,14 +9,15 @@ export interface IMetrics {
 	totalDistanceFormatted: string // в виде строки, отформатированной через helper formatDistance
 	totalAvgPace: string
 	totalHeight: number | null
-	totalDistance: number // в метрах
 }
 
 interface IWorkoutResultsStore {
 	startedAt: number | null
+	trainingId: string | null
 	metrics: IMetrics | null
 	points: IWorkoutLocationStorageItem[] | null
 	type: IWorkoutModeElement | null
+	setTrainingId: (trainingId: string | null) => void
 	setStartedAt: (startedAt: number) => void
 	setType: (type: IWorkoutModeElement) => void
 	setMetrics: (metrics: IMetrics) => void
@@ -26,9 +27,13 @@ interface IWorkoutResultsStore {
 
 export const useWorkoutResultsAfterFinishStore = create<IWorkoutResultsStore>((set, get) => ({
 	startedAt: null,
+	trainingId: null,
 	metrics: null,
 	points: null,
 	type: null,
+	setTrainingId: (trainingId: string | null) => {
+		set({ trainingId })
+	},
 	setStartedAt: (startedAt: number) => {
 		set({ startedAt })
 	},

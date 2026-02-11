@@ -49,7 +49,7 @@ export function Input(props: Props) {
 					</View>
 				</View>
 			)}
-			<ErrorMessage error={error} />
+			{!isFind && <ErrorMessage error={error} />}
 		</View>
 	)
 }

@@ -67,7 +67,7 @@ const INITIAL_MAP_ZOOM = 14
 export default function NewTraining() {
 	const insets = useSafeAreaInsets()
 	const toast = useToast()
-	const { setStartedAt, setType, setPoints, setMetrics } = useWorkoutResultsAfterFinishStore()
+	const { setTrainingId, setStartedAt, setType, setPoints, setMetrics } = useWorkoutResultsAfterFinishStore()
 
 	const router = useRouter()
 	const permissionsRef = useRef<AllGeolocationPermissionsHandle>(null)
@@ -427,6 +427,7 @@ export default function NewTraining() {
 		const totalAvgPace = calculatePace(timeElapsed, accumulatedDistanceRef.current)
 		const totalHeight = getWorkoutHeight(pointsRef.current)
 
+		setTrainingId(meta.id)
 		setStartedAt(meta.startedAt)
 		setType(chosenWorkout)
 		setPoints(pointsRef.current)
@@ -436,8 +437,7 @@ export default function NewTraining() {
 			totalCalories,
 			totalDistanceFormatted,
 			totalAvgPace,
-			totalHeight,
-			totalDistance: accumulatedDistanceRef.current
+			totalHeight
 		})
 	}
 

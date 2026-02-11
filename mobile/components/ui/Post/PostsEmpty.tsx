@@ -27,7 +27,7 @@ const PostsEmpty = () => {
 	]
 
 	return (
-		<View className="gap-[40px]">
+		<View className="gap-[40px] flex-1 justify-center">
 			<RenderText textBlocks={textBlocks} />
 			<Button onPress={() => router.push('/(tabs)/newTraining')} variant="white">
 				Начать тренировку

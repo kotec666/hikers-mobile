@@ -3,6 +3,7 @@ import { TouchableOpacity, View } from 'react-native'
 import PostListItemSlider from '@/components/ui/Post/PostListItemSlider'
 import { useRouter } from 'expo-router'
 import PostListItemBody from '@/components/ui/Post/PostListItemBody'
+import { ITrainingMetrics } from '@/api/workout'
 
 export enum PostType {
 	FEED_LIST_ITEM = 'FEED_LIST_ITEM',
@@ -11,6 +12,10 @@ export enum PostType {
 
 interface IProps {
 	mode: PostType
+	postId?: string
+	title?: string
+	description?: string | null
+	metrics?: ITrainingMetrics
 }
 
 const PostBodyWrapper = (props: IProps) => {
@@ -27,8 +32,8 @@ const PostBodyWrapper = (props: IProps) => {
 		<>
 			{IS_FEED_LIST_ITEM ? (
 				<>
-					<TouchableOpacity onPress={() => router.push('/news-feed/1')}>
-						<PostListItemBody />
+					<TouchableOpacity onPress={() => router.push(`/news-feed/${props.postId}`)}>
+						<PostListItemBody title={props.title} description={props.description} metrics={props.metrics} />
 					</TouchableOpacity>
 					<View>
 						<PostListItemSlider data={PostSliderItems} />

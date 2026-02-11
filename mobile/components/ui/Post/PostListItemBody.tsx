@@ -2,26 +2,33 @@ import React from 'react'
 import { Text, View } from 'react-native'
 import { fontFamily } from '@/constants/Fonts'
 import PostMetrics from '@/components/ui/Post/PostMetrics'
+import { ITrainingMetrics } from '@/api/workout'
+import { formatDistance } from '@/helpers/distance'
+import { formatTimeFromSecondsCompact } from '@/helpers/formatTime'
 
-const PostListItemBody = () => {
+interface IProps {
+	title?: string
+	description?: string | null
+	metrics?: ITrainingMetrics
+}
+
+const PostListItemBody = (props: IProps) => {
 	return (
 		<>
 			<View className="gap-[15px]">
 				<View className="gap-[6px]">
 					<Text className="text-gray-ab text-[19px]" style={{ fontFamily: fontFamily.bold }}>
-						Нормальный заголовок
+						{props.title}
 					</Text>
 					<Text className="text-gray-ab text-base" style={{ fontFamily: fontFamily.medium }}>
-						Я сегодня пробежал 2 метра и упал. Хочу вам похвастаться. Это было не то, на что я надеялся. Я
-						остановился, обессиленный и разочарованный Не знаю, что произошло, но вместо того, чтобы
-						сдаться, я вернулся в квартиру, выпил воды и задумался над тем, чтобы начать бежать снова.
+						{props.description}
 					</Text>
 				</View>
 
 				<View className="flex-row justify-between w-full">
-					<PostMetrics label="Расстояние" text="52 км" />
-					<PostMetrics label="Время" text="100 мин" />
-					<PostMetrics label="Набор высоты" text="140 м" />
+					<PostMetrics label="Расстояние" text={formatDistance(props.metrics?.distanceM || 0)} />
+					<PostMetrics label="Время" text={formatTimeFromSecondsCompact(props.metrics?.timeSec)} />
+					<PostMetrics label="Набор высоты" text={`${props.metrics?.altitudeGainM || '-'} м`} />
 				</View>
 			</View>
 		</>

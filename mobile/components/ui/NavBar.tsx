@@ -94,6 +94,15 @@ const NavBar = () => {
 
 	const activeId = getActiveId()
 
+	const handlePress = (href: string) => {
+		const isSameRoute = pathname.startsWith(href)
+
+		router.push({
+			pathname: href as RelativePathString,
+			params: isSameRoute ? { scrollToTop: Date.now() } : {}
+		})
+	}
+
 	return (
 		<Animated.View
 			style={[styles.NavBarContainer, animatedContainer, { bottom: insets.bottom }]}
@@ -116,7 +125,7 @@ const NavBar = () => {
 					<AnimatedButton
 						key={link.id}
 						isActive={activeId === link.id}
-						onPress={() => router.push(link.href as RelativePathString)}
+						onPress={() => handlePress(link.href)}
 						Icon={link.Icon}
 					/>
 				))}
