@@ -6,6 +6,7 @@ import { locationEmitter } from './locationEmitter'
 import { TaskManagerError } from 'expo-task-manager'
 import { syncTraining } from '@/api/workout'
 import { prepareLocationsForSync } from '@/helpers/prepareLocationsForSync'
+import { getItem } from '@/store/storage'
 
 export const LOCATION_TASK_NAME = 'background-location-task'
 let innerAppMountedPromiseRef: Promise<void> | null = null // Variable to hold the promise resolver logic
@@ -52,6 +53,7 @@ export async function stopTracking() {
 TaskManager.defineTask(
 	LOCATION_TASK_NAME,
 	async ({ data, error }: { data: { locations: LocationObject[] }; error: TaskManagerError | null }) => {
+		const user = getItem('authData')?.user
 		// Delay starting the task until the inner app is mounted
 		if (innerAppMountedPromiseRef) await innerAppMountedPromiseRef
 		if (error) {
@@ -59,10 +61,10 @@ TaskManager.defineTask(
 			return
 		}
 
-		const meta = getWorkoutMeta()
+		const meta = getWorkoutMeta(user?.id)
 		if (!meta || !data?.locations?.length) return
 
-		const savedLocations = setWorkoutItems(data.locations)
+		const savedLocations = setWorkoutItems(data.locations, user?.id)
 		locationEmitter.emit(savedLocations)
 
 		const preparedLocations = prepareLocationsForSync(savedLocations)
@@ -71,7 +73,10 @@ TaskManager.defineTask(
 			if (preparedLocations.length === 0) return
 			const result = await syncTraining(meta.id, preparedLocations)
 			if (result.success) {
-				markPointsAsSaved(preparedLocations.map((item) => item.pointId))
+				markPointsAsSaved(
+					preparedLocations.map((item) => item.pointId),
+					user?.id
+				)
 			}
 		} catch {}
 	}

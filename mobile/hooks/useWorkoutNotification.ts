@@ -15,7 +15,7 @@ interface NotificationActions {
 }
 
 interface UseWorkoutNotificationReturn {
-	startNotificationTimer: () => Promise<void>
+	startNotificationTimer: (userId?: string) => Promise<void>
 	stopNotificationTimer: () => Promise<void>
 }
 
@@ -40,7 +40,7 @@ export const useWorkoutNotification = (actions: NotificationActions): UseWorkout
 		})
 	}
 
-	const startNotificationTimer = async () => {
+	const startNotificationTimer = async (userId?: string) => {
 		if (Platform.OS !== 'android') return
 		if (notificationIntervalRef.current) return
 		const { granted: notificationsGranted } = await Notification.getPermissionsAsync()
@@ -51,14 +51,14 @@ export const useWorkoutNotification = (actions: NotificationActions): UseWorkout
 		if (activityRecognitionPerms !== PermissionsAndroid.RESULTS.GRANTED || !notificationsGranted) return
 		await createChannel()
 
-		const meta = getWorkoutMeta()
+		const meta = getWorkoutMeta(userId)
 		if (!meta) {
 			console.log('Нет активной тренировки, уведомления не запускаются')
 			return
 		}
 
 		notificationIntervalRef.current = setInterval(() => {
-			const meta = getWorkoutMeta()
+			const meta = getWorkoutMeta(userId)
 
 			if (!meta) {
 				if (notificationIntervalRef.current) {

@@ -4,6 +4,7 @@ import { LocationActivityType, LocationObject } from 'expo-location'
 import { getWorkoutMeta, setWorkoutItems } from '@/store/workoutStorage'
 import { locationEmitter } from './locationEmitter'
 import { TaskManagerError } from 'expo-task-manager'
+import { getItem } from '@/store/storage'
 // import { DeadReckoningEngine } from '@/helpers/location/DeadReckoningEngine'
 
 export const LOCATION_TASK_NAME = 'background-location-task'
@@ -60,7 +61,9 @@ TaskManager.defineTask(
 			return
 		}
 
-		const meta = getWorkoutMeta()
+		const user = getItem('authData')?.user
+
+		const meta = getWorkoutMeta(user?.id)
 		if (!meta || !data?.locations?.length) return
 		// const last = data.locations.at(-1)
 		//
@@ -99,7 +102,7 @@ TaskManager.defineTask(
 		// 	locationEmitter.emit(savedLocations)
 		// })
 
-		const savedLocations = setWorkoutItems(data.locations)
+		const savedLocations = setWorkoutItems(data.locations, user?.id)
 		locationEmitter.emit(savedLocations)
 
 		// const preparedLocations = savedLocations.map((item) => ({

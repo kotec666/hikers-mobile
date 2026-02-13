@@ -13,6 +13,7 @@ import { setActiveWorkoutPauseState } from '@/store/workoutStorage'
 import { getAuthData } from '@/services/tokenService'
 import { GestureHandlerRootView } from 'react-native-gesture-handler'
 import PortalProvider from '@/components/Portal/PortalProvider'
+import { getItem } from '@/store/storage'
 
 YamapInstance.setLocale('ru_RU')
 YamapInstance.init(process.env.EXPO_PUBLIC_YAMAP_KEY || '')
@@ -25,13 +26,14 @@ YamapInstance.init(process.env.EXPO_PUBLIC_YAMAP_KEY || '')
 notifee.onBackgroundEvent(async ({ type, detail }) => {
 	if (type === EventType.ACTION_PRESS) {
 		const actionId = detail.pressAction?.id
+		const user = getItem('authData')?.user
 
 		switch (actionId) {
 			case 'pause':
-				setActiveWorkoutPauseState(true)
+				setActiveWorkoutPauseState(true, user?.id)
 				break
 			case 'resume':
-				setActiveWorkoutPauseState(false)
+				setActiveWorkoutPauseState(false, user?.id)
 				break
 		}
 	}

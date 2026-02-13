@@ -43,6 +43,7 @@ import { useWorkoutResultsAfterFinishStore } from '@/store/workoutResultsAfterFi
 import { formatDistance } from '@/helpers/distance'
 import { WorkoutTypesData } from '@/constants/WorkoutTypes'
 import { TrainingType } from '@shared/enums'
+import { useAuthStore } from '@/store/authStore'
 // Debugging
 TaskManager.getRegisteredTasksAsync().then((tasks) => {
 	console.log(tasks)
@@ -67,6 +68,7 @@ const INITIAL_MAP_ZOOM = 14
 export default function NewTraining() {
 	const insets = useSafeAreaInsets()
 	const toast = useToast()
+	const { user } = useAuthStore()
 	const { setTrainingId, setStartedAt, setType, setPoints, setMetrics } = useWorkoutResultsAfterFinishStore()
 
 	const router = useRouter()
@@ -244,14 +246,14 @@ export default function NewTraining() {
 
 	const startWorkout = async (workoutType: TrainingType, afterReboot: boolean) => {
 		try {
-			const shortWorkouts = getShortWorkouts()
+			const shortWorkouts = getShortWorkouts(user?.id)
 			const isShortWorkoutsExist = shortWorkouts.length
 
 			if (isInternetConnectedRef.current && isShortWorkoutsExist) {
 				try {
 					const result = await deleteNotFinishedTraining()
 					if (result.success) {
-						removeAllShortWorkouts() // (storage)
+						removeAllShortWorkouts(user?.id) // (storage)
 					}
 				} catch {}
 			}
@@ -291,14 +293,14 @@ export default function NewTraining() {
 					console.log('[start-workout-error]:', e)
 					newTrainingId = null
 				}
-				startAndStoreNewActiveWorkout(workoutType, newTrainingId)
+				startAndStoreNewActiveWorkout(workoutType, newTrainingId, user?.id)
 				acceptLivePointsRef.current = true // включаем live точки сразу после старта
 			}
 
 			stopActiveTracking()
 			await startHeadingTracking()
 			if (isNotificationsGranted && isPhysicalActivityPermissionGranted) {
-				await startNotificationTimer() // опционально, если уведомления разрешены
+				await startNotificationTimer(user?.id) // опционально, если уведомления разрешены
 			}
 
 			return startTrackingLocation()
@@ -358,7 +360,7 @@ export default function NewTraining() {
 	}, [chosenWorkout.type, getFastUserPosAndSetWithCenter])
 
 	useEffect(() => {
-		const meta = getWorkoutMeta()
+		const meta = getWorkoutMeta(user?.id)
 		// Если нет мета - значит тренировка не активна, можно запускать трекинг в активном режиме
 		if (!meta) {
 			isPendingActiveTrackingRef.current = true
@@ -375,17 +377,17 @@ export default function NewTraining() {
 			metricSpeedRef.current?.setSpeed(0)
 			setIsPaused((prevState) => {
 				const nextPauseState = !prevState
-				setActiveWorkoutPauseState(nextPauseState)
+				setActiveWorkoutPauseState(nextPauseState, user?.id)
 				return nextPauseState
 			})
 			// Fix: Используем последнюю позицию из маршрута, если это доступно.
 			// Это убирает прыгание к "Настоящей GPS" позиции, когда мы используем моковый маршрут.
 			if (pointsRef.current.length > 0) {
 				const lastPoint = pointsRef.current[pointsRef.current.length - 1]
-				setWorkoutItems([lastPoint.locationObject])
+				setWorkoutItems([lastPoint.locationObject], user?.id)
 			} else {
 				const lastUserPosition = await getLastUserPosition()
-				setWorkoutItems([lastUserPosition]) // save pause position
+				setWorkoutItems([lastUserPosition], user?.id) // save pause position
 			}
 		} catch (e) {
 			console.log('handleClickPause error:', e)
@@ -398,7 +400,7 @@ export default function NewTraining() {
 
 	const pauseDebounced = useCallback(debounce(handleClickPause, PAUSE_DEBOUNCE_MS), [])
 
-	const calculateMetricsWhenFinished = (meta: IWorkoutMeta | null) => {
+	const calculateMetricsWhenFinished = (meta: IWorkoutMeta | null | void) => {
 		if (!meta) return
 
 		// Время
@@ -451,25 +453,25 @@ export default function NewTraining() {
 			}
 			await stopNotificationTimer()
 
-			const meta = getWorkoutMeta()
+			const meta = getWorkoutMeta(user?.id)
 
-			if (isWorkoutTooShort()) {
+			if (isWorkoutTooShort(user?.id)) {
 				toast.info('Тренировка завершена слишком рано')
 				if (isInternetConnectedRef.current && meta?.id) {
 					// тренировка существует на бэкенде
 					const result = await deleteNotFinishedTraining()
 					if (result.success) {
 						// удаление сразу
-						return clearActiveWorkoutData()
+						return clearActiveWorkoutData(user?.id)
 					}
 				} else if (!meta?.id) {
 					// тренировка не существует на бэкенде
 					// удаление сразу
-					return clearActiveWorkoutData()
+					return clearActiveWorkoutData(user?.id)
 				} else if (!isInternetConnectedRef.current && meta?.id) {
 					// нет интернета, но тренировка существует на бэкенде
 					// для последующего удаления с фронта и бэкенда
-					return moveActiveWorkoutToShortWorkouts()
+					return moveActiveWorkoutToShortWorkouts(user?.id)
 				}
 			} else {
 				calculateMetricsWhenFinished(meta)
@@ -480,7 +482,7 @@ export default function NewTraining() {
 
 			// Догрузка несохраненных точек
 			if (isInternetConnectedRef.current) {
-				const unsavedPoints = getActiveWorkoutPoints(deserializeGetterType.NOT_SAVED)
+				const unsavedPoints = getActiveWorkoutPoints(deserializeGetterType.NOT_SAVED, user?.id)
 
 				if (meta?.id) {
 					// Тренировка существует на бэкенде
@@ -504,19 +506,28 @@ export default function NewTraining() {
 				try {
 					const result = await finishTraining()
 					if (result.success) {
-						clearActiveWorkoutData()
+						clearActiveWorkoutData(user?.id)
 					}
 				} catch {}
 			} else {
 				toast.info('Нет доступа к интернету, тренировку можно будет сохранить позже')
-				moveActiveWorkoutToNotSaved()
+				moveActiveWorkoutToNotSaved(user?.id)
 			}
 		} catch (e) {
 			console.error('handleClickEndWorkout error: ', e)
 			const errors = e.response.json()
 			console.log(errors)
 		}
-	}, [chosenWorkout.type, isInternetConnectedRef, resetWorkoutState, router, stopNotificationTimer, toast, tracking])
+	}, [
+		chosenWorkout.type,
+		user?.id,
+		isInternetConnectedRef,
+		resetWorkoutState,
+		router,
+		stopNotificationTimer,
+		toast,
+		tracking
+	])
 
 	return (
 		<SafeAreaProvider style={{ paddingTop: insets.top }}>

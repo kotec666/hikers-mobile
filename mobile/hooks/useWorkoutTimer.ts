@@ -2,15 +2,17 @@ import { formatTime } from '@/helpers/formatTime'
 import { getWorkoutMeta } from '@/store/workoutStorage'
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { AppState, AppStateStatus } from 'react-native'
+import { useAuthStore } from '@/store/authStore'
 
 export const useWorkoutTimer = (isPaused: boolean) => {
+	const { user } = useAuthStore()
 	const intervalRef = useRef<null | ReturnType<typeof setInterval>>(null)
 	const appStateRef = useRef(AppState.currentState)
 	// Инициализируем стейт сразу, используя данные из хранилища.
 	// Это важно, чтобы при перезагрузке приложения в состоянии "Пауза"
 	// время отображалось корректно сразу же.
 	const [elapsed, setElapsed] = useState(() => {
-		const meta = getWorkoutMeta()
+		const meta = getWorkoutMeta(user?.id)
 		if (!meta) return 0
 
 		if (meta.isPaused && meta.lastPauseAt) {
@@ -28,7 +30,7 @@ export const useWorkoutTimer = (isPaused: boolean) => {
 	}, [])
 
 	const intervalCallback = useCallback(() => {
-		const meta = getWorkoutMeta()
+		const meta = getWorkoutMeta(user?.id)
 		if (!meta) return
 
 		let time = 0
@@ -40,7 +42,7 @@ export const useWorkoutTimer = (isPaused: boolean) => {
 
 		console.log('workout timer')
 		setElapsed(time)
-	}, []) // OK если getWorkoutMeta стабильный
+	}, [user?.id]) // OK если getWorkoutMeta стабильный
 
 	// Управление интервалом по isPaused (и старт при активном приложении)
 	useEffect(() => {

@@ -33,6 +33,7 @@ import { prepareLocationsForSync } from '@/helpers/prepareLocationsForSync'
 import { chunkArray } from '@/helpers/chunkArray'
 import { useToast } from '@/hooks/useToast'
 import { useInternetConnectionRef } from '@/hooks/useInternetConnectionRef'
+import { useAuthStore } from '@/store/authStore'
 
 export interface IWorkoutModeElement {
 	id: number
@@ -58,6 +59,7 @@ const { height: SCREEN_HEIGHT } = Dimensions.get('screen')
 const { height: WINDOW_HEIGHT } = Dimensions.get('window')
 
 const NewWorkout = memo((props: IProps) => {
+	const { user } = useAuthStore()
 	const router = useRouter()
 	const insets = useSafeAreaInsets()
 	const toast = useToast()
@@ -77,10 +79,10 @@ const NewWorkout = memo((props: IProps) => {
 	useEffect(() => {
 		if (unsavedWorkoutsShownRef.current || !isInternetConnectedRef.current) return
 
-		const meta = getWorkoutMeta()
+		const meta = getWorkoutMeta(user?.id)
 		if (meta) return
 
-		const notSavedWorkouts = getNotSavedWorkouts()
+		const notSavedWorkouts = getNotSavedWorkouts(user?.id)
 
 		if (notSavedWorkouts.length === 0) return
 		setNotSavedWorkoutsCount(notSavedWorkouts.length)
@@ -129,7 +131,7 @@ const NewWorkout = memo((props: IProps) => {
 		setIsSaving(true)
 
 		try {
-			const notSavedWorkouts = getNotSavedWorkouts()
+			const notSavedWorkouts = getNotSavedWorkouts(user?.id)
 
 			for (const initialWorkout of notSavedWorkouts) {
 				let trainingId = initialWorkout.id
@@ -144,14 +146,14 @@ const NewWorkout = memo((props: IProps) => {
 						})
 
 						trainingId = newTraining.id
-						assignIdToAnUnsavedWorkout(initialWorkout.startedAt, trainingId)
+						assignIdToAnUnsavedWorkout(initialWorkout.startedAt, trainingId, user?.id)
 					} catch {
 						toast.error('Произошла ошибка при старте тренировки')
 					}
 				}
 
 				while (true) {
-					const workout = getUnsavedWorkoutByStartedAt(initialWorkout.startedAt)
+					const workout = getUnsavedWorkoutByStartedAt(initialWorkout.startedAt, user?.id)
 					if (!workout) break
 
 					const unsavedPoints = workout.locations.filter((point) => !point.isSavedToServer)
@@ -163,7 +165,7 @@ const NewWorkout = memo((props: IProps) => {
 								ts: workout.locations[workout.locations.length - 1].relTs + workout.startedAt
 							})
 							if (result.success) {
-								deleteUnsavedTrainingByStartedAt(workout.startedAt)
+								deleteUnsavedTrainingByStartedAt(workout.startedAt, user?.id)
 							}
 						} catch (e) {
 							console.error('[sync] finishTraining failed', e)
@@ -186,10 +188,11 @@ const NewWorkout = memo((props: IProps) => {
 					// 4. Маркируем успешно сохранённые точки
 					markUnsavedWorkoutPointsAsSaved(
 						workout.startedAt,
-						batch.map((p) => p.pointId)
+						batch.map((p) => p.pointId),
+						user?.id
 					)
 
-					const updated = getUnsavedWorkoutByStartedAt(workout.startedAt)
+					const updated = getUnsavedWorkoutByStartedAt(workout.startedAt, user?.id)
 					const nextCount = updated?.locations.filter((p) => !p.isSavedToServer).length ?? 0
 
 					if (nextCount >= prevCount) {
@@ -215,9 +218,9 @@ const NewWorkout = memo((props: IProps) => {
 	}
 
 	const deleteUnsavedWorkouts = () => {
-		const notSavedWorkouts = getNotSavedWorkouts()
+		const notSavedWorkouts = getNotSavedWorkouts(user?.id)
 		for (const notSavedWorkout of notSavedWorkouts) {
-			deleteUnsavedTrainingByStartedAt(notSavedWorkout.startedAt)
+			deleteUnsavedTrainingByStartedAt(notSavedWorkout.startedAt, user?.id)
 		}
 		toast.success('Все несохраненные тренировки удалены успешно')
 		closeBottomSheet()

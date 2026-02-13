@@ -12,23 +12,20 @@ export const workoutStorage = createMMKV({
 	id: 'workout-storage'
 })
 
-// Keys
-const KEY_NOT_SAVED = 'NOT_SAVED_WORKOUTS'
-const KEY_SHORT_WORKOUTS = 'SHORT_WORKOUTS'
-const KEY_ACTIVE_META = 'ACTIVE_WORKOUT_META'
-const KEY_ACTIVE_BIN_CHUNK_PREFIX = 'BIN_CHUNK_'
+// --- KEY FACTORY (user scoped) ---
 
-// Размер чанка (количество точек)
+const KEY_NOT_SAVED = (userId: string) => `NOT_SAVED_${userId}`
+const KEY_SHORT_WORKOUTS = (userId: string) => `SHORT_WORKOUTS_${userId}`
+const KEY_ACTIVE_META = (userId: string) => `ACTIVE_META_${userId}`
+const KEY_ACTIVE_BIN = (userId: string, chunkIndex: number) => `BIN_${userId}_${chunkIndex}`
+
 export const CHUNK_POINT_COUNT = 200
 
-export interface IWorkoutStorage {
-	notSavedWorkouts: IWorkout[]
-	shortWorkouts: IWorkout[] // список коротких тренировок, которые нужно удалить, когда появится интернет на устройстве
-	activeWorkout: IWorkout | null
-}
+// --- TYPES ---
 
 export interface IWorkout {
 	id: string | null
+	userId: string
 	isPaused: boolean
 	type: TrainingType
 	startedAt: number
@@ -37,9 +34,9 @@ export interface IWorkout {
 	locations: IWorkoutLocationStorageItem[]
 }
 
-// Внутренняя структура метаданных
 export interface IWorkoutMeta {
 	id: string | null
+	userId: string
 	isPaused: boolean
 	type: TrainingType
 	startedAt: number
@@ -57,144 +54,27 @@ export interface IWorkoutLocationStorageItem {
 	isSavedToServer: boolean
 }
 
-export const getWorkoutMeta = (): IWorkoutMeta | null => {
-	const metaStr = workoutStorage.getString(KEY_ACTIVE_META)
-	if (metaStr) {
-		return JSON.parse(metaStr) as IWorkoutMeta
-	}
-	return null
+// --- META ---
+
+export const getWorkoutMeta = (userId?: string): IWorkoutMeta | null | void => {
+	if (!userId) return console.error('getWorkoutMeta [error]: no userId provided')
+	const metaStr = workoutStorage.getString(KEY_ACTIVE_META(userId))
+	return metaStr ? (JSON.parse(metaStr) as IWorkoutMeta) : null
 }
 
-export const deleteUnsavedTrainingByStartedAt = (startedAt: number): void => {
-	const notSavedStr = workoutStorage.getString(KEY_NOT_SAVED)
-	if (!notSavedStr) return
+// --- ACTIVE WORKOUT ---
 
-	let notSavedWorkouts: IWorkout[]
-	try {
-		notSavedWorkouts = JSON.parse(notSavedStr) as IWorkout[]
-	} catch (e) {
-		console.error('[workoutStorage] Failed to parse NOT_SAVED_WORKOUTS:', e)
-		return
-	}
+export const startAndStoreNewActiveWorkout = (
+	type: TrainingType,
+	createdTrainingId: string | null,
+	userId?: string
+) => {
+	if (!userId) return console.error('startAndStoreNewActiveWorkout [error]: no userId provided')
+	clearActiveWorkoutData(userId)
 
-	const originalLength = notSavedWorkouts.length
-	const filteredWorkouts = notSavedWorkouts.filter((workout) => workout.startedAt !== startedAt)
-
-	if (filteredWorkouts.length === originalLength) {
-		console.warn('[workoutStorage] Unsaved workout not found for deletion, startedAt:', startedAt)
-		return
-	}
-
-	if (filteredWorkouts.length === 0) {
-		// если список стал пустым — можно удалить ключ целиком
-		workoutStorage.remove(KEY_NOT_SAVED)
-	} else {
-		workoutStorage.set(KEY_NOT_SAVED, JSON.stringify(filteredWorkouts))
-	}
-}
-
-export const assignIdToAnUnsavedWorkout = (startedAt: number, id: string): void => {
-	const notSavedStr = workoutStorage.getString(KEY_NOT_SAVED)
-	if (!notSavedStr) return
-
-	let notSavedWorkouts: IWorkout[]
-	try {
-		notSavedWorkouts = JSON.parse(notSavedStr) as IWorkout[]
-	} catch (e) {
-		console.error('[workoutStorage] Failed to parse NOT_SAVED_WORKOUTS:', e)
-		return
-	}
-
-	let updated = false
-
-	const updatedWorkouts = notSavedWorkouts.map((workout) => {
-		if (workout.startedAt === startedAt) {
-			updated = true
-			return {
-				...workout,
-				id
-			}
-		}
-		return workout
-	})
-
-	if (!updated) {
-		console.warn('[workoutStorage] Unsaved workout not found for startedAt:', startedAt)
-		return
-	}
-
-	workoutStorage.set(KEY_NOT_SAVED, JSON.stringify(updatedWorkouts))
-}
-
-export const getNotSavedWorkouts = (): IWorkout[] => {
-	const notSavedStr = workoutStorage.getString(KEY_NOT_SAVED)
-	if (notSavedStr) {
-		try {
-			return JSON.parse(notSavedStr) as IWorkout[]
-		} catch (e) {
-			console.error('Failed to parse notSavedWorkouts:', e)
-			return []
-		}
-	}
-	return []
-}
-
-export const getShortWorkouts = (): IWorkout[] => {
-	const shortWorkoutsStr = workoutStorage.getString(KEY_SHORT_WORKOUTS)
-	if (shortWorkoutsStr) {
-		try {
-			return JSON.parse(shortWorkoutsStr) as IWorkout[]
-		} catch (e) {
-			console.error('Failed to parse shortWorkouts:', e)
-			return []
-		}
-	}
-	return []
-}
-
-export const getUnsavedWorkoutByStartedAt = (startedAt: number): IWorkout | null => {
-	return getNotSavedWorkouts().find((w) => w.startedAt === startedAt) ?? null
-}
-
-/**
- * Helper: Append bytes to a buffer
- */
-const appendBytes = (oldBuffer: Uint8Array | undefined, newBytes: Uint8Array): Uint8Array => {
-	if (!oldBuffer) return newBytes
-	const tmp = new Uint8Array(oldBuffer.byteLength + newBytes.byteLength)
-	tmp.set(oldBuffer, 0)
-	tmp.set(newBytes, oldBuffer.byteLength)
-	return tmp
-}
-
-export const setActiveWorkoutPauseState = (isPaused: boolean): void => {
-	const metaStr = workoutStorage.getString(KEY_ACTIVE_META)
-
-	if (metaStr) {
-		const meta = JSON.parse(metaStr) as IWorkoutMeta
-
-		let totalPausedMs = meta.totalPausedMs
-		if (!isPaused && meta.isPaused && meta.lastPauseAt) {
-			const pausedFor = Date.now() - meta.lastPauseAt
-			totalPausedMs += pausedFor
-		}
-
-		const updatedMeta: IWorkoutMeta = {
-			...meta,
-			isPaused: isPaused,
-			totalPausedMs: totalPausedMs,
-			lastPauseAt: isPaused ? Date.now() : null
-		}
-
-		workoutStorage.set(KEY_ACTIVE_META, JSON.stringify(updatedMeta))
-	}
-}
-
-export const startAndStoreNewActiveWorkout = (type: TrainingType, createdTrainingId: string | null) => {
-	clearActiveWorkoutData()
-
-	const newMeta: IWorkoutMeta = {
+	const meta: IWorkoutMeta = {
 		id: createdTrainingId,
+		userId,
 		type,
 		startedAt: Date.now(),
 		isPaused: false,
@@ -204,198 +84,359 @@ export const startAndStoreNewActiveWorkout = (type: TrainingType, createdTrainin
 		nextPointId: 0
 	}
 
-	workoutStorage.set(KEY_ACTIVE_META, JSON.stringify(newMeta))
+	workoutStorage.set(KEY_ACTIVE_META(userId), JSON.stringify(meta))
 }
 
-export const moveActiveWorkoutToNotSaved = () => {
-	const fullActive = getFullActiveWorkout()
+export const clearActiveWorkoutData = (userId?: string) => {
+	if (!userId) return console.error('clearActiveWorkoutData [error]: no userId provided')
+	const meta = getWorkoutMeta(userId)
 
-	if (fullActive) {
-		const notSavedStr = workoutStorage.getString(KEY_NOT_SAVED)
-		const notSavedWorkouts = notSavedStr ? (JSON.parse(notSavedStr) as IWorkout[]) : []
-
-		const updatedNotSaved = [...notSavedWorkouts, fullActive]
-		workoutStorage.set(KEY_NOT_SAVED, JSON.stringify(updatedNotSaved))
-
-		clearActiveWorkoutData()
-	}
-}
-
-export const moveActiveWorkoutToShortWorkouts = () => {
-	const fullActive = getFullActiveWorkout()
-
-	if (fullActive) {
-		const shortWorkoutsStr = workoutStorage.getString(KEY_SHORT_WORKOUTS)
-		const shortWorkouts = shortWorkoutsStr ? (JSON.parse(shortWorkoutsStr) as IWorkout[]) : []
-
-		const updatedShortWorkouts = [...shortWorkouts, fullActive]
-		workoutStorage.set(KEY_SHORT_WORKOUTS, JSON.stringify(updatedShortWorkouts))
-
-		clearActiveWorkoutData()
-	}
-}
-
-export const setWorkoutItems = (workoutItems: LocationObject[]): IWorkoutLocationStorageItem[] => {
-	const metaStr = workoutStorage.getString(KEY_ACTIVE_META)
-	if (!metaStr) return []
-
-	const meta = JSON.parse(metaStr) as IWorkoutMeta
-	let currentChunkIdx = Math.max(0, meta.chunkCount - 1)
-	let chunkKey = `${KEY_ACTIVE_BIN_CHUNK_PREFIX}${currentChunkIdx}`
-
-	const rawBuffer = workoutStorage.getBuffer(chunkKey)
-	let currentBuffer: Uint8Array | undefined = rawBuffer
-		? new Uint8Array(rawBuffer as unknown as ArrayLike<number>)
-		: undefined
-	// let metaDirty = false
-
-	// Массив для сохранения созданных элементов
-	const savedItems: IWorkoutLocationStorageItem[] = []
-
-	for (const workoutItem of workoutItems) {
-		// [FIX] Защита от переполнения:
-		// Если timestamp равен 0 (нет GPS времени) или меньше времени старта тренировки,
-		// вычитание (timestamp - startedAt) даст отрицательное число.
-		// В бинарном виде uint32 это превратится в огромное положительное число (~4 млрд).
-		if (workoutItem.timestamp < meta.startedAt) {
-			console.warn(
-				'[workoutStorage] Ignored point with invalid timestamp:',
-				workoutItem.timestamp,
-				'startedAt:',
-				meta.startedAt
-			)
-			continue
+	if (meta) {
+		for (let i = 0; i < meta.chunkCount + 2; i++) {
+			workoutStorage.remove(KEY_ACTIVE_BIN(userId, i))
 		}
+	}
 
-		const relTs = workoutItem.timestamp - meta.startedAt
-		const workoutItemToSave: IWorkoutLocationStorageItem = {
+	workoutStorage.remove(KEY_ACTIVE_META(userId))
+}
+
+// --- LOCATION STORAGE ---
+
+const appendBytes = (oldBuffer: Uint8Array | undefined, newBytes: Uint8Array): Uint8Array => {
+	if (!oldBuffer) return newBytes
+	const tmp = new Uint8Array(oldBuffer.byteLength + newBytes.byteLength)
+	tmp.set(oldBuffer)
+	tmp.set(newBytes, oldBuffer.byteLength)
+	return tmp
+}
+
+export const setWorkoutItems = (items: LocationObject[], userId?: string): IWorkoutLocationStorageItem[] => {
+	if (!userId) {
+		console.error('setWorkoutItems [error]: no userId provided')
+		return []
+	}
+	const meta = getWorkoutMeta(userId)
+	if (!meta) return []
+
+	let chunkIdx = Math.max(0, meta.chunkCount - 1)
+	let buffer = workoutStorage.getBuffer(KEY_ACTIVE_BIN(userId, chunkIdx))
+	let currentBuffer = buffer ? new Uint8Array(buffer as any) : undefined
+
+	const saved: IWorkoutLocationStorageItem[] = []
+
+	for (const item of items) {
+		if (item.timestamp < meta.startedAt) continue
+
+		const entry: IWorkoutLocationStorageItem = {
 			pointId: meta.nextPointId++,
-			relTs,
-			isSavedToServer: false,
-			locationObject: workoutItem,
-			paused: meta.isPaused
+			relTs: item.timestamp - meta.startedAt,
+			locationObject: item,
+			paused: meta.isPaused,
+			isSavedToServer: false
 		}
 
-		savedItems.push(workoutItemToSave)
+		saved.push(entry)
 
-		const newBytes = serializeLocation(workoutItemToSave)
-		const currentSize = currentBuffer ? currentBuffer.byteLength : 0
-		const newSize = currentSize + newBytes.byteLength
-		const chunkByteLimit = CHUNK_POINT_COUNT * POINT_BYTE_SIZE
+		const bytes = serializeLocation(entry)
+		const limit = CHUNK_POINT_COUNT * POINT_BYTE_SIZE
 
-		// Защита: одна точка больше лимита (крайний случай)
-		if (newBytes.byteLength > chunkByteLimit) {
-			console.warn(
-				'[workoutStorage] Single serialized location exceeds chunk size limit:',
-				newBytes.byteLength,
-				'>',
-				chunkByteLimit
-			)
-		}
-
-		if (newSize > chunkByteLimit) {
+		if ((currentBuffer?.byteLength ?? 0) + bytes.byteLength > limit) {
 			if (currentBuffer) {
-				const exactBytes = currentBuffer.buffer.slice(
-					currentBuffer.byteOffset,
-					currentBuffer.byteOffset + currentBuffer.byteLength
-				)
-				workoutStorage.set(chunkKey, exactBytes as ArrayBuffer)
+				workoutStorage.set(KEY_ACTIVE_BIN(userId, chunkIdx), currentBuffer.buffer)
 			}
-
-			// Переходим к следующему чанку
-			currentChunkIdx++
-			chunkKey = `${KEY_ACTIVE_BIN_CHUNK_PREFIX}${currentChunkIdx}`
-			currentBuffer = undefined // новый пустой чанк
-
-			// Обновляем мету
-			meta.chunkCount = currentChunkIdx + 1
-			// metaDirty = true
+			chunkIdx++
+			meta.chunkCount = chunkIdx + 1
+			currentBuffer = undefined
 		}
 
-		// --- добавляем текущую точку в (возможно новый) чанк ---
-		currentBuffer = appendBytes(currentBuffer, newBytes)
+		currentBuffer = appendBytes(currentBuffer, bytes)
 	}
 
-	// Save last buffer state
 	if (currentBuffer) {
-		const exactBytes = currentBuffer.buffer.slice(
-			currentBuffer.byteOffset,
-			currentBuffer.byteOffset + currentBuffer.byteLength
-		)
-		workoutStorage.set(chunkKey, exactBytes as ArrayBuffer)
+		workoutStorage.set(KEY_ACTIVE_BIN(userId, chunkIdx), currentBuffer.buffer)
 	}
 
-	// if (metaDirty) { из-за nextPointId++ теперь сохранение меты каждый раз
-	// 	workoutStorage.set(KEY_ACTIVE_META, JSON.stringify(meta))
-	// }
+	workoutStorage.set(KEY_ACTIVE_META(userId), JSON.stringify(meta))
 
-	if (savedItems.length > 0) {
-		workoutStorage.set(KEY_ACTIVE_META, JSON.stringify(meta))
-	}
-
-	// Возвращаем массив сохраненных элементов
-	return savedItems
+	return saved
 }
 
-export const markUnsavedWorkoutPointsAsSaved = (startedAt: number, pointIds: number[]): void => {
+// --- ACTIVE -> FULL WORKOUT ---
+
+export const getFullActiveWorkout = (userId?: string): IWorkout | null => {
+	if (!userId) {
+		console.error('getFullActiveWorkout [error]: no userId provided')
+		return null
+	}
+	const meta = getWorkoutMeta(userId)
+	if (!meta) return null
+
+	let locations: IWorkoutLocationStorageItem[] = []
+
+	for (let i = 0; i < meta.chunkCount; i++) {
+		const buffer = workoutStorage.getBuffer(KEY_ACTIVE_BIN(userId, i))
+		if (!buffer) continue
+
+		const points = deserializeLocations(new Uint8Array(buffer), meta.startedAt, deserializeGetterType.ALL)
+
+		locations = locations.concat(points)
+	}
+
+	return {
+		id: meta.id,
+		userId: meta.userId,
+		type: meta.type,
+		startedAt: meta.startedAt,
+		isPaused: meta.isPaused,
+		totalPausedMs: meta.totalPausedMs,
+		lastPauseAt: meta.lastPauseAt,
+		locations
+	}
+}
+
+// --- NOT SAVED ---
+
+export const moveActiveWorkoutToNotSaved = (userId?: string) => {
+	if (!userId) return console.error('moveActiveWorkoutToNotSaved [error]: no userId provided')
+	const workout = getFullActiveWorkout(userId)
+	if (!workout) return
+
+	const key = KEY_NOT_SAVED(userId)
+	const existing = workoutStorage.getString(key)
+	const arr = existing ? (JSON.parse(existing) as IWorkout[]) : []
+
+	workoutStorage.set(key, JSON.stringify([...arr, workout]))
+
+	clearActiveWorkoutData(userId)
+}
+
+export const getNotSavedWorkouts = (userId?: string): IWorkout[] => {
+	if (!userId) {
+		console.error('getNotSavedWorkouts [error]: no userId provided')
+		return []
+	}
+	const str = workoutStorage.getString(KEY_NOT_SAVED(userId))
+	return str ? (JSON.parse(str) as IWorkout[]) : []
+}
+
+// --- SHORT WORKOUTS ---
+
+export const moveActiveWorkoutToShortWorkouts = (userId?: string) => {
+	if (!userId) return console.error('moveActiveWorkoutToShortWorkouts [error]: no userId provided')
+	const workout = getFullActiveWorkout(userId)
+	if (!workout) return
+
+	const key = KEY_SHORT_WORKOUTS(userId)
+	const existing = workoutStorage.getString(key)
+	const arr = existing ? (JSON.parse(existing) as IWorkout[]) : []
+
+	workoutStorage.set(key, JSON.stringify([...arr, workout]))
+
+	clearActiveWorkoutData(userId)
+}
+
+export const getShortWorkouts = (userId?: string): IWorkout[] => {
+	if (!userId) {
+		console.error('getShortWorkouts [error]: no userId provided')
+		return []
+	}
+	const str = workoutStorage.getString(KEY_SHORT_WORKOUTS(userId))
+	return str ? (JSON.parse(str) as IWorkout[]) : []
+}
+
+export const setActiveWorkoutPauseState = (isPaused: boolean, userId?: string): void => {
+	if (!userId) return console.error('setActiveWorkoutPauseState [error]: no userId provided')
+
+	const meta = getWorkoutMeta(userId)
+	if (!meta) return
+
+	let totalPausedMs = meta.totalPausedMs
+
+	if (!isPaused && meta.isPaused && meta.lastPauseAt) {
+		totalPausedMs += Date.now() - meta.lastPauseAt
+	}
+
+	const updated: IWorkoutMeta = {
+		...meta,
+		isPaused,
+		totalPausedMs,
+		lastPauseAt: isPaused ? Date.now() : null
+	}
+
+	workoutStorage.set(KEY_ACTIVE_META(userId), JSON.stringify(updated))
+}
+
+export const getActiveWorkoutPoints = (
+	getterType: deserializeGetterType,
+	userId?: string
+): IWorkoutLocationStorageItem[] => {
+	if (!userId) {
+		console.error('getActiveWorkoutPoints [error]: no userId provided')
+		return []
+	}
+	const meta = getWorkoutMeta(userId)
+	if (!meta) return []
+
+	const result: IWorkoutLocationStorageItem[] = []
+
+	for (let i = 0; i < meta.chunkCount; i++) {
+		const buffer = workoutStorage.getBuffer(KEY_ACTIVE_BIN(userId, i))
+		if (!buffer) continue
+
+		const points = deserializeLocations(new Uint8Array(buffer), meta.startedAt, getterType)
+
+		result.push(...points)
+	}
+
+	return result
+}
+
+export const removeAllShortWorkouts = (userId?: string): void => {
+	if (!userId) return console.error('removeAllShortWorkouts [error]: no userId provided')
+	workoutStorage.remove(KEY_SHORT_WORKOUTS(userId))
+}
+
+export const assignIdToAnUnsavedWorkout = (startedAt: number, id: string, userId?: string): void => {
+	if (!userId) return console.error('assignIdToAnUnsavedWorkout [error]: no userId provided')
+	const key = KEY_NOT_SAVED(userId)
+	const str = workoutStorage.getString(key)
+	if (!str) return
+
+	let workouts: IWorkout[]
+	try {
+		workouts = JSON.parse(str)
+	} catch (e) {
+		console.error('[workoutStorage] parse error:', e)
+		return
+	}
+
+	let updated = false
+
+	const next = workouts.map((w) => {
+		if (w.startedAt === startedAt) {
+			updated = true
+			return { ...w, id }
+		}
+		return w
+	})
+
+	if (!updated) {
+		console.warn('[workoutStorage] workout not found:', startedAt)
+		return
+	}
+
+	workoutStorage.set(key, JSON.stringify(next))
+}
+
+export const deleteUnsavedTrainingByStartedAt = (startedAt: number, userId?: string): void => {
+	if (!userId) return console.error('deleteUnsavedTrainingByStartedAt [error]: no userId provided')
+	const key = KEY_NOT_SAVED(userId)
+	const str = workoutStorage.getString(key)
+	if (!str) return
+
+	let workouts: IWorkout[]
+	try {
+		workouts = JSON.parse(str)
+	} catch (e) {
+		console.error('[workoutStorage] parse error:', e)
+		return
+	}
+
+	const filtered = workouts.filter((w) => w.startedAt !== startedAt)
+
+	if (filtered.length === workouts.length) {
+		console.warn('[workoutStorage] not found:', startedAt)
+		return
+	}
+
+	if (filtered.length === 0) {
+		workoutStorage.remove(key)
+	} else {
+		workoutStorage.set(key, JSON.stringify(filtered))
+	}
+}
+
+export const getUnsavedWorkoutByStartedAt = (startedAt: number, userId?: string): IWorkout | null => {
+	if (!userId) {
+		console.error('getUnsavedWorkoutByStartedAt [error]: no userId provided')
+		return null
+	}
+	const workouts = getNotSavedWorkouts(userId)
+	return workouts.find((w) => w.startedAt === startedAt) ?? null
+}
+
+export const markUnsavedWorkoutPointsAsSaved = (startedAt: number, pointIds: number[], userId?: string): void => {
+	if (!userId) return console.error('markUnsavedWorkoutPointsAsSaved [error]: no userId provided')
+
 	if (pointIds.length === 0) return
 
-	const notSavedStr = workoutStorage.getString(KEY_NOT_SAVED)
-	if (!notSavedStr) return
+	const key = KEY_NOT_SAVED(userId)
+	const str = workoutStorage.getString(key)
+	if (!str) return
 
-	let notSavedWorkouts: IWorkout[]
+	let workouts: IWorkout[]
 	try {
-		notSavedWorkouts = JSON.parse(notSavedStr) as IWorkout[]
+		workouts = JSON.parse(str)
 	} catch (e) {
-		console.error('[workoutStorage] Failed to parse NOT_SAVED_WORKOUTS:', e)
+		console.error('[workoutStorage] parse error:', e)
 		return
 	}
 
 	const idSet = new Set(pointIds)
 	let updated = false
 
-	const updatedWorkouts = notSavedWorkouts.map((workout) => {
-		if (workout.startedAt !== startedAt) {
-			return workout
-		}
+	const next = workouts.map((workout) => {
+		if (workout.startedAt !== startedAt) return workout
 
-		let locationsUpdated = false
+		let changed = false
 
-		const updatedLocations = workout.locations.map((point) => {
-			if (!point.isSavedToServer && idSet.has(point.pointId)) {
-				locationsUpdated = true
-				return {
-					...point,
-					isSavedToServer: true
-				}
+		const locations = workout.locations.map((p) => {
+			if (!p.isSavedToServer && idSet.has(p.pointId)) {
+				changed = true
+				return { ...p, isSavedToServer: true }
 			}
-			return point
+			return p
 		})
 
-		if (!locationsUpdated) {
-			return workout
-		}
+		if (!changed) return workout
 
 		updated = true
 
 		return {
 			...workout,
-			locations: updatedLocations
+			locations
 		}
 	})
 
 	if (!updated) {
-		console.warn('[workoutStorage] No unsaved points found for startedAt:', startedAt)
+		console.warn('[workoutStorage] no points updated:', startedAt)
 		return
 	}
 
-	workoutStorage.set(KEY_NOT_SAVED, JSON.stringify(updatedWorkouts))
+	workoutStorage.set(key, JSON.stringify(next))
 }
 
-export const markPointsAsSaved = (pointIds: number[]) => {
+export const getWorkoutChunk = (
+	chunkIndex: number,
+	startedAt: number,
+	userId?: string
+): IWorkoutLocationStorageItem[] => {
+	if (!userId) {
+		console.error('getWorkoutChunk [error]: no userId provided')
+		return []
+	}
+	const buffer = workoutStorage.getBuffer(KEY_ACTIVE_BIN(userId, chunkIndex))
+
+	if (!buffer) return []
+
+	return deserializeLocations(new Uint8Array(buffer), startedAt, deserializeGetterType.ALL)
+}
+
+export const markPointsAsSaved = (pointIds: number[], userId?: string) => {
+	if (!userId) return console.error('markPointsAsSaved [error]: no userId provided')
 	if (pointIds.length === 0) return
 
-	const meta = getWorkoutMeta()
+	const meta = getWorkoutMeta(userId)
 	if (!meta) return
 
 	const idSet = new Set(pointIds)
@@ -403,7 +444,7 @@ export const markPointsAsSaved = (pointIds: number[]) => {
 	const maxId = Math.max(...pointIds)
 
 	for (let chunkIndex = 0; chunkIndex < meta.chunkCount; chunkIndex++) {
-		const key = `${KEY_ACTIVE_BIN_CHUNK_PREFIX}${chunkIndex}`
+		const key = KEY_ACTIVE_BIN(userId, chunkIndex)
 		const buffer = workoutStorage.getBuffer(key)
 		if (!buffer) continue
 
@@ -436,117 +477,8 @@ export const markPointsAsSaved = (pointIds: number[]) => {
 	}
 }
 
-export const getActiveWorkoutPoints = (deserializeGetterType: deserializeGetterType): IWorkoutLocationStorageItem[] => {
-	const meta = getWorkoutMeta()
-	if (!meta) return []
-
-	const result: IWorkoutLocationStorageItem[] = []
-
-	for (let chunkIndex = 0; chunkIndex < meta.chunkCount; chunkIndex++) {
-		const key = `${KEY_ACTIVE_BIN_CHUNK_PREFIX}${chunkIndex}`
-		const buffer = workoutStorage.getBuffer(key)
-		if (!buffer) continue
-		const points = deserializeLocations(new Uint8Array(buffer), meta?.startedAt, deserializeGetterType)
-
-		result.push(...points)
-	}
-
-	return result
-}
-
-export const removeAllShortWorkouts = (): void => {
-	const shortWorkoutsStr = workoutStorage.getString(KEY_SHORT_WORKOUTS)
-	if (!shortWorkoutsStr) {
-		return
-	}
-
-	workoutStorage.remove(KEY_SHORT_WORKOUTS)
-}
+// --- CLEANUP ---
 
 export const removeAllWorkoutStorage = () => {
 	workoutStorage.clearAll()
 }
-
-// --- Helpers ---
-
-export const clearActiveWorkoutData = () => {
-	const metaStr = workoutStorage.getString(KEY_ACTIVE_META)
-	if (metaStr) {
-		try {
-			const meta = JSON.parse(metaStr) as IWorkoutMeta
-			// Удаляем все известные чанки
-			for (let i = 0; i < meta.chunkCount + 2; i++) {
-				// +2 на случай рассинхрона
-				workoutStorage.remove(`${KEY_ACTIVE_BIN_CHUNK_PREFIX}${i}`)
-			}
-		} catch (e) {
-			console.warn('Failed to parse meta for cleanup', e)
-			// Fallback: если мета битая, придется использовать getAllKeys
-			const keys = workoutStorage.getAllKeys()
-			for (const key of keys) {
-				if (key.startsWith(KEY_ACTIVE_BIN_CHUNK_PREFIX)) {
-					workoutStorage.remove(key)
-				}
-			}
-		}
-	}
-
-	workoutStorage.remove(KEY_ACTIVE_META)
-}
-
-export const getFullActiveWorkout = (): IWorkout | null => {
-	const metaStr = workoutStorage.getString(KEY_ACTIVE_META)
-	if (!metaStr) return null
-
-	const meta = JSON.parse(metaStr) as IWorkoutMeta
-	return getActiveWorkoutFromStorage(meta)
-}
-
-/**
- * Получить конкретный чанк тренировки по индексу
- */
-export const getWorkoutChunk = (chunkIndex: number, startedAt: number): IWorkoutLocationStorageItem[] => {
-	const chunkKey = `${KEY_ACTIVE_BIN_CHUNK_PREFIX}${chunkIndex}`
-	const chunkBuffer = workoutStorage.getBuffer(chunkKey)
-
-	if (chunkBuffer) {
-		return deserializeLocations(new Uint8Array(chunkBuffer), startedAt, deserializeGetterType.ALL)
-	}
-	return []
-}
-
-const getActiveWorkoutFromStorage = (meta: IWorkoutMeta): IWorkout => {
-	let locations: IWorkoutLocationStorageItem[] = []
-
-	for (let i = 0; i < meta.chunkCount; i++) {
-		const chunkBuffer = workoutStorage.getBuffer(`${KEY_ACTIVE_BIN_CHUNK_PREFIX}${i}`)
-		if (chunkBuffer) {
-			const chunkPoints = deserializeLocations(
-				new Uint8Array(chunkBuffer),
-				meta.startedAt,
-				deserializeGetterType.ALL
-			)
-			locations = locations.concat(chunkPoints)
-		}
-	}
-
-	return {
-		id: meta.id,
-		type: meta.type,
-		startedAt: meta.startedAt,
-		isPaused: meta.isPaused,
-		totalPausedMs: meta.totalPausedMs,
-		lastPauseAt: meta.lastPauseAt,
-		locations
-	}
-}
-
-// export const getAllWorkoutStorage = (): IWorkoutStorage => {
-// 	const notSavedStr = workoutStorage.getString(KEY_NOT_SAVED)
-// 	const notSavedWorkouts = notSavedStr ? (JSON.parse(notSavedStr) as IWorkout[]) : []
-//
-// 	return {
-// 		notSavedWorkouts,
-// 		activeWorkout: getFullActiveWorkout()
-// 	}
-// }

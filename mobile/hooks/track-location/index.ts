@@ -14,6 +14,7 @@ import { MetricHeightHandle } from '@/components/training/tabs/metrics/MetricHei
 import { calculateTotalDistance } from '@/helpers/distance'
 import { MapComponentSegmentsHandle } from '@/components/map/MapComponentSegments'
 import { MetricAvgSpeedHandle } from '@/components/training/tabs/metrics/MetricAvgSpeed'
+import { useAuthStore } from '@/store/authStore'
 
 export function useLocationTracking() {
 	const onStartTracking = useCallback(async () => {
@@ -40,6 +41,8 @@ export function useLocationData(
 	onInitialDataLoadedCallback: (restoredWorkoutType: TrainingType) => void,
 	workoutType: TrainingType
 ) {
+	const { user } = useAuthStore()
+
 	// Refs для UI
 	const mapComponentRef = useRef<MapComponentSegmentsHandle>(null)
 	const userLocationMarkerRef = useRef<UserLocationMarkerHandle>(null)
@@ -157,7 +160,7 @@ export function useLocationData(
 			if (!isMountedRef.current) return
 			// Если пауза и это не принудительное обновление — выходим
 			if (isPausedRef.current && !forceUpdate) return
-			const meta = getWorkoutMeta()
+			const meta = getWorkoutMeta(user?.id)
 
 			// 1. Скорость
 			if (forceUpdate) {
@@ -194,7 +197,7 @@ export function useLocationData(
 			// 5. Высота
 			metricHeightRef.current?.updateHeight(pointsRef.current)
 		},
-		[workoutType, isPausedRef]
+		[user?.id, workoutType, isPausedRef]
 	)
 
 	// Универсальный обработчик для новых точек (push в pointsRef + обновление UI/метрик)
@@ -283,7 +286,7 @@ export function useLocationData(
 	// Функция прогрессивной загрузки истории (с защитой от параллельных вызовов)
 	const loadHistoryProgressively = useCallback(async () => {
 		if (isLoadingRef.current) return
-		const meta = getWorkoutMeta()
+		const meta = getWorkoutMeta(user?.id)
 		if (!meta) return
 
 		isLoadingRef.current = true
@@ -299,7 +302,7 @@ export function useLocationData(
 				// Грузим чанки. Для правильного порядка лучше грузить с 0 до N
 				for (let i = 0; i < totalChunks; i++) {
 					if (!isMountedRef.current) break
-					const chunk = getWorkoutChunk(i, meta.startedAt)
+					const chunk = getWorkoutChunk(i, meta.startedAt, user?.id)
 					if (chunk.length > 0) allLoadedPoints.push(...chunk)
 					// Даем UI дышать
 					if (i % 2 === 0) await new Promise((r) => setTimeout(r, 0))
@@ -333,7 +336,7 @@ export function useLocationData(
 				// Запускаем UI только после того, как данные загружены и стейты обновлены.
 				// Это гарантирует, что WorkoutStarted смонтируется с правильными initialMarkerLocation и initialLocations
 				if (!initialDataLoadedSetRef.current && isMountedRef.current) {
-					const metaNow = getWorkoutMeta()
+					const metaNow = getWorkoutMeta(user?.id)
 					setIsPaused(metaNow?.isPaused ?? false)
 					setIsWorkoutStarted(true)
 					initialDataLoadedSetRef.current = true
@@ -359,7 +362,7 @@ export function useLocationData(
 
 				for (let i = startChunkIdx; i < totalChunks; i++) {
 					if (!isMountedRef.current) break
-					const chunk = getWorkoutChunk(i, meta.startedAt)
+					const chunk = getWorkoutChunk(i, meta.startedAt, user?.id)
 
 					chunk.forEach((p) => {
 						if (
@@ -417,7 +420,7 @@ export function useLocationData(
 			isHistoryLoading.current = false
 			isLoadingRef.current = false
 		}
-	}, [saveInitialMarkerLocation, saveInitialLocations, updateRealtimeMetrics, getDist, processPoints])
+	}, [user?.id, saveInitialMarkerLocation, saveInitialLocations, updateRealtimeMetrics, getDist, processPoints])
 
 	/**
 	 * Функция для полного сброса состояния тренировки и очистки карты.
@@ -472,7 +475,7 @@ export function useLocationData(
 			}
 		}
 
-		const meta = getWorkoutMeta()
+		const meta = getWorkoutMeta(user?.id)
 		if (meta) {
 			onInitialDataLoadedCallback(meta.type)
 			init()
@@ -502,7 +505,7 @@ export function useLocationData(
 
 			// При возврате в active — включаем обработку live и догружаем историю
 			if (prev.match(/inactive|background/) && nextAppState === 'active') {
-				const meta = getWorkoutMeta()
+				const meta = getWorkoutMeta(user?.id)
 				if (meta && isMountedRef.current) {
 					setIsPaused(meta.isPaused)
 					acceptLivePointsRef.current = false // блокируем live точки
@@ -520,7 +523,7 @@ export function useLocationData(
 
 		const sub = AppState.addEventListener('change', onAppStateChange)
 		return () => sub.remove()
-	}, [loadHistoryProgressively])
+	}, [user?.id, loadHistoryProgressively])
 
 	// Эффект для принудительного обновления метрик после монтирования компонентов тренировки
 	// Это решает проблему пустых метрик при перезапуске приложения в состоянии "Пауза"
