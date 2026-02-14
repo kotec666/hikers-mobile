@@ -177,8 +177,7 @@ export class PostsService {
 				userCreatorId: userId,
 				trainingId: participant.trainingId,
 			})
-			.returning({ id: posts.id })
-			.onConflictDoNothing();
+			.returning({ id: posts.id });
 
 		// @TODO ловить ошибку на медиа
 		if (typeof dto.files !== 'undefined') {
