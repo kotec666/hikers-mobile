@@ -462,16 +462,19 @@ export default function NewTraining() {
 					const result = await deleteNotFinishedTraining()
 					if (result.success) {
 						// удаление сразу
-						return clearActiveWorkoutData(user?.id)
+						clearActiveWorkoutData(user?.id)
+						return resetWorkoutState()
 					}
 				} else if (!meta?.id) {
 					// тренировка не существует на бэкенде
 					// удаление сразу
-					return clearActiveWorkoutData(user?.id)
+					clearActiveWorkoutData(user?.id)
+					return resetWorkoutState()
 				} else if (!isInternetConnectedRef.current && meta?.id) {
 					// нет интернета, но тренировка существует на бэкенде
 					// для последующего удаления с фронта и бэкенда
-					return moveActiveWorkoutToShortWorkouts(user?.id)
+					moveActiveWorkoutToShortWorkouts(user?.id)
+					return resetWorkoutState()
 				}
 			} else {
 				calculateMetricsWhenFinished(meta)

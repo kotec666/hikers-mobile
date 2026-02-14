@@ -61,12 +61,12 @@ export const getPostById = async (postId: number): Promise<IPost[]> => {
 
 // Поставить лайк на пост по его id
 export const likePostById = async (postId: string): Promise<ISuccess> => {
-	return (await fetcher.get(`posts/${postId}/like`)).json()
+	return (await fetcher.post(`posts/${postId}/like`)).json()
 }
 
 // Убрать лайк с поста по его id
 export const unlikePostById = async (postId: string): Promise<ISuccess> => {
-	return (await fetcher.get(`posts/${postId}/unlike`)).json()
+	return (await fetcher.post(`posts/${postId}/unlike`)).json()
 }
 
 // Создание нового поста

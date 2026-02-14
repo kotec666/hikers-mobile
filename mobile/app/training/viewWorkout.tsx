@@ -114,7 +114,9 @@ export default function ViewWorkout() {
 				}
 			})
 
-			formData.append('files[]', filesArray as unknown as Blob)
+			for (let i = 0; i < filesArray.length; i++) {
+				formData.append('files', filesArray[i])
+			}
 		}
 	}
 
@@ -138,6 +140,8 @@ export default function ViewWorkout() {
 			}
 			handlePostImages(postImages, formData)
 			await createPost(formData)
+
+			console.log(formData)
 			toast.success('Пост опубликован')
 			router.replace('/(tabs)/profile')
 		} catch (e) {

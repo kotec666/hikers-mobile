@@ -162,36 +162,40 @@ const Profile = () => {
 
 	// Функция рендеринга элемента поста
 	const renderPostItem = useCallback(
-		({ item }: { item: IPost }) => (
-			<PostListItem
-				key={item.id}
-				{...item}
-				isMyPost
-				postId={item.id}
-				authorName={item.userCreator?.name || ''}
-				avatar={item.userCreator.avatarFilename}
-				createdAt={item.createdAt}
-				workoutType={item.training.type}
-				title={item.title}
-				description={item.description}
-				images={item.fileNames}
-				metrics={item.training.participants.find((participant) => participant.id === user?.id)?.metrics}
-				likeData={{
-					isLiked: item.isLiked,
-					likesCount: item.likesCount,
-					postId: item.id
-				}}
-				participants={item.training.participants}
-				mapComponent={
-					<MapComponent
-						rounded={25}
-						interactiveDisabled
-						initialLocations={{ current: adaptLocations(item.training.participants[0].route.points) }}
-					/>
-				}
-			/>
-		),
-		[]
+		({ item }: { item: IPost }) => {
+			return (
+				<PostListItem
+					key={item.id}
+					{...item}
+					isMyPost
+					postId={item.id}
+					authorName={item.userCreator?.name || ''}
+					avatar={item.userCreator.avatarFilename}
+					createdAt={item.createdAt}
+					workoutType={item.training.type}
+					title={item.title}
+					description={item.description}
+					images={item.fileNames}
+					metrics={
+						item.training.participants.find((participant) => participant.user.id === user?.id)?.metrics
+					}
+					likeData={{
+						isLiked: item.isLiked,
+						likesCount: item.likesCount,
+						postId: item.id
+					}}
+					participants={item.training.participants}
+					mapComponent={
+						<MapComponent
+							rounded={25}
+							interactiveDisabled
+							initialLocations={{ current: adaptLocations(item.training.participants[0].route.points) }}
+						/>
+					}
+				/>
+			)
+		},
+		[user?.id]
 	)
 
 	// Функция рендеринга индикатора загрузки
