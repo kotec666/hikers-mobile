@@ -86,7 +86,7 @@ export class PostsController {
 	 * @summary Поставить лайк пост
 	 * @security token
 	 */
-	@Get(':id/like')
+	@Post(':id/like')
 	public async like(
 		@User() user: UserData,
 		@IsUUID('id') @Param('id') id: string,
@@ -99,7 +99,7 @@ export class PostsController {
 	 * @summary Убрать лайк с поста
 	 * @security token
 	 */
-	@Get(':id/unlike')
+	@Post(':id/unlike')
 	public async unlike(
 		@User() user: UserData,
 		@IsUUID('id') @Param('id') id: string,
