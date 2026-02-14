@@ -289,4 +289,38 @@ export class PostsService {
 		// Пока что все посты закреплены за своей тренировкой
 		return this.trainings.getParticipants(post.trainingId!, page, limit);
 	}
+
+	public async deletePost(postId: string, userId: string): Promise<CommonDto.BooleanResponse> {
+		const [post] = await this.db.db
+			.select({ userCreatorId: posts.userCreatorId })
+			.from(posts)
+			.where(eq(posts.id, postId))
+			.limit(1);
+		if (!post) {
+			throw new NotFoundException(ERRORS.NOT_FOUND);
+		}
+		if (post.userCreatorId !== userId) {
+			throw new ForbiddenException(ERRORS.FORBIDDEN);
+		}
+
+		const media = await this.db.db
+			.select({ mediaFilename: postMedia.mediaFilename })
+			.from(postMedia)
+			.where(eq(postMedia.postId, postId));
+
+		for (const m of media) {
+			try {
+				// @TODO проверить ошибку тут какую будет
+				await this.files.deleteFile(m.mediaFilename);
+			} catch (error) {
+				console.error('Ошибка файл не удалился', m.mediaFilename);
+			}
+		}
+
+		await this.db.db.delete(postLikes).where(eq(postLikes.postId, postId));
+		await this.db.db.delete(postMedia).where(eq(postMedia.postId, postId));
+		await this.db.db.delete(posts).where(eq(posts.id, postId));
+
+		return { success: true };
+	}
 }

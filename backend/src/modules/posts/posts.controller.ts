@@ -1,4 +1,4 @@
-﻿import { Body, Controller, Get, Param, Post, Query, UploadedFiles, UseInterceptors } from '@nestjs/common';
+﻿import { Body, Controller, Delete, Get, Param, Post, Query, UploadedFiles, UseInterceptors } from '@nestjs/common';
 import { UserInterceptor } from '../../common/interceptors/user.interceptor';
 import { User, UserData } from '../../common/decorators/user.decorator';
 import { CommonDto } from '../../common/dto/common.dto';
@@ -80,6 +80,19 @@ export class PostsController {
 	@Get(':id')
 	public async getById(@User() user: UserData, @IsUUID('id') @Param('id') id: string): Promise<PostDto.Entity> {
 		return await this.service.getById(user.id, id);
+	}
+
+	/**
+	 * @tag Posts
+	 * @summary Удалить пост
+	 * @security token
+	 */
+	@Delete(':id')
+	public async deletePost(
+		@User() user: UserData,
+		@IsUUID('id') @Param('id') id: string,
+	): Promise<CommonDto.BooleanResponse> {
+		return await this.service.deletePost(id, user.id);
 	}
 
 	/**
