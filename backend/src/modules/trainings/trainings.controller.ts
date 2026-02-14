@@ -1,6 +1,6 @@
 ﻿import { Body, Controller, Delete, Get, Param, Patch, Post, Query, UseInterceptors } from '@nestjs/common';
 import { TrainingsService } from './trainings.service';
-import { TrainingDto } from './trainings.dto';
+import { TrainingDto, TrainingParticipantDto } from './trainings.dto';
 import { User } from 'src/common/decorators/user.decorator';
 import { TokenDto } from '../token/token.dto';
 import { UserInterceptor } from 'src/common/interceptors/user.interceptor';
@@ -8,6 +8,7 @@ import { CommonDto } from 'src/common/dto/common.dto';
 import { IsUUID } from '@validation/parameter-decorators';
 import { TrainingType } from '@shared/enums';
 import { ParseEnumArray } from '@validation/param.decorators';
+import { NotNegative } from '@validation/query-decorators';
 
 @Controller('trainings')
 @UseInterceptors(UserInterceptor)
@@ -98,5 +99,19 @@ export class TrainingsController {
 	@Delete('delete-not-finished')
 	public async deleteAllNotFinished(@User() user: TokenDto.Payload): Promise<CommonDto.BooleanResponse> {
 		return this.service.deleteAllNotFinished(user.id);
+	}
+
+	/**
+	 * @tag Trainings
+	 * @summary Получить участников тренировки по id тренировки с пагинацией
+	 * @security token
+	 */
+	@Get(':id/participants')
+	public async getParticipants(
+		@IsUUID('id') @Param('id') id: string,
+		@NotNegative('page') @Query('page') page: number,
+		@NotNegative('limit') @Query('limit') limit: number,
+	): Promise<TrainingParticipantDto.Entity[]> {
+		return this.service.getParticipants(id, page, limit);
 	}
 }

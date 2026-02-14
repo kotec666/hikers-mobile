@@ -372,7 +372,13 @@ export class TrainingsService {
 		return participants;
 	}
 
-	public async getParticipants(trainingId: string): Promise<TrainingParticipantDto.Entity[]> {
+	public async getParticipants(
+		trainingId: string,
+		page: number,
+		limit: number,
+	): Promise<TrainingParticipantDto.Entity[]> {
+		const offset = Math.max(0, (page - 1) * limit);
+
 		const participants = await this.db.db
 			.select({
 				id: trainingParticipants.id,
@@ -387,7 +393,9 @@ export class TrainingsService {
 			})
 			.from(trainingParticipants)
 			.where(eq(trainingParticipants.trainingId, trainingId))
-			.innerJoin(users, eq(users.id, trainingParticipants.userId));
+			.innerJoin(users, eq(users.id, trainingParticipants.userId))
+			.offset(offset)
+			.limit(limit);
 
 		return participants;
 	}

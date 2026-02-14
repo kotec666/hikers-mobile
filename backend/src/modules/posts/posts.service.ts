@@ -9,6 +9,7 @@ import { StaticService } from '../static/static.service';
 import { CommonDto } from 'src/common/dto/common.dto';
 import { UserDto } from '../user/user.dto';
 import { SubscribersService } from '../subscribers/subscribers.service';
+import { TrainingParticipantDto } from '../trainings/trainings.dto';
 
 @Injectable()
 export class PostsService {
@@ -269,5 +270,23 @@ export class PostsService {
 			.where(eq(postMedia.postId, postId));
 
 		return fileNames.map((i) => i.mediaFilename);
+	}
+
+	public async getParticipants(
+		postId: string,
+		page: number,
+		limit: number,
+	): Promise<TrainingParticipantDto.Entity[]> {
+		const [post] = await this.db.db
+			.select({ trainingId: posts.trainingId })
+			.from(posts)
+			.where(eq(posts.id, postId))
+			.limit(1);
+		if (!post) {
+			throw new NotFoundException(ERRORS.NOT_FOUND);
+		}
+
+		// Пока что все посты закреплены за своей тренировкой
+		return this.trainings.getParticipants(post.trainingId!, page, limit);
 	}
 }

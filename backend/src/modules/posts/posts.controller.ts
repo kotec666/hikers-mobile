@@ -1,12 +1,13 @@
 ﻿import { Body, Controller, Get, Param, Post, Query, UploadedFiles, UseInterceptors } from '@nestjs/common';
 import { UserInterceptor } from '../../common/interceptors/user.interceptor';
 import { User, UserData } from '../../common/decorators/user.decorator';
+import { CommonDto } from '../../common/dto/common.dto';
 import { PostsService } from './posts.service';
-import { PostDto } from './posts.dto';
 import { FilesInterceptor } from '@nestjs/platform-express';
 import { IsUUID } from '@validation/parameter-decorators';
 import { NotNegative } from '@validation/query-decorators';
-import { CommonDto } from 'src/common/dto/common.dto';
+import { TrainingParticipantDto } from '../trainings/trainings.dto';
+import { PostDto } from './posts.dto';
 
 @Controller('posts')
 @UseInterceptors(UserInterceptor)
@@ -105,5 +106,19 @@ export class PostsController {
 		@IsUUID('id') @Param('id') id: string,
 	): Promise<CommonDto.BooleanResponse> {
 		return await this.service.unlikePost(user.id, id);
+	}
+
+	/**
+	 * @tag Posts
+	 * @summary Участники поста
+	 * @security token
+	 */
+	@Get(':id/participants')
+	public async getParticipants(
+		@IsUUID('id') @Param('id') id: string,
+		@NotNegative('page') @Query('page') page: number,
+		@NotNegative('limit') @Query('limit') limit: number,
+	): Promise<TrainingParticipantDto.Entity[]> {
+		return await this.service.getParticipants(id, page, limit);
 	}
 }
