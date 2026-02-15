@@ -65,17 +65,17 @@ export class HttpExceptionFilter implements ExceptionFilter {
 
 					const statusCode = 400;
 
-					// Эхх, костыли, костыли
-					if (exception.constraint === 'post_one_per_participant') {
+					const regexWithGroups = /\(([^)]+)\)=\(([^)]+)\)/;
+					const match = exception.detail?.match(regexWithGroups);
+					if (!match) break;
+
+					// Если ошибка по нескольким полям, то считаем как общюю, а не проперти
+					if (match[1].includes(', ')) {
 						return response.status(statusCode).json({
 							statusCode,
 							message: ERRORS.ALREADY_EXISTS,
 						});
 					}
-
-					const regexWithGroups = /\(([^)]+)\)=\(([^)]+)\)/;
-					const match = exception.detail?.match(regexWithGroups);
-					if (!match) break;
 
 					const message: string = `_${match[1]}:${ERRORS.ALREADY_EXISTS}`;
 

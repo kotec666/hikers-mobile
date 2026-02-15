@@ -196,6 +196,7 @@ export class PostsService {
 				continue;
 			}
 
+			// @TODO тест что если файл не догрузится, чтобы не стопил остальные
 			const mediaFilename = await this.files.uploadFile(file);
 			const [media] = await this.db.db
 				.insert(postMedia)
