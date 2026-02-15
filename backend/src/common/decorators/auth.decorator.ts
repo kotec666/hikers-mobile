@@ -1,5 +1,5 @@
 import { applyDecorators, UseInterceptors } from '@nestjs/common';
-import { UserInterceptor } from '../interceptors/user.interceptor';
+import { UserInterceptor } from '@interceptors/user.interceptor';
 
 /**
  * Декоратор для проверки авторизации и получения пользователя.

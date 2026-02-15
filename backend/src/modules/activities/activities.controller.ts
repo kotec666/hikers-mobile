@@ -1,8 +1,8 @@
 ﻿import { Controller, Get, Query, UseInterceptors } from '@nestjs/common';
 import { ActivitiesService } from './activities.service';
 import { ActivitiyDto } from './activities.dto';
-import { User, UserData } from '../../common/decorators/user.decorator';
-import { UserInterceptor } from '../../common/interceptors/user.interceptor';
+import { User, UserData } from '@decorators/user.decorator';
+import { UserInterceptor } from '@interceptors/user.interceptor';
 
 @Controller('activities')
 @UseInterceptors(UserInterceptor)

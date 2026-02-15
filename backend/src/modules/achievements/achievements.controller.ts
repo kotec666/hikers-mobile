@@ -1,9 +1,9 @@
 ﻿import { Controller, Get, Param, UseInterceptors } from '@nestjs/common';
 import { AchievementsService } from './achievements.service';
 import { AchievementDto } from './achievements.dto';
-import { User } from '../../common/decorators/user.decorator';
+import { User } from '@decorators/user.decorator';
 import { TokenDto } from '../token/token.dto';
-import { UserInterceptor } from '../../common/interceptors/user.interceptor';
+import { UserInterceptor } from '@interceptors/user.interceptor';
 
 @Controller('achievements')
 @UseInterceptors(UserInterceptor)
