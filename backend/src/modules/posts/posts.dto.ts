@@ -53,6 +53,9 @@ export namespace PostDto {
 		title?: string;
 
 		@IsOptional()
+		@Length(lengths.post.description.min, lengths.post.description.max, {
+			message: `_description:${ERRORS.INVALID_LENGTH}`,
+		})
 		description?: string;
 
 		@IsOptional()
