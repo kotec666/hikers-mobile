@@ -1,14 +1,15 @@
-﻿import { ForbiddenException, Injectable, NotFoundException } from '@nestjs/common';
+﻿import { BadRequestException, ForbiddenException, Injectable, NotFoundException } from '@nestjs/common';
 import { DatabaseService } from '../database/database.service';
 import { PostDto } from './posts.dto';
 import { postLikes, postMedia, posts, trainingParticipants, users } from '../database/schema';
-import { desc, eq, ne, count, and } from 'drizzle-orm';
+import { desc, eq, ne, count, and, sql } from 'drizzle-orm';
 import { ERRORS } from '@shared/errors';
 import { TrainingsService } from '../trainings/trainings.service';
 import { StaticService } from '../static/static.service';
 import { CommonDto } from 'src/common/dto/common.dto';
 import { UserDto } from '../user/user.dto';
 import { SubscribersService } from '../subscribers/subscribers.service';
+import { TrainingParticipantDto } from '../trainings/trainings.dto';
 
 @Injectable()
 export class PostsService {
@@ -176,8 +177,7 @@ export class PostsService {
 				userCreatorId: userId,
 				trainingId: participant.trainingId,
 			})
-			.returning({ id: posts.id })
-			.onConflictDoNothing();
+			.returning({ id: posts.id });
 
 		// @TODO ловить ошибку на медиа
 		if (typeof dto.files !== 'undefined') {
@@ -188,27 +188,120 @@ export class PostsService {
 		return await this.getById(userId, post.id);
 	}
 
+	public async areMediasAttachedToPost(postId: string, mediaFilenames: string[]): Promise<boolean> {
+		const postMedias = await this.db.db
+			.select({ mediaFilename: postMedia.mediaFilename })
+			.from(postMedia)
+			.where(eq(postMedia.postId, postId));
+
+		return mediaFilenames.every((fname) => postMedias.find((el) => el.mediaFilename === fname));
+	}
+
+	public async edit(postId: string, userId: string, dto: PostDto.Edit): Promise<CommonDto.BooleanResponse> {
+		dto = Object.fromEntries(Object.entries(dto).filter(([, val]) => typeof val !== 'undefined'));
+
+		if (Object.values(dto).length === 0) {
+			throw new BadRequestException(ERRORS.BAD_REQUEST);
+		}
+
+		const [post] = await this.db.db
+			.select({ userCreatorId: posts.userCreatorId })
+			.from(posts)
+			.where(eq(posts.id, postId))
+			.limit(1);
+		if (!post) {
+			throw new NotFoundException(ERRORS.NOT_FOUND);
+		}
+		if (post.userCreatorId !== userId) {
+			throw new ForbiddenException(ERRORS.FORBIDDEN);
+		}
+
+		if (typeof dto.deletedFilenames !== 'undefined') {
+			if (!(await this.areMediasAttachedToPost(postId, dto.deletedFilenames))) {
+				throw new BadRequestException(`_deletedFilenames:${ERRORS.MISMATCH}`);
+			}
+
+			await this.detachFiles(postId, dto.deletedFilenames);
+		}
+
+		if (typeof dto.files !== 'undefined') {
+			await this.attachFiles(postId, dto.files);
+		}
+
+		const dtoFields = { updatedAt: sql`NOW()` };
+		if (dto.title) {
+			dtoFields['title'] = dto.title;
+		}
+		if (dto.description) {
+			dtoFields['description'] = dto.description;
+		}
+
+		await this.db.db
+			.update(posts)
+			.set({ ...dtoFields })
+			.where(eq(posts.id, postId));
+
+		return { success: true };
+	}
+
 	public async attachFiles(postId: string, files: Express.Multer.File[]): Promise<string[]> {
 		const mediaIds: string[] = [];
 
 		for (const file of files) {
-			if (!(file satisfies Express.Multer.File)) {
-				continue;
+			// @TODO тест что если файл не догрузится, чтобы не стопил остальные
+			try {
+				const mediaId = await this.attachFile(postId, file);
+				mediaIds.push(mediaId);
+			} catch (error) {
+				console.error(`Файл ${file.originalname} не догрузился в пост ${postId} по причине:`, error);
 			}
-
-			const mediaFilename = await this.files.uploadFile(file);
-			const [media] = await this.db.db
-				.insert(postMedia)
-				.values({
-					postId,
-					mediaFilename,
-				})
-				.returning({ id: postMedia.id });
-
-			mediaIds.push(media.id);
 		}
 
 		return mediaIds;
+	}
+
+	public async attachFile(postId: string, file: Express.Multer.File): Promise<string> {
+		if (!(file satisfies Express.Multer.File)) {
+			throw new BadRequestException(ERRORS.BAD_REQUEST);
+		}
+
+		const mediaFilename = await this.files.uploadFile(file);
+		const [media] = await this.db.db
+			.insert(postMedia)
+			.values({
+				postId,
+				mediaFilename,
+			})
+			.returning({ id: postMedia.id });
+
+		return media.id;
+	}
+
+	public async detachFiles(postId: string, mediaFilenames: string[]): Promise<string[]> {
+		const mediaIds: string[] = [];
+
+		for (const filename of mediaFilenames) {
+			// @TODO тест что если файл не удалится, чтобы не стопил остальные
+			try {
+				const mediaId = await this.detachFile(postId, filename);
+				mediaIds.push(mediaId);
+			} catch (error) {
+				console.error(`Файл ${filename} не удалился из поста ${postId} по причине:`, error);
+			}
+		}
+
+		return mediaIds;
+	}
+
+	public async detachFile(postId: string, mediaFilename: string): Promise<string> {
+		// @TODO тест что если файл не догрузится, чтобы не стопил остальные
+		await this.files.deleteFile(mediaFilename);
+		const [mediaId] = await this.db.db
+			.delete(postMedia)
+			.where(and(eq(postMedia.postId, postId), eq(postMedia.mediaFilename, mediaFilename)))
+			.returning({ id: postMedia.id });
+
+		return mediaId.id;
 	}
 
 	public async unlikePost(userId: string, postId: string): Promise<CommonDto.BooleanResponse> {
@@ -269,5 +362,57 @@ export class PostsService {
 			.where(eq(postMedia.postId, postId));
 
 		return fileNames.map((i) => i.mediaFilename);
+	}
+
+	public async getParticipants(
+		postId: string,
+		page: number,
+		limit: number,
+	): Promise<TrainingParticipantDto.Entity[]> {
+		const [post] = await this.db.db
+			.select({ trainingId: posts.trainingId })
+			.from(posts)
+			.where(eq(posts.id, postId))
+			.limit(1);
+		if (!post) {
+			throw new NotFoundException(ERRORS.NOT_FOUND);
+		}
+
+		// Пока что все посты закреплены за своей тренировкой
+		return this.trainings.getParticipants(post.trainingId!, page, limit);
+	}
+
+	public async deletePost(postId: string, userId: string): Promise<CommonDto.BooleanResponse> {
+		const [post] = await this.db.db
+			.select({ userCreatorId: posts.userCreatorId })
+			.from(posts)
+			.where(eq(posts.id, postId))
+			.limit(1);
+		if (!post) {
+			throw new NotFoundException(ERRORS.NOT_FOUND);
+		}
+		if (post.userCreatorId !== userId) {
+			throw new ForbiddenException(ERRORS.FORBIDDEN);
+		}
+
+		const media = await this.db.db
+			.select({ mediaFilename: postMedia.mediaFilename })
+			.from(postMedia)
+			.where(eq(postMedia.postId, postId));
+
+		for (const m of media) {
+			try {
+				// @TODO проверить ошибку тут какую будет
+				await this.files.deleteFile(m.mediaFilename);
+			} catch (error) {
+				console.error('Ошибка файл не удалился', m.mediaFilename);
+			}
+		}
+
+		await this.db.db.delete(postLikes).where(eq(postLikes.postId, postId));
+		await this.db.db.delete(postMedia).where(eq(postMedia.postId, postId));
+		await this.db.db.delete(posts).where(eq(posts.id, postId));
+
+		return { success: true };
 	}
 }

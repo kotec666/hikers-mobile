@@ -22,6 +22,10 @@ export const lengths = {
 			min: 0,
 			max: 255,
 		},
+		description: {
+			min: 0,
+			max: 4095,
+		},
 	},
 	achievements: {
 		title: {

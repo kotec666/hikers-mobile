@@ -1,12 +1,24 @@
-﻿import { Body, Controller, Get, Param, Post, Query, UploadedFiles, UseInterceptors } from '@nestjs/common';
-import { UserInterceptor } from '../../common/interceptors/user.interceptor';
-import { User, UserData } from '../../common/decorators/user.decorator';
-import { PostsService } from './posts.service';
-import { PostDto } from './posts.dto';
+﻿import {
+	Body,
+	Controller,
+	Delete,
+	Get,
+	Param,
+	Patch,
+	Post,
+	Query,
+	UploadedFiles,
+	UseInterceptors,
+} from '@nestjs/common';
+import { User, UserData } from '@decorators/user.decorator';
 import { FilesInterceptor } from '@nestjs/platform-express';
+import { PostsService } from './posts.service';
 import { IsUUID } from '@validation/parameter-decorators';
 import { NotNegative } from '@validation/query-decorators';
-import { CommonDto } from 'src/common/dto/common.dto';
+import { UserInterceptor } from '@interceptors/user.interceptor';
+import { TrainingParticipantDto } from '../trainings/trainings.dto';
+import { CommonDto } from '../../common/dto/common.dto';
+import { PostDto } from './posts.dto';
 
 @Controller('posts')
 @UseInterceptors(UserInterceptor)
@@ -83,10 +95,42 @@ export class PostsController {
 
 	/**
 	 * @tag Posts
+	 * @summary Редактирование поста по id
+	 * @security token
+	 */
+	@Patch(':id')
+	@UseInterceptors(FilesInterceptor('files'))
+	public async edit(
+		@IsUUID('id') @Param('id') id: string,
+		@User() user: UserData,
+		@Body() body: PostDto.Edit,
+		@UploadedFiles() files?: Array<Express.Multer.File>,
+	): Promise<CommonDto.BooleanResponse> {
+		return await this.service.edit(id, user.id, {
+			...body,
+			files,
+		});
+	}
+
+	/**
+	 * @tag Posts
+	 * @summary Удалить пост по id
+	 * @security token
+	 */
+	@Delete(':id')
+	public async deletePost(
+		@User() user: UserData,
+		@IsUUID('id') @Param('id') id: string,
+	): Promise<CommonDto.BooleanResponse> {
+		return await this.service.deletePost(id, user.id);
+	}
+
+	/**
+	 * @tag Posts
 	 * @summary Поставить лайк пост
 	 * @security token
 	 */
-	@Get(':id/like')
+	@Post(':id/like')
 	public async like(
 		@User() user: UserData,
 		@IsUUID('id') @Param('id') id: string,
@@ -99,11 +143,25 @@ export class PostsController {
 	 * @summary Убрать лайк с поста
 	 * @security token
 	 */
-	@Get(':id/unlike')
+	@Post(':id/unlike')
 	public async unlike(
 		@User() user: UserData,
 		@IsUUID('id') @Param('id') id: string,
 	): Promise<CommonDto.BooleanResponse> {
 		return await this.service.unlikePost(user.id, id);
+	}
+
+	/**
+	 * @tag Posts
+	 * @summary Участники поста
+	 * @security token
+	 */
+	@Get(':id/participants')
+	public async getParticipants(
+		@IsUUID('id') @Param('id') id: string,
+		@NotNegative('page') @Query('page') page: number,
+		@NotNegative('limit') @Query('limit') limit: number,
+	): Promise<TrainingParticipantDto.Entity[]> {
+		return await this.service.getParticipants(id, page, limit);
 	}
 }

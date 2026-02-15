@@ -1,7 +1,7 @@
 import { Controller, Get, UseInterceptors } from '@nestjs/common';
 import { UserService } from './user.service';
-import { UserInterceptor } from '../../common/interceptors/user.interceptor';
-import { User } from '../../common/decorators/user.decorator';
+import { UserInterceptor } from '@interceptors/user.interceptor';
+import { User } from '@decorators/user.decorator';
 import { TokenDto } from '../token/token.dto';
 
 @Controller('user')

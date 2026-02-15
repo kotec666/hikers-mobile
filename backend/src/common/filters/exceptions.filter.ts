@@ -63,12 +63,21 @@ export class HttpExceptionFilter implements ExceptionFilter {
 				case '23505': {
 					// 23505 Это ошибка дубликата значения поля. Пример: detail: 'Key (username)=(example123) already exists.'
 
+					const statusCode = 400;
+
 					const regexWithGroups = /\(([^)]+)\)=\(([^)]+)\)/;
 					const match = exception.detail?.match(regexWithGroups);
 					if (!match) break;
 
+					// Если ошибка по нескольким полям, то считаем как общюю, а не проперти
+					if (match[1].includes(', ')) {
+						return response.status(statusCode).json({
+							statusCode,
+							message: ERRORS.ALREADY_EXISTS,
+						});
+					}
+
 					const message: string = `_${match[1]}:${ERRORS.ALREADY_EXISTS}`;
-					const statusCode = 400;
 
 					return response.status(statusCode).json({
 						statusCode,

@@ -141,3 +141,14 @@ export function isUUID(item: any): boolean {
 export function isFile(item: any): boolean {
 	return item satisfies Express.Multer.File;
 }
+
+export function isUUIDFilename(item: any): boolean {
+	const strItem = String(item).split('.');
+	if (strItem.length !== 2) {
+		return false;
+	}
+
+	const uuidPart = strItem[0];
+	const extensionPart = strItem[1];
+	return isUUID(uuidPart) && extensionPart.length > 0;
+}

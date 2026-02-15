@@ -1,9 +1,11 @@
 ﻿import { ERRORS } from '@shared/errors';
-import { FinishedTrainingParticipant, isFile, TypedArray } from '@validation/property-decorators';
+import { FinishedTrainingParticipant, isFile, isUUIDFilename, TypedArray } from '@validation/property-decorators';
 import { IsOptional, IsUUID, Length } from 'class-validator';
+import { Transform } from 'class-transformer';
 import { UserDto } from '../user/user.dto';
 import { TrainingDto } from '../trainings/trainings.dto';
 import { lengths } from '@shared/lengths';
+import { toArray } from '@transformers/array.transformer';
 
 export namespace PostDto {
 	export type Entity = {
@@ -38,6 +40,28 @@ export namespace PostDto {
 
 		@IsOptional()
 		description?: string;
+
+		@IsOptional()
+		@TypedArray(isFile)
+		files?: Express.Multer.File[];
+	}
+
+	/** Form-Data запрос */
+	export class Edit {
+		@IsOptional()
+		@Length(lengths.post.title.min, lengths.post.title.max, { message: `_title:${ERRORS.INVALID_LENGTH}` })
+		title?: string;
+
+		@IsOptional()
+		@Length(lengths.post.description.min, lengths.post.description.max, {
+			message: `_description:${ERRORS.INVALID_LENGTH}`,
+		})
+		description?: string;
+
+		@IsOptional()
+		@Transform(({ value }) => toArray(value))
+		@TypedArray(isUUIDFilename)
+		deletedFilenames?: string[];
 
 		@IsOptional()
 		@TypedArray(isFile)
