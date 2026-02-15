@@ -1,9 +1,9 @@
 ﻿import { Body, Controller, Get, Param, Patch, UploadedFile, UseInterceptors } from '@nestjs/common';
+import { FileInterceptor } from '@nestjs/platform-express';
 import { ProfileService } from './profile.service';
-import { UserInterceptor } from '../../common/interceptors/user.interceptor';
+import { UserInterceptor } from '@interceptors/user.interceptor';
 import { User, UserData } from '../../common/decorators/user.decorator';
 import { ProfileDto } from './profile.dto';
-import { FileInterceptor } from '@nestjs/platform-express';
 
 @Controller('profile')
 @UseInterceptors(UserInterceptor)

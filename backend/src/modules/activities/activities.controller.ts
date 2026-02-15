@@ -2,7 +2,7 @@
 import { ActivitiesService } from './activities.service';
 import { ActivitiyDto } from './activities.dto';
 import { User, UserData } from '../../common/decorators/user.decorator';
-import { UserInterceptor } from '../../common/interceptors/user.interceptor';
+import { UserInterceptor } from '@interceptors/user.interceptor';
 
 @Controller('activities')
 @UseInterceptors(UserInterceptor)

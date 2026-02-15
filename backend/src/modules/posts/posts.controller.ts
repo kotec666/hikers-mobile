@@ -1,12 +1,23 @@
-﻿import { Body, Controller, Delete, Get, Param, Post, Query, UploadedFiles, UseInterceptors } from '@nestjs/common';
-import { UserInterceptor } from '../../common/interceptors/user.interceptor';
+﻿import {
+	Body,
+	Controller,
+	Delete,
+	Get,
+	Param,
+	Patch,
+	Post,
+	Query,
+	UploadedFiles,
+	UseInterceptors,
+} from '@nestjs/common';
 import { User, UserData } from '../../common/decorators/user.decorator';
-import { CommonDto } from '../../common/dto/common.dto';
-import { PostsService } from './posts.service';
 import { FilesInterceptor } from '@nestjs/platform-express';
+import { PostsService } from './posts.service';
 import { IsUUID } from '@validation/parameter-decorators';
 import { NotNegative } from '@validation/query-decorators';
+import { UserInterceptor } from '@interceptors/user.interceptor';
 import { TrainingParticipantDto } from '../trainings/trainings.dto';
+import { CommonDto } from '../../common/dto/common.dto';
 import { PostDto } from './posts.dto';
 
 @Controller('posts')
@@ -84,7 +95,26 @@ export class PostsController {
 
 	/**
 	 * @tag Posts
-	 * @summary Удалить пост
+	 * @summary Редактирование поста по id
+	 * @security token
+	 */
+	@Patch(':id')
+	@UseInterceptors(FilesInterceptor('files'))
+	public async edit(
+		@IsUUID('id') @Param('id') id: string,
+		@User() user: UserData,
+		@Body() body: PostDto.Edit,
+		@UploadedFiles() files?: Array<Express.Multer.File>,
+	): Promise<CommonDto.BooleanResponse> {
+		return await this.service.edit(id, user.id, {
+			...body,
+			files,
+		});
+	}
+
+	/**
+	 * @tag Posts
+	 * @summary Удалить пост по id
 	 * @security token
 	 */
 	@Delete(':id')

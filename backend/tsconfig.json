@@ -12,6 +12,8 @@
 		"baseUrl": "./",
 		"paths": {
 			"@validation/*": ["./src/common/validation/*"],
+			"@transformers/*": ["./src/common/transformers/*"],
+			"@interceptors/*": ["./src/common/interceptors/*"],
 			"@shared/*": ["./src/shared/*"],
 			"@helpers": ["./src/common/helpers"]
 		},
