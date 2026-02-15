@@ -1,6 +1,5 @@
-import React, { useEffect, useState } from 'react'
-import { RefreshControl, ScrollView, Text, View } from 'react-native'
-import { Container } from '@/components/ui/Container'
+import React, { useEffect, useState, useCallback, useRef } from 'react'
+import { ActivityIndicator, RefreshControl, Text, View } from 'react-native'
 import { fontFamily } from '@/constants/Fonts'
 import SocialStats from '@/components/ui/Profile/SocialStats'
 import { Button } from '@/components/ui/Button'
@@ -9,7 +8,6 @@ import ActivityInfo from '@/components/ui/Profile/ActivityInfo'
 import PostListItem from '@/components/ui/Post/PostListItem'
 import { SafeAreaProvider, useSafeAreaInsets } from 'react-native-safe-area-context'
 import { useLocalSearchParams } from 'expo-router'
-import NavBar from '@/components/ui/NavBar'
 import { PATH_TO_IMAGE } from '@/constants/PATH_TO_FILES'
 import { getUserProfileData, INotMyProfile } from '@/api/profile'
 import { getFieldsErrors } from '@/helpers/getFieldsErrors'
@@ -19,6 +17,12 @@ import Modal from '@/components/ui/Modal/Modal'
 import { addAsFriend, deleteFriendById, revokeFriendInviteByUserId } from '@/api/friends'
 import { FriendStatus } from '@shared/enums'
 import { AnimatedProfilePicture } from '@/components/ui/Profile/AnimatedProfilePicture'
+import { LegendList, LegendListRef } from '@legendapp/list'
+import { getPostsByUserId, IPost } from '@/api/posts'
+import { Colors } from '@/constants/Colors'
+import MapComponent from '@/components/map/MapComponent'
+import { adaptLocations } from '@/helpers/adaptPointsToIWorkoutLocationStorageItem'
+import { debounce } from '@/helpers/debounce'
 
 /**
  *
@@ -30,15 +34,22 @@ const UserProfilePage = () => {
 	const insets = useSafeAreaInsets()
 	const toast = useToast()
 	const { id } = useLocalSearchParams<{ id: string }>()
+	const [profileData, setProfileData] = useState<INotMyProfile | null>(null)
 	const [data, setData] = useState<{
-		profileData: INotMyProfile | null
 		refreshing: boolean
 		isDeleteModalOpened: boolean
 	}>({
-		profileData: null,
 		refreshing: false,
 		isDeleteModalOpened: false
 	})
+
+	const [posts, setPosts] = useState<IPost[]>([])
+	const [page, setPage] = useState(1)
+	const [loading, setLoading] = useState(false)
+	const [hasMore, setHasMore] = useState(true)
+
+	const limit = 5
+	const legendListRef = useRef<LegendListRef>(null)
 
 	const friendStatusLabel = {
 		[FriendStatus.FALSE]: 'Добавить в друзья',
@@ -49,7 +60,7 @@ const UserProfilePage = () => {
 	const handleGetAndSetData = async () => {
 		try {
 			const profileData = await getUserProfileData(id)
-			setData((s) => ({ ...s, profileData: profileData }))
+			setProfileData(profileData)
 		} catch (e) {
 			const errors = await e.response.json()
 			console.log(errors)
@@ -63,65 +74,53 @@ const UserProfilePage = () => {
 		handleGetAndSetData()
 	}, [])
 
-	const onRefresh = React.useCallback(async () => {
-		setData((s) => ({ ...s, refreshing: true }))
-		await handleGetAndSetData()
-	}, [])
+	const updateProfileData = (updater: (prev: INotMyProfile) => Partial<INotMyProfile>) => {
+		setProfileData((prev) => {
+			if (!prev) return prev
 
-	const posts = [
-		{ id: 1, authorName: 'Сергей Авдотьев', date: 'Вчера' },
-		{ id: 2, authorName: 'Сергей Авдотьев', date: 'Вчера' },
-		{ id: 3, authorName: 'Сергей Авдотьев', date: 'Вчера' }
-	]
-
-	const updateProfileData = (updates: Partial<INotMyProfile>) => {
-		setData((s) => ({
-			...s,
-			profileData: s.profileData ? { ...s.profileData, ...updates } : null
-		}))
-	}
-
-	const handleClickSubscribe = async () => {
-		try {
-			if (!data.profileData?.user?.id) {
-				return toast.info('Не выбран пользователь для подписки')
+			return {
+				...prev,
+				...updater(prev)
 			}
-
-			await subscribeToUser(data.profileData?.user.id)
-			updateProfileData({ isSubscribed: true, subscribers: data.profileData.subscribers + 1 })
-		} catch (e) {
-			toast.error('Произошла ошибка, повторите попытку позже')
-		}
+		})
 	}
 
-	const handleClickUnsubscribe = async () => {
-		try {
-			if (!data.profileData?.user?.id) {
-				return toast.info('Не выбран пользователь для отписки')
-			}
+	const handleClickSubUnsub = async (authorId?: string, current?: boolean) => {
+		if (!authorId) return toast.info('Пользователь не выбран')
 
-			await unsubscribeFromUser(data.profileData?.user.id)
-			updateProfileData({ isSubscribed: false, subscribers: data.profileData.subscribers - 1 })
-		} catch (e) {
-			toast.error('Произошла ошибка, повторите попытку позже')
-		}
-	}
+		if (current) {
+			await unsubscribeFromUser(authorId)
 
-	const handleClickSubUnsub = async () => {
-		if (data.profileData?.isSubscribed) {
-			return await handleClickUnsubscribe()
+			updateProfileData((prev) => ({
+				isSubscribed: false,
+				subscribers: (prev.subscribers ?? 0) - 1
+			}))
 		} else {
-			return await handleClickSubscribe()
+			await subscribeToUser(authorId)
+
+			updateProfileData((prev) => ({
+				isSubscribed: true,
+				subscribers: (prev.subscribers ?? 0) + 1
+			}))
 		}
+
+		setPosts((prev) =>
+			prev.map((post) => (post.userCreator.id === authorId ? { ...post, isSubscribed: !current } : post))
+		)
 	}
+
+	const handleClickSubUnsubDebounced = useCallback(debounce(handleClickSubUnsub, 300), [])
 
 	const handleDeleteFromFriends = async () => {
 		try {
 			await deleteFriendById(id)
 			const friendsCount =
-				typeof data.profileData?.friends === 'number' ? data.profileData.friends - 1 : data.profileData?.friends
+				typeof profileData?.friends === 'number' ? profileData.friends - 1 : profileData?.friends
 
-			updateProfileData({ isFriend: FriendStatus.FALSE, friends: friendsCount })
+			updateProfileData(() => ({
+				isFriend: FriendStatus.FALSE,
+				friends: friendsCount
+			}))
 			toast.success('Пользователь удалён из списка друзей')
 		} catch (e) {
 			toast.error('Произошла ошибка, повторите попытку позже')
@@ -143,9 +142,11 @@ const UserProfilePage = () => {
 	const sendFriendRequest = async () => {
 		try {
 			await addAsFriend(id)
-			updateProfileData({ isFriend: FriendStatus.INVITED })
+			updateProfileData(() => ({
+				isFriend: FriendStatus.INVITED
+			}))
 			toast.success('Заявка в друзья отправлена')
-		} catch (e) {
+		} catch {
 			toast.error('Произошла ошибка, повторите попытку позже')
 			// const errors = await e.response.json()
 			// getFieldsErrors(errors)
@@ -155,9 +156,11 @@ const UserProfilePage = () => {
 	const revokeFriendRequest = async () => {
 		try {
 			await revokeFriendInviteByUserId(id)
-			updateProfileData({ isFriend: FriendStatus.FALSE })
+			updateProfileData(() => ({
+				isFriend: FriendStatus.FALSE
+			}))
 			toast.success('Заявка в друзья отозвана')
-		} catch (e) {
+		} catch {
 			toast.error('Произошла ошибка, повторите попытку позже')
 			// const errors = await e.response.json()
 			// getFieldsErrors(errors)
@@ -165,7 +168,7 @@ const UserProfilePage = () => {
 	}
 
 	const handleClickDeleteAddFriend = async () => {
-		switch (data.profileData?.isFriend) {
+		switch (profileData?.isFriend) {
 			case FriendStatus.TRUE:
 				return handleOpenDeleteModal()
 			case FriendStatus.FALSE:
@@ -175,122 +178,249 @@ const UserProfilePage = () => {
 		}
 	}
 
+	const loadPosts = useCallback(
+		async (pageNum: number, isRefresh = false) => {
+			if (loading && !isRefresh) return
+
+			setLoading(true)
+			try {
+				const newPosts = await getPostsByUserId(id, { page: pageNum, limit })
+
+				if (isRefresh) {
+					setPosts(newPosts)
+				} else {
+					setPosts((prev) => [...prev, ...newPosts])
+				}
+
+				if (newPosts.length < limit) {
+					setHasMore(false)
+				} else {
+					setHasMore(true)
+				}
+			} catch (error) {
+				console.error('Error loading posts:', error)
+			} finally {
+				setLoading(false)
+			}
+		},
+		[id, loading]
+	)
+
+	useEffect(() => {
+		const init = async () => {
+			await handleGetAndSetData()
+			await loadPosts(1, true)
+		}
+
+		init()
+	}, [id])
+
+	const onRefresh = useCallback(async () => {
+		setData((s) => ({ ...s, refreshing: true }))
+		setPage(1)
+		setHasMore(true)
+
+		await Promise.all([handleGetAndSetData(), loadPosts(1, true)])
+
+		setData((s) => ({ ...s, refreshing: false }))
+	}, [loadPosts])
+
+	const loadMorePosts = useCallback(() => {
+		if (hasMore && !loading) {
+			const nextPage = page + 1
+			setPage(nextPage)
+			loadPosts(nextPage)
+		}
+	}, [hasMore, loading, page, loadPosts])
+
+	const renderPostItem = useCallback(({ item }: { item: IPost }) => {
+		return (
+			<PostListItem
+				key={item.id}
+				{...item}
+				postId={item.id}
+				authorId={item.userCreator?.id || ''}
+				authorName={item.userCreator?.name || ''}
+				avatar={item.userCreator.avatarFilename}
+				createdAt={item.createdAt}
+				workoutType={item.training.type}
+				title={item.title}
+				description={item.description}
+				images={item.fileNames}
+				metrics={
+					item.training.participants.find((participant) => participant.user.id === item.userCreator.id)
+						?.metrics
+				}
+				subscribeData={{
+					authorId: item.userCreator.id,
+					isSubscribed: item.isSubscribed
+				}}
+				likeData={{
+					isLiked: item.isLiked,
+					likesCount: item.likesCount,
+					postId: item.id
+				}}
+				participants={item.training.participants}
+				onToggleSubscribe={handleClickSubUnsubDebounced}
+				mapComponent={
+					<MapComponent
+						rounded={25}
+						interactiveDisabled
+						initialLocations={{ current: adaptLocations(item.training.participants[0].route.points) }}
+					/>
+				}
+			/>
+		)
+	}, [])
+
 	return (
 		<>
-			<NavBar />
 			<SafeAreaProvider style={{ paddingTop: insets.top, paddingBottom: insets.bottom }}>
-				<Modal
-					isOpen={data.isDeleteModalOpened}
-					handleClose={handleCloseDeleteModal}
-					label="Вы действительно хотите удалить пользователя из друзей?"
-				>
-					<View className="gap-[20px]">
-						<Text className="text-white text-sm" style={{ fontFamily: fontFamily.bold }}>
-							Это действие нельзя отменить
-						</Text>
-						<View className="flex-row gap-[10px]">
-							<Button onPress={handleDeleteFromFriends} variant="white" buttonContainerClassName="flex-1">
-								Да
-							</Button>
-							<Button onPress={handleCloseDeleteModal} variant="white" buttonContainerClassName="flex-1">
-								Нет
-							</Button>
-						</View>
-					</View>
-				</Modal>
-				<ScrollView refreshControl={<RefreshControl refreshing={data.refreshing} onRefresh={onRefresh} />}>
-					<Container className="gap-[20px]">
-						<View className="gap-[20px]">
-							<View className="gap-[16px]">
-								<View className="flex-row justify-between w-full">
-									<AnimatedProfilePicture
-										size={117}
-										bordered
-										imageUrl={`${PATH_TO_IMAGE}${data.profileData?.user?.avatarFilename}`}
-									/>
-									{/*<MoreOptionsButton*/}
-									{/*	icon={<MoreOptionsSvg />}*/}
-									{/*	params={[*/}
-									{/*		{ label: 'Редактировать профиль', action: () => {} },*/}
-									{/*		{ label: 'Политика конфиденциальности', action: () => {} },*/}
-									{/*		{ label: 'Политика обработки персональных данных', action: () => {} },*/}
-									{/*		{ label: 'Выход', action: () => {} }*/}
-									{/*	]}*/}
-									{/*/>*/}
-								</View>
-								<View>
-									{data.profileData?.user?.name && (
-										<Text
-											className="text-[19px] text-white"
-											style={{ fontFamily: fontFamily.bold }}
+				<LegendList
+					ref={legendListRef}
+					data={posts}
+					renderItem={renderPostItem}
+					keyExtractor={(item) => item.id}
+					onEndReached={loadMorePosts}
+					onEndReachedThreshold={0.5}
+					ItemSeparatorComponent={() => <View style={{ height: 16 }} />}
+					ListFooterComponent={
+						loading ? (
+							<View style={{ padding: 20 }}>
+								<ActivityIndicator size="small" color={Colors['green-main']} />
+							</View>
+						) : null
+					}
+					refreshControl={<RefreshControl refreshing={data.refreshing} onRefresh={onRefresh} />}
+					ListHeaderComponent={
+						<>
+							<Modal
+								isOpen={data.isDeleteModalOpened}
+								handleClose={handleCloseDeleteModal}
+								label="Вы действительно хотите удалить пользователя из друзей?"
+							>
+								<View className="gap-[20px]">
+									<Text className="text-white text-sm" style={{ fontFamily: fontFamily.bold }}>
+										Это действие нельзя отменить
+									</Text>
+									<View className="flex-row gap-[10px]">
+										<Button
+											onPress={handleDeleteFromFriends}
+											variant="white"
+											buttonContainerClassName="flex-1"
 										>
-											{data.profileData?.user?.name}
-										</Text>
-									)}
-									{data.profileData?.user?.username && (
-										<Text
-											className="text-base text-gray-ab"
-											style={{ fontFamily: fontFamily.medium }}
+											Да
+										</Button>
+										<Button
+											onPress={handleCloseDeleteModal}
+											variant="white"
+											buttonContainerClassName="flex-1"
 										>
-											@{data.profileData?.user?.username}
-										</Text>
-									)}
+											Нет
+										</Button>
+									</View>
 								</View>
-							</View>
-							<View className="flex-row justify-between gap-[20px]">
-								<SocialStats
-									label="Подписчики"
-									content={data.profileData?.subscribers}
-									// hrefTo="/subscribers/my-subscribers"
-								/>
-								<SocialStats
-									label="Друзья"
-									content={data.profileData?.friends}
-									// hrefTo="/friends/my-friends"
-								/>
-								<SocialStats
-									label="Подписки"
-									content={data.profileData?.subscriptions}
-									// hrefTo="/subscribers/my-subscriptions"
-								/>
-							</View>
-							<View className="flex-row gap-[10px]">
-								<Button
-									variant={data.profileData?.isSubscribed ? 'black' : 'white'}
-									buttonContainerClassName="flex-1"
-									onPress={handleClickSubUnsub}
+							</Modal>
+							<View className="gap-[20px] mb-[16px]">
+								<View className="gap-[20px]">
+									<View className="gap-[20px]">
+										<View className="gap-[16px]">
+											<View className="flex-row justify-between w-full">
+												<AnimatedProfilePicture
+													size={117}
+													bordered
+													imageUrl={`${PATH_TO_IMAGE}${profileData?.user?.avatarFilename}`}
+												/>
+												{/*<MoreOptionsButton*/}
+												{/*	icon={<MoreOptionsSvg />}*/}
+												{/*	params={[*/}
+												{/*		{ label: 'Редактировать профиль', action: () => {} },*/}
+												{/*		{ label: 'Политика конфиденциальности', action: () => {} },*/}
+												{/*		{ label: 'Политика обработки персональных данных', action: () => {} },*/}
+												{/*		{ label: 'Выход', action: () => {} }*/}
+												{/*	]}*/}
+												{/*/>*/}
+											</View>
+											<View>
+												{profileData?.user?.name && (
+													<Text
+														className="text-[19px] text-white"
+														style={{ fontFamily: fontFamily.bold }}
+													>
+														{profileData?.user?.name}
+													</Text>
+												)}
+												{profileData?.user?.username && (
+													<Text
+														className="text-base text-gray-ab"
+														style={{ fontFamily: fontFamily.medium }}
+													>
+														@{profileData?.user?.username}
+													</Text>
+												)}
+											</View>
+										</View>
+										<View className="flex-row justify-between gap-[20px]">
+											<SocialStats
+												label="Подписчики"
+												content={profileData?.subscribers}
+												// hrefTo="/subscribers/my-subscribers"
+											/>
+											<SocialStats
+												label="Друзья"
+												content={profileData?.friends}
+												// hrefTo="/friends/my-friends"
+											/>
+											<SocialStats
+												label="Подписки"
+												content={profileData?.subscriptions}
+												// hrefTo="/subscribers/my-subscriptions"
+											/>
+										</View>
+										<View className="flex-row gap-[10px]">
+											<Button
+												variant={profileData?.isSubscribed ? 'black' : 'white'}
+												buttonContainerClassName="flex-1"
+												onPress={() =>
+													handleClickSubUnsubDebounced(
+														profileData?.user.id,
+														profileData?.isSubscribed
+													)
+												}
+											>
+												{profileData?.isSubscribed ? 'Отписаться' : 'Подписаться'}
+											</Button>
+											<Button
+												variant={
+													profileData?.isFriend === FriendStatus.TRUE ||
+													profileData?.isFriend === FriendStatus.INVITED
+														? 'black'
+														: 'white'
+												}
+												buttonContainerClassName="flex-1"
+												onPress={handleClickDeleteAddFriend}
+											>
+												{profileData && friendStatusLabel[profileData?.isFriend]}
+											</Button>
+										</View>
+										<RedirectAchievementsInfo
+											achievements={profileData?.achievements}
+											userId={id}
+										/>
+										<ActivityInfo label="Активности" activities={profileData?.activities || []} />
+									</View>
+								</View>
+								<Text
+									className="text-base text-white border-b-[1px] border-b-black-44 py-[20px]"
+									style={{ fontFamily: fontFamily.bold }}
 								>
-									{data.profileData?.isSubscribed ? 'Отписаться' : 'Подписаться'}
-								</Button>
-								<Button
-									variant={
-										data.profileData?.isFriend === FriendStatus.TRUE ||
-										data.profileData?.isFriend === FriendStatus.INVITED
-											? 'black'
-											: 'white'
-									}
-									buttonContainerClassName="flex-1"
-									onPress={handleClickDeleteAddFriend}
-								>
-									{data.profileData && friendStatusLabel[data.profileData?.isFriend]}
-								</Button>
+									Лента
+								</Text>
 							</View>
-							<RedirectAchievementsInfo achievements={data.profileData?.achievements} userId={id} />
-							<ActivityInfo label="Активности" activities={data.profileData?.activities || []} />
-						</View>
-					</Container>
-					<Container className="gap-[15px]" style={{ paddingBottom: 100 }}>
-						<Text
-							className="text-base text-white border-b-[1px] border-b-black-44 py-[20px]"
-							style={{ fontFamily: fontFamily.bold }}
-						>
-							Лента
-						</Text>
-						{posts.map((post) => (
-							<PostListItem key={post.id} {...post} isMyPost />
-						))}
-					</Container>
-				</ScrollView>
+						</>
+					}
+					contentContainerStyle={{ paddingBottom: 100, paddingHorizontal: 16 }}
+				/>
 			</SafeAreaProvider>
 		</>
 	)

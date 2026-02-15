@@ -84,7 +84,7 @@ const PostListItemBottom = (props: IProps) => {
 											shadowRadius: 1.5,
 											elevation: 2
 										}}
-										className="bg-white rounded-full shadow-sm"
+										className="rounded-full shadow-sm"
 									>
 										<UserAvatar
 											avatar={

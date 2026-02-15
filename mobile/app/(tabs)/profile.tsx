@@ -1,6 +1,6 @@
 import React, { useCallback, useEffect, useRef, useState } from 'react'
 import { SafeAreaProvider, useSafeAreaInsets } from 'react-native-safe-area-context'
-import { View, Text, RefreshControl, ActivityIndicator, ScrollView, Dimensions } from 'react-native'
+import { View, Text, RefreshControl, ActivityIndicator } from 'react-native'
 import SettingsSvg from '@/components/svg/SettingsSvg'
 import MoreOptionsButton from '@/components/ui/MoreOptionsButton/MoreOptionsButton'
 import { fontFamily } from '@/constants/Fonts'
@@ -20,9 +20,8 @@ import { useInternetConnection } from '@/hooks/useInternetConnection'
 import { LegendList, LegendListRef } from '@legendapp/list'
 import { getPostsMy, IPost } from '@/api/posts'
 import { Colors } from '@/constants/Colors'
-import MapComponent, { MapComponentHandle } from '@/components/map/MapComponent'
+import MapComponent from '@/components/map/MapComponent'
 import { adaptLocations } from '@/helpers/adaptPointsToIWorkoutLocationStorageItem'
-import { MapComponentSegmentsHandle } from '@/components/map/MapComponentSegments'
 
 /**
  *
@@ -59,7 +58,7 @@ const Profile = () => {
 	const [page, setPage] = useState(1)
 	const [loading, setLoading] = useState(false)
 	const [hasMore, setHasMore] = useState(true)
-	const limit = 1 // @TODO 10 Количество постов на странице
+	const limit = 5
 	const legendListRef = useRef<LegendListRef>(null)
 	const params = useLocalSearchParams()
 
@@ -169,6 +168,7 @@ const Profile = () => {
 					{...item}
 					isMyPost
 					postId={item.id}
+					authorId={item.userCreator?.id || ''}
 					authorName={item.userCreator?.name || ''}
 					avatar={item.userCreator.avatarFilename}
 					createdAt={item.createdAt}

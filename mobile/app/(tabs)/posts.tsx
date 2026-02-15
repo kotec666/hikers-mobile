@@ -26,11 +26,11 @@ import PostSearchResult from '@/components/ui/Post/PostSearchResult'
 import { LegendList, LegendListRef } from '@legendapp/list'
 import { getPostsFeed, IPost } from '@/api/posts'
 import { Colors } from '@/constants/Colors'
-import { useAuthStore } from '@/store/authStore'
 import { useLocalSearchParams } from 'expo-router'
 import { subscribeToUser, unsubscribeFromUser } from '@/api/subscribers'
 import MapComponent from '@/components/map/MapComponent'
 import { adaptLocations } from '@/helpers/adaptPointsToIWorkoutLocationStorageItem'
+import { useToast } from '@/hooks/useToast'
 
 enum SearchMode {
 	PEOPLE = 'people',
@@ -39,7 +39,7 @@ enum SearchMode {
 
 const PostsPage = () => {
 	const insets = useSafeAreaInsets()
-
+	const toast = useToast()
 	const [state, setState] = useState<{
 		isSearchActive: boolean
 		searchMode: SearchMode
@@ -54,7 +54,7 @@ const PostsPage = () => {
 	const [loading, setLoading] = useState(false)
 	const [refreshing, setRefreshing] = useState(false)
 	const [hasMore, setHasMore] = useState(true)
-	const limit = 1 // @TODO 10 Количество постов на странице
+	const limit = 5
 	const legendListRef = useRef<LegendListRef>(null)
 	const params = useLocalSearchParams()
 
@@ -123,9 +123,17 @@ const PostsPage = () => {
 	const handleToggleSubscribe = async (authorId: string, currentValue?: boolean) => {
 		try {
 			if (currentValue) {
-				await unsubscribeFromUser(authorId)
+				try {
+					await unsubscribeFromUser(authorId)
+				} catch (e) {
+					toast.error('Произошла ошибка, повторите попытку позже')
+				}
 			} else {
-				await subscribeToUser(authorId)
+				try {
+					await subscribeToUser(authorId)
+				} catch (e) {
+					toast.error('Произошла ошибка, повторите попытку позже')
+				}
 			}
 
 			setPosts((prev) =>
@@ -148,6 +156,7 @@ const PostsPage = () => {
 				key={item.id}
 				{...item}
 				postId={item.id}
+				authorId={item.userCreator?.id || ''}
 				authorName={item.userCreator?.name || ''}
 				avatar={item.userCreator.avatarFilename}
 				createdAt={item.createdAt}

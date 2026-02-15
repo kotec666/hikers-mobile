@@ -11,6 +11,7 @@ import { IParticipant } from '@/api/posts'
 interface IProps {
 	isMyPost?: boolean
 	postId?: string
+	authorId?: string
 	authorName?: string
 	createdAt?: string
 	avatar?: string | null
@@ -43,6 +44,7 @@ const PostListItem = (props: IProps) => {
 				isMyPost={props.isMyPost}
 				subscribeData={props.subscribeData}
 				avatar={props.avatar}
+				authorId={props.authorId}
 				authorName={props.authorName}
 				createdAt={props.createdAt}
 				workoutType={props.workoutType}
