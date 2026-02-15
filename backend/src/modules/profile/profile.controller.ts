@@ -2,7 +2,7 @@
 import { FileInterceptor } from '@nestjs/platform-express';
 import { ProfileService } from './profile.service';
 import { UserInterceptor } from '@interceptors/user.interceptor';
-import { User, UserData } from '../../common/decorators/user.decorator';
+import { User, UserData } from '@decorators/user.decorator';
 import { ProfileDto } from './profile.dto';
 
 @Controller('profile')

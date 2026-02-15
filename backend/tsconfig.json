@@ -14,6 +14,7 @@
 			"@validation/*": ["./src/common/validation/*"],
 			"@transformers/*": ["./src/common/transformers/*"],
 			"@interceptors/*": ["./src/common/interceptors/*"],
+			"@decorators/*": ["./src/common/decorators/*"],
 			"@shared/*": ["./src/shared/*"],
 			"@helpers": ["./src/common/helpers"]
 		},

@@ -1,6 +1,6 @@
 ﻿import { Controller, Delete, Get, Param, Post, UseInterceptors } from '@nestjs/common';
 import { SubscribersService } from './subscribers.service';
-import { User, UserData } from '../../common/decorators/user.decorator';
+import { User, UserData } from '@decorators/user.decorator';
 import { IsUUID } from '@validation/parameter-decorators';
 import { UserInterceptor } from '@interceptors/user.interceptor';
 import { SubscriberDto, SubscriptionDto } from './subscribers.dto';

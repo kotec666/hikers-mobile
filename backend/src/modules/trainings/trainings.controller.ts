@@ -1,7 +1,7 @@
 ﻿import { Body, Controller, Delete, Get, Param, Patch, Post, Query, UseInterceptors } from '@nestjs/common';
 import { TrainingsService } from './trainings.service';
 import { TrainingDto, TrainingParticipantDto } from './trainings.dto';
-import { User } from 'src/common/decorators/user.decorator';
+import { User } from '@decorators/user.decorator';
 import { TokenDto } from '../token/token.dto';
 import { UserInterceptor } from 'src/common/interceptors/user.interceptor';
 import { CommonDto } from 'src/common/dto/common.dto';

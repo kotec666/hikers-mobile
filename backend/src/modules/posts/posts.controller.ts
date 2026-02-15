@@ -10,7 +10,7 @@
 	UploadedFiles,
 	UseInterceptors,
 } from '@nestjs/common';
-import { User, UserData } from '../../common/decorators/user.decorator';
+import { User, UserData } from '@decorators/user.decorator';
 import { FilesInterceptor } from '@nestjs/platform-express';
 import { PostsService } from './posts.service';
 import { IsUUID } from '@validation/parameter-decorators';

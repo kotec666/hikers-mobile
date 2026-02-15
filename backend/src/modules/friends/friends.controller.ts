@@ -1,6 +1,6 @@
 ﻿import { Controller, Delete, Get, Param, Patch, Post, UseInterceptors } from '@nestjs/common';
 import { FriendsService } from './friends.service';
-import { User, UserData } from '../../common/decorators/user.decorator';
+import { User, UserData } from '@decorators/user.decorator';
 import { IsUUID } from '@validation/parameter-decorators';
 import { UserInterceptor } from '@interceptors/user.interceptor';
 import { CommonDto } from '../../common/dto/common.dto';
