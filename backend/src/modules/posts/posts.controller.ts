@@ -19,6 +19,7 @@ import { UserInterceptor } from '@interceptors/user.interceptor';
 import { TrainingParticipantDto } from '../trainings/trainings.dto';
 import { CommonDto } from '../../common/dto/common.dto';
 import { PostDto } from './posts.dto';
+import { TokenDto } from '../token/token.dto';
 
 @Controller('posts')
 @UseInterceptors(UserInterceptor)
@@ -158,10 +159,11 @@ export class PostsController {
 	 */
 	@Get(':id/participants')
 	public async getParticipants(
+		@User() user: TokenDto.Payload,
 		@IsUUID('id') @Param('id') id: string,
 		@NotNegative('page') @Query('page') page: number,
 		@NotNegative('limit') @Query('limit') limit: number,
-	): Promise<TrainingParticipantDto.Entity[]> {
-		return await this.service.getParticipants(id, page, limit);
+	): Promise<Required<TrainingParticipantDto.Entity>[]> {
+		return await this.service.getParticipants(user.id, id, page, limit);
 	}
 }

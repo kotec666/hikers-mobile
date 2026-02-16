@@ -93,6 +93,7 @@ export namespace TrainingParticipantDto {
 		id: string;
 		user: UserDto.Entity;
 		colorHex: string | null;
+		isSubscribed?: boolean;
 	};
 
 	export type ExtendedEntity = Entity & {
