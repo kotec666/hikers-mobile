@@ -1,4 +1,4 @@
-import React from 'react'
+import React, { useEffect } from 'react'
 import { Pressable, Text, View } from 'react-native'
 import { UserAvatar } from '@/components/ui/UserAvatar'
 import { fontFamily } from '@/constants/Fonts'
@@ -10,19 +10,22 @@ import { formatRelativeDate } from '@/helpers/formatRelativeDate'
 import { WorkoutTypesData } from '@/constants/WorkoutTypes'
 import { TrainingType } from '@/shared/enums'
 import { useRouter } from 'expo-router'
+import { subscribeToUser, unsubscribeFromUser } from '@/api/subscribers'
+import { useToast } from '@/hooks/useToast'
+import { useOptimisticToggle } from '@/hooks/useOptimisticToggle'
 
 interface IProps {
 	isMyPost?: boolean
 	authorId?: string
-	authorName?: string
+	authorName?: string | null
 	avatar?: string | null
 	createdAt?: string | null
 	workoutType?: TrainingType
 	subscribeData?: {
-		authorId: string
+		authorId?: string
 		isSubscribed?: boolean
 	}
-	onToggleSubscribe?: (authorId: string, current?: boolean) => void
+	onToggleSubscribeCallback?: (isSubscribed: boolean, authorId?: string) => void
 }
 
 const PostListItemHeader = ({
@@ -33,15 +36,21 @@ const PostListItemHeader = ({
 	avatar,
 	createdAt,
 	workoutType,
-	onToggleSubscribe
+	onToggleSubscribeCallback
 }: IProps) => {
-	const isSubscribed = subscribeData?.isSubscribed
 	const router = useRouter()
-	const handleClickSubUnsub = () => {
-		if (!subscribeData?.authorId) return
-
-		onToggleSubscribe?.(subscribeData.authorId, subscribeData.isSubscribed)
-	}
+	const toast = useToast()
+	const {
+		value: isSubscribed,
+		toggle: toggleSubscribe,
+		isLoading
+	} = useOptimisticToggle({
+		initialValue: subscribeData?.isSubscribed,
+		onEnable: () => subscribeToUser(subscribeData!.authorId!),
+		onDisable: () => unsubscribeFromUser(subscribeData!.authorId!),
+		onError: () => toast.error('Ошибка, попробуйте позже'),
+		onSuccess: (val) => onToggleSubscribeCallback?.(val, subscribeData!.authorId)
+	})
 
 	const renderIcon = (workoutType?: TrainingType) => {
 		if (!workoutType) return
@@ -85,7 +94,8 @@ const PostListItemHeader = ({
 				{!isMyPost && (
 					<View>
 						<Pressable
-							onPress={handleClickSubUnsub}
+							onPress={toggleSubscribe}
+							disabled={isLoading}
 							className={cn('w-[50px] h-[50px] rounded-full items-center justify-center', {
 								'bg-white': !isSubscribed,
 								'bg-green-main': isSubscribed

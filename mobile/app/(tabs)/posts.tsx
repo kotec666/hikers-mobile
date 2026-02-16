@@ -120,28 +120,10 @@ const PostsPage = () => {
 		loadPosts(1, true)
 	}, [])
 
-	const handleToggleSubscribe = async (authorId: string, currentValue?: boolean) => {
-		try {
-			if (currentValue) {
-				try {
-					await unsubscribeFromUser(authorId)
-				} catch (e) {
-					toast.error('Произошла ошибка, повторите попытку позже')
-				}
-			} else {
-				try {
-					await subscribeToUser(authorId)
-				} catch (e) {
-					toast.error('Произошла ошибка, повторите попытку позже')
-				}
-			}
-
-			setPosts((prev) =>
-				prev.map((post) => (post.userCreator.id === authorId ? { ...post, isSubscribed: !currentValue } : post))
-			)
-		} catch (e) {
-			console.error(e)
-		}
+	const toggleSubscribeCallback = (isSubscribed: boolean, authorId?: string) => {
+		setPosts((prev) =>
+			prev.map((post) => (post.userCreator.id === authorId ? { ...post, isSubscribed: isSubscribed } : post))
+		)
 	}
 
 	// Функция рендеринга элемента поста
@@ -175,7 +157,7 @@ const PostsPage = () => {
 					postId: item.id,
 					likesCount: item.likesCount
 				}}
-				onToggleSubscribe={handleToggleSubscribe}
+				onToggleSubscribeCallback={toggleSubscribeCallback}
 				mapComponent={
 					<MapComponent
 						rounded={25}

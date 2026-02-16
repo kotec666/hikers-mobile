@@ -16,7 +16,6 @@ import { getFieldsErrors } from '@/helpers/getFieldsErrors'
 import { PATH_TO_IMAGE } from '@/constants/PATH_TO_FILES'
 import { useEditActivitiesStore } from '@/store/editActivitiesStore'
 import { AnimatedProfilePicture } from '@/components/ui/Profile/AnimatedProfilePicture'
-import { useInternetConnection } from '@/hooks/useInternetConnection'
 import { LegendList, LegendListRef } from '@legendapp/list'
 import { getPostsMy, IPost } from '@/api/posts'
 import { Colors } from '@/constants/Colors'
@@ -43,7 +42,6 @@ const Profile = () => {
 	const router = useRouter()
 	const { logout, user, setUser } = useAuthStore()
 	const { newActivitiesOrder } = useEditActivitiesStore()
-	const { isConnected: isInternetConnected } = useInternetConnection()
 
 	const [data, setData] = useState<{
 		profileData?: IProfile
@@ -266,7 +264,7 @@ const Profile = () => {
 												className="text-[19px] text-white"
 												style={{ fontFamily: fontFamily.bold }}
 											>
-												{user?.name} [{isInternetConnected ? 'есть интернет' : 'нет интернета'}]
+												{user?.name}
 											</Text>
 										)}
 										{user?.username && (

@@ -16,6 +16,10 @@ export interface IParticipant {
 	metrics: ITrainingMetrics
 }
 
+export type ITrainingMember = Omit<IParticipant, 'route' | 'metrics'> & {
+	isSubscribed: boolean
+}
+
 export interface IPost {
 	id: string
 	isSubscribed: boolean
@@ -54,8 +58,16 @@ export const getPostsMy = async (data: { page: number; limit: number }): Promise
 	return (await fetcher.get(`posts/my?${toQs(data)}`)).json()
 }
 
+// Получить участников тренировки по id поста с пагинацией
+export const getTrainingMembersByPostId = async (
+	postId: string,
+	data: { page: number; limit: number }
+): Promise<ITrainingMember[]> => {
+	return (await fetcher.get(`posts/${postId}/participants?${toQs(data)}`)).json()
+}
+
 // Получение подробного поста по его id
-export const getPostById = async (postId: number): Promise<IPost[]> => {
+export const getPostById = async (postId: string): Promise<IPost> => {
 	return (await fetcher.get(`posts/${postId}`)).json()
 }
 
@@ -86,4 +98,28 @@ export const createPost = async (data: BodyInit): Promise<IPost> => {
 			body: data
 		})
 	).json()
+}
+
+// Редактирование поста
+/**
+ *
+ * {
+ *    title: string [заголовок поста]
+ *    description?: [описание поста]
+ *    files?: [массив изображений]
+ *    deletedFilenames?: [массив строк]
+ * }
+ *
+ */
+export const editPostById = async (postId: string, data: BodyInit): Promise<ISuccess> => {
+	return (
+		await fetcher.patch(`posts/${postId}`, {
+			body: data
+		})
+	).json()
+}
+
+// Удаление своего поста
+export const deletePostById = async (postId: string): Promise<ISuccess> => {
+	return (await fetcher.delete(`posts/${postId}`)).json()
 }

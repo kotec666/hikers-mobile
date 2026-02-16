@@ -29,7 +29,7 @@ interface IProps {
 		likesCount: number
 	}
 	participants?: IParticipant[]
-	onToggleSubscribe?: (authorId: string, current?: boolean) => void
+	onToggleSubscribeCallback?: (isSubscribed: boolean, authorId?: string) => void
 	mapComponent?: React.ReactNode
 	images?: string[]
 }
@@ -48,7 +48,7 @@ const PostListItem = (props: IProps) => {
 				authorName={props.authorName}
 				createdAt={props.createdAt}
 				workoutType={props.workoutType}
-				onToggleSubscribe={props.onToggleSubscribe}
+				onToggleSubscribeCallback={props.onToggleSubscribeCallback}
 			/>
 			<PostBodyWrapper
 				mode={PostType.FEED_LIST_ITEM}
@@ -60,6 +60,7 @@ const PostListItem = (props: IProps) => {
 				mapComponent={props.mapComponent}
 			/>
 			<PostListItemBottom
+				postId={props.postId}
 				authorName={props.authorName}
 				likeData={props.likeData}
 				participants={props.participants}

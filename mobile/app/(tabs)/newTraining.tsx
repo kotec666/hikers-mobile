@@ -44,6 +44,7 @@ import { formatDistance } from '@/helpers/distance'
 import { WorkoutTypesData } from '@/constants/WorkoutTypes'
 import { TrainingType } from '@shared/enums'
 import { useAuthStore } from '@/store/authStore'
+import { VIEWWORKOUT_MODE } from '@/app/training/viewWorkout'
 // Debugging
 TaskManager.getRegisteredTasksAsync().then((tasks) => {
 	console.log(tasks)
@@ -480,7 +481,7 @@ export default function NewTraining() {
 				calculateMetricsWhenFinished(meta)
 				// Полный сброс состояния карты и переменных
 				resetWorkoutState()
-				router.push('/training/viewWorkout') // - offline - просмотр тренировки до определенного момента, без сохранения
+				router.push(`/training/viewWorkout?mode=${VIEWWORKOUT_MODE.VIEW}`) // - offline - просмотр тренировки до определенного момента, без сохранения
 			}
 
 			// Догрузка несохраненных точек

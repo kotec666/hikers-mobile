@@ -1,7 +1,6 @@
 import { useFonts } from 'expo-font'
 import { Stack } from 'expo-router'
 import { Colors } from '@/constants/Colors'
-import './../global.css'
 import { fontFamily } from '@/constants/Fonts'
 import { YamapInstance } from 'react-native-yamap-plus'
 import { useAuthStore } from '@/store/authStore'
@@ -14,6 +13,7 @@ import { getAuthData } from '@/services/tokenService'
 import { GestureHandlerRootView } from 'react-native-gesture-handler'
 import PortalProvider from '@/components/Portal/PortalProvider'
 import { getItem } from '@/store/storage'
+import './../global.css'
 
 YamapInstance.setLocale('ru_RU')
 YamapInstance.init(process.env.EXPO_PUBLIC_YAMAP_KEY || '')
@@ -82,7 +82,7 @@ export default function RootLayout() {
 
 	const authenticatedRoutes = [
 		'find-people',
-		'news-feed/members', // для /news-feed/members
+		// 'news-feed/members', // для /news-feed/members
 		'workout-history',
 		'friends/search',
 		'friends/my-friends',

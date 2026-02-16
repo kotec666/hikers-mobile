@@ -1,5 +1,5 @@
 import React from 'react'
-import { TouchableOpacity, View } from 'react-native'
+import { Dimensions, TouchableOpacity, View } from 'react-native'
 import PostListItemSlider from '@/components/ui/Post/PostListItemSlider'
 import { useRouter } from 'expo-router'
 import PostListItemBody from '@/components/ui/Post/PostListItemBody'
@@ -38,7 +38,10 @@ const PostBodyWrapper = (props: IProps) => {
 					</View>
 				</>
 			) : (
-				<PostListItemBody />
+				<>
+					<PostListItemBody title={props.title} description={props.description} metrics={props.metrics} />
+					{props.mapComponent}
+				</>
 			)}
 		</>
 	)

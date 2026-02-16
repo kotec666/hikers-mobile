@@ -15,6 +15,7 @@ import UserLocationMarker, {
 } from '@/components/map/markers/UserLocationMarker/UserLocationMarker'
 
 interface IProps {
+	needSaveCenter?: boolean
 	interactiveDisabled?: boolean
 	maxMapHeight?: number
 	maxContainerHeight?: number
@@ -288,7 +289,7 @@ const MapComponent = forwardRef<MapComponentHandle, IProps>((props, ref) => {
 	return (
 		<View
 			pointerEvents={props.interactiveDisabled ? 'none' : 'auto'}
-			className="flex-1"
+			className="flex-1 border-[1px] border-white/20"
 			style={{
 				overflow: 'hidden',
 				borderRadius: props.rounded || 0,
@@ -311,6 +312,7 @@ const MapComponent = forwardRef<MapComponentHandle, IProps>((props, ref) => {
 					}
 				}}
 				onCameraPositionChangeEnd={() => {
+					if (!props.needSaveCenter) return
 					mapRef.current?.getCameraPosition((pos) => {
 						updateMapSettingsDebounced({
 							lat: pos.point.lat,

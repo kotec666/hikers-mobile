@@ -1,4 +1,4 @@
-import React, { useState } from 'react'
+import React, { useCallback, useEffect, useState } from 'react'
 import { View, ScrollView, Image, Dimensions } from 'react-native'
 import { SafeAreaProvider, useSafeAreaInsets } from 'react-native-safe-area-context'
 import { Container } from '@/components/ui/Container'
@@ -12,57 +12,135 @@ import MapRoutesSwitchers from '@/components/ui/Post/MapRoutesSwitchers'
 import DeletePostModal from '@/components/ui/Post/DeletePostModal'
 import MoreOptionsSvg from '@/components/svg/MoreOptionsSvg'
 import MoreOptionsButton from '@/components/ui/MoreOptionsButton/MoreOptionsButton'
+import { useLocalSearchParams, useRouter } from 'expo-router'
+import { deletePostById, getPostById, IPost } from '@/api/posts'
+import { useAuthStore } from '@/store/authStore'
+import MapComponent from '@/components/map/MapComponent'
+import { adaptLocations } from '@/helpers/adaptPointsToIWorkoutLocationStorageItem'
+import { useToast } from '@/hooks/useToast'
+import { VIEWWORKOUT_MODE } from '@/app/training/viewWorkout'
 
 const { height } = Dimensions.get('screen')
+const SLIDE_ASPECT_RATIO = height / 3.6
 
 const Post = () => {
 	const insets = useSafeAreaInsets()
-	const [state, setState] = useState({
-		isDeleteModalOpen: false
-	})
+	const toast = useToast()
+	const router = useRouter()
+	const { id } = useLocalSearchParams<{ id: string }>()
+	const { user } = useAuthStore()
 
-	const PostSliderItems = [
-		{ id: 1, image: require('@/assets/images/carousel/carousel-3.webp') },
-		{ id: 2, image: require('@/assets/images/carousel/carousel-3.webp') },
-		{ id: 3, image: require('@/assets/images/carousel/carousel-3.webp') }
-	]
+	const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false)
+	const [post, setPost] = useState<IPost | null>(null)
 
-	const SLIDE_ASPECT_RATIO = height / 3.6
+	useEffect(() => {
+		;(async () => {
+			try {
+				const postData = await getPostById(id)
+				setPost(postData)
+			} catch (e) {
+				toast.info('Ошибка при загрузке поста')
+				router.back()
+			}
+		})()
+	}, [])
 
-	const handleClickDelete = () => {
-		return setState((s) => ({ ...s, isDeleteModalOpen: !s.isDeleteModalOpen }))
+	const handleOpenDeleteModal = () => {
+		return setIsDeleteModalOpen((prevState) => !prevState)
 	}
 
+	const handleClickDeletePost = async () => {
+		try {
+			const result = await deletePostById(id)
+			if (result.success) {
+				toast.success('Пост успешно удален')
+				router.back()
+			}
+		} catch {
+			toast.error('Произошла ошибка при удалении поста, попробуйте позже')
+		}
+	}
+
+	const creatorMetrics = post?.training.participants.find(
+		(participant) => participant.user.id === post?.userCreator.id
+	)?.metrics
+
 	return (
-		<SafeAreaProvider style={{ paddingTop: insets.top }}>
+		<SafeAreaProvider style={{ paddingTop: insets.top, paddingBottom: insets.bottom }}>
 			<View style={{ flex: 1, alignItems: 'center' }}>
-				<DeletePostModal open={state.isDeleteModalOpen} handleClose={handleClickDelete} />
+				<DeletePostModal
+					open={isDeleteModalOpen}
+					handleClickDeletePost={handleClickDeletePost}
+					handleClose={handleOpenDeleteModal}
+				/>
 				<Container className="gap-[20px]">
 					<View className="flex-row justify-between items-center">
 						<HeaderBack>Просмотр поста</HeaderBack>
-						<MoreOptionsButton
-							icon={<MoreOptionsSvg />}
-							params={[
-								{ label: 'Редактировать профиль', action: () => {} },
-								{ label: 'Политика конфиденциальности', action: () => {} },
-								{ label: 'Политика обработки персональных данных', action: () => {} },
-								{ label: 'Выход', action: () => {} }
-							]}
-						/>
+						{post?.userCreator?.id === user?.id && (
+							<MoreOptionsButton
+								icon={<MoreOptionsSvg />}
+								params={[
+									{
+										label: 'Редактировать',
+										action: () => {
+											router.push(
+												`/training/viewWorkout?mode=${VIEWWORKOUT_MODE.EDIT}&editPostId=${post?.id}`
+											)
+										}
+									},
+									{ label: 'Удалить', action: handleOpenDeleteModal }
+								]}
+							/>
+						)}
 					</View>
 					<ScrollView style={{ flex: 1, width: '100%' }}>
 						<View className="gap-[15px]">
-							<PostListItemHeader isSubscribed />
-							<PostBodyWrapper mode={PostType.POST_ITEM} />
-							<Image
-								style={{ height: SLIDE_ASPECT_RATIO }}
-								source={require('@/assets/images/carousel/carousel-2.webp')}
-								className="rounded-[25px] border-[1px] border-white/20 w-full"
-								resizeMode="cover"
+							<PostListItemHeader
+								isMyPost={post?.userCreator.id === user?.id}
+								subscribeData={{
+									authorId: post?.userCreator.id,
+									isSubscribed: post?.isSubscribed
+								}}
+								avatar={post?.userCreator.avatarFilename}
+								authorId={post?.userCreator.id}
+								authorName={post?.userCreator?.name}
+								createdAt={post?.createdAt}
+								workoutType={post?.training?.type}
+							/>
+							<PostBodyWrapper
+								mode={PostType.POST_ITEM}
+								title={post?.title}
+								description={post?.description}
+								metrics={creatorMetrics}
+								mapComponent={
+									<MapComponent
+										minMapHeight={SLIDE_ASPECT_RATIO}
+										maxMapHeight={SLIDE_ASPECT_RATIO}
+										rounded={25}
+										interactiveDisabled={false}
+										initialLocations={{
+											current: adaptLocations(
+												post?.training?.participants?.[0]?.route?.points || []
+											)
+										}}
+									/>
+								}
 							/>
 							<MapRoutesSwitchers />
-							<PostListItemSlider data={PostSliderItems} />
-							<PostListItemBottom />
+							<PostListItemSlider images={post?.fileNames} />
+							{post?.isLiked !== undefined &&
+								post?.likesCount !== undefined &&
+								post?.id !== undefined && (
+									<PostListItemBottom
+										postId={post.id}
+										likeData={{
+											isLiked: post.isLiked,
+											likesCount: post.likesCount,
+											postId: post.id
+										}}
+										participants={post?.training.participants}
+									/>
+								)}
 						</View>
 					</ScrollView>
 				</Container>

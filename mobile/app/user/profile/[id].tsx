@@ -22,7 +22,7 @@ import { getPostsByUserId, IPost } from '@/api/posts'
 import { Colors } from '@/constants/Colors'
 import MapComponent from '@/components/map/MapComponent'
 import { adaptLocations } from '@/helpers/adaptPointsToIWorkoutLocationStorageItem'
-import { debounce } from '@/helpers/debounce'
+import { useOptimisticToggle } from '@/hooks/useOptimisticToggle'
 
 /**
  *
@@ -41,6 +41,35 @@ const UserProfilePage = () => {
 	}>({
 		refreshing: false,
 		isDeleteModalOpened: false
+	})
+
+	const {
+		value: isSubscribed,
+		toggle: toggleSubscribe,
+		isLoading: isSubscribeLoading
+	} = useOptimisticToggle({
+		initialValue: profileData?.isSubscribed ?? false,
+		onEnable: async () => {
+			if (!profileData?.user?.id) throw new Error('Пользователь не выбран')
+			await subscribeToUser(profileData.user.id)
+		},
+		onDisable: async () => {
+			if (!profileData?.user?.id) throw new Error('Пользователь не выбран')
+			await unsubscribeFromUser(profileData.user.id)
+		},
+		onError: () => toast.error('Ошибка при подписке/отписке'),
+		onSuccess: (val) => {
+			// синхронизируем profileData и ленту
+			updateProfileData((prev) => ({
+				isSubscribed: val,
+				subscribers: (prev.subscribers ?? 0) + (val ? 1 : -1)
+			}))
+			setPosts((prev) =>
+				prev.map((post) =>
+					post.userCreator.id === profileData?.user?.id ? { ...post, isSubscribed: val } : post
+				)
+			)
+		}
 	})
 
 	const [posts, setPosts] = useState<IPost[]>([])
@@ -85,31 +114,23 @@ const UserProfilePage = () => {
 		})
 	}
 
-	const handleClickSubUnsub = async (authorId?: string, current?: boolean) => {
-		if (!authorId) return toast.info('Пользователь не выбран')
-
-		if (current) {
-			await unsubscribeFromUser(authorId)
-
-			updateProfileData((prev) => ({
-				isSubscribed: false,
-				subscribers: (prev.subscribers ?? 0) - 1
-			}))
-		} else {
-			await subscribeToUser(authorId)
-
+	const subUnsubCallback = (isSubscribed: boolean, authorId?: string) => {
+		if (isSubscribed) {
 			updateProfileData((prev) => ({
 				isSubscribed: true,
 				subscribers: (prev.subscribers ?? 0) + 1
 			}))
+		} else {
+			updateProfileData((prev) => ({
+				isSubscribed: false,
+				subscribers: (prev.subscribers ?? 0) - 1
+			}))
 		}
 
 		setPosts((prev) =>
-			prev.map((post) => (post.userCreator.id === authorId ? { ...post, isSubscribed: !current } : post))
+			prev.map((post) => (post.userCreator.id === authorId ? { ...post, isSubscribed: isSubscribed } : post))
 		)
 	}
-
-	const handleClickSubUnsubDebounced = useCallback(debounce(handleClickSubUnsub, 300), [])
 
 	const handleDeleteFromFriends = async () => {
 		try {
@@ -261,7 +282,7 @@ const UserProfilePage = () => {
 					postId: item.id
 				}}
 				participants={item.training.participants}
-				onToggleSubscribe={handleClickSubUnsubDebounced}
+				onToggleSubscribeCallback={subUnsubCallback}
 				mapComponent={
 					<MapComponent
 						rounded={25}
@@ -379,16 +400,12 @@ const UserProfilePage = () => {
 										</View>
 										<View className="flex-row gap-[10px]">
 											<Button
-												variant={profileData?.isSubscribed ? 'black' : 'white'}
+												variant={isSubscribed ? 'black' : 'white'}
 												buttonContainerClassName="flex-1"
-												onPress={() =>
-													handleClickSubUnsubDebounced(
-														profileData?.user.id,
-														profileData?.isSubscribed
-													)
-												}
+												onPress={toggleSubscribe}
+												disabled={isSubscribeLoading}
 											>
-												{profileData?.isSubscribed ? 'Отписаться' : 'Подписаться'}
+												{isSubscribed ? 'Отписаться' : 'Подписаться'}
 											</Button>
 											<Button
 												variant={

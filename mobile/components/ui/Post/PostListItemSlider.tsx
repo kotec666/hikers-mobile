@@ -10,6 +10,7 @@ interface IProps {
 type FlatListItem = { id: string; isCustom: true } | string
 
 const { width, height } = Dimensions.get('screen')
+const SLIDE_ASPECT_RATIO = height / 3.83
 
 const PostListItemSlider = (props: IProps) => {
 	const scrollX = useSharedValue(0)
@@ -19,7 +20,6 @@ const PostListItemSlider = (props: IProps) => {
 			scrollX.value = event.contentOffset.x
 		}
 	})
-	const SLIDE_ASPECT_RATIO = height / 3.83
 
 	const flatListData: FlatListItem[] = props.firstElement
 		? [{ id: 'custom-first', isCustom: true }, ...(props.images || [])]

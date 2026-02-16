@@ -9,8 +9,10 @@ import { Colors } from '@/constants/Colors'
 import { IParticipant, likePostById, unlikePostById } from '@/api/posts'
 import { PATH_TO_IMAGE } from '@/constants/PATH_TO_FILES'
 import { useToast } from '@/hooks/useToast'
+import { useOptimisticToggle } from '@/hooks/useOptimisticToggle'
 
 interface IProps {
+	postId?: string
 	authorName?: string
 	participants?: IParticipant[]
 	likeData?: {
@@ -24,48 +26,31 @@ const PostListItemBottom = (props: IProps) => {
 	const router = useRouter()
 	const toast = useToast()
 	const participantsCount = props?.participants?.length || 0
+	const [likesCount, setLikesCount] = useState(props.likeData?.likesCount ?? 0)
 
-	const [isLikedState, setIsLikedState] = useState({
-		count: props.likeData?.likesCount || 0,
-		isLiked: props.likeData?.isLiked
+	const {
+		value: isLiked,
+		toggle: toggleLike,
+		isLoading: isLoadingLike
+	} = useOptimisticToggle({
+		initialValue: props.likeData?.isLiked ?? false,
+		onEnable: async () => {
+			if (!props.likeData?.postId) throw new Error('Не выбран пост')
+			await likePostById(props.likeData.postId)
+		},
+		onDisable: async () => {
+			if (!props.likeData?.postId) throw new Error('Не выбран пост')
+			await unlikePostById(props.likeData.postId)
+		},
+		onError: () => toast.error('Ошибка, повторите попытку позже'),
+		onSuccess: (val) => {
+			setLikesCount((prev) => prev + (val ? 1 : -1))
+		}
 	})
 
-	const handleClickLike = async () => {
-		try {
-			if (!props.likeData?.postId) {
-				return toast.info('Не выбран пост для лайка')
-			}
-
-			await likePostById(props.likeData.postId)
-			setIsLikedState((s) => ({ ...s, isLiked: true, count: s.count + 1 }))
-		} catch (e) {
-			toast.error('Произошла ошибка, повторите попытку позже')
-		}
-	}
-
-	const handleClickUnlike = async () => {
-		try {
-			if (!props.likeData?.postId) {
-				return toast.info('Не выбран пост для удаления лайка')
-			}
-
-			await unlikePostById(props.likeData.postId)
-			setIsLikedState((s) => ({ ...s, isLiked: false, count: s.count - 1 }))
-		} catch (e) {
-			toast.error('Произошла ошибка, повторите попытку позже')
-		}
-	}
-
-	const handleClickLikeUnlike = async () => {
-		if (isLikedState.isLiked) {
-			return await handleClickUnlike()
-		} else {
-			return await handleClickLike()
-		}
-	}
 	return (
 		<View className="flex-row justify-between items-center">
-			<TouchableOpacity onPress={() => router.push('/news-feed/members')}>
+			<TouchableOpacity onPress={() => router.push(`/news-feed/members/${props.postId}`)}>
 				<View className="flex-row items-center gap-[15px]">
 					<View className="flex-row">
 						{Boolean(props?.participants?.length)
@@ -123,14 +108,14 @@ const PostListItemBottom = (props: IProps) => {
 
 			<View className="flex-row gap-[15px]">
 				<View className="flex-row gap-[8px] items-center">
-					<Pressable onPress={handleClickLikeUnlike}>
-						<LikeSvg isPressed={isLikedState.isLiked} />
+					<Pressable onPress={toggleLike} disabled={isLoadingLike}>
+						<LikeSvg isPressed={isLiked} />
 					</Pressable>
 					<Text
 						className="text-white text-sm"
 						style={{ fontFamily: fontFamily.medium, fontVariant: ['tabular-nums'] }}
 					>
-						{isLikedState.count}
+						{likesCount}
 					</Text>
 				</View>
 				<View className="items-center justify-center">
