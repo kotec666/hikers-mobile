@@ -1,4 +1,4 @@
-import { Controller, Delete, Get, Param, Res } from '@nestjs/common';
+import { Controller, Get, Param, Res } from '@nestjs/common';
 import { StaticService } from './static.service';
 
 @Controller('static')
@@ -13,14 +13,5 @@ export class StaticController {
 	async serveStatic(@Param('key') key: string, @Res() res) {
 		const file = await this.service.getFile(key);
 		return file.pipe(res);
-	}
-
-	/**
-	 * @tag Static
-	 * @summary Очистить всё под чистую чистяк пустяк шмурдяк
-	 */
-	@Delete()
-	async clearBucket() {
-		return this.service.clearBucket();
 	}
 }
