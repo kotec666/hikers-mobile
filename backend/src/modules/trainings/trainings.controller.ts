@@ -108,10 +108,11 @@ export class TrainingsController {
 	 */
 	@Get(':id/participants')
 	public async getParticipants(
+		@User() user: TokenDto.Payload,
 		@IsUUID('id') @Param('id') id: string,
 		@NotNegative('page') @Query('page') page: number,
 		@NotNegative('limit') @Query('limit') limit: number,
-	): Promise<TrainingParticipantDto.Entity[]> {
-		return this.service.getParticipants(id, page, limit);
+	): Promise<Required<TrainingParticipantDto.Entity>[]> {
+		return this.service.getParticipantsWithSubs(user.id, id, page, limit);
 	}
 }

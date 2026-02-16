@@ -8,9 +8,10 @@ import {
 	trainingParticipants,
 	trainingRoutes,
 	users,
+	userSubscribers,
 } from '../database/schema';
 import { TrainingDto, TrainingMetricsDto, TrainingParticipantDto } from './trainings.dto';
-import { eq, and, isNull, isNotNull, inArray } from 'drizzle-orm';
+import { eq, and, isNull, isNotNull, inArray, sql } from 'drizzle-orm';
 import { ERRORS } from '@shared/errors';
 import { CommonDto } from '../../common/dto/common.dto';
 import { TrainingType } from '@shared/enums';
@@ -394,6 +395,43 @@ export class TrainingsService {
 			.from(trainingParticipants)
 			.where(eq(trainingParticipants.trainingId, trainingId))
 			.innerJoin(users, eq(users.id, trainingParticipants.userId))
+			.offset(offset)
+			.limit(limit);
+
+		return participants;
+	}
+
+	public async getParticipantsWithSubs(
+		userId: string,
+		trainingId: string,
+		page: number,
+		limit: number,
+	): Promise<Required<TrainingParticipantDto.Entity>[]> {
+		const offset = Math.max(0, (page - 1) * limit);
+
+		const participants = await this.db.db
+			.select({
+				id: trainingParticipants.id,
+				user: {
+					id: users.id,
+					email: users.email,
+					name: users.name,
+					username: users.username,
+					avatarFilename: users.avatarFilename,
+				},
+				colorHex: trainingParticipants.colorHex,
+				isSubscribed: sql<boolean>`${userSubscribers.userId} IS NOT NULL`,
+			})
+			.from(trainingParticipants)
+			.where(eq(trainingParticipants.trainingId, trainingId))
+			.innerJoin(users, eq(users.id, trainingParticipants.userId))
+			.leftJoin(
+				userSubscribers,
+				and(
+					eq(userSubscribers.userId, trainingParticipants.userId),
+					eq(userSubscribers.userSubscriberId, userId),
+				),
+			)
 			.offset(offset)
 			.limit(limit);
 

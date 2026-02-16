@@ -365,10 +365,11 @@ export class PostsService {
 	}
 
 	public async getParticipants(
+		userId: string,
 		postId: string,
 		page: number,
 		limit: number,
-	): Promise<TrainingParticipantDto.Entity[]> {
+	): Promise<Required<TrainingParticipantDto.Entity>[]> {
 		const [post] = await this.db.db
 			.select({ trainingId: posts.trainingId })
 			.from(posts)
@@ -379,7 +380,7 @@ export class PostsService {
 		}
 
 		// Пока что все посты закреплены за своей тренировкой
-		return this.trainings.getParticipants(post.trainingId!, page, limit);
+		return this.trainings.getParticipantsWithSubs(userId, post.trainingId!, page, limit);
 	}
 
 	public async deletePost(postId: string, userId: string): Promise<CommonDto.BooleanResponse> {
