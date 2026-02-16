@@ -46,7 +46,9 @@ const PeopleListItem = (props: IProps) => {
 					))}
 				</View>
 			) : (
-				<TouchableOpacity onPress={props.icon?.iconCb}>{props.icon?.iconSvg}</TouchableOpacity>
+				<TouchableOpacity onPress={props.icon?.iconCb} disabled={props.isIconDisabled}>
+					{props.icon?.iconSvg}
+				</TouchableOpacity>
 			)}
 		</View>
 	)
