@@ -1,29 +1,38 @@
 import React, { PropsWithChildren } from 'react'
-import { View, StyleSheet, Platform } from 'react-native'
+import { View, StyleSheet, Platform, Pressable } from 'react-native'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
 import { BlurView } from 'expo-blur'
 import Portal from '@/components/Portal/Portal'
 
-const Popup = (props: PropsWithChildren) => {
+interface PopupProps {
+	onClose: () => void
+}
+
+const Popup = ({ children, onClose }: PropsWithChildren<PopupProps>) => {
 	const insets = useSafeAreaInsets()
 	return (
 		<Portal>
-			<View style={[styles.container, { top: insets.top + 35 }]}>
-				{Platform.OS === 'ios' ? (
-					<BlurView style={styles.blurView} tint="dark" intensity={15}>
-						<View style={styles.content}>{props.children}</View>
-					</BlurView>
-				) : (
-					<View style={styles.content} className="bg-black">
-						{props.children}
-					</View>
-				)}
-			</View>
+			<Pressable style={styles.overlay} onPress={onClose}>
+				<Pressable style={[styles.container, { top: insets.top + 35 }]} onPress={(e) => e.stopPropagation()}>
+					{Platform.OS === 'ios' ? (
+						<BlurView style={styles.blurView} tint="dark" intensity={15}>
+							<View style={styles.content}>{children}</View>
+						</BlurView>
+					) : (
+						<View style={styles.content} className="bg-black">
+							{children}
+						</View>
+					)}
+				</Pressable>
+			</Pressable>
 		</Portal>
 	)
 }
 
 const styles = StyleSheet.create({
+	overlay: {
+		...StyleSheet.absoluteFillObject
+	},
 	container: {
 		position: 'absolute',
 		right: 0,

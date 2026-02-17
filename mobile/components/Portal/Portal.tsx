@@ -1,8 +1,7 @@
 import * as React from 'react'
-
+import { View, StyleSheet } from 'react-native'
 import PortalConsumer from './PortalConsumer'
 import PortalHost, { PortalContext, PortalMethods } from './PortalHost'
-import { View } from 'react-native'
 
 export type Props = {
 	/**
@@ -42,7 +41,10 @@ class Portal extends React.Component<Props> {
 			<PortalContext.Consumer>
 				{(manager) => (
 					<PortalConsumer manager={manager as PortalMethods}>
-						<View>{children}</View>
+						{/* style={StyleSheet.absoluteFill} pointerEvents="box-none"> нужны для того чтобы клик вне MoreOptionsButton закрывал Popup */}
+						<View style={StyleSheet.absoluteFill} pointerEvents="box-none">
+							{children}
+						</View>
 					</PortalConsumer>
 				)}
 			</PortalContext.Consumer>

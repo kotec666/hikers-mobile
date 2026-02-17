@@ -31,7 +31,7 @@ const MoreOptionsButton = (props: IMoreOptionsButtonProps) => {
 				{props.icon}
 			</Pressable>
 			{state.isVisible && (
-				<Popup>
+				<Popup onClose={() => setState((s) => ({ ...s, isVisible: false }))}>
 					{props.params.map((param) => (
 						<MoreOptionsListItem
 							key={param.label}
