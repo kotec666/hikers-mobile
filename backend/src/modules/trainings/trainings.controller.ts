@@ -17,15 +17,18 @@ export class TrainingsController {
 
 	/**
 	 * @tag Trainings
-	 * @summary История тренировок (завершённые, где пользователь был участником)
+	 * @summary Получить тренировки, где пользователь участник
 	 * @security token
 	 */
-	@Get('history')
-	public async getHistory(
+	@Get('my')
+	public async getMy(
 		@User() user: TokenDto.Payload,
+		@NotNegative('page') @Query('page') page: number,
+		@NotNegative('limit') @Query('limit') limit: number,
+		@Query('finished') isFinished?: boolean,
 		@ParseEnumArray({ key: 'types', enum: TrainingType }) @Query('types') types?: TrainingType[],
 	): Promise<TrainingDto.Entity[]> {
-		return this.service.getHistory(user.id, types);
+		return this.service.getMy(user.id, page, limit, isFinished, types);
 	}
 
 	/**
