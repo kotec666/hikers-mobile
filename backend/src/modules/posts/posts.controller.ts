@@ -1,4 +1,14 @@
-﻿import { Controller, Delete, Get, Param, Patch, Post, Query, UseInterceptors } from '@nestjs/common';
+﻿import {
+	BadRequestException,
+	Controller,
+	Delete,
+	Get,
+	Param,
+	Patch,
+	Post,
+	Query,
+	UseInterceptors,
+} from '@nestjs/common';
 import { User, UserData } from '@decorators/user.decorator';
 import { FilesInterceptor } from '@nestjs/platform-express';
 import { PostsService } from './posts.service';
@@ -9,7 +19,13 @@ import { TrainingParticipantDto } from '../trainings/trainings.dto';
 import { CommonDto } from '../../common/dto/common.dto';
 import { PostDto } from './posts.dto';
 import { TokenDto } from '../token/token.dto';
-import { MAX_FILE_SIZE_MEGABYTES, POST_MAX_FILES_COUNT } from '@shared/constants';
+import {
+	MAX_FILE_SIZE_MEGABYTES,
+	POST_MAX_FILES_COUNT,
+	VALID_IMAGE_MIME_TYPES,
+	VALID_VIDEO_MIME_TYPES,
+} from '@shared/constants';
+import { ERRORS } from '@shared/errors';
 
 @Controller('posts')
 @UseInterceptors(UserInterceptor)
@@ -24,12 +40,22 @@ export class PostsController {
 	@Post()
 	@UseInterceptors(
 		FilesInterceptor('files', POST_MAX_FILES_COUNT, {
+			fileFilter: (_req, file, callb) => {
+				if (
+					!VALID_IMAGE_MIME_TYPES.includes(file.mimetype) &&
+					!VALID_VIDEO_MIME_TYPES.includes(file.mimetype)
+				) {
+					return callb(new BadRequestException(`_files:${ERRORS.BAD_REQUEST}`), false);
+				}
+
+				callb(null, false);
+			},
 			limits: {
 				fileSize: MAX_FILE_SIZE_MEGABYTES * 1024 * 1024,
 			},
 		}),
 	)
-	public async create(@User() user: UserData, @BodyWithFiles() dto: PostDto.Creation): Promise<any> {
+	public async create(@User() user: UserData, @BodyWithFiles() dto: PostDto.Creation): Promise<PostDto.Entity> {
 		return await this.service.create(user.id, dto);
 	}
 
@@ -94,6 +120,16 @@ export class PostsController {
 	@Patch(':id')
 	@UseInterceptors(
 		FilesInterceptor('files', POST_MAX_FILES_COUNT, {
+			fileFilter: (_req, file, callb) => {
+				if (
+					!VALID_IMAGE_MIME_TYPES.includes(file.mimetype) &&
+					!VALID_VIDEO_MIME_TYPES.includes(file.mimetype)
+				) {
+					return callb(new BadRequestException(`_files:${ERRORS.BAD_REQUEST}`), false);
+				}
+
+				callb(null, false);
+			},
 			limits: {
 				fileSize: MAX_FILE_SIZE_MEGABYTES * 1024 * 1024,
 			},
