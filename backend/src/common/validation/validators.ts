@@ -1,7 +1,7 @@
 ﻿import { ValidationArguments, ValidatorConstraint, ValidatorConstraintInterface } from 'class-validator';
 import { Injectable } from '@nestjs/common';
-import { DatabaseService } from 'src/modules/database/database.service';
-import { training, trainingParticipants } from 'src/modules/database/schema';
+import { DatabaseService } from '../../modules/database/database.service';
+import { training, trainingParticipants, users } from '../../modules/database/schema';
 import { and, eq, isNotNull } from 'drizzle-orm';
 import { ERRORS } from '@shared/errors';
 
@@ -22,5 +22,20 @@ export class FinishedTrainingParticipantValidator implements ValidatorConstraint
 
 	defaultMessage(args: ValidationArguments): string {
 		return `_${args.property}:${ERRORS.USER_IN_NOT_FINISHED_TRAINING}`;
+	}
+}
+
+@Injectable()
+@ValidatorConstraint({ async: true })
+export class UniqueEmailValidator implements ValidatorConstraintInterface {
+	constructor(private db: DatabaseService) {}
+
+	async validate(email: string): Promise<boolean> {
+		const [user] = await this.db.db.select({ id: users.id }).from(users).where(eq(users.email, email)).limit(1);
+		return !user;
+	}
+
+	defaultMessage(args: ValidationArguments): string {
+		return `_${args.property}:${ERRORS.ALREADY_EXISTS}`;
 	}
 }
