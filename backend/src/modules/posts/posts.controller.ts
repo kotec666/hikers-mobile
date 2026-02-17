@@ -1,15 +1,4 @@
-﻿import {
-	Body,
-	Controller,
-	Delete,
-	Get,
-	Param,
-	Patch,
-	Post,
-	Query,
-	UploadedFiles,
-	UseInterceptors,
-} from '@nestjs/common';
+﻿import { Controller, Delete, Get, Param, Patch, Post, Query, UseInterceptors } from '@nestjs/common';
 import { User, UserData } from '@decorators/user.decorator';
 import { FilesInterceptor } from '@nestjs/platform-express';
 import { PostsService } from './posts.service';
@@ -20,6 +9,8 @@ import { TrainingParticipantDto } from '../trainings/trainings.dto';
 import { CommonDto } from '../../common/dto/common.dto';
 import { PostDto } from './posts.dto';
 import { TokenDto } from '../token/token.dto';
+import { BodyWithFiles } from '@validation/param.decorators';
+import { MAX_FILE_SIZE_MEGABYTES, POST_MAX_FILES_COUNT } from '@shared/constants';
 
 @Controller('posts')
 @UseInterceptors(UserInterceptor)
@@ -32,13 +23,15 @@ export class PostsController {
 	 * @security token
 	 */
 	@Post()
-	@UseInterceptors(FilesInterceptor('files'))
-	public async create(
-		@User() user: UserData,
-		@Body() dto: PostDto.Creation,
-		@UploadedFiles() files: Array<Express.Multer.File>,
-	): Promise<PostDto.Entity> {
-		return await this.service.create(user.id, { ...dto, files });
+	@UseInterceptors(
+		FilesInterceptor('files', POST_MAX_FILES_COUNT, {
+			limits: {
+				fileSize: MAX_FILE_SIZE_MEGABYTES * 1024 * 1024,
+			},
+		}),
+	)
+	public async create(@User() user: UserData, @BodyWithFiles() dto: PostDto.Creation): Promise<any> {
+		return await this.service.create(user.id, dto);
 	}
 
 	/**
@@ -100,17 +93,19 @@ export class PostsController {
 	 * @security token
 	 */
 	@Patch(':id')
-	@UseInterceptors(FilesInterceptor('files'))
+	@UseInterceptors(
+		FilesInterceptor('files', POST_MAX_FILES_COUNT, {
+			limits: {
+				fileSize: MAX_FILE_SIZE_MEGABYTES * 1024 * 1024,
+			},
+		}),
+	)
 	public async edit(
 		@IsUUID('id') @Param('id') id: string,
 		@User() user: UserData,
-		@Body() body: PostDto.Edit,
-		@UploadedFiles() files?: Array<Express.Multer.File>,
+		@BodyWithFiles() dto: PostDto.Edit,
 	): Promise<CommonDto.BooleanResponse> {
-		return await this.service.edit(id, user.id, {
-			...body,
-			files,
-		});
+		return await this.service.edit(id, user.id, dto);
 	}
 
 	/**

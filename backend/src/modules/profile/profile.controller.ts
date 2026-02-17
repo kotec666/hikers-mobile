@@ -4,6 +4,7 @@ import { ProfileService } from './profile.service';
 import { UserInterceptor } from '@interceptors/user.interceptor';
 import { User, UserData } from '@decorators/user.decorator';
 import { ProfileDto } from './profile.dto';
+import { MAX_FILE_SIZE_MEGABYTES } from '@shared/constants';
 
 @Controller('profile')
 @UseInterceptors(UserInterceptor)
@@ -36,7 +37,13 @@ export class ProfileController {
 	 * @security token
 	 */
 	@Patch()
-	@UseInterceptors(FileInterceptor('avatarFilename'))
+	@UseInterceptors(
+		FileInterceptor('avatarFilename', {
+			limits: {
+				fileSize: MAX_FILE_SIZE_MEGABYTES * 1024 * 1024,
+			},
+		}),
+	)
 	public async edit(
 		@User() user: UserData,
 		@Body() body: ProfileDto.Edit,

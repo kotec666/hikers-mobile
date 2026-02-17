@@ -1,5 +1,5 @@
 ﻿import { ERRORS } from '@shared/errors';
-import { isFile, isUUIDFilename, TypedArray } from '@validation/property-decorators';
+import { isUUIDFilename, TypedArray } from '@validation/property-decorators';
 import { IsOptional, IsUUID, Length } from 'class-validator';
 import { Transform } from 'class-transformer';
 import { UserDto } from '../user/user.dto';
@@ -41,7 +41,6 @@ export namespace PostDto {
 		description?: string;
 
 		@IsOptional()
-		@TypedArray(isFile)
 		files?: Express.Multer.File[];
 	}
 
@@ -63,7 +62,6 @@ export namespace PostDto {
 		deletedFilenames?: string[];
 
 		@IsOptional()
-		@TypedArray(isFile)
 		files?: Express.Multer.File[];
 	}
 }
