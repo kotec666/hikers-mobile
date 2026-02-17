@@ -161,6 +161,7 @@ const PostsPage = () => {
 				mapComponent={
 					<MapComponent
 						rounded={25}
+						needFinishMarker
 						interactiveDisabled
 						initialLocations={{ current: adaptLocations(item.training.participants[0].route.points) }}
 					/>

@@ -13,9 +13,11 @@ import { PolylineNativeProps } from 'react-native-yamap-plus/src/spec/PolylineNa
 import UserLocationMarker, {
 	UserLocationMarkerHandle
 } from '@/components/map/markers/UserLocationMarker/UserLocationMarker'
+import FinishLocationMarker from '@/components/map/markers/FinishLocationMarker'
 
 interface IProps {
 	needSaveCenter?: boolean
+	needFinishMarker?: boolean
 	interactiveDisabled?: boolean
 	maxMapHeight?: number
 	maxContainerHeight?: number
@@ -286,6 +288,22 @@ const MapComponent = forwardRef<MapComponentHandle, IProps>((props, ref) => {
 		}
 	}, [])
 
+	const lastPoint: Point | null = (() => {
+		if (currentSegmentPointsRef.current.length > 0) {
+			return currentSegmentPointsRef.current[currentSegmentPointsRef.current.length - 1]
+		}
+
+		// fallback: из segments (например при initial load)
+		if (segments.length > 0) {
+			const lastSegment = segments[segments.length - 1]
+			if (lastSegment.points.length > 0) {
+				return lastSegment.points[lastSegment.points.length - 1]
+			}
+		}
+
+		return null
+	})()
+
 	return (
 		<View
 			pointerEvents={props.interactiveDisabled ? 'none' : 'auto'}
@@ -366,7 +384,7 @@ const MapComponent = forwardRef<MapComponentHandle, IProps>((props, ref) => {
 					)
 				)}
 
-				{/*<FinishLocationMarker position={{ lat: 53.374451, lon: 49.660469 }} />*/}
+				{props.needFinishMarker && lastPoint && <FinishLocationMarker position={lastPoint} />}
 			</Yamap>
 		</View>
 	)

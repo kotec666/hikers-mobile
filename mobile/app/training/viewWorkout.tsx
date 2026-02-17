@@ -384,6 +384,7 @@ export default function ViewWorkout() {
 							<MapComponent
 								minMapHeight={320}
 								rounded={25}
+								needFinishMarker
 								initialLocations={
 									mode === VIEWWORKOUT_MODE.VIEW ? pointsRef : { current: adaptedLocations }
 								}

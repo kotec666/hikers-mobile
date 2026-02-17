@@ -287,6 +287,7 @@ const UserProfilePage = () => {
 					<MapComponent
 						rounded={25}
 						interactiveDisabled
+						needFinishMarker
 						initialLocations={{ current: adaptLocations(item.training.participants[0].route.points) }}
 					/>
 				}

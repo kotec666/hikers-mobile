@@ -114,10 +114,11 @@ const Post = () => {
 								metrics={creatorMetrics}
 								mapComponent={
 									<MapComponent
+										key={post?.training?.participants?.[0]?.route?.points?.length || 0} // какое-то время points undefined
+										rounded={25}
 										minMapHeight={SLIDE_ASPECT_RATIO}
 										maxMapHeight={SLIDE_ASPECT_RATIO}
-										rounded={25}
-										interactiveDisabled={false}
+										needFinishMarker
 										initialLocations={{
 											current: adaptLocations(
 												post?.training?.participants?.[0]?.route?.points || []
