@@ -1,5 +1,5 @@
 ﻿import { ERRORS } from '@shared/errors';
-import { FinishedTrainingParticipant, isFile, isUUIDFilename, TypedArray } from '@validation/property-decorators';
+import { isFile, isUUIDFilename, TypedArray } from '@validation/property-decorators';
 import { IsOptional, IsUUID, Length } from 'class-validator';
 import { Transform } from 'class-transformer';
 import { UserDto } from '../user/user.dto';
@@ -31,9 +31,8 @@ export namespace PostDto {
 
 	/** Form-Data запрос */
 	export class Creation {
-		@IsUUID('4', { message: `_trainingParticipantId:${ERRORS.BAD_REQUEST}` })
-		@FinishedTrainingParticipant()
-		trainingParticipantId: string;
+		@IsUUID('4', { message: `_trainingId:${ERRORS.BAD_REQUEST}` })
+		trainingId: string;
 
 		@Length(lengths.post.title.min, lengths.post.title.max, { message: `_title:${ERRORS.INVALID_LENGTH}` })
 		title: string;

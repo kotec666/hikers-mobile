@@ -1,7 +1,7 @@
 ﻿import { BadRequestException, ForbiddenException, Injectable, NotFoundException } from '@nestjs/common';
 import { DatabaseService } from '../database/database.service';
 import { PostDto } from './posts.dto';
-import { postLikes, postMedia, posts, trainingParticipants, users } from '../database/schema';
+import { postLikes, postMedia, posts, training, users } from '../database/schema';
 import { desc, eq, ne, count, and, sql } from 'drizzle-orm';
 import { ERRORS } from '@shared/errors';
 import { TrainingsService } from '../trainings/trainings.service';
@@ -150,22 +150,23 @@ export class PostsService {
 	}
 
 	public async create(userId: string, dto: PostDto.Creation): Promise<PostDto.Entity> {
-		const [participant] = await this.db.db
+		const [trainingRow] = await this.db.db
 			.select({
-				id: trainingParticipants.id,
-				userId: trainingParticipants.userId,
-				trainingId: trainingParticipants.trainingId,
+				id: training.id,
+				userCreatorId: training.userCreatorId,
+				finishedAt: training.finishedAt,
 			})
-			.from(trainingParticipants)
-			.where(eq(trainingParticipants.id, dto.trainingParticipantId))
+			.from(training)
+			.where(eq(training.id, dto.trainingId))
 			.limit(1);
-
-		// (проверку что треня уже завершена выполняет валидатор)
-		if (!participant) {
+		if (!trainingRow) {
 			throw new NotFoundException(ERRORS.NOT_FOUND);
 		}
-		if (participant.userId !== userId) {
-			throw new ForbiddenException(ERRORS.FORBIDDEN);
+		if (trainingRow.userCreatorId !== userId) {
+			throw new NotFoundException(ERRORS.FORBIDDEN);
+		}
+		if (!trainingRow.finishedAt) {
+			throw new NotFoundException(ERRORS.USER_IN_NOT_FINISHED_TRAINING);
 		}
 
 		const [post] = await this.db.db
@@ -175,7 +176,7 @@ export class PostsService {
 				description: dto.description,
 
 				userCreatorId: userId,
-				trainingId: participant.trainingId,
+				trainingId: dto.trainingId,
 			})
 			.returning({ id: posts.id });
 
