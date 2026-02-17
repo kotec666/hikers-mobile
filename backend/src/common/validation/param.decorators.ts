@@ -26,3 +26,12 @@ export const ParseEnumArray = createParamDecorator((data: { key: string; enum: o
 
 	return parsedArray;
 });
+
+export const BodyWithFiles = createParamDecorator((data: unknown, ctx: ExecutionContext) => {
+	const request = ctx.switchToHttp().getRequest();
+
+	return {
+		...request.body,
+		files: request.files,
+	};
+});
