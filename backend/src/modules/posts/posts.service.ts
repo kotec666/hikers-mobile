@@ -6,7 +6,7 @@ import { desc, eq, ne, count, and, sql } from 'drizzle-orm';
 import { ERRORS } from '@shared/errors';
 import { TrainingsService } from '../trainings/trainings.service';
 import { StaticService } from '../static/static.service';
-import { CommonDto } from 'src/common/dto/common.dto';
+import { CommonDto } from '../../common/dto/common.dto';
 import { UserDto } from '../user/user.dto';
 import { SubscribersService } from '../subscribers/subscribers.service';
 import { TrainingParticipantDto } from '../trainings/trainings.dto';

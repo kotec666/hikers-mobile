@@ -3,12 +3,11 @@ import { TrainingsService } from './trainings.service';
 import { TrainingDto, TrainingParticipantDto } from './trainings.dto';
 import { User } from '@decorators/user.decorator';
 import { TokenDto } from '../token/token.dto';
-import { UserInterceptor } from 'src/common/interceptors/user.interceptor';
-import { CommonDto } from 'src/common/dto/common.dto';
-import { IsUUID } from '@validation/parameter-decorators';
-import { TrainingType } from '@shared/enums';
-import { ParseEnumArray } from '@validation/param.decorators';
+import { UserInterceptor } from '../../common/interceptors/user.interceptor';
+import { CommonDto } from '../../common/dto/common.dto';
+import { IsUUID, ParseEnumArray } from '@validation/parameter-decorators';
 import { NotNegative } from '@validation/query-decorators';
+import { TrainingType } from '@shared/enums';
 
 @Controller('trainings')
 @UseInterceptors(UserInterceptor)

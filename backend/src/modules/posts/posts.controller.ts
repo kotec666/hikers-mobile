@@ -2,14 +2,13 @@
 import { User, UserData } from '@decorators/user.decorator';
 import { FilesInterceptor } from '@nestjs/platform-express';
 import { PostsService } from './posts.service';
-import { IsUUID } from '@validation/parameter-decorators';
+import { IsUUID, BodyWithFiles } from '@validation/parameter-decorators';
 import { NotNegative } from '@validation/query-decorators';
 import { UserInterceptor } from '@interceptors/user.interceptor';
 import { TrainingParticipantDto } from '../trainings/trainings.dto';
 import { CommonDto } from '../../common/dto/common.dto';
 import { PostDto } from './posts.dto';
 import { TokenDto } from '../token/token.dto';
-import { BodyWithFiles } from '@validation/param.decorators';
 import { MAX_FILE_SIZE_MEGABYTES, POST_MAX_FILES_COUNT } from '@shared/constants';
 
 @Controller('posts')
