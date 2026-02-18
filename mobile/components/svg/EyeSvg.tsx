@@ -16,7 +16,7 @@ const SvgComponent = ({ color = '#FFFFFF', opened }: Props) => {
 		progress.value = withTiming(opened ? 0 : 1, { duration: 400 })
 	}, [opened])
 
-	const dashLength = 32 // подберите под длину линии
+	const dashLength = 32
 
 	const animatedProps = useAnimatedProps(() => ({
 		strokeDashoffset: dashLength * (1 - progress.value)
@@ -24,7 +24,6 @@ const SvgComponent = ({ color = '#FFFFFF', opened }: Props) => {
 
 	return (
 		<Svg width={28} height={28} fill="none">
-			{/* Основная иконка глаза — всегда */}
 			<Path
 				stroke={color}
 				strokeLinecap="round"
@@ -40,7 +39,6 @@ const SvgComponent = ({ color = '#FFFFFF', opened }: Props) => {
 				d="M14 18.143a3.65 3.65 0 0 0 3.657-3.643A3.65 3.65 0 0 0 14 10.857a3.65 3.65 0 0 0-3.657 3.643A3.65 3.65 0 0 0 14 18.143Z"
 			/>
 
-			{/* Анимированная зачеркнутая линия поверх */}
 			<AnimatedPath
 				stroke={color}
 				strokeLinecap="round"
