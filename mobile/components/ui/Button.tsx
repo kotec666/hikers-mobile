@@ -3,6 +3,7 @@ import { cn } from '@/helpers/cn'
 import { fontFamily } from '@/constants/Fonts'
 import { ActivityIndicator, Animated, GestureResponderEvent, Pressable, PressableProps } from 'react-native'
 import { Colors } from '@/constants/Colors'
+import { Motion } from '@legendapp/motion'
 
 const buttonBaseStyles = 'rounded-full w-full flex justify-center items-center flex-row'
 
@@ -88,32 +89,42 @@ export function Button(props: Props & PressableProps) {
 	}
 
 	return (
-		<Pressable
+		<Motion.Pressable
 			className={cn('flex-row', buttonContainerClassName)}
 			onPressIn={!isLoading ? fadeIn : undefined}
 			onPressOut={!isLoading ? fadeOut : undefined}
 			{...restProps}
 		>
-			<Animated.View
-				style={{
-					backgroundColor: isLoading ? Colors['gray-92'] : btnColor,
-					height: buttonHeight || 50
+			<Motion.View
+				className="w-full"
+				whileTap={{ scale: 0.95 }}
+				transition={{
+					type: 'spring',
+					damping: 20,
+					stiffness: 400
 				}}
-				className={cn(buttonBaseStyles, className)}
 			>
-				{!isLoading && (
-					<Animated.Text
-						className="text-sm"
-						style={{
-							fontFamily: fontFamily.bold,
-							color: textColor
-						}}
-					>
-						{children}
-					</Animated.Text>
-				)}
-				{isLoading && <ActivityIndicator size="large" color={Colors.white} />}
-			</Animated.View>
-		</Pressable>
+				<Animated.View
+					style={{
+						backgroundColor: isLoading ? Colors['gray-92'] : btnColor,
+						height: buttonHeight || 50
+					}}
+					className={cn(buttonBaseStyles, className)}
+				>
+					{!isLoading && (
+						<Animated.Text
+							className="text-sm"
+							style={{
+								fontFamily: fontFamily.bold,
+								color: textColor
+							}}
+						>
+							{children}
+						</Animated.Text>
+					)}
+					{isLoading && <ActivityIndicator size="large" color={Colors.white} />}
+				</Animated.View>
+			</Motion.View>
+		</Motion.Pressable>
 	)
 }

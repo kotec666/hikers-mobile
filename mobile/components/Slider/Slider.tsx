@@ -79,7 +79,9 @@ export function Slider({ itemList, children }: SliderProps) {
 				className="flex-grow-0"
 				ref={flatListRef}
 				data={data}
-				renderItem={({ item, index }) => <SliderItem item={item} index={index} key={item.title} />}
+				renderItem={({ item, index }) => (
+					<SliderItem item={item} index={index} activeIndex={paginationIndex} total={itemList.length} />
+				)}
 				horizontal
 				showsHorizontalScrollIndicator={false}
 				pagingEnabled

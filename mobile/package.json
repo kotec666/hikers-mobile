@@ -19,6 +19,7 @@
 	},
 	"dependencies": {
 		"@legendapp/list": "^2.0.16",
+		"@legendapp/motion": "^2.5.3",
 		"@notifee/react-native": "^9.1.8",
 		"@shopify/react-native-skia": "^2.4.18",
 		"@typescript-eslint/eslint-plugin": "^8.40.0",

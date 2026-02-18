@@ -1,6 +1,6 @@
 import { fontFamily } from '@/constants/Fonts'
 import React, { useState } from 'react'
-import { View, Text, TouchableOpacity, Pressable } from 'react-native'
+import { View, Text, TouchableOpacity } from 'react-native'
 import { UserAvatar } from '@/components/ui/UserAvatar'
 import LikeSvg from '@/components/svg/LikeSvg'
 import ShareSvg from '@/components/svg/ShareSvg'
@@ -10,6 +10,7 @@ import { IParticipant, likePostById, unlikePostById } from '@/api/posts'
 import { PATH_TO_IMAGE } from '@/constants/PATH_TO_FILES'
 import { useToast } from '@/hooks/useToast'
 import { useOptimisticToggle } from '@/hooks/useOptimisticToggle'
+import { Motion } from '@legendapp/motion'
 
 interface IProps {
 	postId?: string
@@ -108,9 +109,18 @@ const PostListItemBottom = (props: IProps) => {
 
 			<View className="flex-row gap-[15px]">
 				<View className="flex-row gap-[8px] items-center">
-					<Pressable onPress={toggleLike} disabled={isLoadingLike}>
-						<LikeSvg isPressed={isLiked} />
-					</Pressable>
+					<Motion.Pressable onPress={toggleLike} disabled={isLoadingLike}>
+						<Motion.View
+							whileTap={{ scale: 0.8 }}
+							transition={{
+								type: 'spring',
+								damping: 20,
+								stiffness: 400
+							}}
+						>
+							<LikeSvg isPressed={isLiked} />
+						</Motion.View>
+					</Motion.Pressable>
 					<Text
 						className="text-white text-sm"
 						style={{ fontFamily: fontFamily.medium, fontVariant: ['tabular-nums'] }}
@@ -118,9 +128,19 @@ const PostListItemBottom = (props: IProps) => {
 						{likesCount}
 					</Text>
 				</View>
-				<View className="items-center justify-center">
-					<ShareSvg />
-				</View>
+				<Motion.Pressable>
+					<Motion.View
+						className="items-center justify-center"
+						whileTap={{ scale: 0.8 }}
+						transition={{
+							type: 'spring',
+							damping: 20,
+							stiffness: 400
+						}}
+					>
+						<ShareSvg />
+					</Motion.View>
+				</Motion.Pressable>
 			</View>
 		</View>
 	)

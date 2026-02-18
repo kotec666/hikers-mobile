@@ -1,10 +1,13 @@
-import { Dimensions, Image, Platform, StyleSheet, Text, View } from 'react-native'
+import { Dimensions, Image, Platform, StyleSheet, View } from 'react-native'
 import { ImageSliderType } from '@/components/Slider/Slider'
 import { fontFamily } from '@/constants/Fonts'
+import { Motion } from '@legendapp/motion'
 
 export type SliderItemProps = {
 	item: ImageSliderType
 	index: number
+	activeIndex: number
+	total: number
 }
 
 const { width, height } = Dimensions.get('screen')
@@ -16,15 +19,31 @@ const ITEM_CONTAINER_HEIGHT = Platform.select({
 
 // const BOTTOM_OVERLAY_HEIGHT = ITEM_CONTAINER_HEIGHT * 0.2 // 20%
 
-export function SliderItem({ item }: SliderItemProps) {
+export function SliderItem({ item, index, activeIndex, total }: SliderItemProps) {
+	const normalizedIndex = index % total
+	const isActive = normalizedIndex === activeIndex
+
 	return (
 		<View className="justify-center items-center" style={styles.itemContainer}>
 			<View>
 				<Image source={item.image} style={styles.image} />
 				<View className="absolute bottom-[20px] left-[20px]">
-					<Text className="text-white text-[39px]" style={styles.titleText}>
+					<Motion.Text
+						animate={{
+							opacity: isActive ? 1 : 0,
+							y: isActive ? 0 : 20
+						}}
+						transition={{
+							type: 'spring',
+							delay: isActive ? 0.1 : 0,
+							damping: 18,
+							stiffness: 120
+						}}
+						className="text-white text-[39px]"
+						style={styles.titleText}
+					>
 						{item.title}
-					</Text>
+					</Motion.Text>
 				</View>
 			</View>
 		</View>
