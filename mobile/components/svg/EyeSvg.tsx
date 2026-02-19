@@ -13,7 +13,7 @@ const SvgComponent = ({ color = '#FFFFFF', opened }: Props) => {
 	const progress = useSharedValue(opened ? 0 : 1) // 1 = линия видна, 0 = скрыта
 
 	React.useEffect(() => {
-		progress.value = withTiming(opened ? 0 : 1, { duration: 400 })
+		progress.value = withTiming(opened ? 0 : 1, { duration: 300 })
 	}, [opened])
 
 	const dashLength = 32

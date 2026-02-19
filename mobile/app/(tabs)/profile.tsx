@@ -9,7 +9,7 @@ import { Button } from '@/components/ui/Button'
 import ActivityInfo from '@/components/ui/Profile/ActivityInfo'
 import RedirectAchievementsInfo from '@/components/ui/Profile/RedirectAchievementsInfo'
 import PostListItem from '@/components/ui/Post/PostListItem'
-import { RelativePathString, useLocalSearchParams, useRouter } from 'expo-router'
+import { RelativePathString, useLocalSearchParams, useRouter, useFocusEffect } from 'expo-router'
 import { useAuthStore } from '@/store/authStore'
 import { getProfileData, IProfile } from '@/api/profile'
 import { getFieldsErrors } from '@/helpers/getFieldsErrors'
@@ -41,7 +41,6 @@ const Profile = () => {
 	const insets = useSafeAreaInsets()
 	const router = useRouter()
 	const { logout, user, setUser } = useAuthStore()
-	const { newActivitiesOrder } = useEditActivitiesStore()
 
 	const [data, setData] = useState<{
 		profileData?: IProfile
@@ -94,9 +93,6 @@ const Profile = () => {
 		}
 	}
 
-	const sourceArray = newActivitiesOrder?.length ? newActivitiesOrder : data.profileData?.activities || []
-	const activitiesToRender = sourceArray?.length >= 3 ? sourceArray?.slice(0, 3) : []
-
 	// Функция для загрузки постов
 	const loadPosts = useCallback(
 		async (pageNum: number, isRefresh = false) => {
@@ -148,14 +144,17 @@ const Profile = () => {
 		setData((s) => ({ ...s, refreshing: false }))
 	}, [loadPosts])
 
-	// Первоначальная загрузка данных
-	useEffect(() => {
-		const initializeData = async () => {
-			await handleGetAndSetData()
-			await loadPosts(1, true)
-		}
-		initializeData()
-	}, [])
+	// Первоначальная загрузка данных (при фокусе на странице)
+	useFocusEffect(
+		useCallback(() => {
+			const initializeData = async () => {
+				await handleGetAndSetData()
+				await loadPosts(1, true)
+			}
+
+			initializeData()
+		}, [])
+	)
 
 	// Функция рендеринга элемента поста
 	const renderPostItem = useCallback(
@@ -297,7 +296,7 @@ const Profile = () => {
 								</View>
 								<Button variant="white">История тренировок</Button>
 								<RedirectAchievementsInfo achievements={data.profileData?.achievements} isMyProfile />
-								<ActivityInfo label="Активности" activities={activitiesToRender || []} />
+								<ActivityInfo label="Активности" activities={data.profileData?.activities || []} />
 							</View>
 							<Text
 								className="text-base text-white border-b-[1px] border-b-black-44 py-[20px]"

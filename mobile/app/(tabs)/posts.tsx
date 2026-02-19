@@ -7,7 +7,6 @@ import {
 	KeyboardAvoidingView,
 	TouchableWithoutFeedback,
 	Keyboard,
-	Pressable,
 	RefreshControl,
 	ActivityIndicator
 } from 'react-native'
@@ -27,10 +26,9 @@ import { LegendList, LegendListRef } from '@legendapp/list'
 import { getPostsFeed, IPost } from '@/api/posts'
 import { Colors } from '@/constants/Colors'
 import { useLocalSearchParams } from 'expo-router'
-import { subscribeToUser, unsubscribeFromUser } from '@/api/subscribers'
 import MapComponent from '@/components/map/MapComponent'
 import { adaptLocations } from '@/helpers/adaptPointsToIWorkoutLocationStorageItem'
-import { useToast } from '@/hooks/useToast'
+import { Motion } from '@legendapp/motion'
 
 enum SearchMode {
 	PEOPLE = 'people',
@@ -39,7 +37,6 @@ enum SearchMode {
 
 const PostsPage = () => {
 	const insets = useSafeAreaInsets()
-	const toast = useToast()
 	const [state, setState] = useState<{
 		isSearchActive: boolean
 		searchMode: SearchMode
@@ -216,15 +213,24 @@ const PostsPage = () => {
 				<View style={{ flex: 1 }}>
 					<Container className="gap-[20px] flex-1">
 						<View className="flex-row justify-center items-center gap-[10px] w-full">
-							<Pressable
+							<Motion.Pressable
 								onPress={() => {
 									Keyboard.dismiss()
 									setState((s) => ({ ...s, isSearchActive: false }))
 								}}
-								className="border-2 relative rounded-full h-[50px] w-[50px] border-black-44 justify-center items-center"
 							>
-								<ArrowBackSvg height={19} width={19} />
-							</Pressable>
+								<Motion.View
+									className="border-2 relative rounded-full h-[50px] w-[50px] border-black-44 justify-center items-center"
+									whileTap={{ scale: 0.8 }}
+									transition={{
+										type: 'spring',
+										damping: 20,
+										stiffness: 400
+									}}
+								>
+									<ArrowBackSvg height={19} width={19} />
+								</Motion.View>
+							</Motion.Pressable>
 							<Input
 								isFind
 								containerClassName="flex-1"
