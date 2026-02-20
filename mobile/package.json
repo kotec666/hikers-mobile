@@ -7,7 +7,7 @@
 		"start": "expo start",
 		"start:withVPN": "expo start --tunnel",
 		"optimize": "npx expo-optimize",
-		"build": "expo prebuild",
+		"build": "expo prebuild && node ./scripts/withLocalProperties.js",
 		"doctor": "npx expo-doctor",
 		"build:eas:android": "eas build --platform android",
 		"reset-project": "node ./scripts/reset-project.js",

@@ -58,10 +58,11 @@
            shrinkResources true
    ```   
 
-3. Создайте `./android/local.properties` и укажите путь к Android SDK (пример для Windows):
+3. ~~Создайте~~ `./android/local.properties` и укажите путь к Android SDK (пример для Windows) (сейчас генерируется автоматически с ./scripts/withLocalProperties.js):
    ```
    sdk.dir=C:\\Users\\alexk\\AppData\\Local\\Android\\Sdk
    ```
+
 4. В сгенерированном `AndroidManifest.xml` добавьте foreground‑сервис Notifee внутри тега `<application>`:
    ```xml
    <service
