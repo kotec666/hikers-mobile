@@ -6,10 +6,8 @@ import { Colors } from '@/constants/Colors'
 import { RelativePathString, usePathname, useRouter } from 'expo-router'
 import { BlurView } from 'expo-blur'
 import { cn } from '@/helpers/cn'
-
-import NavBarPostsSvg from '@/components/svg/NavBarPostsSvg'
-import NavBarMapSvg from '@/components/svg/NavBarMapSvg'
-import NavBarAccountSvg from '@/components/svg/NavBarAccountSvg'
+import { useNavBarVisibility } from '@/hooks/useNavBarVisibility'
+import { tabsConfig } from '@/components/ui/Navbar/tabs.config'
 
 type AnimatedButtonProps = {
 	isActive: boolean
@@ -50,45 +48,15 @@ const NavBar = () => {
 	const router = useRouter()
 	const pathname = usePathname()
 
-	// 0 — показываем NavBar
-	// 1 — скрываем NavBar
-	const hidden = useSharedValue(0)
-
-	useEffect(() => {
-		if (pathname.startsWith('/newTraining')) {
-			hidden.value = withTiming(1, { duration: 300 })
-		} else {
-			hidden.value = withTiming(0, { duration: 300 })
-		}
-	}, [pathname])
+	const hidden = useNavBarVisibility(['/newTraining'])
 
 	const animatedContainer = useAnimatedStyle(() => ({
 		opacity: 1 - hidden.value,
-		transform: [
-			{ translateY: hidden.value * 80 } // сдвигаем вниз
-		]
+		transform: [{ translateY: hidden.value * 80 }]
 	}))
 
-	const links = [
-		{
-			href: '/posts',
-			Icon: NavBarPostsSvg,
-			id: 'posts'
-		},
-		{
-			href: '/newTraining',
-			Icon: NavBarMapSvg,
-			id: 'newTraining'
-		},
-		{
-			href: '/profile',
-			Icon: NavBarAccountSvg,
-			id: 'profile'
-		}
-	]
-
 	const getActiveId = () => {
-		const found = links.find((l) => pathname.startsWith(l.href))
+		const found = tabsConfig.find((t) => pathname.startsWith(t.href))
 		return found?.id
 	}
 
@@ -121,12 +89,12 @@ const NavBar = () => {
 						style={[StyleSheet.absoluteFill, { overflow: 'hidden', backgroundColor: 'transparent' }]}
 					/>
 				)}
-				{links.map((link) => (
+				{tabsConfig.map((tab) => (
 					<AnimatedButton
-						key={link.id}
-						isActive={activeId === link.id}
-						onPress={() => handlePress(link.href)}
-						Icon={link.Icon}
+						key={tab.id}
+						isActive={activeId === tab.id}
+						onPress={() => handlePress(tab.href)}
+						Icon={tab.icon}
 					/>
 				))}
 			</View>

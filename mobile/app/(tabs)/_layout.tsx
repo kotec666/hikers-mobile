@@ -1,10 +1,10 @@
 import { Tabs, Stack, Redirect } from 'expo-router'
-import NavBar from '@/components/ui/NavBar'
 import { Colors } from '@/constants/Colors'
 import { useAuthStore } from '@/store/authStore'
 import { NotificationProvider } from '@/components/providers/NotificationProvider'
 import { Platform } from 'react-native'
-import NativeTabsComponent from '@/components/ui/NativeTabs/NativeTabsComponent'
+import NativeTabsComponent from '@/components/ui/Navbar/NativeTabsComponent'
+import NavBar from '@/components/ui/Navbar/NavBar'
 
 export default function TabLayout() {
 	const { isAuthenticated } = useAuthStore()
@@ -31,27 +31,29 @@ export default function TabLayout() {
 	}
 
 	return (
-		<Tabs
-			initialRouteName="profile"
-			screenOptions={{
-				// tabBarActiveTintColor: '#ff00c3', // цвет активной иконки
-				// tabBarInactiveTintColor: '#727272', // цвет неактивной иконки
-				headerShown: false,
-				tabBarShowLabel: false,
-				tabBarStyle: { display: 'none' },
-				animation: 'fade',
-				sceneStyle: {
-					backgroundColor: Colors['black-0d']
-				}
-			}}
-			tabBar={() => <NavBar />}
-		>
-			<Stack.Protected guard={isAuthenticated}>
-				<Tabs.Screen name="profile" />
-				<Tabs.Screen name="posts" />
-				<Tabs.Screen name="newTraining" />
-			</Stack.Protected>
+		<>
 			<NotificationProvider />
-		</Tabs>
+			<Tabs
+				initialRouteName="profile"
+				screenOptions={{
+					// tabBarActiveTintColor: '#ff00c3', // цвет активной иконки
+					// tabBarInactiveTintColor: '#727272', // цвет неактивной иконки
+					headerShown: false,
+					tabBarShowLabel: false,
+					tabBarStyle: { display: 'none' },
+					animation: 'fade',
+					sceneStyle: {
+						backgroundColor: Colors['black-0d']
+					}
+				}}
+				tabBar={() => <NavBar />}
+			>
+				<Stack.Protected guard={isAuthenticated}>
+					<Tabs.Screen name="profile" />
+					<Tabs.Screen name="posts" />
+					<Tabs.Screen name="newTraining" />
+				</Stack.Protected>
+			</Tabs>
+		</>
 	)
 }

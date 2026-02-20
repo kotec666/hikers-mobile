@@ -17,9 +17,9 @@ import WorkoutWalking from '@/components/svg/WorkoutWalking'
 import WorkoutBicycle from '@/components/svg/WorkoutBicycle'
 import { Container } from '@/components/ui/Container'
 import { Notification, NotificationInAppType } from '@/components/Notification'
-import NavBar from '@/components/ui/NavBar'
 import AchievementsMedalSvg from '@/components/svg/AchievementsMedalSvg'
 import { Colors } from '@/constants/Colors'
+import NavBar from '@/components/ui/Navbar/NavBar'
 
 const { height: screenHeight } = Dimensions.get('screen')
 
@@ -120,8 +120,8 @@ export default function HomeScreen() {
 					<Button variant="black" onPress={() => router.navigate('/friends/my-friends')}>
 						Страница списка друзей
 					</Button>
-					<Button variant="black" onPress={() => router.navigate('/news-feed')}>
-						Страница постов
+					<Button variant="black" onPress={() => router.navigate('/news-feed/1')}>
+						Страница поста
 					</Button>
 					<Button variant="black" onPress={() => router.navigate('/friends/friend-requests')}>
 						Страница запросов в друзья
