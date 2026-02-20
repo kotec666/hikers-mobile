@@ -1,11 +1,34 @@
-import { Tabs, Stack } from 'expo-router'
+import { Tabs, Stack, Redirect } from 'expo-router'
 import NavBar from '@/components/ui/NavBar'
 import { Colors } from '@/constants/Colors'
 import { useAuthStore } from '@/store/authStore'
 import { NotificationProvider } from '@/components/providers/NotificationProvider'
+import { Platform } from 'react-native'
+import NativeTabsComponent from '@/components/ui/NativeTabs/NativeTabsComponent'
 
 export default function TabLayout() {
 	const { isAuthenticated } = useAuthStore()
+
+	const LiquidGlassIosVersionFrom = 26
+	const isIOS = Platform.OS === 'ios'
+	const versionString = String(Platform.Version)
+	const majorVersion = parseInt(versionString.split('.')[0], 10)
+
+	const isIOS26OrHigher = isIOS && majorVersion >= LiquidGlassIosVersionFrom
+
+	if (!isAuthenticated) {
+		return <Redirect href="/auth" />
+	}
+
+	// если iOS 26+ → используем NativeTabs
+	if (isIOS26OrHigher) {
+		return (
+			<>
+				<NativeTabsComponent />
+				<NotificationProvider />
+			</>
+		)
+	}
 
 	return (
 		<Tabs
