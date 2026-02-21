@@ -45,6 +45,7 @@ import { WorkoutTypesData } from '@/constants/WorkoutTypes'
 import { TrainingType } from '@shared/enums'
 import { useAuthStore } from '@/store/authStore'
 import { VIEWWORKOUT_MODE } from '@/app/training/viewWorkout'
+import {Colors} from "@/constants/Colors";
 // Debugging
 TaskManager.getRegisteredTasksAsync().then((tasks) => {
 	console.log(tasks)
@@ -534,7 +535,7 @@ export default function NewTraining() {
 	])
 
 	return (
-		<SafeAreaProvider style={{ paddingTop: insets.top }}>
+		<SafeAreaProvider style={{ paddingTop: insets.top, backgroundColor: Colors['black-0d']  }}>
 			<View style={styles.container}>
 				{isWorkoutStarted ? (
 					<WorkoutStarted

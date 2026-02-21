@@ -209,7 +209,7 @@ const PostsPage = () => {
 
 	if (state.isSearchActive) {
 		return (
-			<SafeAreaProvider style={{ paddingTop: insets.top, paddingBottom: insets.bottom }}>
+			<SafeAreaProvider style={{ paddingTop: insets.top, paddingBottom: insets.bottom, backgroundColor: Colors['black-0d'] }}>
 				<View style={{ flex: 1 }}>
 					<Container className="gap-[20px] flex-1">
 						<View className="flex-row justify-center items-center gap-[10px] w-full">
@@ -311,7 +311,7 @@ const PostsPage = () => {
 
 	// Основная лента постов
 	return (
-		<SafeAreaProvider style={{ paddingTop: insets.top, paddingBottom: insets.bottom }}>
+		<SafeAreaProvider style={{ paddingTop: insets.top, paddingBottom: insets.bottom, backgroundColor: Colors['black-0d']  }}>
 			<View style={{ flex: 1 }}>
 				<Container className="gap-[20px] flex-1">
 					<View className="flex-row justify-center items-center gap-[10px] w-full">

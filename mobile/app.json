@@ -7,8 +7,8 @@
 		"icon": "./assets/images/icon.png",
 		"scheme": "mobile",
 		"userInterfaceStyle": "automatic",
-		"newArchEnabled": true,
 		"backgroundColor": "#0D0D0D",
+        "newArchEnabled": true,
 		"ios": {
 			"supportsTablet": true,
 			"bundleIdentifier": "com.hikers.mobile"
@@ -80,8 +80,8 @@
 			[
 				"expo-image-picker",
 				{
-					"photosPermission": "Приложению требуется доступ к вашей галереи для выбора аватара",
-					"cameraPermission": "Приложению требуется доступ к вашей камере для добавления аватара"
+					"photosPermission": "Приложению требуется доступ к вашей галереи для выбора изображения",
+					"cameraPermission": "Приложению требуется доступ к вашей камере для добавления изображения"
 				}
 			],
 			"expo-font"

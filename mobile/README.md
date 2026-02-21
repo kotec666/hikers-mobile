@@ -82,6 +82,12 @@
    ...
    ```
 
+2. Проверить наличие строки в файле `Podfile.properties.json`:
+   ```
+   "newArchEnabled": "true",
+   ```
+
+
 ## Общая папка `shared`
 
 - **Windows**

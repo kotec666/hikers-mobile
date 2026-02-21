@@ -5,7 +5,8 @@ import NavBarAccountSvg from '@/components/svg/NavBarAccountSvg'
 export const tabsConfig = [
 	{
 		id: 'posts',
-		href: '/posts',
+        route: 'posts',     // для NativeTabs
+        href: '/posts',     // для router и pathname
 		label: 'Посты',
 		icon: NavBarPostsSvg,
 		nativeIcon: {
@@ -15,7 +16,8 @@ export const tabsConfig = [
 	},
 	{
 		id: 'newTraining',
-		href: '/newTraining',
+        route: 'newTraining',     // для NativeTabs
+        href: '/newTraining',     // для router и pathname
 		label: 'Тренировка',
 		icon: NavBarMapSvg,
 		nativeIcon: {
@@ -25,7 +27,8 @@ export const tabsConfig = [
 	},
 	{
 		id: 'profile',
-		href: '/profile',
+        route: 'profile',     // для NativeTabs
+        href: '/profile',     // для router и pathname
 		label: 'Профиль',
 		icon: NavBarAccountSvg,
 		nativeIcon: {

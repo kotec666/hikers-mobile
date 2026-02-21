@@ -208,7 +208,7 @@ const Profile = () => {
 
 	return (
 		<>
-			<SafeAreaProvider style={{ paddingTop: insets.top, paddingBottom: insets.bottom }}>
+			<SafeAreaProvider style={{ paddingTop: insets.top, paddingBottom: insets.bottom, backgroundColor: Colors['black-0d'] }}>
 				<LegendList
 					ref={legendListRef}
 					data={posts}
