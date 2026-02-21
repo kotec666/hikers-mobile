@@ -11,7 +11,7 @@ const FinishLocationMarker = ({ position }: Props) => {
 	if (!position?.lat || !position?.lon) return null
 
 	return (
-		<Marker point={position} zIndex={5}>
+		<Marker point={position} zIndex={6}>
 			<View>
 				<FinishWithCircleSvg />
 			</View>

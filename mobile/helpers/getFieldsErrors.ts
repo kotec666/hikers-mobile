@@ -90,7 +90,7 @@ const personalErrorFields: PersonalErrorFields = {
 		[ERRORS.MISMATCH]: 'Неверный пароль'
 	},
 	username: {
-		[ERRORS.ALREADY_EXISTS]: 'Такой ник уже используется'
+		[ERRORS.ALREADY_EXISTS]: 'Такой логин уже используется'
 	}
 }
 /* prettier-ignore */

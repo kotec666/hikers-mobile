@@ -14,7 +14,6 @@ import { Motion } from '@legendapp/motion'
 
 interface IProps {
 	postId?: string
-	authorName?: string
 	participants?: IParticipant[]
 	likeData?: {
 		isLiked: boolean
@@ -88,7 +87,7 @@ const PostListItemBottom = (props: IProps) => {
 
 					<View className="flex-row gap-[5px]">
 						<Text className="text-blue-3d text-sm" style={{ fontFamily: fontFamily.medium }}>
-							{props.authorName}
+							{props.participants?.[0].user.name}
 						</Text>
 						{participantsCount > 1 && (
 							<>

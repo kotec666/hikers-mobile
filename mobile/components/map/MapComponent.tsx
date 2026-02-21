@@ -94,7 +94,7 @@ const MapComponent = forwardRef<MapComponentHandle, IProps>((props, ref) => {
 		return () => {
 			if (idleId) cancelIdleCallback(idleId)
 		}
-	}, [])
+	}, [props.initialLocations?.current])
 
 	const parseLocationsToSegments = (locations: IWorkoutLocationStorageItem[]) => {
 		if (!locations || locations.length === 0) return { segments: [], markers: [] }

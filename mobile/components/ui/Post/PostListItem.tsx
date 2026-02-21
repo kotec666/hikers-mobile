@@ -59,12 +59,7 @@ const PostListItem = (props: IProps) => {
 				images={props.images}
 				mapComponent={props.mapComponent}
 			/>
-			<PostListItemBottom
-				postId={props.postId}
-				authorName={props.authorName}
-				likeData={props.likeData}
-				participants={props.participants}
-			/>
+			<PostListItemBottom postId={props.postId} likeData={props.likeData} participants={props.participants} />
 		</View>
 	)
 }
