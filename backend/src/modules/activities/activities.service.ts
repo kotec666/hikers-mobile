@@ -40,7 +40,6 @@ export class ActivitiesService {
 	}
 
 	public async getAll(userId: string, limit?: number): Promise<ActivitiyDto.Entity[]> {
-		// @TODO пагинация?
 		const query = this.db.db
 			.select({
 				place: userActivities.placeForShow,
