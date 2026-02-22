@@ -11,8 +11,9 @@ export class SubscribersService {
 	constructor(private readonly db: DatabaseService) {}
 
 	/** Получить подписки */
-	public async getSubscriptions(userId: string): Promise<SubscriptionDto.Entity[]> {
-		// @TODO пагинация
+	public async getSubscriptions(userId: string, page: number, limit: number): Promise<SubscriptionDto.Entity[]> {
+		const offset = Math.max(0, (page - 1) * limit);
+
 		return await this.db.db
 			.select({
 				user: {
@@ -25,12 +26,15 @@ export class SubscribersService {
 			})
 			.from(userSubscribers)
 			.where(eq(userSubscribers.userSubscriberId, userId))
-			.innerJoin(users, eq(users.id, userSubscribers.userId));
+			.innerJoin(users, eq(users.id, userSubscribers.userId))
+			.offset(offset)
+			.limit(limit);
 	}
 
 	/** Получить подписчиков */
-	public async getSubscribers(userId: string): Promise<SubscriberDto.Entity[]> {
-		// @TODO пагинация
+	public async getSubscribers(userId: string, page: number, limit: number): Promise<SubscriberDto.Entity[]> {
+		const offset = Math.max(0, (page - 1) * limit);
+
 		return await this.db.db
 			.select({
 				user: {
@@ -43,7 +47,9 @@ export class SubscribersService {
 			})
 			.from(userSubscribers)
 			.where(eq(userSubscribers.userId, userId))
-			.innerJoin(users, eq(users.id, userSubscribers.userSubscriberId));
+			.innerJoin(users, eq(users.id, userSubscribers.userSubscriberId))
+			.offset(offset)
+			.limit(limit);
 	}
 
 	/** Получить кол-во подписчиков */
