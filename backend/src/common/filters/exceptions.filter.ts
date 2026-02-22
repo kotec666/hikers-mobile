@@ -117,11 +117,12 @@ export class HttpExceptionFilter implements ExceptionFilter {
 			}
 		}
 
-		this.logger.error(`Unhandled exception: ${JSON.stringify(exception)}`);
+		this.logger.error(`Unhandled exception: ${exception}. Stack ${exception.stack}`);
 
 		response.status(500).json({
 			statusCode: 500,
 			message: ERRORS.INTERNAL,
+			text: `Unhandled exception: ${exception}. Stack: ${exception.stack}`,
 		});
 	}
 }
