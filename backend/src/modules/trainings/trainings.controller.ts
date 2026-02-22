@@ -16,7 +16,18 @@ export class TrainingsController {
 
 	/**
 	 * @tag Trainings
-	 * @summary Получить тренировки, где пользователь участник
+	 * @summary ДЕБАГ-РУДИМЕНТ ДЛЯ ФРОНТЕНДА. НЕ ИСПОЛЬЗОВАТЬ
+	 * @security token
+	 */
+	@Get('history')
+	public async getAll(@User() user: TokenDto.Payload): Promise<TrainingDto.Entity[]> {
+		// @TODO выпилить когда не нужен будет
+		return this.service.getAll(user.id);
+	}
+
+	/**
+	 * @tag Trainings
+	 * @summary (экран История тренировок) Получить тренировки, где пользователь участник
 	 * @security token
 	 */
 	@Get('my')
@@ -26,7 +37,7 @@ export class TrainingsController {
 		@NotNegative('limit') @Query('limit') limit: number,
 		@Query('finished') isFinished?: boolean,
 		@ParseEnumArray({ key: 'types', enum: TrainingType }) @Query('types') types?: TrainingType[],
-	): Promise<TrainingDto.Entity[]> {
+	): Promise<TrainingDto.SearchEntity[]> {
 		return this.service.getMy(user.id, page, limit, isFinished, types);
 	}
 

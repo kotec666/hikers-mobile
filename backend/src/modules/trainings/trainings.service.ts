@@ -485,13 +485,31 @@ export class TrainingsService {
 		};
 	}
 
+	public async getAll(userId: string): Promise<TrainingDto.Entity[]> {
+		const trainings = await this.db.db
+			.select({
+				id: training.id,
+				type: training.type,
+				creatorId: training.userCreatorId,
+				createdAt: training.createdAt,
+				startedAt: training.startedAt,
+				finishedAt: training.finishedAt,
+			})
+			.from(training)
+			.leftJoin(trainingParticipants, eq(trainingParticipants.trainingId, training.id))
+			.where(eq(trainingParticipants.userId, userId))
+			.orderBy(desc(training.finishedAt, 'first'));
+
+		return trainings;
+	}
+
 	public async getMy(
 		userId: string,
 		page: number,
 		limit: number,
 		isFinished?: boolean,
 		types?: TrainingType[],
-	): Promise<TrainingDto.Entity[]> {
+	): Promise<TrainingDto.SearchEntity[]> {
 		const offset = Math.max(0, (page - 1) * limit);
 
 		const finishedCond =
@@ -502,7 +520,6 @@ export class TrainingsService {
 			.select({
 				id: training.id,
 				type: training.type,
-				creatorId: training.userCreatorId,
 				createdAt: training.createdAt,
 				startedAt: training.startedAt,
 				finishedAt: training.finishedAt,
