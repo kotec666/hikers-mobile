@@ -29,6 +29,13 @@ export namespace PostDto {
 		likesCount: number;
 	};
 
+	export type SearchEntity = {
+		id: string;
+		training: TrainingDto.SearchEntity | null;
+		title: string;
+		createdAt: Date;
+	};
+
 	/** Form-Data запрос */
 	export class Creation {
 		@IsUUID('4', { message: `_trainingId:${ERRORS.BAD_REQUEST}` })

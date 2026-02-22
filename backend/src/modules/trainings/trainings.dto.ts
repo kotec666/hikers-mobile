@@ -43,12 +43,18 @@ export namespace TrainingDto {
 		type: TrainingType;
 		creatorId?: string;
 
-		/** Момент создания тренировки - как только отправился первый инвайт */
-		createdAt: Date; // @TODO мб выпилить
+		createdAt: Date;
 
-		/** Момент старта тренировки - как только создатель начал тренировку */
 		startedAt: Date | null;
-		/** Момент финиша тренировки - как только создатель закончил тренировку */
+		finishedAt: Date | null;
+	};
+
+	export type SearchEntity = {
+		id: string;
+		type: TrainingType;
+
+		createdAt: Date;
+		startedAt: Date | null;
 		finishedAt: Date | null;
 	};
 

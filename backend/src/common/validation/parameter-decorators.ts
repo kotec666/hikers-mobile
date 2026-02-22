@@ -39,6 +39,23 @@ export const ParseEnumArray = createParamDecorator((data: { key: string; enum: o
 	return parsedArray;
 });
 
+export const ParseEnum = createParamDecorator((data: { key: string; enum: object }, ctx: ExecutionContext) => {
+	const request = ctx.switchToHttp().getRequest();
+	const value = request.query[data.key];
+
+	if (!value) return value;
+
+	if (typeof value !== 'string') {
+		throw new BadRequestException(`_${data.key}:${ERRORS.BAD_REQUEST}`);
+	}
+
+	const enumValues = Object.values(data.enum);
+	if (!enumValues.includes(value)) {
+		throw new BadRequestException(`_${data.key}:${ERRORS.BAD_REQUEST}`);
+	}
+	return value as keyof typeof data.enum;
+});
+
 export const BodyWithFiles = createParamDecorator((data: unknown, ctx: ExecutionContext) => {
 	const request = ctx.switchToHttp().getRequest();
 

@@ -30,3 +30,8 @@ export enum FriendStatus {
 	TRUE = 'true',
 	INVITED = 'invited',
 }
+
+export enum SearchType {
+	POSTS = 'posts',
+	USERS = 'users',
+}

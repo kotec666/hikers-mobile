@@ -2,7 +2,7 @@ import { BadRequestException, Injectable, NotFoundException } from '@nestjs/comm
 import { DatabaseService } from '../database/database.service';
 import { UserDto } from './user.dto';
 import { users } from '../database/schema';
-import { eq } from 'drizzle-orm';
+import { and, eq, ilike, ne, or } from 'drizzle-orm';
 import { comparePassword, hashPassword } from './user.helpers';
 import { ERRORS } from '@shared/errors';
 
@@ -141,5 +141,34 @@ export class UserService {
 				avatarFilename: users.avatarFilename,
 			})
 			.from(users);
+	}
+
+	public async search(userId: string, page: number, limit: number, searchWord?: string): Promise<UserDto.Entity[]> {
+		const offset = Math.max(0, (page - 1) * limit);
+
+		const query = this.db.db
+			.select({
+				id: users.id,
+				name: users.name,
+				username: users.username,
+				email: users.email,
+				avatarFilename: users.avatarFilename,
+			})
+			.from(users)
+			.offset(offset)
+			.limit(limit);
+
+		if (searchWord) {
+			query.where(
+				and(
+					ne(users.id, userId),
+					or(ilike(users.username, `%${searchWord}%`), ilike(users.name, `%${searchWord}%`)),
+				),
+			);
+		} else {
+			query.where(ne(users.id, userId));
+		}
+
+		return await query;
 	}
 }
