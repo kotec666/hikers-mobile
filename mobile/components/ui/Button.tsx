@@ -1,7 +1,7 @@
 import { PropsWithChildren, useRef } from 'react'
 import { cn } from '@/helpers/cn'
 import { fontFamily } from '@/constants/Fonts'
-import { ActivityIndicator, Animated, GestureResponderEvent, Pressable, PressableProps } from 'react-native'
+import { ActivityIndicator, Animated, GestureResponderEvent, PressableProps } from 'react-native'
 import { Colors } from '@/constants/Colors'
 import { Motion } from '@legendapp/motion'
 

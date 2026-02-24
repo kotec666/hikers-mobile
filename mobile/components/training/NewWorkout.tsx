@@ -10,7 +10,7 @@ import BottomSheetResizable, {
 	BottomSheetResizableRef
 } from '@/components/ui/BottomSheetResizable/BottomSheetResizable'
 import WorkoutType from '@/components/WorkoutType'
-import { useRouter } from 'expo-router'
+import { useFocusEffect, useRouter } from 'expo-router'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
 import { TrainingType } from '@shared/enums'
 import { UserLocationMarkerHandle } from '@/components/map/markers/UserLocationMarker/UserLocationMarker'
@@ -76,19 +76,39 @@ const NewWorkout = memo((props: IProps) => {
 		}
 	}, [])
 
-	useEffect(() => {
-		if (unsavedWorkoutsShownRef.current || !isInternetConnectedRef.current) return
+	// Проверка на наличие несохраненных тренировок
+	useFocusEffect(
+		useCallback(() => {
+			toast.info(
+				`unsavedWorkoutsShownRef.current: ${unsavedWorkoutsShownRef.current}; isInternetConnectedRef.current: ${isInternetConnectedRef.current}`
+			)
+			if (unsavedWorkoutsShownRef.current || !isInternetConnectedRef.current) return
 
-		const meta = getWorkoutMeta(user?.id)
-		if (meta) return
+			const meta = getWorkoutMeta(user?.id)
+			if (meta) return
 
-		const notSavedWorkouts = getNotSavedWorkouts(user?.id)
+			const notSavedWorkouts = getNotSavedWorkouts(user?.id)
 
-		if (notSavedWorkouts.length === 0) return
-		setNotSavedWorkoutsCount(notSavedWorkouts.length)
-		openBottomSheet()
-		unsavedWorkoutsShownRef.current = true
-	}, [isInternetConnectedRef, isInternetConnectedRef.current, openBottomSheet])
+			if (notSavedWorkouts.length === 0) return
+			setNotSavedWorkoutsCount(notSavedWorkouts.length)
+			openBottomSheet()
+			unsavedWorkoutsShownRef.current = true
+		}, [isInternetConnectedRef, isInternetConnectedRef.current, openBottomSheet, user?.id])
+	)
+
+	// useEffect(() => {
+	// 	if (unsavedWorkoutsShownRef.current || !isInternetConnectedRef.current) return
+	//
+	// 	const meta = getWorkoutMeta(user?.id)
+	// 	if (meta) return
+	//
+	// 	const notSavedWorkouts = getNotSavedWorkouts(user?.id)
+	//
+	// 	if (notSavedWorkouts.length === 0) return
+	// 	setNotSavedWorkoutsCount(notSavedWorkouts.length)
+	// 	openBottomSheet()
+	// 	unsavedWorkoutsShownRef.current = true
+	// }, [isInternetConnectedRef, isInternetConnectedRef.current, openBottomSheet])
 
 	useEffect(() => {
 		return () => {
@@ -201,7 +221,7 @@ const NewWorkout = memo((props: IProps) => {
 					}
 				}
 			}
-
+			unsavedWorkoutsShownRef.current = false
 			toast.success('Тренировка успешно сохранена')
 			closeBottomSheet()
 		} catch (e) {
@@ -222,6 +242,7 @@ const NewWorkout = memo((props: IProps) => {
 		for (const notSavedWorkout of notSavedWorkouts) {
 			deleteUnsavedTrainingByStartedAt(notSavedWorkout.startedAt, user?.id)
 		}
+		unsavedWorkoutsShownRef.current = false
 		toast.success('Все несохраненные тренировки удалены успешно')
 		closeBottomSheet()
 	}

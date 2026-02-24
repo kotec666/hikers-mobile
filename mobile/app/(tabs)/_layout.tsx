@@ -5,6 +5,37 @@ import { NotificationProvider } from '@/components/providers/NotificationProvide
 import { Platform } from 'react-native'
 import NativeTabsComponent from '@/components/ui/Navbar/NativeTabsComponent'
 import NavBar from '@/components/ui/Navbar/NavBar'
+import { ThemeProvider } from '@shopify/restyle'
+import { ColorSchemeProvider, useColorScheme } from '@/components/providers/ColorSchemeContext'
+import { darkTheme, lightTheme } from '@/constants/Theme'
+
+const AppNavigator = (props: { isAuthenticated: boolean }) => {
+	const { colorScheme } = useColorScheme()
+	return (
+		<ThemeProvider theme={colorScheme === 'dark' ? darkTheme : lightTheme}>
+			<NotificationProvider />
+			<Tabs
+				initialRouteName="profile"
+				screenOptions={{
+					headerShown: false,
+					tabBarShowLabel: false,
+					tabBarStyle: { display: 'none' },
+					animation: 'fade'
+					// sceneStyle: {
+					// 	backgroundColor: Colors['black-0d']
+					// }
+				}}
+				tabBar={() => <NavBar />}
+			>
+				<Stack.Protected guard={props.isAuthenticated}>
+					<Tabs.Screen name="profile" />
+					<Tabs.Screen name="posts" />
+					<Tabs.Screen name="newTraining" />
+				</Stack.Protected>
+			</Tabs>
+		</ThemeProvider>
+	)
+}
 
 export default function TabLayout() {
 	const { isAuthenticated } = useAuthStore()
@@ -24,36 +55,23 @@ export default function TabLayout() {
 	if (isIOS26OrHigher) {
 		return (
 			<>
-				<NativeTabsComponent />
+				<Stack
+					screenOptions={{
+						contentStyle: {
+							backgroundColor: Colors['black-0d']
+						}
+					}}
+				>
+					<NativeTabsComponent />
+				</Stack>
 				<NotificationProvider />
 			</>
 		)
 	}
 
 	return (
-		<>
-			<NotificationProvider />
-			<Tabs
-				initialRouteName="profile"
-				screenOptions={{
-					// tabBarActiveTintColor: '#ff00c3', // цвет активной иконки
-					// tabBarInactiveTintColor: '#727272', // цвет неактивной иконки
-					headerShown: false,
-					tabBarShowLabel: false,
-					tabBarStyle: { display: 'none' },
-					animation: 'fade',
-					sceneStyle: {
-						backgroundColor: Colors['black-0d']
-					}
-				}}
-				tabBar={() => <NavBar />}
-			>
-				<Stack.Protected guard={isAuthenticated}>
-					<Tabs.Screen name="profile" />
-					<Tabs.Screen name="posts" />
-					<Tabs.Screen name="newTraining" />
-				</Stack.Protected>
-			</Tabs>
-		</>
+		<ColorSchemeProvider>
+			<AppNavigator isAuthenticated={isAuthenticated} />
+		</ColorSchemeProvider>
 	)
 }

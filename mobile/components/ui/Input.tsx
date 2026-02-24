@@ -26,7 +26,7 @@ export function Input(props: Props) {
 						? { borderColor: Colors['red-8b'], color: Colors['red-ff'], backgroundColor: Colors['red-55'] }
 						: { borderColor: Colors['black-44'], color: 'white', backgroundColor: 'transparent' },
 					isFind ? { paddingRight: 42 } : { paddingRight: 15 },
-					restProps.multiline ? { height: 200 } : {}
+					restProps.multiline ? { height: 200, paddingVertical: 15, textAlignVertical: 'top' } : {}
 				]}
 				className={cn(
 					'border-[1px] relative placeholder:text-gray-ab placeholder:text-[15px]',

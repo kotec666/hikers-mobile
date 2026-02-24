@@ -53,16 +53,24 @@ const errorFields: ErrorFields = {
     },
     [ERRORS.USER_IN_NOT_FINISHED_TRAINING]: {
         field: 'field_name',
-        message: 'USER_IN_NOT_FINISHED_TRAINING',
+        message: 'Невозможно начать тренировку, пока предыдущая не закончилась',
     },
     [ERRORS.USER_IS_TRAINING_PARTICIPANT]: {
         field: 'field_name',
-        message: 'USER_IS_TRAINING_PARTICIPANT',
+        message: 'Невозможно начать тренировку, вы уже в составе другой тренировки',
     },
     [ERRORS.USER_IS_NOT_TRAINING_PARTICIPANT]: {
         field: 'field_name',
-        message: 'USER_IS_NOT_TRAINING_PARTICIPANT',
-    }
+        message: 'Невозможно начать тренировку, вы не являетесь её участником',
+    },
+    [ERRORS.DATE_IN_THE_PAST]: {
+        field: 'field_name',
+        message: 'DATE_IN_THE_PAST',
+    },
+    [ERRORS.DATE_IN_THE_FUTURE]: {
+        field: 'field_name',
+        message: 'DATE_IN_THE_FUTURE',
+    },
 }
 /* prettier-ignore */
 
@@ -118,6 +126,9 @@ type ErrorObject = {
 
 export const getFieldsErrors = (errorObject: ErrorObject | ErrorObjectArr): { [key: string]: string | boolean } => {
 	const errors: { [key: string]: string | boolean } = {}
+
+	// @TODO Критические ошибки
+	if (!errorObject?.message) return {}
 
 	if (Array.isArray(errorObject.message)) {
 		errorObject.message.forEach((error) => {

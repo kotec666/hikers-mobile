@@ -11,7 +11,6 @@ import {
 	ActivityIndicator
 } from 'react-native'
 import { SafeAreaProvider, useSafeAreaInsets } from 'react-native-safe-area-context'
-import { StatusBar } from 'expo-status-bar'
 import { Input } from '@/components/ui/Input'
 import { Container } from '@/components/ui/Container'
 import { NotificationsButton } from '@/components/ui/Notifications/NotificationsButton'
@@ -306,7 +305,6 @@ const PostsPage = () => {
 						</KeyboardAvoidingView>
 					</Container>
 				</View>
-				<StatusBar style="light" />
 			</SafeAreaProvider>
 		)
 	}
@@ -355,7 +353,6 @@ const PostsPage = () => {
 					</View>
 				</Container>
 			</View>
-			<StatusBar style="light" />
 		</SafeAreaProvider>
 	)
 }

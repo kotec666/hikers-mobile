@@ -219,6 +219,11 @@ export const getNotSavedWorkouts = (userId?: string): IWorkout[] => {
 	return str ? (JSON.parse(str) as IWorkout[]) : []
 }
 
+export const getUnsavedWorkoutsThatHaveId = (userId?: string) => {
+	const workouts = getNotSavedWorkouts(userId)
+	return workouts.filter((workout) => workout.id !== null)
+}
+
 // --- SHORT WORKOUTS ---
 
 export const moveActiveWorkoutToShortWorkouts = (userId?: string) => {
