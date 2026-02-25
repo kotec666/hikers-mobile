@@ -77,8 +77,9 @@ const AuthPage = () => {
 
 				login(loginData.token, restParameters)
 			} catch (e) {
-				const errors = await e.response.json()
-				console.log(errors)
+				console.log('e: ', e)
+				const errors = await e?.response?.json()
+				console.log('errors: ', errors)
 				const formattedErrors = getFieldsErrors(errors)
 				setData((s) => ({ ...s, errors: formattedErrors }))
 				Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error)
@@ -95,9 +96,9 @@ const AuthPage = () => {
 
 				login(regData.token, restParameters)
 			} catch (e) {
-				console.log(e)
-				const errors = await e.response.json()
-				console.log(JSON.stringify(errors))
+				console.log('e: ', e)
+				const errors = await e?.response?.json()
+				console.log('errors: ', errors)
 				const formattedErrors = getFieldsErrors(errors)
 				setData((s) => ({ ...s, errors: formattedErrors }))
 				Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error)

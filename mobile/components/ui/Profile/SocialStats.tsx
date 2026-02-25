@@ -1,8 +1,7 @@
 import React from 'react'
-import { TouchableOpacity } from 'react-native'
+import { TouchableOpacity, View, Text } from 'react-native'
 import { fontFamily } from '@/constants/Fonts'
 import { RelativePathString, useRouter } from 'expo-router'
-import { Box, Text } from '@/constants/Theme'
 
 interface IProps {
 	label?: string
@@ -13,10 +12,10 @@ interface IProps {
 const InnerSocialStatsData = ({ label, content }: Pick<IProps, 'label' | 'content'>) => {
 	return (
 		<>
-			<Text className="text-xs" color="textSecondary" style={{ fontFamily: fontFamily.medium }}>
+			<Text className="text-xs text-gray-ab" style={{ fontFamily: fontFamily.medium }}>
 				{label}
 			</Text>
-			<Text className="text-[19px]" color="textSuccess" style={{ fontFamily: fontFamily.bold }}>
+			<Text className="text-[19px] text-green-main" style={{ fontFamily: fontFamily.bold }}>
 				{content}
 			</Text>
 		</>
@@ -37,9 +36,9 @@ const SocialStats = ({ label, content, hrefTo }: IProps) => {
 		)
 	} else {
 		return (
-			<Box backgroundColor="cardBackground" className="rounded-[15px] px-[15px] flex-1 py-[20px]">
+			<View className="bg-black-25 rounded-[15px] px-[15px] flex-1 py-[20px]">
 				<InnerSocialStatsData label={label} content={content} />
-			</Box>
+			</View>
 		)
 	}
 }

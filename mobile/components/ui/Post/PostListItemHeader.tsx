@@ -1,4 +1,4 @@
-import React, { useEffect } from 'react'
+import React from 'react'
 import { Pressable, Text, View } from 'react-native'
 import { UserAvatar } from '@/components/ui/UserAvatar'
 import { fontFamily } from '@/constants/Fonts'

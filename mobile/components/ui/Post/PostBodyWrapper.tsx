@@ -18,6 +18,7 @@ interface IProps {
 	images?: string[]
 	metrics?: ITrainingMetrics
 	mapComponent?: React.ReactNode
+	isDetail?: boolean
 }
 
 const PostBodyWrapper = (props: IProps) => {
@@ -31,7 +32,12 @@ const PostBodyWrapper = (props: IProps) => {
 			{IS_FEED_LIST_ITEM ? (
 				<>
 					<TouchableOpacity onPress={() => router.push(`/news-feed/${props.postId}`)}>
-						<PostListItemBody title={props.title} description={props.description} metrics={props.metrics} />
+						<PostListItemBody
+							title={props.title}
+							description={props.description}
+							metrics={props.metrics}
+							isDetail={props.isDetail}
+						/>
 					</TouchableOpacity>
 					<View>
 						<PostListItemSlider images={props.images} firstElement={MapSlide} />
@@ -39,7 +45,12 @@ const PostBodyWrapper = (props: IProps) => {
 				</>
 			) : (
 				<>
-					<PostListItemBody title={props.title} description={props.description} metrics={props.metrics} />
+					<PostListItemBody
+						title={props.title}
+						description={props.description}
+						metrics={props.metrics}
+						isDetail={props.isDetail}
+					/>
 					{props.mapComponent}
 				</>
 			)}

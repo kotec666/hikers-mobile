@@ -9,6 +9,7 @@ import { formatTimeFromSecondsCompact } from '@/helpers/formatTime'
 interface IProps {
 	title?: string
 	description?: string | null
+	isDetail?: boolean
 	metrics?: ITrainingMetrics
 }
 
@@ -20,7 +21,11 @@ const PostListItemBody = (props: IProps) => {
 					<Text className="text-gray-ab text-[19px]" style={{ fontFamily: fontFamily.bold }}>
 						{props.title}
 					</Text>
-					<Text className="text-gray-ab text-base" style={{ fontFamily: fontFamily.medium }}>
+					<Text
+						className="text-gray-ab text-base"
+						numberOfLines={props.isDetail ? undefined : 2}
+						style={{ fontFamily: fontFamily.medium }}
+					>
 						{props.description}
 					</Text>
 				</View>

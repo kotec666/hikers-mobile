@@ -112,6 +112,7 @@ const Post = () => {
 								title={post?.title}
 								description={post?.description}
 								metrics={creatorMetrics}
+								isDetail
 								mapComponent={
 									<MapComponent
 										key={post?.training?.participants?.[0]?.route?.points?.length || 0} // какое-то время points undefined

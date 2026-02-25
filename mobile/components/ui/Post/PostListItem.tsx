@@ -32,6 +32,7 @@ interface IProps {
 	onToggleSubscribeCallback?: (isSubscribed: boolean, authorId?: string) => void
 	mapComponent?: React.ReactNode
 	images?: string[]
+	isDetail?: boolean
 }
 
 const PostListItem = (props: IProps) => {
@@ -58,6 +59,7 @@ const PostListItem = (props: IProps) => {
 				metrics={props.metrics}
 				images={props.images}
 				mapComponent={props.mapComponent}
+				isDetail={props.isDetail}
 			/>
 			<PostListItemBottom postId={props.postId} likeData={props.likeData} participants={props.participants} />
 		</View>

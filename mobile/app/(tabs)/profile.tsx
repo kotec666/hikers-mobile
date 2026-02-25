@@ -1,6 +1,6 @@
 import React, { useCallback, useEffect, useRef, useState } from 'react'
 import { SafeAreaProvider, useSafeAreaInsets } from 'react-native-safe-area-context'
-import { View, RefreshControl, ActivityIndicator } from 'react-native'
+import { View, RefreshControl, ActivityIndicator, Text } from 'react-native'
 import SettingsSvg from '@/components/svg/SettingsSvg'
 import MoreOptionsButton from '@/components/ui/MoreOptionsButton/MoreOptionsButton'
 import { fontFamily } from '@/constants/Fonts'
@@ -20,9 +20,6 @@ import { getPostsMy, IPost } from '@/api/posts'
 import { Colors } from '@/constants/Colors'
 import MapComponent from '@/components/map/MapComponent'
 import { adaptLocations } from '@/helpers/adaptPointsToIWorkoutLocationStorageItem'
-import { Box, Text } from '@/constants/Theme'
-import { ColorSchemeButton } from '@/components/ui/ColorSchemeButton'
-import { VIEWWORKOUT_MODE } from '@/app/training/viewWorkout'
 
 /**
  *
@@ -208,114 +205,110 @@ const Profile = () => {
 
 	return (
 		<>
-			<Box flex={1} backgroundColor="mainBackground">
-				<SafeAreaProvider style={{ paddingTop: insets.top, paddingBottom: insets.bottom }}>
-					<LegendList
-						ref={legendListRef}
-						data={posts}
-						renderItem={renderPostItem}
-						keyExtractor={(item) => item.id.toString()}
-						onEndReached={loadMorePosts}
-						onEndReachedThreshold={0.5}
-						ItemSeparatorComponent={() => <View style={{ height: 16 }} />}
-						ListFooterComponent={renderFooter}
-						refreshControl={
-							<RefreshControl refreshing={data.refreshing} onRefresh={onRefresh} tintColor="#22CB5A" />
-						}
-						ListHeaderComponent={
-							<View className="gap-[20px] mb-[16px]">
-								<View className="gap-[20px]">
-									<View className="gap-[16px]">
-										<View className="flex-row justify-between w-full">
-											<AnimatedProfilePicture
-												size={117}
-												bordered
-												imageUrl={`${PATH_TO_IMAGE}${user?.avatarFilename}`}
-											/>
-											{/*<ColorSchemeButton />*/}
-											<MoreOptionsButton
-												icon={<SettingsSvg />}
-												params={[
-													{
-														label: 'Редактировать профиль',
-														action: () => handleClickRedirect(ALLOWED_ROUTES.EDIT_PROFILE)
-													},
-													{
-														label: 'Политика конфиденциальности',
-														action: () => handleClickRedirect(ALLOWED_ROUTES.DOCUMENT)
-													},
-													{
-														label: 'Политика обработки персональных данных',
-														action: () => handleClickRedirect(ALLOWED_ROUTES.DOCUMENT)
-													},
-													// {
-													// 	label: 'Tabs ui',
-													// 	action: () => handleClickRedirect('/(tabs-ui-kit)' as AllowedRoute)
-													// },
-													// {
-													// 	label: 'To view workout',
-													// 	action: () =>
-													// 		handleClickRedirect(
-													// 			`/training/viewWorkout?mode=${VIEWWORKOUT_MODE.VIEW}` as AllowedRoute
-													// 		)
-													// },
-													{ label: 'Выход', action: handleClickExit }
-												]}
-											/>
-										</View>
-										<View>
-											{user?.name && (
-												<Text className="text-[19px]" style={{ fontFamily: fontFamily.bold }}>
-													{user?.name}
-												</Text>
-											)}
-											{user?.username && (
-												<Text
-													className="text-base"
-													color="textSecondary"
-													style={{ fontFamily: fontFamily.medium }}
-												>
-													@{user?.username}
-												</Text>
-											)}
-										</View>
-									</View>
-									<View className="flex-row justify-between gap-[10px]">
-										<SocialStats
-											label="Подписчики"
-											content={data.profileData?.subscribers}
-											hrefTo="/subscribers/my-subscribers"
+			<SafeAreaProvider style={{ paddingTop: insets.top, paddingBottom: insets.bottom }}>
+				<LegendList
+					ref={legendListRef}
+					data={posts}
+					renderItem={renderPostItem}
+					keyExtractor={(item) => item.id.toString()}
+					onEndReached={loadMorePosts}
+					onEndReachedThreshold={0.5}
+					ItemSeparatorComponent={() => <View style={{ height: 16 }} />}
+					ListFooterComponent={renderFooter}
+					refreshControl={
+						<RefreshControl refreshing={data.refreshing} onRefresh={onRefresh} tintColor="#22CB5A" />
+					}
+					ListHeaderComponent={
+						<View className="gap-[20px] mb-[16px]">
+							<View className="gap-[20px]">
+								<View className="gap-[16px]">
+									<View className="flex-row justify-between w-full">
+										<AnimatedProfilePicture
+											size={117}
+											bordered
+											imageUrl={`${PATH_TO_IMAGE}${user?.avatarFilename}`}
 										/>
-										<SocialStats
-											label="Друзья"
-											content={data.profileData?.friends}
-											hrefTo="/friends/my-friends"
-										/>
-										<SocialStats
-											label="Подписки"
-											content={data.profileData?.subscriptions}
-											hrefTo="/subscribers/my-subscriptions"
+										<MoreOptionsButton
+											icon={<SettingsSvg />}
+											params={[
+												{
+													label: 'Редактировать профиль',
+													action: () => handleClickRedirect(ALLOWED_ROUTES.EDIT_PROFILE)
+												},
+												{
+													label: 'Политика конфиденциальности',
+													action: () => handleClickRedirect(ALLOWED_ROUTES.DOCUMENT)
+												},
+												{
+													label: 'Политика обработки персональных данных',
+													action: () => handleClickRedirect(ALLOWED_ROUTES.DOCUMENT)
+												},
+												// {
+												// 	label: 'Tabs ui',
+												// 	action: () => handleClickRedirect('/(tabs-ui-kit)' as AllowedRoute)
+												// },
+												// {
+												// 	label: 'To view workout',
+												// 	action: () =>
+												// 		handleClickRedirect(
+												// 			`/training/viewWorkout?mode=${VIEWWORKOUT_MODE.VIEW}` as AllowedRoute
+												// 		)
+												// },
+												{ label: 'Выход', action: handleClickExit }
+											]}
 										/>
 									</View>
-									<Button variant="white">История тренировок</Button>
-									<RedirectAchievementsInfo
-										achievements={data.profileData?.achievements}
-										isMyProfile
-									/>
-									<ActivityInfo label="Активности" activities={data.profileData?.activities || []} />
+									<View>
+										{user?.name && (
+											<Text
+												className="text-[19px] text-white"
+												style={{ fontFamily: fontFamily.bold }}
+											>
+												{user?.name}
+											</Text>
+										)}
+										{user?.username && (
+											<Text
+												className="text-base text-gray-ab"
+												style={{ fontFamily: fontFamily.medium }}
+											>
+												@{user?.username}
+											</Text>
+										)}
+									</View>
 								</View>
-								<Text
-									className="text-base text-white border-b-[1px] border-b-black-44 py-[20px]"
-									style={{ fontFamily: fontFamily.bold }}
-								>
-									Лента
-								</Text>
+								<View className="flex-row justify-between gap-[10px]">
+									<SocialStats
+										label="Подписчики"
+										content={data.profileData?.subscribers}
+										hrefTo="/subscribers/my-subscribers"
+									/>
+									<SocialStats
+										label="Друзья"
+										content={data.profileData?.friends}
+										hrefTo="/friends/my-friends"
+									/>
+									<SocialStats
+										label="Подписки"
+										content={data.profileData?.subscriptions}
+										hrefTo="/subscribers/my-subscriptions"
+									/>
+								</View>
+								<Button variant="white">История тренировок</Button>
+								<RedirectAchievementsInfo achievements={data.profileData?.achievements} isMyProfile />
+								<ActivityInfo label="Активности" activities={data.profileData?.activities || []} />
 							</View>
-						}
-						contentContainerStyle={{ paddingBottom: 100, paddingHorizontal: 16 }}
-					/>
-				</SafeAreaProvider>
-			</Box>
+							<Text
+								className="text-base text-white border-b-[1px] border-b-black-44 py-[20px]"
+								style={{ fontFamily: fontFamily.bold }}
+							>
+								Лента
+							</Text>
+						</View>
+					}
+					contentContainerStyle={{ paddingBottom: 100, paddingHorizontal: 16 }}
+				/>
+			</SafeAreaProvider>
 		</>
 	)
 }

@@ -19,8 +19,8 @@ export const useOptimisticToggle = ({
 }: UseOptimisticToggleParams) => {
 	const [value, setValue] = useState(initialValue)
 	const [isLoading, setIsLoading] = useState(false)
+	const lockRef = useRef(false)
 
-	// чтобы не ловить stale closures
 	const valueRef = useRef(value)
 	valueRef.current = value
 
@@ -30,14 +30,13 @@ export const useOptimisticToggle = ({
 	}, [initialValue])
 
 	const toggle = useCallback(async () => {
-		if (isLoading || disabled) return
+		if (lockRef.current || disabled) return
 
+		lockRef.current = true
 		const prev = valueRef.current
 		const next = !prev
 
 		setIsLoading(true)
-
-		// optimistic update
 		setValue(next)
 
 		try {
@@ -49,13 +48,13 @@ export const useOptimisticToggle = ({
 
 			onSuccess?.(next)
 		} catch (e) {
-			// rollback
 			setValue(prev)
 			onError?.(e)
 		} finally {
+			lockRef.current = false
 			setIsLoading(false)
 		}
-	}, [isLoading, disabled, onEnable, onDisable, onError, onSuccess])
+	}, [disabled, onEnable, onDisable, onError, onSuccess])
 
 	return {
 		value,

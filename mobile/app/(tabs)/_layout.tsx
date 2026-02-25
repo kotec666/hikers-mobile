@@ -1,39 +1,41 @@
 import { Tabs, Stack, Redirect } from 'expo-router'
-import { Colors } from '@/constants/Colors'
 import { useAuthStore } from '@/store/authStore'
 import { NotificationProvider } from '@/components/providers/NotificationProvider'
 import { Platform } from 'react-native'
 import NativeTabsComponent from '@/components/ui/Navbar/NativeTabsComponent'
 import NavBar from '@/components/ui/Navbar/NavBar'
-import { ThemeProvider } from '@shopify/restyle'
-import { ColorSchemeProvider, useColorScheme } from '@/components/providers/ColorSchemeContext'
-import { darkTheme, lightTheme } from '@/constants/Theme'
+import { Colors } from '@/constants/Colors'
 
 const AppNavigator = (props: { isAuthenticated: boolean }) => {
-	const { colorScheme } = useColorScheme()
 	return (
-		<ThemeProvider theme={colorScheme === 'dark' ? darkTheme : lightTheme}>
+		<Tabs
+			initialRouteName="profile"
+			screenOptions={{
+				headerShown: false,
+				tabBarShowLabel: false,
+				tabBarStyle: { display: 'none' },
+				animation: 'fade',
+				sceneStyle: {
+					backgroundColor: Colors['black-0d']
+				}
+			}}
+			tabBar={() => <NavBar />}
+		>
+			<Stack.Protected guard={props.isAuthenticated}>
+				<Tabs.Screen name="profile" />
+				<Tabs.Screen name="posts" />
+				<Tabs.Screen name="newTraining" />
+			</Stack.Protected>
+		</Tabs>
+	)
+}
+
+const Root = ({ isIOS26OrHigher, isAuthenticated }: { isIOS26OrHigher: boolean; isAuthenticated: boolean }) => {
+	return (
+		<>
 			<NotificationProvider />
-			<Tabs
-				initialRouteName="profile"
-				screenOptions={{
-					headerShown: false,
-					tabBarShowLabel: false,
-					tabBarStyle: { display: 'none' },
-					animation: 'fade'
-					// sceneStyle: {
-					// 	backgroundColor: Colors['black-0d']
-					// }
-				}}
-				tabBar={() => <NavBar />}
-			>
-				<Stack.Protected guard={props.isAuthenticated}>
-					<Tabs.Screen name="profile" />
-					<Tabs.Screen name="posts" />
-					<Tabs.Screen name="newTraining" />
-				</Stack.Protected>
-			</Tabs>
-		</ThemeProvider>
+			{isIOS26OrHigher ? <NativeTabsComponent /> : <AppNavigator isAuthenticated={isAuthenticated} />}
+		</>
 	)
 }
 
@@ -51,27 +53,9 @@ export default function TabLayout() {
 		return <Redirect href="/auth" />
 	}
 
-	// если iOS 26+ → используем NativeTabs
-	if (isIOS26OrHigher) {
-		return (
-			<>
-				<Stack
-					screenOptions={{
-						contentStyle: {
-							backgroundColor: Colors['black-0d']
-						}
-					}}
-				>
-					<NativeTabsComponent />
-				</Stack>
-				<NotificationProvider />
-			</>
-		)
-	}
-
 	return (
-		<ColorSchemeProvider>
-			<AppNavigator isAuthenticated={isAuthenticated} />
-		</ColorSchemeProvider>
+		<>
+			<Root isIOS26OrHigher={isIOS26OrHigher} isAuthenticated={isAuthenticated} />
+		</>
 	)
 }

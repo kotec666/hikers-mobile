@@ -2,7 +2,6 @@ import React, { ReactElement, useState } from 'react'
 import Popup from '@/components/ui/Popup'
 import MoreOptionsListItem from '@/components/ui/MoreOptionsButton/MoreOptionsListItem'
 import { Motion } from '@legendapp/motion'
-import { ColorSchemeButton } from '@/components/ui/ColorSchemeButton'
 
 interface IMoreOptionsButtonProps {
 	params: { label: string; action: () => void }[]
