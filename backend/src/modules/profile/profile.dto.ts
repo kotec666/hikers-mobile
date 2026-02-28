@@ -7,6 +7,7 @@ import { lengths } from '@shared/lengths';
 import { ERRORS } from '@shared/errors';
 import { FriendStatus, UserActivity } from '@shared/enums';
 import { isUserActivityEnumValue, isUUID, TypedArray } from '@validation/property-decorators';
+import { toArray } from '@transformers/array.transformer';
 
 export namespace ProfileDto {
 	export type Entity = {
@@ -49,12 +50,7 @@ export namespace ProfileDto {
 		 */
 		@IsOptional()
 		@TypedArray(isUserActivityEnumValue)
-		@Transform(({ value }) => {
-			if (typeof value === 'string') {
-				return value.split(',').map((v) => v.trim());
-			}
-			return value;
-		})
+		@Transform(({ value }) => toArray(value))
 		activities?: UserActivity[];
 
 		/**

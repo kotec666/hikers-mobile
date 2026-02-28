@@ -15,6 +15,7 @@ import { User, UserData } from '@decorators/user.decorator';
 import { ProfileDto } from './profile.dto';
 import { MAX_FILE_SIZE_MEGABYTES, VALID_IMAGE_MIME_TYPES } from '@shared/constants';
 import { ERRORS } from '@shared/errors';
+import { IsUUID } from '@validation/parameter-decorators';
 
 @Controller('profile')
 @UseInterceptors(UserInterceptor)
@@ -37,7 +38,10 @@ export class ProfileController {
 	 * @security token
 	 */
 	@Get(':userId')
-	public async getSomeone(@User() user: UserData, @Param('userId') userId: string): Promise<ProfileDto.Entity> {
+	public async getSomeone(
+		@User() user: UserData,
+		@IsUUID('userId') @Param('userId') userId: string,
+	): Promise<ProfileDto.Entity> {
 		return await this.service.getOtherProfile(user.id, userId);
 	}
 

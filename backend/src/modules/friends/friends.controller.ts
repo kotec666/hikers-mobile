@@ -88,7 +88,7 @@ export class FriendsController {
 	@Post('invites/send/:userId')
 	public async sendInvite(
 		@User() user: UserData,
-		@Param('userId') toUserId: string,
+		@IsUUID('userId') @Param('userId') toUserId: string,
 	): Promise<CommonDto.BooleanResponse> {
 		return this.service.sendInvite(user.id, toUserId);
 	}
@@ -101,7 +101,7 @@ export class FriendsController {
 	@Patch('invites/accept/:userId')
 	public async acceptInvite(
 		@User() user: UserData,
-		@Param('userId') fromUserId: string,
+		@IsUUID('userId') @Param('userId') fromUserId: string,
 	): Promise<CommonDto.BooleanResponse> {
 		return this.service.acceptInvite(fromUserId, user.id);
 	}
@@ -114,7 +114,7 @@ export class FriendsController {
 	@Patch('invites/reject/:userId')
 	public async rejectInvite(
 		@User() user: UserData,
-		@Param('userId') fromUserId: string,
+		@IsUUID('userId') @Param('userId') fromUserId: string,
 	): Promise<CommonDto.BooleanResponse> {
 		return this.service.rejectInvite(fromUserId, user.id);
 	}
@@ -127,7 +127,7 @@ export class FriendsController {
 	@Delete('invites/revoke/:userId')
 	public async revokeInvite(
 		@User() user: UserData,
-		@Param('userId') toUserId: string,
+		@IsUUID('userId') @Param('userId') toUserId: string,
 	): Promise<CommonDto.BooleanResponse> {
 		return this.service.revokeInvite(user.id, toUserId);
 	}

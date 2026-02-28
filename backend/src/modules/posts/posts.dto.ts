@@ -38,13 +38,16 @@ export namespace PostDto {
 
 	/** Form-Data запрос */
 	export class Creation {
-		@IsUUID('4', { message: `_trainingId:${ERRORS.BAD_REQUEST}` })
+		@IsUUID('4', { message: `_trainingId:${ERRORS.MISMATCH}` })
 		trainingId: string;
 
 		@Length(lengths.post.title.min, lengths.post.title.max, { message: `_title:${ERRORS.INVALID_LENGTH}` })
 		title: string;
 
 		@IsOptional()
+		@Length(lengths.post.description.min, lengths.post.description.max, {
+			message: `_description:${ERRORS.INVALID_LENGTH}`,
+		})
 		description?: string;
 
 		@IsOptional()
@@ -64,8 +67,8 @@ export namespace PostDto {
 		description?: string;
 
 		@IsOptional()
-		@Transform(({ value }) => toArray(value))
 		@TypedArray(isUUIDFilename)
+		@Transform(({ value }) => toArray(value))
 		deletedFilenames?: string[];
 
 		@IsOptional()

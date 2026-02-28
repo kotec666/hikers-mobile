@@ -84,7 +84,7 @@ export class SubscribersService {
 
 	public async subscribe(subscriberUserId: string, toUserId: string): Promise<CommonDto.BooleanResponse> {
 		if (subscriberUserId === toUserId) {
-			throw new BadRequestException(ERRORS.BAD_REQUEST);
+			throw new BadRequestException(ERRORS.MISMATCH);
 		}
 
 		const [existingSubscription] = await this.db.db
@@ -92,7 +92,7 @@ export class SubscribersService {
 			.from(userSubscribers)
 			.where(and(eq(userSubscribers.userId, toUserId), eq(userSubscribers.userSubscriberId, subscriberUserId)));
 		if (existingSubscription) {
-			throw new BadRequestException(ERRORS.ALREADY_CREATED);
+			throw new BadRequestException(ERRORS.ALREADY_EXISTS);
 		}
 
 		await this.db.db.insert(userSubscribers).values({
