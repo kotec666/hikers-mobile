@@ -49,8 +49,9 @@ export class FriendsService {
 		return friend;
 	}
 
-	public async getFriends(userId: string): Promise<FriendDto.Entity[]> {
-		// @TODO пагинация
+	public async getFriends(userId: string, page: number, limit: number): Promise<FriendDto.Entity[]> {
+		const offset = Math.max(0, (page - 1) * limit);
+
 		const friends = await this.db.db
 			.select({
 				userId: userFriends.userId,
@@ -58,7 +59,9 @@ export class FriendsService {
 				createdAt: userFriends.createdAt,
 			})
 			.from(userFriends)
-			.where(or(eq(userFriends.userId, userId), eq(userFriends.userFriendId, userId)));
+			.where(or(eq(userFriends.userId, userId), eq(userFriends.userFriendId, userId)))
+			.offset(offset)
+			.limit(limit);
 
 		return await Promise.all(
 			friends.map(async (friendRow) => {
@@ -139,11 +142,15 @@ export class FriendsService {
 		return { success: true };
 	}
 
-	public async getSentInvites(userId: string): Promise<FriendDto.InviteEntity[]> {
+	public async getSentInvites(userId: string, page: number, limit: number): Promise<FriendDto.InviteEntity[]> {
+		const offset = Math.max(0, (page - 1) * limit);
+
 		const invites = await this.db.db
 			.select({ userId: userFriendsInvites.userId, invitedUserId: userFriendsInvites.invitedUserId })
 			.from(userFriendsInvites)
-			.where(eq(userFriendsInvites.userId, userId));
+			.where(eq(userFriendsInvites.userId, userId))
+			.offset(offset)
+			.limit(limit);
 
 		return await Promise.all(
 			invites.map(async (inviteRow) => {
@@ -163,11 +170,15 @@ export class FriendsService {
 		);
 	}
 
-	public async getPendingInvites(userId: string): Promise<FriendDto.InviteEntity[]> {
+	public async getPendingInvites(userId: string, page: number, limit: number): Promise<FriendDto.InviteEntity[]> {
+		const offset = Math.max(0, (page - 1) * limit);
+
 		const invites = await this.db.db
 			.select({ userId: userFriendsInvites.userId, invitedUserId: userFriendsInvites.invitedUserId })
 			.from(userFriendsInvites)
-			.where(eq(userFriendsInvites.invitedUserId, userId));
+			.where(eq(userFriendsInvites.invitedUserId, userId))
+			.offset(offset)
+			.limit(limit);
 
 		return await Promise.all(
 			invites.map(async (inviteRow) => {

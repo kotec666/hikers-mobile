@@ -1,12 +1,12 @@
 ﻿import { BadRequestException, ForbiddenException, Injectable, NotFoundException } from '@nestjs/common';
 import { DatabaseService } from '../database/database.service';
 import { PostDto } from './posts.dto';
-import { postLikes, postMedia, posts, trainingParticipants, users } from '../database/schema';
-import { desc, eq, ne, count, and, sql } from 'drizzle-orm';
+import { postLikes, postMedia, posts, training, users } from '../database/schema';
+import { desc, eq, ne, count, and, sql, ilike, or } from 'drizzle-orm';
 import { ERRORS } from '@shared/errors';
 import { TrainingsService } from '../trainings/trainings.service';
 import { StaticService } from '../static/static.service';
-import { CommonDto } from 'src/common/dto/common.dto';
+import { CommonDto } from '../../common/dto/common.dto';
 import { UserDto } from '../user/user.dto';
 import { SubscribersService } from '../subscribers/subscribers.service';
 import { TrainingParticipantDto } from '../trainings/trainings.dto';
@@ -19,6 +19,82 @@ export class PostsService {
 		private readonly trainings: TrainingsService,
 		private readonly subscribers: SubscribersService,
 	) {}
+
+	public async getAll(userId: string, page: number, limit: number): Promise<PostDto.Entity[]> {
+		const offset = Math.max(0, (page - 1) * limit);
+
+		const rows = await this.db.db
+			.select({
+				id: posts.id,
+				title: posts.title,
+				description: posts.description,
+				trainingId: posts.trainingId,
+				createdAt: posts.createdAt,
+				updatedAt: posts.updatedAt,
+
+				userCreator: {
+					id: users.id,
+					email: users.email,
+					name: users.name,
+					username: users.username,
+					avatarFilename: users.avatarFilename,
+				},
+			})
+			.from(posts)
+			.innerJoin(users, eq(users.id, posts.userCreatorId))
+			.orderBy(desc(posts.createdAt))
+			.offset(offset)
+			.limit(limit);
+
+		// @TODO костыль переделать
+		const postEntities: PostDto.Entity[] = [];
+		for (const row of rows) {
+			const isLiked = await this.isLiked(userId, row.id);
+			const likesCount = await this.getLikesCount(row.id);
+
+			const fileNames = await this.getFileNames(row.id);
+
+			// Пока что все посты закреплены за своей тренировкой
+			const training = await this.trainings.getExtendedById(row.trainingId!);
+			const isSubscribed = await this.subscribers.isSubscribed(userId, row.userCreator.id);
+
+			postEntities.push({ ...row, isSubscribed, likesCount, isLiked, training, fileNames });
+		}
+
+		return postEntities;
+	}
+
+	public async search(
+		userId: string,
+		page: number,
+		limit: number,
+		searchWord: string,
+	): Promise<PostDto.SearchEntity[]> {
+		const offset = Math.max(0, (page - 1) * limit);
+
+		return await this.db.db
+			.select({
+				id: posts.id,
+				title: posts.title,
+				createdAt: posts.createdAt,
+				updatedAt: posts.updatedAt,
+
+				training: {
+					id: training.id,
+					type: training.type,
+					createdAt: training.createdAt,
+					startedAt: training.startedAt,
+					finishedAt: training.finishedAt,
+				},
+			})
+			.from(posts)
+			.innerJoin(users, eq(users.id, posts.userCreatorId))
+			.leftJoin(training, eq(training.id, posts.trainingId))
+			.where(or(ilike(posts.title, `%${searchWord}%`), ilike(posts.description, `%${searchWord}%`)))
+			.orderBy(desc(posts.createdAt))
+			.offset(offset)
+			.limit(limit);
+	}
 
 	public async getByUser(userId: string, someUserId: string, page: number, limit: number): Promise<PostDto.Entity[]> {
 		const offset = Math.max(0, (page - 1) * limit);
@@ -150,22 +226,23 @@ export class PostsService {
 	}
 
 	public async create(userId: string, dto: PostDto.Creation): Promise<PostDto.Entity> {
-		const [participant] = await this.db.db
+		const [trainingRow] = await this.db.db
 			.select({
-				id: trainingParticipants.id,
-				userId: trainingParticipants.userId,
-				trainingId: trainingParticipants.trainingId,
+				id: training.id,
+				userCreatorId: training.userCreatorId,
+				finishedAt: training.finishedAt,
 			})
-			.from(trainingParticipants)
-			.where(eq(trainingParticipants.id, dto.trainingParticipantId))
+			.from(training)
+			.where(eq(training.id, dto.trainingId))
 			.limit(1);
-
-		// (проверку что треня уже завершена выполняет валидатор)
-		if (!participant) {
+		if (!trainingRow) {
 			throw new NotFoundException(ERRORS.NOT_FOUND);
 		}
-		if (participant.userId !== userId) {
-			throw new ForbiddenException(ERRORS.FORBIDDEN);
+		if (trainingRow.userCreatorId !== userId) {
+			throw new NotFoundException(ERRORS.FORBIDDEN);
+		}
+		if (!trainingRow.finishedAt) {
+			throw new NotFoundException(ERRORS.USER_IN_NOT_FINISHED_TRAINING);
 		}
 
 		const [post] = await this.db.db
@@ -175,7 +252,7 @@ export class PostsService {
 				description: dto.description,
 
 				userCreatorId: userId,
-				trainingId: participant.trainingId,
+				trainingId: dto.trainingId,
 			})
 			.returning({ id: posts.id });
 

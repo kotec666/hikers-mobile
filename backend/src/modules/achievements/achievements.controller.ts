@@ -42,7 +42,7 @@ export class AchievementsContoller {
 
 	/**
 	 * @tag Achievements
-	 * @summary Получить все достижения (пока без пагинации)
+	 * @summary Получить все достижения
 	 * @security token
 	 */
 	@Get()

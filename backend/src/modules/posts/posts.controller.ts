@@ -1,5 +1,5 @@
 ﻿import {
-	Body,
+	BadRequestException,
 	Controller,
 	Delete,
 	Get,
@@ -7,19 +7,25 @@
 	Patch,
 	Post,
 	Query,
-	UploadedFiles,
 	UseInterceptors,
 } from '@nestjs/common';
 import { User, UserData } from '@decorators/user.decorator';
 import { FilesInterceptor } from '@nestjs/platform-express';
 import { PostsService } from './posts.service';
-import { IsUUID } from '@validation/parameter-decorators';
+import { IsUUID, BodyWithFiles } from '@validation/parameter-decorators';
 import { NotNegative } from '@validation/query-decorators';
 import { UserInterceptor } from '@interceptors/user.interceptor';
 import { TrainingParticipantDto } from '../trainings/trainings.dto';
 import { CommonDto } from '../../common/dto/common.dto';
 import { PostDto } from './posts.dto';
 import { TokenDto } from '../token/token.dto';
+import {
+	MAX_FILE_SIZE_MEGABYTES,
+	POST_MAX_FILES_COUNT,
+	VALID_IMAGE_MIME_TYPES,
+	VALID_VIDEO_MIME_TYPES,
+} from '@shared/constants';
+import { ERRORS } from '@shared/errors';
 
 @Controller('posts')
 @UseInterceptors(UserInterceptor)
@@ -32,13 +38,25 @@ export class PostsController {
 	 * @security token
 	 */
 	@Post()
-	@UseInterceptors(FilesInterceptor('files'))
-	public async create(
-		@User() user: UserData,
-		@Body() dto: PostDto.Creation,
-		@UploadedFiles() files: Array<Express.Multer.File>,
-	): Promise<PostDto.Entity> {
-		return await this.service.create(user.id, { ...dto, files });
+	@UseInterceptors(
+		FilesInterceptor('files', POST_MAX_FILES_COUNT, {
+			fileFilter: (_req, file, callb) => {
+				if (
+					!VALID_IMAGE_MIME_TYPES.includes(file.mimetype) &&
+					!VALID_VIDEO_MIME_TYPES.includes(file.mimetype)
+				) {
+					return callb(new BadRequestException(`_files:${ERRORS.BAD_REQUEST}`), false);
+				}
+
+				callb(null, false);
+			},
+			limits: {
+				fileSize: MAX_FILE_SIZE_MEGABYTES * 1024 * 1024,
+			},
+		}),
+	)
+	public async create(@User() user: UserData, @BodyWithFiles() dto: PostDto.Creation): Promise<PostDto.Entity> {
+		return await this.service.create(user.id, dto);
 	}
 
 	/**
@@ -100,17 +118,29 @@ export class PostsController {
 	 * @security token
 	 */
 	@Patch(':id')
-	@UseInterceptors(FilesInterceptor('files'))
+	@UseInterceptors(
+		FilesInterceptor('files', POST_MAX_FILES_COUNT, {
+			fileFilter: (_req, file, callb) => {
+				if (
+					!VALID_IMAGE_MIME_TYPES.includes(file.mimetype) &&
+					!VALID_VIDEO_MIME_TYPES.includes(file.mimetype)
+				) {
+					return callb(new BadRequestException(`_files:${ERRORS.BAD_REQUEST}`), false);
+				}
+
+				callb(null, false);
+			},
+			limits: {
+				fileSize: MAX_FILE_SIZE_MEGABYTES * 1024 * 1024,
+			},
+		}),
+	)
 	public async edit(
 		@IsUUID('id') @Param('id') id: string,
 		@User() user: UserData,
-		@Body() body: PostDto.Edit,
-		@UploadedFiles() files?: Array<Express.Multer.File>,
+		@BodyWithFiles() dto: PostDto.Edit,
 	): Promise<CommonDto.BooleanResponse> {
-		return await this.service.edit(id, user.id, {
-			...body,
-			files,
-		});
+		return await this.service.edit(id, user.id, dto);
 	}
 
 	/**

@@ -1,5 +1,5 @@
 ﻿import { ERRORS } from '@shared/errors';
-import { FinishedTrainingParticipant, isFile, isUUIDFilename, TypedArray } from '@validation/property-decorators';
+import { isUUIDFilename, TypedArray } from '@validation/property-decorators';
 import { IsOptional, IsUUID, Length } from 'class-validator';
 import { Transform } from 'class-transformer';
 import { UserDto } from '../user/user.dto';
@@ -29,11 +29,17 @@ export namespace PostDto {
 		likesCount: number;
 	};
 
+	export type SearchEntity = {
+		id: string;
+		training: TrainingDto.SearchEntity | null;
+		title: string;
+		createdAt: Date;
+	};
+
 	/** Form-Data запрос */
 	export class Creation {
-		@IsUUID('4', { message: `_trainingParticipantId:${ERRORS.BAD_REQUEST}` })
-		@FinishedTrainingParticipant()
-		trainingParticipantId: string;
+		@IsUUID('4', { message: `_trainingId:${ERRORS.BAD_REQUEST}` })
+		trainingId: string;
 
 		@Length(lengths.post.title.min, lengths.post.title.max, { message: `_title:${ERRORS.INVALID_LENGTH}` })
 		title: string;
@@ -42,7 +48,6 @@ export namespace PostDto {
 		description?: string;
 
 		@IsOptional()
-		@TypedArray(isFile)
 		files?: Express.Multer.File[];
 	}
 
@@ -64,7 +69,6 @@ export namespace PostDto {
 		deletedFilenames?: string[];
 
 		@IsOptional()
-		@TypedArray(isFile)
 		files?: Express.Multer.File[];
 	}
 }

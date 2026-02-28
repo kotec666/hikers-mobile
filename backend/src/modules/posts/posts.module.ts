@@ -8,7 +8,7 @@ import { SubscribersModule } from '../subscribers/subscribers.module';
 
 @Module({
 	controllers: [PostsController],
-	exports: [],
+	exports: [PostsService],
 	imports: [DatabaseModule, StaticModule, TrainingsModule, SubscribersModule],
 	providers: [PostsService],
 })
