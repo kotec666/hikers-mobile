@@ -223,7 +223,7 @@ export class FriendsService {
 			)
 			.limit(1);
 		if (existingFriend) {
-			throw new BadRequestException(ERRORS.MISMATCH);
+			throw new BadRequestException(ERRORS.ALREADY_EXISTS);
 		}
 
 		await this.db.db.insert(userFriendsInvites).values({ userId: fromUserId, invitedUserId: toUserId });
