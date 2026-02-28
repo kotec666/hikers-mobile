@@ -1,5 +1,6 @@
 ﻿import {
 	BadRequestException,
+	Body,
 	Controller,
 	Delete,
 	Get,
@@ -12,7 +13,7 @@
 import { User, UserData } from '@decorators/user.decorator';
 import { FilesInterceptor } from '@nestjs/platform-express';
 import { PostsService } from './posts.service';
-import { IsUUID, BodyWithFiles } from '@validation/parameter-decorators';
+import { IsUUID, InjectBodyFiles } from '@validation/parameter-decorators';
 import { NotNegative } from '@validation/query-decorators';
 import { UserInterceptor } from '@interceptors/user.interceptor';
 import { TrainingParticipantDto } from '../trainings/trainings.dto';
@@ -55,7 +56,10 @@ export class PostsController {
 			},
 		}),
 	)
-	public async create(@User() user: UserData, @BodyWithFiles() dto: PostDto.Creation): Promise<PostDto.Entity> {
+	public async create(
+		@User() user: UserData,
+		@InjectBodyFiles() @Body() dto: PostDto.Creation,
+	): Promise<PostDto.Entity> {
 		return await this.service.create(user.id, dto);
 	}
 
@@ -138,7 +142,7 @@ export class PostsController {
 	public async edit(
 		@IsUUID('id') @Param('id') id: string,
 		@User() user: UserData,
-		@BodyWithFiles() dto: PostDto.Edit,
+		@InjectBodyFiles() @Body() dto: PostDto.Edit,
 	): Promise<CommonDto.BooleanResponse> {
 		return await this.service.edit(id, user.id, dto);
 	}
