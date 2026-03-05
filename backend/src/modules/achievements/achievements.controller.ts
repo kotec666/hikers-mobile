@@ -4,6 +4,7 @@ import { AchievementDto } from './achievements.dto';
 import { User } from '@decorators/user.decorator';
 import { TokenDto } from '../token/token.dto';
 import { UserInterceptor } from '@interceptors/user.interceptor';
+import { IsUUID } from '@validation/parameter-decorators';
 
 @Controller('achievements')
 @UseInterceptors(UserInterceptor)
@@ -16,7 +17,9 @@ export class AchievementsContoller {
 	 * @security token
 	 */
 	@Get('claimed/:userId')
-	public async getClaimedByUserId(@Param('userId') userId: string): Promise<AchievementDto.Entity[]> {
+	public async getClaimedByUserId(
+		@IsUUID('userId') @Param('userId') userId: string,
+	): Promise<AchievementDto.Entity[]> {
 		return this.service.getClaimed(userId);
 	}
 
@@ -42,7 +45,7 @@ export class AchievementsContoller {
 
 	/**
 	 * @tag Achievements
-	 * @summary Получить все достижения (пока без пагинации)
+	 * @summary Получить все достижения
 	 * @security token
 	 */
 	@Get()
@@ -56,7 +59,10 @@ export class AchievementsContoller {
 	 * @security token
 	 */
 	@Get('/:id')
-	public async getById(@Param('id') id: string, @User() user: TokenDto.Payload): Promise<AchievementDto.Entity> {
+	public async getById(
+		@IsUUID('id') @Param('id') id: string,
+		@User() user: TokenDto.Payload,
+	): Promise<AchievementDto.Entity> {
 		return await this.service.getById(id, user.id);
 	}
 }

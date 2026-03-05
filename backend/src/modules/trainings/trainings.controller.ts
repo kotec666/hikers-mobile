@@ -3,12 +3,11 @@ import { TrainingsService } from './trainings.service';
 import { TrainingDto, TrainingParticipantDto } from './trainings.dto';
 import { User } from '@decorators/user.decorator';
 import { TokenDto } from '../token/token.dto';
-import { UserInterceptor } from 'src/common/interceptors/user.interceptor';
-import { CommonDto } from 'src/common/dto/common.dto';
-import { IsUUID } from '@validation/parameter-decorators';
-import { TrainingType } from '@shared/enums';
-import { ParseEnumArray } from '@validation/param.decorators';
+import { UserInterceptor } from '../../common/interceptors/user.interceptor';
+import { CommonDto } from '../../common/dto/common.dto';
+import { IsUUID, ParseEnumArray } from '@validation/parameter-decorators';
 import { NotNegative } from '@validation/query-decorators';
+import { TrainingType } from '@shared/enums';
 
 @Controller('trainings')
 @UseInterceptors(UserInterceptor)
@@ -17,15 +16,29 @@ export class TrainingsController {
 
 	/**
 	 * @tag Trainings
-	 * @summary История тренировок (завершённые, где пользователь был участником)
+	 * @summary ДЕБАГ-РУДИМЕНТ ДЛЯ ФРОНТЕНДА. НЕ ИСПОЛЬЗОВАТЬ
 	 * @security token
 	 */
 	@Get('history')
-	public async getHistory(
+	public async getAll(@User() user: TokenDto.Payload): Promise<TrainingDto.Entity[]> {
+		// @TODO выпилить когда не нужен будет
+		return this.service.getAll(user.id);
+	}
+
+	/**
+	 * @tag Trainings
+	 * @summary (экран История тренировок) Получить тренировки, где пользователь участник
+	 * @security token
+	 */
+	@Get('my')
+	public async getMy(
 		@User() user: TokenDto.Payload,
+		@NotNegative('page') @Query('page') page: number,
+		@NotNegative('limit') @Query('limit') limit: number,
+		@Query('finished') isFinished?: boolean,
 		@ParseEnumArray({ key: 'types', enum: TrainingType }) @Query('types') types?: TrainingType[],
-	): Promise<TrainingDto.Entity[]> {
-		return this.service.getHistory(user.id, types);
+	): Promise<TrainingDto.SearchEntity[]> {
+		return this.service.getMy(user.id, page, limit, isFinished, types);
 	}
 
 	/**

@@ -16,6 +16,7 @@ const statusCodeToError = {
 	401: ERRORS.UNAUTHORIZED,
 	403: ERRORS.FORBIDDEN,
 	404: ERRORS.NOT_FOUND,
+	413: ERRORS.TOO_LARGE,
 	500: ERRORS.INTERNAL,
 };
 
@@ -116,11 +117,12 @@ export class HttpExceptionFilter implements ExceptionFilter {
 			}
 		}
 
-		this.logger.error(`Unhandled exception: ${JSON.stringify(exception)}`);
+		this.logger.error(`Unhandled exception: ${exception}. Stack ${exception.stack}`);
 
 		response.status(500).json({
 			statusCode: 500,
 			message: ERRORS.INTERNAL,
+			text: `Unhandled exception: ${exception}. Stack: ${exception.stack}`,
 		});
 	}
 }

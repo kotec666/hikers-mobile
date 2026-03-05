@@ -36,8 +36,6 @@ export class AchievementsService {
 	}
 
 	public async getAll(userId: string): Promise<AchievementDto.Entity[]> {
-		// @TODO пагинация
-
 		return await this.db.db
 			.select({
 				id: achievements.id,

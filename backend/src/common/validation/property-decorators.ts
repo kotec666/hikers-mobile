@@ -1,9 +1,8 @@
 ﻿import { registerDecorator, ValidationOptions } from 'class-validator';
-import { UniqueEmailValidator } from './unique-email.validator';
 import { UserActivity } from '@shared/enums';
 import { ERRORS } from '@shared/errors';
 import { validate } from 'uuid';
-import { FinishedTrainingParticipantValidator } from './finished-training-participant.validator';
+import { FinishedTrainingParticipantValidator, UniqueEmailValidator } from './validators';
 
 export function IsUUID(validationOptions?: ValidationOptions) {
 	return function (object: object, propertyName: string) {

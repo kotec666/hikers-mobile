@@ -18,15 +18,4 @@ export class UserController {
 	public async getMe(@User() user: TokenDto.Payload) {
 		return this.userService.getUser(user.id);
 	}
-
-	/**
-	 * @tag User
-	 * @summary Получить всех юзеров (для тестов)
-	 * @security token
-	 */
-	@Get()
-	public async getAll() {
-		// @TODO убрать после тестов
-		return this.userService.getAll();
-	}
 }

@@ -1,10 +1,11 @@
-﻿import { Controller, Delete, Get, Param, Post, UseInterceptors } from '@nestjs/common';
+﻿import { Controller, Delete, Get, Param, Post, Query, UseInterceptors } from '@nestjs/common';
 import { SubscribersService } from './subscribers.service';
 import { User, UserData } from '@decorators/user.decorator';
 import { IsUUID } from '@validation/parameter-decorators';
 import { UserInterceptor } from '@interceptors/user.interceptor';
 import { SubscriberDto, SubscriptionDto } from './subscribers.dto';
 import { CommonDto } from '../../common/dto/common.dto';
+import { NotNegative } from '@validation/query-decorators';
 
 @Controller('subscribers')
 @UseInterceptors(UserInterceptor)
@@ -43,8 +44,12 @@ export class SubscribersController {
 	 * @security token
 	 */
 	@Get('me')
-	public async getSubscriptions(@User() user: UserData): Promise<SubscriptionDto.Entity[]> {
-		return await this.service.getSubscriptions(user.id);
+	public async getSubscriptions(
+		@User() user: UserData,
+		@NotNegative('page') @Query('page') page: number,
+		@NotNegative('limit') @Query('limit') limit: number,
+	): Promise<SubscriptionDto.Entity[]> {
+		return await this.service.getSubscriptions(user.id, page, limit);
 	}
 
 	/**
@@ -53,7 +58,11 @@ export class SubscribersController {
 	 * @security token
 	 */
 	@Get('my')
-	public async getSubscribers(@User() user: UserData): Promise<SubscriberDto.Entity[]> {
-		return await this.service.getSubscribers(user.id);
+	public async getSubscribers(
+		@User() user: UserData,
+		@NotNegative('page') @Query('page') page: number,
+		@NotNegative('limit') @Query('limit') limit: number,
+	): Promise<SubscriberDto.Entity[]> {
+		return await this.service.getSubscribers(user.id, page, limit);
 	}
 }

@@ -485,9 +485,8 @@ export class TrainingsService {
 		};
 	}
 
-	public async getHistory(userId: string, types?: TrainingType[]): Promise<TrainingDto.Entity[]> {
-		// @TODO пагинация
-		const query = this.db.db
+	public async getAll(userId: string): Promise<TrainingDto.Entity[]> {
+		const trainings = await this.db.db
 			.select({
 				id: training.id,
 				type: training.type,
@@ -498,14 +497,41 @@ export class TrainingsService {
 			})
 			.from(training)
 			.leftJoin(trainingParticipants, eq(trainingParticipants.trainingId, training.id))
+			.where(eq(trainingParticipants.userId, userId))
 			.orderBy(desc(training.finishedAt, 'first'));
 
-		if (types) {
-			query.where(and(inArray(training.type, types), eq(trainingParticipants.userId, userId)));
-		} else {
-			query.where(eq(trainingParticipants.userId, userId));
-		}
-		return await query;
+		return trainings;
+	}
+
+	public async getMy(
+		userId: string,
+		page: number,
+		limit: number,
+		isFinished?: boolean,
+		types?: TrainingType[],
+	): Promise<TrainingDto.SearchEntity[]> {
+		const offset = Math.max(0, (page - 1) * limit);
+
+		const finishedCond =
+			typeof isFinished !== 'undefined' ? (isFinished ? isNotNull : isNull)(training.finishedAt) : undefined;
+		const typesCond = typeof types !== 'undefined' ? inArray(training.type, types) : undefined;
+
+		const trainings = await this.db.db
+			.select({
+				id: training.id,
+				type: training.type,
+				createdAt: training.createdAt,
+				startedAt: training.startedAt,
+				finishedAt: training.finishedAt,
+			})
+			.from(training)
+			.leftJoin(trainingParticipants, eq(trainingParticipants.trainingId, training.id))
+			.where(and(eq(trainingParticipants.userId, userId), finishedCond, typesCond))
+			.orderBy(desc(training.finishedAt, 'first'))
+			.offset(offset)
+			.limit(limit);
+
+		return trainings;
 	}
 
 	public async getById(id: string): Promise<Required<TrainingDto.Entity>> {
