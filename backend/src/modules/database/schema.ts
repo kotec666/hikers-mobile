@@ -319,7 +319,7 @@ export const notifications = pgTable(
 		toUserId: uuid('to_user_id')
 			.notNull()
 			.references(() => users.id),
-		action: jsonb('action').default({}).$type<NotificationDto.Action>(),
+		action: jsonb('action').default({}).notNull().$type<NotificationDto.Action>(),
 		type: notificationTypeEnum().notNull(),
 		createdAt: timestamp('created_at').defaultNow().notNull(),
 		readedAt: timestamp('readed_at'),
