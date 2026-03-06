@@ -176,13 +176,6 @@
       "when": 1769436156462,
       "tag": "0024_add_post_media_id_pkey",
       "breakpoints": true
-    },
-    {
-      "idx": 25,
-      "version": "7",
-      "when": 1772802868204,
-      "tag": "0025_add_notification_action",
-      "breakpoints": true
     }
   ]
 }
