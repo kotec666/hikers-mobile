@@ -315,12 +315,10 @@ export const notifications = pgTable(
 	'notifications',
 	{
 		id: uuid('id').primaryKey().defaultRandom(),
-		iconFilename: varchar('icon_filename', { length: 255 }).references(() => media.filename),
 		toUserId: uuid('to_user_id')
 			.notNull()
 			.references(() => users.id),
 		action: jsonb('action').default({}).$type<NotificationDto.Action>(),
-		text: varchar('text', { length: 255 }).notNull(),
 		createdAt: timestamp('created_at').defaultNow().notNull(),
 		readedAt: timestamp('readed_at'),
 	},
