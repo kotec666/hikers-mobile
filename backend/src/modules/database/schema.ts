@@ -17,6 +17,7 @@ import {
 } from 'drizzle-orm/pg-core';
 import { enumToPgEnum } from './helpers';
 import { MeasuringUnit, TrainingType, UserActivity } from '@shared/enums';
+import { NotificationDto } from '../notifications/notifications.dto';
 
 /**
  * ENUMS
@@ -318,6 +319,7 @@ export const notifications = pgTable(
 		toUserId: uuid('to_user_id')
 			.notNull()
 			.references(() => users.id),
+		action: jsonb('action').default({}).$type<NotificationDto.Action>(),
 		text: varchar('text', { length: 255 }).notNull(),
 		createdAt: timestamp('created_at').defaultNow().notNull(),
 		readedAt: timestamp('readed_at'),
