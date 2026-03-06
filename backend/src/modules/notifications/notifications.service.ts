@@ -93,4 +93,18 @@ export class NotificationsService {
 
 		return { success: true };
 	}
+
+	public async delete(userId: string, ids?: string[]): Promise<CommonDto.BooleanResponse> {
+		const query = this.db.db.delete(notifications);
+
+		if (ids) {
+			query.where(and(eq(notifications.toUserId, userId), inArray(notifications.id, ids)));
+		} else {
+			query.where(eq(notifications.toUserId, userId));
+		}
+
+		await query;
+
+		return { success: true };
+	}
 }

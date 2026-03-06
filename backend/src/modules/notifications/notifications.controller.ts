@@ -1,4 +1,4 @@
-﻿import { Body, Controller, Get, Patch, Post, Query, UseInterceptors } from '@nestjs/common';
+﻿import { Body, Controller, Delete, Get, Patch, Post, Query, UseInterceptors } from '@nestjs/common';
 import { NotificationsService } from './notifications.service';
 import { UserInterceptor } from '@interceptors/user.interceptor';
 import { User, UserData } from '@decorators/user.decorator';
@@ -34,6 +34,16 @@ export class NotificationsController {
 		@Query('readed') readed?: boolean,
 	): Promise<NotificationDto.Entity[]> {
 		return this.service.getNotifications(user.id, page, limit, readed);
+	}
+
+	/**
+	 * @tag Notifications
+	 * @security token
+	 * @summary Удалить уведы. Если боди не передано - удалятся все
+	 */
+	@Delete('delete')
+	public delete(@User() user: UserData, @Body() dto?: NotificationDto.Read): Promise<CommonDto.BooleanResponse> {
+		return this.service.delete(user.id, dto ? dto.ids : undefined);
 	}
 
 	/**
