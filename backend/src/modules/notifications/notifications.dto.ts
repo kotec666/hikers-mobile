@@ -14,7 +14,7 @@ export namespace NotificationDto {
 	export type Action = {
 		text: string;
 		iconFilename: string;
-		relEntityId: string;
+		relEntityId: string | null;
 	};
 
 	export class Pull {

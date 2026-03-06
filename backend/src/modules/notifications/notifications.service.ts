@@ -1,24 +1,44 @@
 ﻿import { Injectable } from '@nestjs/common';
 import { NotificationDto } from './notifications.dto';
 import { DatabaseService } from '../database/database.service';
-import { WebsocketsGateway } from '../websockets/websockets.gateway';
+import { notifications } from '../database/schema';
+import { and, eq, isNotNull, isNull } from 'drizzle-orm';
 
 @Injectable()
 export class NotificationsService {
 	constructor(private readonly db: DatabaseService) {}
 
 	public async getNotifications(
-		// eslint-disable-next-line @typescript-eslint/no-unused-vars
 		userId: string,
-		// eslint-disable-next-line @typescript-eslint/no-unused-vars
 		page: number,
-		// eslint-disable-next-line @typescript-eslint/no-unused-vars
 		limit: number,
-		// eslint-disable-next-line @typescript-eslint/no-unused-vars
-		onlyReaded?: boolean,
+		readed?: boolean,
 	): Promise<NotificationDto.Entity[]> {
-		// @TODO убрать, это просто для примера
-		WebsocketsGateway.emitToUser(userId, 'test', { test: 'test static' });
-		return [];
+		const offset = Math.max(0, (page - 1) * limit);
+
+		const query = this.db.db
+			.select({
+				id: notifications.id,
+				type: notifications.type,
+				createdAt: notifications.createdAt,
+				readedAt: notifications.readedAt,
+				action: notifications.action,
+			})
+			.from(notifications)
+			.offset(offset)
+			.limit(limit);
+
+		if (typeof readed !== 'undefined') {
+			query.where(
+				and(
+					readed ? isNotNull(notifications.readedAt) : isNull(notifications.readedAt),
+					eq(notifications.toUserId, userId),
+				),
+			);
+		} else {
+			query.where(eq(notifications.toUserId, userId));
+		}
+
+		return await query;
 	}
 }

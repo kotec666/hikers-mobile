@@ -19,8 +19,8 @@ export class NotificationsController {
 		@User() user: UserData,
 		@NotNegative('page') @Query('page') page: number,
 		@NotNegative('limit') @Query('limit') limit: number,
-		@Query('onlyReaded') onlyReaded?: boolean,
+		@Query('readed') readed?: boolean,
 	) {
-		return this.service.getNotifications(user.id, page, limit, onlyReaded);
+		return this.service.getNotifications(user.id, page, limit, readed);
 	}
 }
