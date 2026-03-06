@@ -21,6 +21,7 @@ import { ProfileModule } from './modules/profile/profile.module';
 import { TrainingsModule } from './modules/trainings/trainings.module';
 import { PostsModule } from './modules/posts/posts.module';
 import { SerachModule } from './modules/search/search.module';
+import { NotificationsModule } from './modules/notifications/notifications.module';
 
 config({ quiet: true });
 
@@ -84,6 +85,7 @@ config({ quiet: true });
 		TrainingsModule,
 		PostsModule,
 		SerachModule,
+		NotificationsModule,
 	],
 	providers: [UniqueEmailValidator, FinishedTrainingParticipantValidator],
 })
