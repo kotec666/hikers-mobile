@@ -1,6 +1,7 @@
 ﻿import { Injectable } from '@nestjs/common';
 import { NotificationDto } from './notifications.dto';
 import { DatabaseService } from '../database/database.service';
+import { WebsocketsGateway } from '../websockets/websockets.gateway';
 
 @Injectable()
 export class NotificationsService {
@@ -14,8 +15,10 @@ export class NotificationsService {
 		// eslint-disable-next-line @typescript-eslint/no-unused-vars
 		limit: number,
 		// eslint-disable-next-line @typescript-eslint/no-unused-vars
-		onlyNotReaded?: boolean,
+		onlyReaded?: boolean,
 	): Promise<NotificationDto.Entity[]> {
+		// @TODO убрать, это просто для примера
+		WebsocketsGateway.emitToUser(userId, 'test', { test: 'test static' });
 		return [];
 	}
 }

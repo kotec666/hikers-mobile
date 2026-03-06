@@ -22,6 +22,7 @@ import { TrainingsModule } from './modules/trainings/trainings.module';
 import { PostsModule } from './modules/posts/posts.module';
 import { SerachModule } from './modules/search/search.module';
 import { NotificationsModule } from './modules/notifications/notifications.module';
+import { WebsocketsModule } from './modules/websockets/websockets.module';
 
 config({ quiet: true });
 
@@ -86,6 +87,7 @@ config({ quiet: true });
 		PostsModule,
 		SerachModule,
 		NotificationsModule,
+		WebsocketsModule,
 	],
 	providers: [UniqueEmailValidator, FinishedTrainingParticipantValidator],
 })
