@@ -1,5 +1,6 @@
 ﻿import { NotificationType } from '@shared/enums';
 import { ERRORS } from '@shared/errors';
+import { isUUID, TypedArray } from '@validation/property-decorators';
 import { IsPositive } from 'class-validator';
 
 export namespace NotificationDto {
@@ -22,5 +23,10 @@ export namespace NotificationDto {
 		page: number;
 		@IsPositive({ message: `_limit:${ERRORS.MISMATCH}` })
 		limit: number;
+	}
+
+	export class Read {
+		@TypedArray(isUUID)
+		ids: string[];
 	}
 }

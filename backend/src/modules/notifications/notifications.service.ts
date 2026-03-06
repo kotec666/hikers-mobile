@@ -1,12 +1,51 @@
 ﻿import { Injectable } from '@nestjs/common';
 import { NotificationDto } from './notifications.dto';
 import { DatabaseService } from '../database/database.service';
-import { notifications } from '../database/schema';
-import { and, eq, isNotNull, isNull } from 'drizzle-orm';
+import { notifications, users } from '../database/schema';
+import { and, eq, inArray, isNotNull, isNull, sql } from 'drizzle-orm';
+import { CommonDto } from 'src/common/dto/common.dto';
+import { NotificationType } from '@shared/enums';
+import { WebsocketsGateway } from '../websockets/websockets.gateway';
 
 @Injectable()
 export class NotificationsService {
 	constructor(private readonly db: DatabaseService) {}
+
+	public push(userId: string, notif: NotificationDto.Entity): boolean {
+		return WebsocketsGateway.emitToUser(userId, 'notification', notif);
+	}
+
+	public async debugCreateAndPush(userId: string, timeMs: number): Promise<NotificationDto.Entity> {
+		const [user] = await this.db.db
+			.select({ avatar: users.avatarFilename })
+			.from(users)
+			.where(eq(users.id, userId))
+			.limit(1);
+
+		const [notif] = await this.db.db
+			.insert(notifications)
+			.values({
+				toUserId: userId,
+				type: NotificationType.FRIEND_INVITE,
+				action: {
+					iconFilename: user.avatar ?? 'no avatar',
+					text: Date.now().toString(),
+					relEntityId: userId,
+				},
+			})
+			.returning({
+				id: notifications.id,
+				type: notifications.type,
+				createdAt: notifications.createdAt,
+				readedAt: notifications.readedAt,
+				action: notifications.action,
+			});
+
+		setTimeout(() => {
+			this.push(userId, notif);
+		}, timeMs);
+		return notif;
+	}
 
 	public async getNotifications(
 		userId: string,
@@ -40,5 +79,18 @@ export class NotificationsService {
 		}
 
 		return await query;
+	}
+
+	public async read(userId: string, ids: string[]): Promise<CommonDto.BooleanResponse> {
+		await this.db.db
+			.update(notifications)
+			.set({
+				readedAt: sql`NOW()`,
+			})
+			.where(
+				and(eq(notifications.toUserId, userId), inArray(notifications.id, ids), isNull(notifications.readedAt)),
+			);
+
+		return { success: true };
 	}
 }
