@@ -113,6 +113,7 @@ export class HttpExceptionFilter implements ExceptionFilter {
 						: ERRORS[message]
 							? message
 							: (statusCodeToError[exceptionStatus] ?? ERRORS.UNKNOWN_ERROR),
+					text: exceptionStatus === 500 ? message : undefined,
 				});
 			}
 		}

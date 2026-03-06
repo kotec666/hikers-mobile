@@ -5,12 +5,13 @@
 	S3Client as AWSClient,
 	GetObjectCommand,
 } from '@aws-sdk/client-s3';
+import { Injectable, InternalServerErrorException, NotFoundException } from '@nestjs/common';
 import { v4 as uuidv4 } from 'uuid';
-import { EnvService } from '../env/env.service';
-import { Injectable, InternalServerErrorException } from '@nestjs/common';
-import * as stream from 'stream';
 import { DatabaseService } from '../database/database.service';
+import { EnvService } from '../env/env.service';
 import { media } from '../database/schema';
+import { ERRORS } from '@shared/errors';
+import * as stream from 'stream';
 
 interface S3Config {
 	readonly bucketName: string;
@@ -121,12 +122,12 @@ export class StaticService {
 
 			// Проверяем, что response.Body является потоком
 			if (!response.Body || typeof response.Body !== 'object') {
-				throw new Error('Response body is not a valid stream');
+				throw new InternalServerErrorException(ERRORS.INTERNAL);
 			}
 
 			return response.Body as stream.Readable;
 		} catch (error) {
-			throw new InternalServerErrorException(`S3 error: ${error.message}`);
+			throw new NotFoundException(ERRORS.NOT_FOUND);
 		}
 	}
 
