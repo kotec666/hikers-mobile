@@ -39,11 +39,9 @@ import GallerySvg from '@/components/svg/GallerySvg'
 import ImagePickerButton from '@/components/ui/ImagePickerButton'
 import { useToast } from '@/hooks/useToast'
 import { createPost, editPostById, getPostById, IPost } from '@/api/posts'
-import { useAuthStore } from '@/store/authStore'
-import { getExtendedDetails } from '@/api/workout'
 import { CharacterCounter } from '@/components/ui/CharacterCounter'
 import { PATH_TO_IMAGE } from '@/constants/PATH_TO_FILES'
-import { TrainingType } from '../../../shared/enums'
+import { TrainingType } from '@shared/enums'
 import { WorkoutTypesData } from '@/constants/WorkoutTypes'
 import { formatDistance } from '@/helpers/distance'
 import { formatRelativeDate } from '@/helpers/formatRelativeDate'
@@ -51,7 +49,7 @@ import { formatTimeFromSecondsCompact } from '@/helpers/formatTime'
 import { mpsToKmph } from '@/helpers/mpsToKmph'
 import { adaptLocations } from '@/helpers/adaptPointsToIWorkoutLocationStorageItem'
 import { formatBackendPace } from '@/helpers/formatBackendPace'
-import PostMetrics from '@/components/ui/Post/PostMetrics' // @TODO Возможно нахрен удалить
+import { validateFile } from '@/helpers/fileValidation'
 
 interface IPostFormState {
 	title: string
@@ -89,7 +87,6 @@ export default function ViewWorkout() {
 	const { handleSubmit, control, setValue } = useForm<IPostFormState>()
 	const { ErrorMessages } = useErrorMessage()
 
-	const { user } = useAuthStore()
 	const results = useWorkoutResultsAfterFinishStore((state) => state)
 	const pointsRef = useRef(results.points || [])
 	const [isPhotoModalOpen, setIsPhotoModalOpen] = useState(false)
@@ -158,21 +155,14 @@ export default function ViewWorkout() {
 		}
 	}
 
-	const getParticipantId = async (trainingId: string | null, userId: string | undefined): Promise<string | null> => {
-		if (!trainingId || !userId) return null
-		const extendedTraining = await getExtendedDetails(trainingId)
-		return extendedTraining.participants.find((participant) => participant.user.id === userId)?.id || null
-	}
-
 	const onSubmit = async (postFormState: IPostFormState) => {
 		setState((s) => ({ ...s, isLoading: true, errors: undefined }))
 
 		try {
 			const formData = new FormData()
 			if (mode === VIEWWORKOUT_MODE.VIEW) {
-				const participantId = await getParticipantId(results.trainingId, user?.id)
-				if (participantId) {
-					formData.append('trainingParticipantId', participantId)
+				if (results.trainingId) {
+					formData.append('trainingId', results.trainingId)
 				}
 			}
 
@@ -208,7 +198,7 @@ export default function ViewWorkout() {
 	const pickPostImage = async (mode: ImagePickMode) => {
 		setIsPhotoModalOpen(false)
 		try {
-			let result = {} as ImagePicker.ImagePickerResult
+			let result: ImagePicker.ImagePickerResult
 
 			if (mode === ImagePickMode.GALLERY) {
 				await ImagePicker.requestMediaLibraryPermissionsAsync()
@@ -225,9 +215,23 @@ export default function ViewWorkout() {
 				})
 			}
 
-			if (!result.canceled) {
-				setPostImages((prev) => [...prev, result.assets[0].uri])
+			if (result.canceled || !result.assets?.length) return
+
+			const pickedUri = result.assets[0].uri
+
+			if (!pickedUri) {
+				toast.error('Невалидный файл')
+				return
 			}
+
+			const { isValid, errorMessage } = await validateFile(pickedUri, postImages.length + existingImages.length)
+
+			if (!isValid) {
+				toast.error(errorMessage || 'Файл не прошёл проверку')
+				return
+			}
+
+			setPostImages((prev) => [...prev, pickedUri])
 		} catch (e: any) {
 			toast.error('Ошибка при загрузке изображения')
 		}

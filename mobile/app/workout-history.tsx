@@ -1,5 +1,5 @@
-import React from 'react'
-import { SectionList, View, Text } from 'react-native'
+import React, { useCallback, useEffect, useMemo, useState } from 'react'
+import { View, Text, RefreshControl, ActivityIndicator } from 'react-native'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
 import HeaderBack from '@/components/ui/HeaderBack'
 import { Container } from '@/components/ui/Container'
@@ -7,127 +7,252 @@ import PeopleRunningSvg from '@/components/svg/PeopleRunningSvg'
 import WorkoutHistoryListItem from '@/components/workout-history/WorkoutHistoryListItem'
 import { fontFamily } from '@/constants/Fonts'
 import { Select } from '@/components/ui/Select'
+import { WorkoutTypesData } from '@/constants/WorkoutTypes'
+import { format } from 'date-fns'
+import { ru } from 'date-fns/locale'
+import SaveUnsavedTrainingSvg from '@/components/svg/SaveUnsavedTrainingSvg'
+import DeleteTrashSvg from '@/components/svg/DeleteTrashSvg'
+import { usePaginatedList } from '@/hooks/usePaginatedList'
+import { getMyHistoryTrainings, ITrainingHistoryItem } from '@/api/workout'
+import { LegendList } from '@legendapp/list'
+import { Colors } from '@/constants/Colors'
+import CheckMarkIconSvg from '@/components/svg/CheckMarkIconSvg'
+import TrainingsEmpty from '@/components/ui/Post/TrainingsEmpty'
+import { useUnsavedWorkoutSync } from '@/hooks/useUnsavedWorkoutSync'
+import { cn } from '@/helpers/cn'
 
 interface WorkoutItem {
-	id: number
+	id: string
 	title: string
-	icon: React.JSX.Element
+	icon: React.ReactElement
 	month: string
-}
-
-interface GroupedData {
-	[key: string]: WorkoutItem[]
-}
-
-interface Section {
-	title: string
-	data: WorkoutItem[]
+	startedAt: number
+	createdAt: string
+	type: string
+	showHeader?: boolean
 }
 
 const WorkoutHistory = () => {
 	const insets = useSafeAreaInsets()
+	const { notSavedWorkouts, syncingIds, enqueueWorkoutSync, deleteWorkout } = useUnsavedWorkoutSync()
 
-	const data = [
-		{ id: 1, title: '7 июня, 16:20, 15 км', icon: <PeopleRunningSvg width={26} height={26} />, month: 'Июнь' },
-		{ id: 2, title: '8 июня, 16:20, 15 км', icon: <PeopleRunningSvg width={26} height={26} />, month: 'Июнь' },
-		{ id: 3, title: '9 июня, 16:20, 15 км', icon: <PeopleRunningSvg width={26} height={26} />, month: 'Июнь' },
-		{ id: 4, title: '10 июня, 16:20, 15 км', icon: <PeopleRunningSvg width={26} height={26} />, month: 'Июнь' },
-		{ id: 5, title: '11 июня, 16:20, 15 км', icon: <PeopleRunningSvg width={26} height={26} />, month: 'Июнь' },
-		{ id: 6, title: '12 июня, 16:20, 15 км', icon: <PeopleRunningSvg width={26} height={26} />, month: 'Июнь' },
-		{ id: 7, title: '7 июля, 16:20, 15 км', icon: <PeopleRunningSvg width={26} height={26} />, month: 'Июль' },
-		{ id: 8, title: '8 июля, 16:20, 15 км', icon: <PeopleRunningSvg width={26} height={26} />, month: 'Июль' },
-		{ id: 9, title: '9 июля, 16:20, 15 км', icon: <PeopleRunningSvg width={26} height={26} />, month: 'Июль' },
-		{ id: 10, title: '10 июля, 16:20, 15 км', icon: <PeopleRunningSvg width={26} height={26} />, month: 'Июль' },
-		{ id: 11, title: '11 июля, 16:20, 15 км', icon: <PeopleRunningSvg width={26} height={26} />, month: 'Июль' },
-		{ id: 12, title: '13 июня, 16:20, 15 км', icon: <PeopleRunningSvg width={26} height={26} />, month: 'Июнь' },
-		{ id: 13, title: '14 июня, 16:20, 15 км', icon: <PeopleRunningSvg width={26} height={26} />, month: 'Июнь' },
-		{
-			id: 14,
-			title: '7 августа, 16:20, 15 км',
-			icon: <PeopleRunningSvg width={26} height={26} />,
-			month: 'Август'
-		},
-		{
-			id: 15,
-			title: '8 августа, 16:20, 15 км',
-			icon: <PeopleRunningSvg width={26} height={26} />,
-			month: 'Август'
-		},
-		{
-			id: 16,
-			title: '9 августа, 16:20, 15 км',
-			icon: <PeopleRunningSvg width={26} height={26} />,
-			month: 'Август'
-		},
-		{ id: 17, title: '15 июня, 16:20, 15 км', icon: <PeopleRunningSvg width={26} height={26} />, month: 'Июнь' },
-		{
-			id: 18,
-			title: '7 сентября, 16:20, 15 км',
-			icon: <PeopleRunningSvg width={26} height={26} />,
-			month: 'Сентябрь'
-		},
-		{
-			id: 19,
-			title: '8 сентября, 16:20, 15 км',
-			icon: <PeopleRunningSvg width={26} height={26} />,
-			month: 'Сентябрь'
-		},
-		{
-			id: 20,
-			title: '9 сентября, 16:20, 15 км last',
-			icon: <PeopleRunningSvg width={26} height={26} />,
-			month: 'Сентябрь'
-		}
-	]
+	// const { user } = useAuthStore()
+	// const [notSavedWorkouts, setNotSavedWorkouts] = useState(getNotSavedWorkouts(user?.id))
+	const [selectedType, setSelectedType] = useState<string>('')
 
-	const groupedData: GroupedData = data.reduce((acc: GroupedData, item: WorkoutItem) => {
-		if (!acc[item.month]) {
-			acc[item.month] = []
-		}
-		acc[item.month].push(item)
-		return acc
-	}, {} as GroupedData)
+	// const syncQueueRef = useRef<QueueItem[]>([])
+	// const isProcessingRef = useRef(false)
+	// const [syncingIds, setSyncingIds] = useState<number[]>([])
 
-	const sections: Section[] = Object.keys(groupedData).map((month: string) => ({
-		title: month,
-		data: groupedData[month]
-	}))
+	// const enqueueWorkoutSync = (startedAt: number) => {
+	// 	if (syncQueueRef.current.some((i) => i.startedAt === startedAt) || syncingIds.includes(startedAt)) return
+	//
+	// 	syncQueueRef.current.push({
+	// 		startedAt,
+	// 		userId: user?.id
+	// 	})
+	//
+	// 	processQueue()
+	// }
 
-	const renderSectionHeader = ({ section }: { section: Section }) => (
-		<View className="mb-[15px] mt-[15px]">
-			<Text className="text-white text-base" style={{ fontFamily: fontFamily.bold }}>
-				{section.title}
-			</Text>
-		</View>
+	// const processQueue = async () => {
+	// 	if (isProcessingRef.current) return
+	//
+	// 	const nextWorkout = syncQueueRef.current.shift()
+	//
+	// 	if (!nextWorkout) {
+	// 		isProcessingRef.current = false
+	// 		return
+	// 	}
+	//
+	// 	isProcessingRef.current = true
+	// 	setSyncingIds((ids) => [...ids, nextWorkout.startedAt])
+	//
+	// 	try {
+	// 		await saveSingleWorkout(nextWorkout.startedAt, nextWorkout.userId)
+	// 		setNotSavedWorkouts(getNotSavedWorkouts(user?.id))
+	// 	} catch (e) {
+	// 		console.error('sync failed', e)
+	// 	} finally {
+	// 		setSyncingIds((ids) => ids.filter((id) => id !== nextWorkout.startedAt))
+	// 		isProcessingRef.current = false
+	//
+	// 		if (syncQueueRef.current.length) {
+	// 			processQueue()
+	// 		}
+	// 	}
+	// }
+
+	// const handleDelete = (startedAt: number) => {
+	// 	deleteUnsavedTrainingByStartedAt(startedAt, user?.id)
+	// 	setNotSavedWorkouts(getNotSavedWorkouts(user?.id))
+	// }
+
+	const limit = 15
+	const fetchHistory = useCallback(
+		({ page, limit }: { page: number; limit: number }) =>
+			getMyHistoryTrainings({ page, limit, finished: true, types: selectedType }),
+		[selectedType]
 	)
+	const {
+		data: history,
+		loading,
+		refreshing,
+		loadMore,
+		refresh
+	} = usePaginatedList<ITrainingHistoryItem, void>({
+		fetchFn: fetchHistory,
+		limit
+	})
 
+	useEffect(() => {
+		refresh() // вызываем обновление при смене типа
+	}, [selectedType])
+
+	const data: WorkoutItem[] = history
+		.map((item) => {
+			const date = new Date(item.startedAt || item.createdAt)
+			const month = format(date, 'LLLL', { locale: ru })
+			const title = format(item.createdAt, 'd MMMM, HH:mm', { locale: ru }) // format(item.createdAt, 'dd-MM-yy, HH:mm')
+			const typeData = WorkoutTypesData.find((t) => t.type === item.type)
+			const IconComponent = typeData?.IconComponent ?? PeopleRunningSvg
+
+			return {
+				id: item.id,
+				title,
+				month,
+				icon: <IconComponent width={26} height={26} />,
+				startedAt: date.getTime(),
+				createdAt: item.createdAt,
+				type: item.type
+			}
+		})
+		.sort((a, b) => b.startedAt - a.startedAt)
+
+	const itemsWithHeaders: WorkoutItem[] = []
+	let lastMonth = ''
+	data.forEach((item) => {
+		const showHeader = item.month !== lastMonth
+		itemsWithHeaders.push({ ...item, showHeader })
+		lastMonth = item.month
+	})
+
+	// Функция рендеринга индикатора загрузки
+	const renderFooter = useCallback(() => {
+		if (!loading) return null
+		return (
+			<View style={{ padding: 20 }}>
+				<ActivityIndicator size="small" color={Colors['green-main']} />
+			</View>
+		)
+	}, [loading])
+
+	const workoutTypeMap = useMemo(() => Object.fromEntries(WorkoutTypesData.map((t) => [t.type, t])), [])
+
+	// @TODO ПОСЛЕ СОХРАНЕНИЯ НЕСОХРАНЕННОЙ ТРЕНИРОВКИ НУЖНО ОБНОВЛЯТЬ СПИСОК СОХРАНЕННЫХ И toast.success('Тренировка сохранена успешно')
 	return (
 		<View style={{ flex: 1, paddingTop: insets.top }}>
 			<Container className="gap-[20px] mt-[20px] flex-1">
 				<HeaderBack>История тренировок</HeaderBack>
 				<Select
 					options={[
-						{ value: '1', label: 'Опция 1' },
-						{ value: '2', label: 'Опция 2' },
-						{ value: '3', label: 'Опция 3' },
-						{ value: '33', label: 'Опция 3 LAST' }
+						{
+							value: '',
+							label: 'Все',
+							IconComponent: CheckMarkIconSvg
+						},
+						...WorkoutTypesData.map((t) => ({
+							value: t.type,
+							label: t.name,
+							IconComponent: t.IconComponent
+						}))
 					]}
-					// value={selectedValue}
-					// onChange={setSelectedValue}
+					value={selectedType}
+					onChange={setSelectedType}
 					placeholder="Выберите тип тренировки"
 				/>
-
-				<SectionList
-					sections={sections}
-					renderItem={({ item }) => <WorkoutHistoryListItem {...item} />}
-					renderSectionHeader={renderSectionHeader}
-					keyExtractor={(item) => item.id.toString()}
-					ItemSeparatorComponent={() => <View style={{ height: 15 }} />}
+				<LegendList
+					key={selectedType} // если этого не сделать, то при смене на BIKE, который [] length 0 и смене обратно на ходьбу не вызывается loadMore
+					style={{ flex: 1 }}
+					data={itemsWithHeaders}
+					ListEmptyComponent={
+						!notSavedWorkouts.length ? (
+							<TrainingsEmpty text="К сожалению, тренировок еще не существует" />
+						) : null
+					}
+					refreshControl={<RefreshControl refreshing={refreshing} onRefresh={refresh} tintColor="#22CB5A" />}
+					ListFooterComponent={renderFooter}
 					contentContainerStyle={{
+						flexGrow: 1,
 						paddingBottom: insets.bottom + 20,
 						paddingTop: 10
 					}}
-					showsVerticalScrollIndicator={false}
+					ListHeaderComponent={
+						<>
+							{notSavedWorkouts?.length > 0 && (
+								<Text
+									className="text-white text-base mb-[15px]"
+									style={{ fontFamily: fontFamily.bold }}
+								>
+									Несохраненные тренировки
+								</Text>
+							)}
+							<View
+								className={cn('', {
+									'gap-[16px]': notSavedWorkouts.length
+								})}
+							>
+								{notSavedWorkouts.map((notSavedWorkout) => {
+									const date = new Date(notSavedWorkout.startedAt)
+									const title = format(date, 'd MMMM, HH:mm', { locale: ru })
+									const typeData = workoutTypeMap[notSavedWorkout.type]
+									const IconComponent = typeData?.IconComponent ?? PeopleRunningSvg
+
+									const isSyncing = syncingIds.includes(notSavedWorkout.startedAt)
+
+									return (
+										<WorkoutHistoryListItem
+											key={notSavedWorkout.startedAt}
+											title={title}
+											icon={<IconComponent width={26} height={26} />}
+											isLoading={isSyncing}
+											actionIcon={[
+												{
+													iconSvg: <SaveUnsavedTrainingSvg />,
+													iconCb: () => enqueueWorkoutSync(notSavedWorkout.startedAt),
+													disabled: isSyncing
+												},
+												{
+													iconSvg: <DeleteTrashSvg />,
+													iconCb: () => deleteWorkout(notSavedWorkout.startedAt),
+													disabled: isSyncing
+												}
+											]}
+										/>
+									)
+								})}
+							</View>
+						</>
+					}
+					renderItem={({ item }) => (
+						<>
+							{item.showHeader && (
+								<Text
+									className="text-white text-base mt-[15px] mb-[15px]"
+									style={{ fontFamily: fontFamily.bold }}
+								>
+									{item.month.charAt(0).toUpperCase() + item.month.slice(1)}
+								</Text>
+							)}
+							<WorkoutHistoryListItem {...item} />
+						</>
+					)}
+					ItemSeparatorComponent={() => <View style={{ height: 16 }} />}
+					keyExtractor={(item) => item.id}
+					onEndReached={loadMore}
+					onEndReachedThreshold={0.4}
+					refreshing={refreshing}
+					onRefresh={refresh}
 				/>
 			</Container>
 		</View>

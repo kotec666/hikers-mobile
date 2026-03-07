@@ -66,4 +66,4 @@ const PostListItem = (props: IProps) => {
 	)
 }
 
-export default PostListItem
+export default React.memo(PostListItem)

@@ -57,7 +57,7 @@ const AchievementsListItem = ({
 				/>
 				{progressWidth === 100 && <View style={{ backgroundColor: '#4F7DF9' }} />}
 				<View className="px-[10px] py-[16px] flex-row gap-[6px] items-center">
-					{/*<AchievementsMedalSvg />*/}
+					{/*<AchievementsMedalSvg /> @TODO удалить*/}
 					<Image
 						className="w-[20px] h-[20px]"
 						source={{ uri: `${PATH_TO_IMAGE}${iconFilename}` }}

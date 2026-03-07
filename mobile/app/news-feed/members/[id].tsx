@@ -1,5 +1,5 @@
-import React, { useEffect, useState, useCallback } from 'react'
-import { View, ActivityIndicator } from 'react-native'
+import React, { useCallback } from 'react'
+import { View, ActivityIndicator, RefreshControl } from 'react-native'
 import { SafeAreaProvider, useSafeAreaInsets } from 'react-native-safe-area-context'
 import { Container } from '@/components/ui/Container'
 import HeaderBack from '@/components/ui/HeaderBack'
@@ -15,6 +15,7 @@ import { useAuthStore } from '@/store/authStore'
 import { useOptimisticToggle } from '@/hooks/useOptimisticToggle'
 import { subscribeToUser, unsubscribeFromUser } from '@/api/subscribers'
 import { useToast } from '@/hooks/useToast'
+import { usePaginatedList } from '@/hooks/usePaginatedList'
 
 const MemberItem = ({
 	item,
@@ -78,79 +79,60 @@ const MemberItem = ({
 
 const Members = () => {
 	const insets = useSafeAreaInsets()
+	const toast = useToast()
 	const { id } = useLocalSearchParams<{ id: string }>()
 	const { user } = useAuthStore()
-	const [members, setMembers] = useState<ITrainingMember[]>([])
-	const [page, setPage] = useState(1)
-	const [loading, setLoading] = useState(false)
-	const [hasMore, setHasMore] = useState(true)
 	const limit = 10
 
-	const loadMembers = useCallback(
-		async (pageNum: number, isRefresh = false) => {
-			if (loading && !isRefresh) return
-			setLoading(true)
-
+	const {
+		data: members,
+		setData: setMembers,
+		loading,
+		refreshing,
+		loadMore,
+		refresh
+	} = usePaginatedList<ITrainingMember, void>({
+		fetchFn: async ({ page, limit }) => {
 			try {
-				const newMembers = await getTrainingMembersByPostId(id, { page: pageNum, limit })
-
-				if (isRefresh) {
-					setMembers(newMembers)
-				} else {
-					setMembers((prev) => [...prev, ...newMembers])
-				}
-
-				setHasMore(newMembers.length === limit)
+				return await getTrainingMembersByPostId(id, { page, limit })
 			} catch (error) {
 				console.error('Ошибка при загрузке участников:', error)
-			} finally {
-				setLoading(false)
+				toast.error('Не удалось загрузить участников')
+				return []
 			}
 		},
-		[id, loading]
-	)
-
-	useEffect(() => {
-		loadMembers(1, true)
-	}, [id])
-
-	const loadMore = useCallback(() => {
-		if (hasMore && !loading) {
-			const nextPage = page + 1
-			setPage(nextPage)
-			loadMembers(nextPage)
-		}
-	}, [hasMore, loading, page, loadMembers])
+		limit
+	})
 
 	const renderMemberItem = useCallback(
 		({ item }: { item: ITrainingMember }) => (
 			<MemberItem item={item} currentUserId={user?.id} setMembers={setMembers} />
 		),
-		[user?.id]
+		[user?.id, setMembers]
 	)
+
+	const renderFooter = () =>
+		loading ? (
+			<View style={{ padding: 20 }}>
+				<ActivityIndicator size="small" color={Colors['green-main']} />
+			</View>
+		) : null
 
 	return (
 		<SafeAreaProvider style={{ paddingTop: insets.top, paddingBottom: insets.bottom }}>
 			<Container className="gap-[20px] mt-[20px] flex-1">
 				<HeaderBack>Участники тренировки</HeaderBack>
-				{/*<Text className="text-white text-base" style={{ fontFamily: fontFamily.bold }}>*/}
-				{/*	Люди*/}
-				{/*</Text>*/}
-
 				<LegendList
 					data={members}
 					renderItem={renderMemberItem}
-					keyExtractor={(item) => item.id.toString()}
+					keyExtractor={(item) => item.id}
 					onEndReached={loadMore}
 					onEndReachedThreshold={0.5}
 					ItemSeparatorComponent={() => <View style={{ height: 15 }} />}
-					ListFooterComponent={
-						loading ? (
-							<View style={{ padding: 20 }}>
-								<ActivityIndicator size="small" color={Colors['green-main']} />
-							</View>
-						) : null
+					refreshControl={
+						<RefreshControl refreshing={refreshing} onRefresh={refresh} tintColor={Colors['green-main']} />
 					}
+					ListFooterComponent={renderFooter}
 					contentContainerStyle={{
 						paddingBottom: insets.bottom + 20,
 						paddingTop: 10

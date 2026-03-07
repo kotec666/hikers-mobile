@@ -1,0 +1,85 @@
+import React, { useCallback, useMemo } from 'react'
+import { View } from 'react-native'
+import { Button } from '@/components/ui/Button'
+import { WorkoutTypesData } from '@/constants/WorkoutTypes'
+import PeopleRunningSvg from '@/components/svg/PeopleRunningSvg'
+import { format } from 'date-fns'
+import { ru } from 'date-fns/locale'
+import WorkoutHistoryListItem from '@/components/workout-history/WorkoutHistoryListItem'
+import SaveUnsavedTrainingSvg from '@/components/svg/SaveUnsavedTrainingSvg'
+import DeleteTrashSvg from '@/components/svg/DeleteTrashSvg'
+import { LegendList } from '@legendapp/list'
+import { IWorkout } from '@/store/workoutStorage'
+import { useSafeAreaInsets } from 'react-native-safe-area-context'
+
+interface IProps {
+	notSavedWorkouts: IWorkout[]
+	handleClickSaveOneWorkout: (startedAt: number) => void
+	handleClickDelete: (startedAt: number) => void
+	handleClickDeleteAll: () => void
+	syncingIds: number[]
+}
+
+const UnsavedTrainingsDetails = (props: IProps) => {
+	const insets = useSafeAreaInsets()
+
+	const workoutTypeMap = useMemo(() => Object.fromEntries(WorkoutTypesData.map((t) => [t.type, t])), [])
+
+	const renderItem = useCallback(
+		({ item }: { item: IWorkout }) => {
+			const date = new Date(item.startedAt)
+
+			const title = format(date, 'd MMMM, HH:mm', { locale: ru })
+			const typeData = workoutTypeMap[item.type]
+
+			const IconComponent = typeData?.IconComponent ?? PeopleRunningSvg
+			const isSyncing = props.syncingIds.includes(item.startedAt)
+
+			return (
+				<WorkoutHistoryListItem
+					title={title}
+					icon={<IconComponent width={26} height={26} />}
+					isLoading={isSyncing}
+					actionIcon={[
+						{
+							iconSvg: <SaveUnsavedTrainingSvg />,
+							iconCb: () => props.handleClickSaveOneWorkout(item.startedAt),
+							disabled: isSyncing
+						},
+						{
+							iconSvg: <DeleteTrashSvg />,
+							iconCb: () => props.handleClickDelete(item.startedAt),
+							disabled: isSyncing
+						}
+					]}
+				/>
+			)
+		},
+		[props.syncingIds]
+	)
+
+	const isDeletingDisabled = !props.notSavedWorkouts.length || props.syncingIds.length > 0
+
+	return (
+		<View className="flex-1 w-full p-[16px]">
+			<LegendList
+				data={props.notSavedWorkouts}
+				renderItem={renderItem}
+				keyExtractor={(item) => String(item.startedAt)}
+				contentContainerStyle={{
+					gap: 16,
+					paddingBottom: insets.bottom + 100
+				}}
+				ListFooterComponent={
+					<View style={{ marginTop: 20 }}>
+						<Button variant="white" onPress={props.handleClickDeleteAll} disabled={isDeletingDisabled}>
+							Удалить все
+						</Button>
+					</View>
+				}
+			/>
+		</View>
+	)
+}
+
+export default UnsavedTrainingsDetails

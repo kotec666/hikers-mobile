@@ -1,5 +1,6 @@
 import fetcher from '@/api/fetcher'
 import { IUser } from '@/store/authStore'
+import { toQs } from '@/helpers/toQs'
 
 export interface ISubscribe {
 	user: IUser
@@ -25,11 +26,11 @@ export const unsubscribeFromUser = async (
 }
 
 // Получить список своих подписок
-export const getSubscriptionsList = async (): Promise<ISubscribe[]> => {
-	return (await fetcher.get(`subscribers/me`)).json()
+export const getSubscriptionsList = async (data: { page: number; limit: number }): Promise<ISubscribe[]> => {
+	return (await fetcher.get(`subscribers/me?${toQs(data)}`)).json()
 }
 
 // Получить список своих подписчиков
-export const getSubscribersList = async (): Promise<ISubscribe[]> => {
-	return (await fetcher.get(`subscribers/my`)).json()
+export const getSubscribersList = async (data: { page: number; limit: number }): Promise<ISubscribe[]> => {
+	return (await fetcher.get(`subscribers/my?${toQs(data)}`)).json()
 }

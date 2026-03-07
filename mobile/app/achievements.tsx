@@ -10,7 +10,6 @@ import { getFieldsErrors } from '@/helpers/getFieldsErrors'
 import BottomSheet from '@/components/ui/BottomSheet/BottomSheet'
 import { BottomSheetHandle } from '@/components/ui/BottomSheet/types'
 import AchievementDetailed from '@/components/BottomSheets/AchievementDetailed'
-import { GestureHandlerRootView } from 'react-native-gesture-handler'
 
 const { height: screenHeight } = Dimensions.get('screen')
 
@@ -69,11 +68,11 @@ const AchievementsPage = () => {
 					<HeaderBack>Мои достижения</HeaderBack>
 					<ScrollView style={{ flex: 1, width: '100%' }}>
 						<View className="gap-[10px]">
-							{state.claimedAchievements.length && (
+							{state.claimedAchievements.length > 0 ? (
 								<Text className="text-base text-white" style={{ fontFamily: fontFamily.bold }}>
 									Полученные
 								</Text>
-							)}
+							) : null}
 							{state.claimedAchievements.map((achievement) => (
 								<AchievementsListItem
 									key={achievement.id}
@@ -85,11 +84,11 @@ const AchievementsPage = () => {
 									handleClickAchievement={handleClickAchievement}
 								/>
 							))}
-							{state.unClaimedAchievements.length && (
+							{state.unClaimedAchievements.length > 0 ? (
 								<Text className="text-base text-white" style={{ fontFamily: fontFamily.bold }}>
 									Не полученные
 								</Text>
-							)}
+							) : null}
 							{state.unClaimedAchievements.map((achievement) => (
 								<AchievementsListItem
 									key={achievement.id}

@@ -12,7 +12,6 @@ import PostListItem from '@/components/ui/Post/PostListItem'
 import { RelativePathString, useLocalSearchParams, useRouter, useFocusEffect } from 'expo-router'
 import { useAuthStore } from '@/store/authStore'
 import { getProfileData, IProfile } from '@/api/profile'
-import { getFieldsErrors } from '@/helpers/getFieldsErrors'
 import { PATH_TO_IMAGE } from '@/constants/PATH_TO_FILES'
 import { AnimatedProfilePicture } from '@/components/ui/Profile/AnimatedProfilePicture'
 import { LegendList, LegendListRef } from '@legendapp/list'
@@ -20,6 +19,8 @@ import { getPostsMy, IPost } from '@/api/posts'
 import { Colors } from '@/constants/Colors'
 import MapComponent from '@/components/map/MapComponent'
 import { adaptLocations } from '@/helpers/adaptPointsToIWorkoutLocationStorageItem'
+import { usePaginatedList } from '@/hooks/usePaginatedList'
+import { VIEWWORKOUT_MODE } from '@/app/training/viewWorkout'
 
 /**
  *
@@ -37,24 +38,30 @@ type AllowedRoute = (typeof ALLOWED_ROUTES)[keyof typeof ALLOWED_ROUTES]
 const Profile = () => {
 	const insets = useSafeAreaInsets()
 	const router = useRouter()
-	const { logout, user, setUser } = useAuthStore()
+	const { user, setUser, logout } = useAuthStore()
+	const params = useLocalSearchParams()
+	const legendListRef = useRef<LegendListRef>(null)
 
-	const [data, setData] = useState<{
-		profileData?: IProfile
-		refreshing: boolean
-	}>({
-		profileData: undefined,
-		refreshing: false
-	})
+	const [profileData, setProfileData] = useState<IProfile | undefined>(undefined)
+	const [refreshingProfile, setRefreshingProfile] = useState(false)
 
 	// Состояние для infinite scroll постов
-	const [posts, setPosts] = useState<IPost[]>([])
-	const [page, setPage] = useState(1)
-	const [loading, setLoading] = useState(false)
-	const [hasMore, setHasMore] = useState(true)
 	const limit = 5
-	const legendListRef = useRef<LegendListRef>(null)
-	const params = useLocalSearchParams()
+	const fetchPosts = useCallback(
+		({ page, limit }: { page: number; limit: number }) => getPostsMy({ page, limit }),
+		[]
+	)
+	const {
+		data: posts,
+		loading,
+		refreshing,
+		loadMore,
+		refresh
+	} = usePaginatedList<IPost, void>({
+		fetchFn: fetchPosts,
+		limit,
+		autoLoad: false
+	})
 
 	// Если пользователь кликнет на ту же страницу, то пойдёт скролл вверх. Навбар передаст params при переходе на эту же страницу
 	useEffect(() => {
@@ -72,90 +79,37 @@ const Profile = () => {
 		router.replace('/')
 	}
 
-	const handleGetAndSetData = async () => {
+	const loadProfile = useCallback(async () => {
+		setRefreshingProfile(true)
 		try {
-			const profileData = await getProfileData()
-			setData((s) => ({ ...s, profileData: profileData }))
-			setUser(profileData.user)
-		} catch (e) {
-			if (!e.response) {
-				// Network error
-				return
-			}
-			//console.log('errors:', e.toString() === 'TypeError: Network request failed')
-			const errors = await e.response.json()
-			getFieldsErrors(errors)
+			const profile = await getProfileData()
+			setProfileData(profile)
+			setUser(profile.user)
 		} finally {
-			setData((s) => ({ ...s, refreshing: false }))
+			setRefreshingProfile(false)
 		}
-	}
+	}, [setUser])
 
-	// Функция для загрузки постов
-	const loadPosts = useCallback(
-		async (pageNum: number, isRefresh = false) => {
-			if (loading && !isRefresh) return
-
-			setLoading(true)
-			try {
-				const newPosts = await getPostsMy({ page: pageNum, limit })
-
-				if (isRefresh) {
-					setPosts(newPosts)
-				} else {
-					setPosts((prev) => [...prev, ...newPosts])
-				}
-
-				// Проверяем, есть ли еще посты
-				if (newPosts.length < limit) {
-					setHasMore(false)
-				} else {
-					setHasMore(true)
-				}
-			} catch (error) {
-				console.error('Error loading posts:', error)
-			} finally {
-				setLoading(false)
-			}
-		},
-		[loading, limit]
-	)
-
-	// Функция для загрузки следующей страницы
-	const loadMorePosts = useCallback(() => {
-		if (hasMore && !loading) {
-			const nextPage = page + 1
-			setPage(nextPage)
-			loadPosts(nextPage)
-		}
-	}, [hasMore, loading, page, loadPosts])
-
-	// Функция для обновления (pull-to-refresh)
-	const onRefresh = useCallback(async () => {
-		setData((s) => ({ ...s, refreshing: true }))
-		setPage(1)
-		setHasMore(true)
-
-		// Загружаем данные профиля и посты одновременно
-		await Promise.all([handleGetAndSetData(), loadPosts(1, true)])
-
-		setData((s) => ({ ...s, refreshing: false }))
-	}, [loadPosts])
+	const onRefreshAll = useCallback(async () => {
+		setRefreshingProfile(true)
+		await Promise.all([loadProfile(), refresh()])
+		setRefreshingProfile(false)
+	}, [loadProfile, refresh])
 
 	// Первоначальная загрузка данных (при фокусе на странице)
 	useFocusEffect(
 		useCallback(() => {
-			const initializeData = async () => {
-				await handleGetAndSetData()
-				await loadPosts(1, true)
+			const init = async () => {
+				await Promise.all([loadProfile(), refresh()])
 			}
-
-			initializeData()
-		}, [])
+			init()
+		}, [loadProfile])
 	)
 
 	// Функция рендеринга элемента поста
 	const renderPostItem = useCallback(
 		({ item }: { item: IPost }) => {
+			const userMetrics = item.training.participants.find((p) => p.user.id === user?.id)?.metrics
 			return (
 				<PostListItem
 					key={item.id}
@@ -170,9 +124,7 @@ const Profile = () => {
 					title={item.title}
 					description={item.description}
 					images={item.fileNames}
-					metrics={
-						item.training.participants.find((participant) => participant.user.id === user?.id)?.metrics
-					}
+					metrics={userMetrics}
 					likeData={{
 						isLiked: item.isLiked,
 						likesCount: item.likesCount,
@@ -210,13 +162,17 @@ const Profile = () => {
 					ref={legendListRef}
 					data={posts}
 					renderItem={renderPostItem}
-					keyExtractor={(item) => item.id.toString()}
-					onEndReached={loadMorePosts}
-					onEndReachedThreshold={0.5}
+					keyExtractor={(item) => item.id}
+					onEndReached={loadMore}
+					onEndReachedThreshold={0.4}
 					ItemSeparatorComponent={() => <View style={{ height: 16 }} />}
 					ListFooterComponent={renderFooter}
 					refreshControl={
-						<RefreshControl refreshing={data.refreshing} onRefresh={onRefresh} tintColor="#22CB5A" />
+						<RefreshControl
+							refreshing={refreshingProfile || refreshing}
+							onRefresh={onRefreshAll}
+							tintColor="#22CB5A"
+						/>
 					}
 					ListHeaderComponent={
 						<View className="gap-[20px] mb-[16px]">
@@ -280,23 +236,30 @@ const Profile = () => {
 								<View className="flex-row justify-between gap-[10px]">
 									<SocialStats
 										label="Подписчики"
-										content={data.profileData?.subscribers}
+										content={profileData?.subscribers}
 										hrefTo="/subscribers/my-subscribers"
 									/>
 									<SocialStats
 										label="Друзья"
-										content={data.profileData?.friends}
+										content={profileData?.friends}
 										hrefTo="/friends/my-friends"
 									/>
 									<SocialStats
 										label="Подписки"
-										content={data.profileData?.subscriptions}
+										content={profileData?.subscriptions}
 										hrefTo="/subscribers/my-subscriptions"
 									/>
 								</View>
-								<Button variant="white">История тренировок</Button>
-								<RedirectAchievementsInfo achievements={data.profileData?.achievements} isMyProfile />
-								<ActivityInfo label="Активности" activities={data.profileData?.activities || []} />
+								<Button
+									variant="white"
+									onPress={() => {
+										return router.push('/workout-history')
+									}}
+								>
+									История тренировок
+								</Button>
+								<RedirectAchievementsInfo achievements={profileData?.achievements} isMyProfile />
+								<ActivityInfo label="Активности" activities={profileData?.activities || []} />
 							</View>
 							<Text
 								className="text-base text-white border-b-[1px] border-b-black-44 py-[20px]"

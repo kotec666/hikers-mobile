@@ -1,5 +1,5 @@
-import React, { useEffect, useState } from 'react'
-import { FlatList, View, Text, RefreshControl } from 'react-native'
+import React from 'react'
+import { ActivityIndicator, View, Text, RefreshControl } from 'react-native'
 import { Container } from '@/components/ui/Container'
 import HeaderBack from '@/components/ui/HeaderBack'
 import PeopleListItem from '@/components/find-people/PeopleListItem'
@@ -11,26 +11,41 @@ import { acceptFriendRequest, getPendingInvitesList, IInvite, rejectFriendReques
 import { getFieldsErrors } from '@/helpers/getFieldsErrors'
 import { useToast } from '@/hooks/useToast'
 import { PATH_TO_IMAGE } from '@/constants/PATH_TO_FILES'
+import { LegendList } from '@legendapp/list'
+import { usePaginatedList } from '@/hooks/usePaginatedList'
+import { Colors } from '@/constants/Colors'
 
 const FriendRequestsPage = () => {
 	const insets = useSafeAreaInsets()
 	const toast = useToast()
-	const [data, setData] = useState<{
-		friendRequests: IInvite[]
-		refreshing: boolean
-	}>({
-		friendRequests: [],
-		refreshing: false
+	const limit = 10
+
+	const {
+		data: friendRequests,
+		setData: setItems,
+		loading,
+		refreshing,
+		loadMore,
+		refresh
+	} = usePaginatedList<IInvite, void>({
+		fetchFn: async (params) => {
+			try {
+				return await getPendingInvitesList(params)
+			} catch (e) {
+				const errors = await e.response?.json?.()
+				getFieldsErrors(errors)
+				return []
+			}
+		},
+		limit
 	})
 
 	const handleAddFriend = async (newFriendId: string) => {
 		try {
 			await acceptFriendRequest(newFriendId)
-			const withoutAddedUser = data.friendRequests.filter(
-				(friendRequest) => friendRequest.user.id !== newFriendId
-			)
-			setData((s) => ({ ...s, friendRequests: withoutAddedUser }))
-		} catch (e) {
+			setItems((prev) => prev.filter((req) => req.user.id !== newFriendId))
+			toast.success('Пользователь добавлен в друзья')
+		} catch {
 			toast.error('Произошла ошибка, повторите попытку позже')
 		}
 	}
@@ -38,52 +53,30 @@ const FriendRequestsPage = () => {
 	const handleDeleteFriendRequest = async (rejectUserId: string) => {
 		try {
 			await rejectFriendRequest(rejectUserId)
-			const withoutRejectedUser = data.friendRequests.filter(
-				(friendRequest) => friendRequest.user.id !== rejectUserId
-			)
-			setData((s) => ({ ...s, friendRequests: withoutRejectedUser }))
-		} catch (e) {
+			setItems((prev) => prev.filter((req) => req.user.id !== rejectUserId))
+			toast.success('Заявка отклонена')
+		} catch {
 			toast.error('Произошла ошибка, повторите попытку позже')
 		}
 	}
 
-	const handleGetAndSetData = async () => {
-		try {
-			const friendRequests = await getPendingInvitesList()
-			setData((s) => ({ ...s, friendRequests: friendRequests }))
-		} catch (e) {
-			const errors = await e.response.json()
-			console.log(errors)
-			getFieldsErrors(errors)
-		} finally {
-			setData((s) => ({ ...s, refreshing: false }))
-		}
+	const renderFooter = () => {
+		if (!loading || refreshing) return null
+
+		return (
+			<View style={{ padding: 20 }}>
+				<ActivityIndicator size="small" color={Colors['green-main']} />
+			</View>
+		)
 	}
-
-	const onRefresh = React.useCallback(async () => {
-		setData((s) => ({ ...s, refreshing: true }))
-		await handleGetAndSetData()
-	}, [])
-
-	useEffect(() => {
-		handleGetAndSetData()
-	}, [])
-
-	const EmptyListComponent = () => (
-		<View style={{ flex: 1 }} className="items-center justify-center">
-			<Text style={{ fontFamily: fontFamily.regular }} className="text-gray-ab text-base">
-				У вас нет заявок в друзья
-			</Text>
-		</View>
-	)
 
 	return (
 		<SafeAreaProvider style={{ paddingTop: insets.top }}>
 			<View style={{ flex: 1 }}>
 				<Container className="gap-[20px] mt-[20px] flex-1">
 					<HeaderBack>Запросы в друзья</HeaderBack>
-					<FlatList
-						data={data.friendRequests}
+					<LegendList
+						data={friendRequests}
 						renderItem={({ item }) => (
 							<PeopleListItem
 								id={item.user.id}
@@ -103,17 +96,26 @@ const FriendRequestsPage = () => {
 							/>
 						)}
 						keyExtractor={(item) => item.user.id}
+						onEndReached={loadMore}
+						onEndReachedThreshold={0.5}
 						ItemSeparatorComponent={() => <View style={{ height: 15 }} />}
+						ListFooterComponent={renderFooter}
+						ListEmptyComponent={() => (
+							<View style={{ flex: 1 }} className="items-center justify-center">
+								<Text style={{ fontFamily: fontFamily.regular }} className="text-gray-ab text-base">
+									У вас нет заявок в друзья
+								</Text>
+							</View>
+						)}
+						refreshControl={
+							<RefreshControl refreshing={refreshing} onRefresh={refresh} tintColor="#22CB5A" />
+						}
 						contentContainerStyle={{
 							paddingBottom: insets.bottom + 20,
 							paddingTop: 10,
-							flex: data.friendRequests.length === 0 ? 1 : undefined
+							flexGrow: friendRequests.length === 0 ? 1 : undefined
 						}}
 						showsVerticalScrollIndicator={false}
-						refreshControl={
-							<RefreshControl refreshing={data.refreshing} onRefresh={onRefresh} tintColor="#22CB5A" />
-						}
-						ListEmptyComponent={EmptyListComponent}
 					/>
 				</Container>
 			</View>

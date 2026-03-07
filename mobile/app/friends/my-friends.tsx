@@ -1,5 +1,5 @@
-import React, { useEffect, useState } from 'react'
-import { FlatList, View, Text, RefreshControl } from 'react-native'
+import React, { useState } from 'react'
+import { View, Text, RefreshControl, ActivityIndicator } from 'react-native'
 import { Container } from '@/components/ui/Container'
 import HeaderBack from '@/components/ui/HeaderBack'
 import PeopleListItem from '@/components/find-people/PeopleListItem'
@@ -14,44 +14,49 @@ import Modal from '@/components/ui/Modal/Modal'
 import { useToast } from '@/hooks/useToast'
 import { IUser } from '@/store/authStore'
 import { PATH_TO_IMAGE } from '@/constants/PATH_TO_FILES'
+import { LegendList } from '@legendapp/list'
+import { usePaginatedList } from '@/hooks/usePaginatedList'
+import { Colors } from '@/constants/Colors'
 
 const MyFriendsPage = () => {
 	const insets = useSafeAreaInsets()
 	const router = useRouter()
 	const toast = useToast()
-	const [data, setData] = useState<{
-		friends: IFriend[]
-		deleteUser: IUser | null
-		refreshing: boolean
-		isDeleteModalOpened: boolean
-	}>({
-		friends: [],
-		deleteUser: null,
-		refreshing: false,
-		isDeleteModalOpened: false
+
+	const [deleteUser, setDeleteUser] = useState<IUser | null>(null)
+	const [isDeleteModalOpened, setIsDeleteModalOpened] = useState(false)
+
+	const limit = 10
+
+	const {
+		data: friends,
+		setData: setItems,
+		loading,
+		refreshing,
+		loadMore,
+		refresh
+	} = usePaginatedList<IFriend, void>({
+		fetchFn: async (params) => {
+			try {
+				return await getMyFriendsList(params)
+			} catch (e) {
+				const errors = await e.response?.json?.()
+				getFieldsErrors(errors)
+				return []
+			}
+		},
+		limit
 	})
 
-	const handleGetAndSetData = async () => {
-		try {
-			const friendsList = await getMyFriendsList()
-			setData((s) => ({ ...s, friends: friendsList }))
-		} catch (e) {
-			const errors = await e.response.json()
-			console.log(errors)
-			getFieldsErrors(errors)
-		} finally {
-			setData((s) => ({ ...s, refreshing: false }))
-		}
+	const renderFooter = () => {
+		if (!loading || refreshing) return null
+
+		return (
+			<View style={{ padding: 20 }}>
+				<ActivityIndicator size="small" color={Colors['green-main']} />
+			</View>
+		)
 	}
-
-	const onRefresh = React.useCallback(async () => {
-		setData((s) => ({ ...s, refreshing: true }))
-		await handleGetAndSetData()
-	}, [])
-
-	useEffect(() => {
-		handleGetAndSetData()
-	}, [])
 
 	const EmptyListComponent = () => (
 		<View style={{ flex: 1 }} className="items-center justify-center">
@@ -62,28 +67,30 @@ const MyFriendsPage = () => {
 	)
 
 	const handleOpenDeleteModal = (user: IUser) => {
-		setData((s) => ({ ...s, isDeleteModalOpened: true, deleteUser: user }))
+		setDeleteUser(user)
+		setIsDeleteModalOpened(true)
 	}
 
 	const handleCloseDeleteModal = () => {
-		setData((s) => ({ ...s, isDeleteModalOpened: false, deleteUser: null }))
+		setDeleteUser(null)
+		setIsDeleteModalOpened(false)
 	}
 
 	const handleDeleteFromFriends = async () => {
 		try {
-			if (!data.deleteUser?.id) {
+			if (!deleteUser?.id) {
 				return toast.info('Не выбран пользователь для удаления из друзей')
 			}
-			await deleteFriendById(data.deleteUser?.id)
-			const withoutDeletedUser = data.friends.filter((friend) => friend.user.id !== data.deleteUser?.id)
-			setData((s) => ({ ...s, friends: withoutDeletedUser }))
+
+			await deleteFriendById(deleteUser.id)
+
+			setItems((prev) => prev.filter((friend) => friend.user.id !== deleteUser.id))
+
 			toast.success('Пользователь удалён из списка друзей')
-		} catch (e) {
+		} catch {
 			toast.error('Произошла ошибка, повторите попытку позже')
-			// const errors = await e.response.json()
-			// getFieldsErrors(errors)
 		} finally {
-			setData((s) => ({ ...s, isDeleteModalOpened: false }))
+			handleCloseDeleteModal()
 		}
 	}
 
@@ -91,7 +98,7 @@ const MyFriendsPage = () => {
 		<SafeAreaProvider style={{ paddingTop: insets.top }}>
 			<View style={{ flex: 1 }}>
 				<Modal
-					isOpen={data.isDeleteModalOpened}
+					isOpen={isDeleteModalOpened}
 					handleClose={handleCloseDeleteModal}
 					label="Вы действительно хотите удалить пользователя из друзей?"
 				>
@@ -112,8 +119,8 @@ const MyFriendsPage = () => {
 				<Container className="gap-[20px] mt-[20px] flex-1" style={{ paddingBottom: insets.bottom + 20 }}>
 					<HeaderBack>Друзья</HeaderBack>
 
-					<FlatList
-						data={data.friends}
+					<LegendList
+						data={friends}
 						renderItem={({ item }) => (
 							<PeopleListItem
 								id={item.user.id}
@@ -127,17 +134,20 @@ const MyFriendsPage = () => {
 							/>
 						)}
 						keyExtractor={(item) => item.user.id}
+						onEndReached={loadMore}
+						onEndReachedThreshold={0.5}
 						ItemSeparatorComponent={() => <View style={{ height: 15 }} />}
+						ListEmptyComponent={EmptyListComponent}
+						ListFooterComponent={renderFooter}
+						refreshControl={
+							<RefreshControl refreshing={refreshing} onRefresh={refresh} tintColor="#22CB5A" />
+						}
 						contentContainerStyle={{
 							paddingBottom: 0,
 							paddingTop: 10,
-							flex: data.friends.length === 0 ? 1 : undefined
+							flexGrow: friends.length === 0 ? 1 : undefined
 						}}
 						showsVerticalScrollIndicator={false}
-						refreshControl={
-							<RefreshControl refreshing={data.refreshing} onRefresh={onRefresh} tintColor="#22CB5A" />
-						}
-						ListEmptyComponent={EmptyListComponent}
 					/>
 
 					<Button variant="white" onPress={() => router.push('/friends/friend-requests')}>

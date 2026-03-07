@@ -1,6 +1,7 @@
 import fetcher from '@/api/fetcher'
 import { TrainingType } from '@shared/enums'
 import { LocationObject } from 'expo-location'
+import { toQs } from '@/helpers/toQs'
 
 export interface ITraining {
 	id: string
@@ -127,4 +128,21 @@ export const syncTraining = async (
 // Удалить незавершенную тренировку (не будет отображена в истории тренировок)
 export const deleteNotFinishedTraining = async (): Promise<{ success: boolean }> => {
 	return (await fetcher.delete(`trainings/delete-not-finished`)).json()
+}
+
+export interface ITrainingHistoryItem {
+	id: string
+	type: TrainingType
+	createdAt: string
+	startedAt: null | string
+	finishedAt: null | string
+}
+// Получить историю своих тренировок
+export const getMyHistoryTrainings = async (data: {
+	page: number
+	limit: number
+	finished: boolean
+	types?: string // run,run,run
+}): Promise<ITrainingHistoryItem[]> => {
+	return (await fetcher.get(`trainings/my?${toQs(data)}`)).json()
 }

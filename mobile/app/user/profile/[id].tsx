@@ -18,11 +18,12 @@ import { addAsFriend, deleteFriendById, revokeFriendInviteByUserId } from '@/api
 import { FriendStatus } from '@shared/enums'
 import { AnimatedProfilePicture } from '@/components/ui/Profile/AnimatedProfilePicture'
 import { LegendList, LegendListRef } from '@legendapp/list'
-import { getPostsByUserId, IPost } from '@/api/posts'
+import { getPostsByUserId, getPostsMy, IPost } from '@/api/posts'
 import { Colors } from '@/constants/Colors'
 import MapComponent from '@/components/map/MapComponent'
 import { adaptLocations } from '@/helpers/adaptPointsToIWorkoutLocationStorageItem'
 import { useOptimisticToggle } from '@/hooks/useOptimisticToggle'
+import { usePaginatedList } from '@/hooks/usePaginatedList'
 
 /**
  *
@@ -30,18 +31,64 @@ import { useOptimisticToggle } from '@/hooks/useOptimisticToggle'
  *
  * */
 
+const friendStatusLabel = {
+	[FriendStatus.FALSE]: 'Добавить в друзья',
+	[FriendStatus.TRUE]: 'Удалить из друзей',
+	[FriendStatus.INVITED]: 'Заявка отправлена'
+}
+
 const UserProfilePage = () => {
 	const insets = useSafeAreaInsets()
 	const toast = useToast()
 	const { id } = useLocalSearchParams<{ id: string }>()
+	const legendListRef = useRef<LegendListRef>(null)
+
 	const [profileData, setProfileData] = useState<INotMyProfile | null>(null)
-	const [data, setData] = useState<{
-		refreshing: boolean
-		isDeleteModalOpened: boolean
-	}>({
-		refreshing: false,
-		isDeleteModalOpened: false
+	const [refreshingProfile, setRefreshingProfile] = useState(false)
+	const [isDeleteModalOpened, setIsDeleteModalOpened] = useState<boolean>(false)
+
+	const limit = 5
+	const fetchPosts = useCallback(
+		({ page, limit }: { page: number; limit: number }) => getPostsByUserId(id, { page, limit }),
+		[id]
+	)
+	const {
+		data: posts,
+		setData: setPosts,
+		loading: loadingPosts,
+		refreshing: refreshingPosts,
+		loadMore,
+		refresh: refreshPosts
+	} = usePaginatedList<IPost, void>({
+		fetchFn: fetchPosts,
+		limit
 	})
+
+	const loadProfile = useCallback(async () => {
+		setRefreshingProfile(true)
+		try {
+			const profile = await getUserProfileData(id)
+			setProfileData(profile)
+		} catch (e) {
+			const errors = await e.response?.json?.()
+			getFieldsErrors(errors)
+		} finally {
+			setRefreshingProfile(false)
+		}
+	}, [id])
+
+	const onRefreshAll = useCallback(async () => {
+		setRefreshingProfile(true)
+		await Promise.all([loadProfile(), refreshPosts()])
+		setRefreshingProfile(false)
+	}, [loadProfile, refreshPosts])
+
+	useEffect(() => {
+		const init = async () => {
+			await Promise.all([loadProfile(), refreshPosts()])
+		}
+		init()
+	}, [id, loadProfile])
 
 	const {
 		value: isSubscribed,
@@ -72,37 +119,6 @@ const UserProfilePage = () => {
 		}
 	})
 
-	const [posts, setPosts] = useState<IPost[]>([])
-	const [page, setPage] = useState(1)
-	const [loading, setLoading] = useState(false)
-	const [hasMore, setHasMore] = useState(true)
-
-	const limit = 5
-	const legendListRef = useRef<LegendListRef>(null)
-
-	const friendStatusLabel = {
-		[FriendStatus.FALSE]: 'Добавить в друзья',
-		[FriendStatus.TRUE]: 'Удалить из друзей',
-		[FriendStatus.INVITED]: 'Заявка отправлена'
-	}
-
-	const handleGetAndSetData = async () => {
-		try {
-			const profileData = await getUserProfileData(id)
-			setProfileData(profileData)
-		} catch (e) {
-			const errors = await e.response.json()
-			console.log(errors)
-			getFieldsErrors(errors)
-		} finally {
-			setData((s) => ({ ...s, refreshing: false }))
-		}
-	}
-
-	useEffect(() => {
-		handleGetAndSetData()
-	}, [])
-
 	const updateProfileData = (updater: (prev: INotMyProfile) => Partial<INotMyProfile>) => {
 		setProfileData((prev) => {
 			if (!prev) return prev
@@ -114,23 +130,26 @@ const UserProfilePage = () => {
 		})
 	}
 
-	const subUnsubCallback = (isSubscribed: boolean, authorId?: string) => {
-		if (isSubscribed) {
-			updateProfileData((prev) => ({
-				isSubscribed: true,
-				subscribers: (prev.subscribers ?? 0) + 1
-			}))
-		} else {
-			updateProfileData((prev) => ({
-				isSubscribed: false,
-				subscribers: (prev.subscribers ?? 0) - 1
-			}))
-		}
+	const subUnsubCallback = useCallback(
+		(isSubscribed: boolean, authorId?: string) => {
+			if (isSubscribed) {
+				updateProfileData((prev) => ({
+					isSubscribed: true,
+					subscribers: (prev.subscribers ?? 0) + 1
+				}))
+			} else {
+				updateProfileData((prev) => ({
+					isSubscribed: false,
+					subscribers: (prev.subscribers ?? 0) - 1
+				}))
+			}
 
-		setPosts((prev) =>
-			prev.map((post) => (post.userCreator.id === authorId ? { ...post, isSubscribed: isSubscribed } : post))
-		)
-	}
+			setPosts((prev) =>
+				prev.map((post) => (post.userCreator.id === authorId ? { ...post, isSubscribed: isSubscribed } : post))
+			)
+		},
+		[setPosts]
+	)
 
 	const handleDeleteFromFriends = async () => {
 		try {
@@ -148,16 +167,16 @@ const UserProfilePage = () => {
 			// const errors = await e.response.json()
 			// getFieldsErrors(errors)
 		} finally {
-			setData((s) => ({ ...s, isDeleteModalOpened: false }))
+			setIsDeleteModalOpened(false)
 		}
 	}
 
 	const handleCloseDeleteModal = () => {
-		setData((s) => ({ ...s, isDeleteModalOpened: false }))
+		setIsDeleteModalOpened(false)
 	}
 
 	const handleOpenDeleteModal = () => {
-		setData((s) => ({ ...s, isDeleteModalOpened: true }))
+		setIsDeleteModalOpened(true)
 	}
 
 	const sendFriendRequest = async () => {
@@ -199,101 +218,56 @@ const UserProfilePage = () => {
 		}
 	}
 
-	const loadPosts = useCallback(
-		async (pageNum: number, isRefresh = false) => {
-			if (loading && !isRefresh) return
-
-			setLoading(true)
-			try {
-				const newPosts = await getPostsByUserId(id, { page: pageNum, limit })
-
-				if (isRefresh) {
-					setPosts(newPosts)
-				} else {
-					setPosts((prev) => [...prev, ...newPosts])
-				}
-
-				if (newPosts.length < limit) {
-					setHasMore(false)
-				} else {
-					setHasMore(true)
-				}
-			} catch (error) {
-				console.error('Error loading posts:', error)
-			} finally {
-				setLoading(false)
-			}
+	const renderPostItem = useCallback(
+		({ item }: { item: IPost }) => {
+			return (
+				<PostListItem
+					key={item.id}
+					{...item}
+					postId={item.id}
+					authorId={item.userCreator?.id || ''}
+					authorName={item.userCreator?.name || ''}
+					avatar={item.userCreator.avatarFilename}
+					createdAt={item.createdAt}
+					workoutType={item.training.type}
+					title={item.title}
+					description={item.description}
+					images={item.fileNames}
+					metrics={
+						item.training.participants.find((participant) => participant.user.id === item.userCreator.id)
+							?.metrics
+					}
+					subscribeData={{
+						authorId: item.userCreator.id,
+						isSubscribed: item.isSubscribed
+					}}
+					likeData={{
+						isLiked: item.isLiked,
+						likesCount: item.likesCount,
+						postId: item.id
+					}}
+					participants={item.training.participants}
+					onToggleSubscribeCallback={subUnsubCallback}
+					mapComponent={
+						<MapComponent
+							rounded={25}
+							interactiveDisabled
+							needFinishMarker
+							initialLocations={{ current: adaptLocations(item.training.participants[0].route.points) }}
+						/>
+					}
+				/>
+			)
 		},
-		[id, loading]
+		[subUnsubCallback]
 	)
 
-	useEffect(() => {
-		const init = async () => {
-			await handleGetAndSetData()
-			await loadPosts(1, true)
-		}
-
-		init()
-	}, [id])
-
-	const onRefresh = useCallback(async () => {
-		setData((s) => ({ ...s, refreshing: true }))
-		setPage(1)
-		setHasMore(true)
-
-		await Promise.all([handleGetAndSetData(), loadPosts(1, true)])
-
-		setData((s) => ({ ...s, refreshing: false }))
-	}, [loadPosts])
-
-	const loadMorePosts = useCallback(() => {
-		if (hasMore && !loading) {
-			const nextPage = page + 1
-			setPage(nextPage)
-			loadPosts(nextPage)
-		}
-	}, [hasMore, loading, page, loadPosts])
-
-	const renderPostItem = useCallback(({ item }: { item: IPost }) => {
-		return (
-			<PostListItem
-				key={item.id}
-				{...item}
-				postId={item.id}
-				authorId={item.userCreator?.id || ''}
-				authorName={item.userCreator?.name || ''}
-				avatar={item.userCreator.avatarFilename}
-				createdAt={item.createdAt}
-				workoutType={item.training.type}
-				title={item.title}
-				description={item.description}
-				images={item.fileNames}
-				metrics={
-					item.training.participants.find((participant) => participant.user.id === item.userCreator.id)
-						?.metrics
-				}
-				subscribeData={{
-					authorId: item.userCreator.id,
-					isSubscribed: item.isSubscribed
-				}}
-				likeData={{
-					isLiked: item.isLiked,
-					likesCount: item.likesCount,
-					postId: item.id
-				}}
-				participants={item.training.participants}
-				onToggleSubscribeCallback={subUnsubCallback}
-				mapComponent={
-					<MapComponent
-						rounded={25}
-						interactiveDisabled
-						needFinishMarker
-						initialLocations={{ current: adaptLocations(item.training.participants[0].route.points) }}
-					/>
-				}
-			/>
-		)
-	}, [])
+	const renderFooter = () =>
+		loadingPosts ? (
+			<View style={{ padding: 20 }}>
+				<ActivityIndicator size="small" color={Colors['green-main']} />
+			</View>
+		) : null
 
 	return (
 		<>
@@ -303,21 +277,17 @@ const UserProfilePage = () => {
 					data={posts}
 					renderItem={renderPostItem}
 					keyExtractor={(item) => item.id}
-					onEndReached={loadMorePosts}
+					onEndReached={loadMore}
 					onEndReachedThreshold={0.5}
 					ItemSeparatorComponent={() => <View style={{ height: 16 }} />}
-					ListFooterComponent={
-						loading ? (
-							<View style={{ padding: 20 }}>
-								<ActivityIndicator size="small" color={Colors['green-main']} />
-							</View>
-						) : null
+					ListFooterComponent={renderFooter}
+					refreshControl={
+						<RefreshControl refreshing={refreshingProfile || refreshingPosts} onRefresh={onRefreshAll} />
 					}
-					refreshControl={<RefreshControl refreshing={data.refreshing} onRefresh={onRefresh} />}
 					ListHeaderComponent={
 						<>
 							<Modal
-								isOpen={data.isDeleteModalOpened}
+								isOpen={isDeleteModalOpened}
 								handleClose={handleCloseDeleteModal}
 								label="Вы действительно хотите удалить пользователя из друзей?"
 							>

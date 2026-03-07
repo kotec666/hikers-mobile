@@ -101,7 +101,7 @@ const PostListItemHeader = ({
 								'bg-green-main': isSubscribed
 							})}
 						>
-							{!isSubscribed ? <PlusIconSvg /> : <CheckMarkIconSvg />}
+							{!isSubscribed ? <PlusIconSvg /> : <CheckMarkIconSvg width={25} height={25} />}
 						</Pressable>
 					</View>
 				)}

@@ -20,20 +20,22 @@ export type ITrainingMember = Omit<IParticipant, 'route' | 'metrics'> & {
 	isSubscribed: boolean
 }
 
+export interface IPostTraining {
+	id: string
+	type: TrainingType
+	creatorId: string
+	createdAt: string
+	startedAt: null | string
+	finishedAt: null | string
+	creator: IUser
+	participants: IParticipant[]
+}
+
 export interface IPost {
 	id: string
 	isSubscribed: boolean
 	userCreator: IUser
-	training: {
-		id: string
-		type: TrainingType
-		creatorId: string
-		createdAt: string
-		startedAt: null | string
-		finishedAt: null | string
-		creator: IUser
-		participants: IParticipant[]
-	}
+	training: IPostTraining
 	title: string
 	description: null | string
 	createdAt: string
@@ -85,7 +87,7 @@ export const unlikePostById = async (postId: string): Promise<ISuccess> => {
 /**
  *
  * {
- *    trainingParticipantId: string [id создателя поста]
+ *    trainingId: string [id тренировки]
  *    title: string [заголовок поста]
  *    description?: [описание поста]
  *    files?: [массив изображений]

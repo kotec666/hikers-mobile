@@ -1,14 +1,15 @@
 import { Text, View } from 'react-native'
 import ArrowBackSvg from '@/components/svg/ArrowBackSvg'
 import { fontFamily } from '@/constants/Fonts'
-import { memo, PropsWithChildren } from 'react'
+import { memo } from 'react'
 import { useRouter } from 'expo-router'
 import { cn } from '@/helpers/cn'
 import { Motion } from '@legendapp/motion'
 
-interface IProps extends PropsWithChildren {
+interface IProps {
 	className?: string
 	returnCallback?: () => void
+	children: string
 }
 
 const HeaderBack = memo((props: IProps) => {

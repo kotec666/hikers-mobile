@@ -1,5 +1,6 @@
 import { IUser } from '@/store/authStore'
 import fetcher from '@/api/fetcher'
+import { toQs } from '@/helpers/toQs'
 
 export interface IFriend {
 	user: IUser
@@ -12,8 +13,8 @@ export interface IInvite {
 }
 
 // Получить список своих друзей
-export const getMyFriendsList = async (): Promise<IFriend[]> => {
-	return (await fetcher.get(`friends`)).json()
+export const getMyFriendsList = async (data: { page: number; limit: number }): Promise<IFriend[]> => {
+	return (await fetcher.get(`friends?${toQs(data)}`)).json()
 }
 
 // Получить друга по его id
@@ -41,8 +42,8 @@ export const getSentInvitesList = async (): Promise<IInvite[]> => {
 }
 
 // Получить все входящие (ожидающие) запросы в друзья
-export const getPendingInvitesList = async (): Promise<IInvite[]> => {
-	return (await fetcher.get(`friends/invites/pending`)).json()
+export const getPendingInvitesList = async (data: { page: number; limit: number }): Promise<IInvite[]> => {
+	return (await fetcher.get(`friends/invites/pending?${toQs(data)}`)).json()
 }
 
 // Отправить запрос пользователю в друзья по его id

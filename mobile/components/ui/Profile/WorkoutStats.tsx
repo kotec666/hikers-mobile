@@ -4,7 +4,7 @@ import { fontFamily } from '@/constants/Fonts'
 import PenSvg from '@/components/svg/PenSvg'
 import CheckMarkIconSvg from '@/components/svg/CheckMarkIconSvg'
 import { cn } from '@/helpers/cn'
-import { MeasuringUnit } from '../../../../shared/enums'
+import { MeasuringUnit } from '@/shared/enums'
 import { getNoun } from '@/helpers/getNoun'
 
 const WorkoutStats = (props: {

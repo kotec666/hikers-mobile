@@ -13,6 +13,7 @@ import Animated, { Easing, useSharedValue, useAnimatedStyle, withTiming } from '
 export interface SelectOption {
 	value: string
 	label: string
+	IconComponent?: React.FC<{ width?: number; height?: number }>
 }
 
 export interface SelectProps {
@@ -68,7 +69,7 @@ export function Select(props: SelectProps) {
 	}
 
 	return (
-		<View className={cn('grow relative', containerClassName)}>
+		<View className={cn(' relative', containerClassName)}>
 			<TouchableOpacity
 				style={[
 					styles.select,
@@ -89,7 +90,10 @@ export function Select(props: SelectProps) {
 				onPress={() => !disabled && toggleOpen()}
 				disabled={disabled}
 			>
-				<Text style={[styles.text, { color: value ? 'white' : Colors['black-5c'] }]} numberOfLines={1}>
+				<Text
+					style={[styles.text, { color: value !== undefined ? 'white' : Colors['black-5c'] }]}
+					numberOfLines={1}
+				>
 					{displayValue}
 				</Text>
 				<ArrowDownSvg />
@@ -153,17 +157,21 @@ const SelectContainer = ({
 			<FlatList
 				data={options}
 				keyExtractor={(item) => item.value}
-				renderItem={({ item }) => (
-					<TouchableOpacity
-						style={[styles.option, item.value === value && styles.selectedOption]}
-						onPress={() => handleSelect(item.value)}
-					>
-						<View className="w-[50px] h-[50px] rounded-[15px] bg-white items-center justify-center">
-							<PeopleRunningSvg />
-						</View>
-						<Text style={styles.optionText}>{item.label}</Text>
-					</TouchableOpacity>
-				)}
+				renderItem={({ item }) => {
+					const Icon = item.IconComponent ?? PeopleRunningSvg
+
+					return (
+						<TouchableOpacity
+							style={[styles.option, item.value === value && styles.selectedOption]}
+							onPress={() => handleSelect(item.value)}
+						>
+							<View className="w-[50px] h-[50px] rounded-[15px] bg-white items-center justify-center">
+								<Icon width={26} height={26} />
+							</View>
+							<Text style={styles.optionText}>{item.label}</Text>
+						</TouchableOpacity>
+					)
+				}}
 				showsVerticalScrollIndicator={false}
 			/>
 			<TouchableOpacity onPress={handleClose}>

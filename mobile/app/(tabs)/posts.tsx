@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useRef, useState } from 'react'
+import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import {
 	FlatList,
 	View,
@@ -15,7 +15,6 @@ import { Input } from '@/components/ui/Input'
 import { Container } from '@/components/ui/Container'
 import { NotificationsButton } from '@/components/ui/Notifications/NotificationsButton'
 import PostListItem from '@/components/ui/Post/PostListItem'
-import PostsEmpty from '@/components/ui/Post/PostsEmpty'
 import { fontFamily } from '@/constants/Fonts'
 import PeopleListItem from '@/components/find-people/PeopleListItem'
 import { Button } from '@/components/ui/Button'
@@ -28,29 +27,79 @@ import { useLocalSearchParams } from 'expo-router'
 import MapComponent from '@/components/map/MapComponent'
 import { adaptLocations } from '@/helpers/adaptPointsToIWorkoutLocationStorageItem'
 import { Motion } from '@legendapp/motion'
+import { usePaginatedList } from '@/hooks/usePaginatedList'
+import TrainingsEmpty from '@/components/ui/Post/TrainingsEmpty'
+import { SearchType } from '@/shared/enums'
+import { IFoundPost, IFoundUser, searchByAllItems } from '@/api/search'
+import { debounce } from '@/helpers/debounce'
+import { PATH_TO_IMAGE } from '@/constants/PATH_TO_FILES'
 
-enum SearchMode {
-	PEOPLE = 'people',
-	POSTS = 'posts'
+const isUser = (item: IFoundUser | IFoundPost): item is IFoundUser => {
+	return 'email' in item
+}
+
+const isPost = (item: IFoundUser | IFoundPost): item is IFoundPost => {
+	return 'training' in item
 }
 
 const PostsPage = () => {
 	const insets = useSafeAreaInsets()
 	const [state, setState] = useState<{
 		isSearchActive: boolean
-		searchMode: SearchMode
+		searchMode: SearchType
 	}>({
 		isSearchActive: false,
-		searchMode: SearchMode.PEOPLE
+		searchMode: SearchType.USERS
 	})
 
+	// State для поиска
+	const [searchWord, setSearchWord] = useState('')
+
+	const {
+		data: searchResults,
+		loading: searchLoading,
+		refreshing: searchRefreshing,
+		loadMore: loadMoreSearch,
+		refresh: refreshSearch
+	} = usePaginatedList<IFoundUser | IFoundPost, { word?: string; type?: SearchType }>({
+		fetchFn: ({ page, limit, word, type }) => {
+			if (!word || word.trim().length < 2) return Promise.resolve([])
+			return searchByAllItems({ page, limit, word, type })
+		},
+		limit: 10, // @TODO Не работает пагинация в поиске
+		autoLoad: false
+	})
+
+	const debouncedSearchRef = useRef(
+		debounce((word: string, type: SearchType) => {
+			refreshSearch({ word, type })
+		}, 500)
+	)
+
+	useEffect(() => {
+		if (!searchWord.trim()) {
+			refreshSearch({}) // сброс поиска
+			return
+		}
+		if (searchWord.trim().length >= 2) {
+			debouncedSearchRef.current(searchWord, state.searchMode)
+		}
+	}, [searchWord, state.searchMode])
+
 	// Состояние для infinite scroll постов
-	const [posts, setPosts] = useState<IPost[]>([])
-	const [page, setPage] = useState(1)
-	const [loading, setLoading] = useState(false)
-	const [refreshing, setRefreshing] = useState(false)
-	const [hasMore, setHasMore] = useState(true)
 	const limit = 5
+	const {
+		data: posts,
+		setData: setPosts,
+		loading,
+		refreshing,
+		loadMore,
+		refresh
+	} = usePaginatedList<IPost, void>({
+		fetchFn: ({ page, limit }) => getPostsFeed({ page, limit }),
+		limit
+	})
+
 	const legendListRef = useRef<LegendListRef>(null)
 	const params = useLocalSearchParams()
 
@@ -61,110 +110,61 @@ const PostsPage = () => {
 		}
 	}, [params.scrollToTop])
 
-	// Функция для загрузки постов из ленты
-	const loadPosts = useCallback(
-		async (pageNum: number, isRefresh = false) => {
-			if (loading && !isRefresh) return
-
-			setLoading(true)
-			try {
-				const newPosts = await getPostsFeed({ page: pageNum, limit })
-
-				if (isRefresh) {
-					setPosts(newPosts)
-				} else {
-					setPosts((prev) => [...prev, ...newPosts])
-				}
-
-				// Проверяем, есть ли еще посты
-				if (newPosts.length < limit) {
-					setHasMore(false)
-				} else {
-					setHasMore(true)
-				}
-			} catch (error) {
-				console.error('Error loading posts:', error)
-			} finally {
-				setLoading(false)
-				if (isRefresh) {
-					setRefreshing(false)
-				}
-			}
+	const toggleSubscribeCallback = useCallback(
+		(isSubscribed: boolean, authorId?: string) => {
+			setPosts((prev) =>
+				prev.map((post) => (post.userCreator.id === authorId ? { ...post, isSubscribed: isSubscribed } : post))
+			)
 		},
-		[loading, limit]
+		[setPosts]
 	)
 
-	// Функция для загрузки следующей страницы
-	const loadMorePosts = useCallback(() => {
-		if (hasMore && !loading) {
-			const nextPage = page + 1
-			setPage(nextPage)
-			loadPosts(nextPage)
-		}
-	}, [hasMore, loading, page, loadPosts])
-
-	// Функция для обновления (pull-to-refresh)
-	const onRefresh = useCallback(async () => {
-		setRefreshing(true)
-		setPage(1)
-		setHasMore(true)
-		await loadPosts(1, true)
-	}, [loadPosts])
-
-	// Первоначальная загрузка данных
-	useEffect(() => {
-		loadPosts(1, true)
-	}, [])
-
-	const toggleSubscribeCallback = (isSubscribed: boolean, authorId?: string) => {
-		setPosts((prev) =>
-			prev.map((post) => (post.userCreator.id === authorId ? { ...post, isSubscribed: isSubscribed } : post))
-		)
-	}
-
 	// Функция рендеринга элемента поста
-	const renderPostItem = useCallback(({ item }: { item: IPost }) => {
-		// Находим метрики текущего пользователя среди участников
-		const userMetrics = item.training.participants.find(
-			(participant) => participant.user.id === item.userCreator.id
-		)?.metrics
+	const renderPostItem = useCallback(
+		({ item }: { item: IPost }) => {
+			// Находим метрики текущего пользователя среди участников
+			const userMetrics = item.training.participants.find(
+				(participant) => participant.user.id === item.userCreator.id
+			)?.metrics
 
-		return (
-			<PostListItem
-				key={item.id}
-				{...item}
-				postId={item.id}
-				authorId={item.userCreator?.id || ''}
-				authorName={item.userCreator?.name || ''}
-				avatar={item.userCreator.avatarFilename}
-				createdAt={item.createdAt}
-				workoutType={item.training.type}
-				title={item.title}
-				description={item.description}
-				metrics={userMetrics}
-				participants={item.training.participants}
-				images={item.fileNames}
-				subscribeData={{
-					authorId: item.userCreator.id,
-					isSubscribed: item.isSubscribed
-				}}
-				likeData={{
-					isLiked: item.isLiked,
-					postId: item.id,
-					likesCount: item.likesCount
-				}}
-				onToggleSubscribeCallback={toggleSubscribeCallback}
-				mapComponent={
-					<MapComponent
-						rounded={25}
-						needFinishMarker
-						interactiveDisabled
-						initialLocations={{ current: adaptLocations(item.training.participants[0].route.points) }}
-					/>
-				}
-			/>
-		)
-	}, [])
+			return (
+				<PostListItem
+					key={item.id}
+					{...item}
+					postId={item.id}
+					authorId={item.userCreator?.id || ''}
+					authorName={item.userCreator?.name || ''}
+					avatar={item.userCreator.avatarFilename}
+					createdAt={item.createdAt}
+					workoutType={item.training.type}
+					title={item.title}
+					description={item.description}
+					metrics={userMetrics}
+					participants={item.training.participants}
+					images={item.fileNames}
+					subscribeData={{
+						authorId: item.userCreator.id,
+						isSubscribed: item.isSubscribed
+					}}
+					likeData={{
+						isLiked: item.isLiked,
+						postId: item.id,
+						likesCount: item.likesCount
+					}}
+					onToggleSubscribeCallback={toggleSubscribeCallback}
+					mapComponent={
+						<MapComponent
+							rounded={25}
+							needFinishMarker
+							interactiveDisabled
+							initialLocations={{ current: adaptLocations(item.training.participants[0].route.points) }}
+						/>
+					}
+				/>
+			)
+		},
+		[toggleSubscribeCallback]
+	)
 
 	// Функция рендеринга индикатора загрузки
 	const renderFooter = useCallback(() => {
@@ -179,32 +179,8 @@ const PostsPage = () => {
 	// Функция рендеринга пустого состояния
 	const renderEmpty = useCallback(() => {
 		if (loading) return null
-		return <PostsEmpty />
+		return <TrainingsEmpty text="К сожалению, постов еще не существует, опубликуйте пост после тренировки" />
 	}, [loading])
-
-	// @TODO Удалить
-	const data = [
-		{ id: 1, name: 'Стив Джобс first', avatar: true },
-		{ id: 2, name: 'Джефф Безос', avatar: false },
-		{ id: 3, name: 'Джефф Безос', avatar: false },
-		{ id: 4, name: 'Джефф Безос', avatar: false },
-		{ id: 5, name: 'Джефф Безос', avatar: false },
-		{ id: 6, name: 'Джефф Безос', avatar: false },
-		{ id: 7, name: 'Джефф Безос', avatar: false },
-		{ id: 8, name: 'Джефф Безос', avatar: false },
-		{ id: 9, name: 'Джефф Безос', avatar: false },
-		{ id: 10, name: 'Джефф Безос', avatar: false },
-		{ id: 11, name: 'Джефф Безос', avatar: false },
-		{ id: 12, name: 'Джефф Безос', avatar: false },
-		{ id: 13, name: 'Джефф Безос', avatar: false },
-		{ id: 14, name: 'Джефф Безос', avatar: false },
-		{ id: 15, name: 'Джефф Безос', avatar: false },
-		{ id: 16, name: 'Джефф Безос', avatar: false },
-		{ id: 17, name: 'Джефф Безос', avatar: false },
-		{ id: 18, name: 'Джефф Безос', avatar: false },
-		{ id: 19, name: 'Джефф Безос', avatar: false },
-		{ id: 20, name: 'Джефф Безос last', avatar: false }
-	]
 
 	if (state.isSearchActive) {
 		return (
@@ -236,6 +212,8 @@ const PostsPage = () => {
 								isFind
 								containerClassName="flex-1"
 								onPress={() => setState((s) => ({ ...s, isSearchActive: true }))}
+								value={searchWord}
+								onChangeText={setSearchWord}
 								placeholder="Поиск"
 							/>
 							<NotificationsButton />
@@ -247,27 +225,26 @@ const PostsPage = () => {
 							keyboardVerticalOffset={Platform.OS === 'ios' ? 90 : 0}
 						>
 							<View style={{ flex: 1 }}>
-								<TouchableWithoutFeedback
-									onPress={Keyboard.dismiss}
-									style={{ borderWidth: 2, borderColor: 'red' }}
-								>
+								<TouchableWithoutFeedback onPress={Keyboard.dismiss}>
 									<View>
 										<View className="flex-row gap-[10px] mb-4">
 											<Button
 												onPress={() =>
-													setState((s) => ({ ...s, searchMode: SearchMode.PEOPLE }))
+													setState((s) => ({ ...s, searchMode: SearchType.USERS }))
 												}
-												variant={state.searchMode === SearchMode.PEOPLE ? 'white' : 'black'}
+												variant={state.searchMode === SearchType.USERS ? 'white' : 'black'}
 												className="w-min px-[30px]"
+												buttonContainerClassName="flex-1"
 											>
 												Люди
 											</Button>
 											<Button
 												onPress={() =>
-													setState((s) => ({ ...s, searchMode: SearchMode.POSTS }))
+													setState((s) => ({ ...s, searchMode: SearchType.POSTS }))
 												}
-												variant={state.searchMode === SearchMode.POSTS ? 'white' : 'black'}
+												variant={state.searchMode === SearchType.POSTS ? 'white' : 'black'}
 												className="w-min px-[30px]"
+												buttonContainerClassName="flex-1"
 											>
 												Посты
 											</Button>
@@ -277,29 +254,62 @@ const PostsPage = () => {
 											className="text-white text-base mb-3"
 											style={{ fontFamily: fontFamily.bold }}
 										>
-											{state.searchMode === SearchMode.PEOPLE ? 'Люди' : 'Посты'}
+											{state.searchMode === SearchType.USERS ? 'Люди' : 'Посты'}
 										</Text>
 									</View>
 								</TouchableWithoutFeedback>
-								<FlatList
-									data={data}
+								<LegendList
+									// key={`${state.searchMode}-${searchWord}`}
+									data={searchResults}
+									ListEmptyComponent={
+										<View className="flex-1 justify-center items-center ">
+											<Text
+												className="text-gray-ab text-center text-[19px]"
+												style={{ fontFamily: fontFamily.regular }}
+											>
+												Ничего не нашлось
+											</Text>
+										</View>
+									}
 									renderItem={({ item, index }) => {
-										switch (state.searchMode) {
-											case SearchMode.PEOPLE:
-												return <PeopleListItem key={item.id} {...item} />
-											case SearchMode.POSTS:
-												return <PostSearchResult key={item.id} {...item} index={index} />
+										if (state.searchMode === SearchType.USERS && isUser(item)) {
+											return (
+												<PeopleListItem
+													{...item}
+													avatar={
+														item.avatarFilename
+															? `${PATH_TO_IMAGE}${item.avatarFilename}`
+															: null
+													}
+												/>
+											)
 										}
+
+										if (state.searchMode === SearchType.POSTS && isPost(item)) {
+											return <PostSearchResult {...item} />
+										}
+
+										return null
 									}}
-									keyExtractor={(item) => item.id.toString()}
+									keyExtractor={(item) => item.id}
+									onEndReached={loadMoreSearch}
+									onEndReachedThreshold={0.4}
+									refreshing={searchRefreshing}
+									onRefresh={refreshSearch}
 									ItemSeparatorComponent={() => <View style={{ height: 15 }} />}
+									ListFooterComponent={
+										searchLoading ? (
+											<View style={{ padding: 20 }}>
+												<ActivityIndicator size="small" color={Colors['green-main']} />
+											</View>
+										) : null
+									}
 									contentContainerStyle={{
+										flexGrow: 1,
 										paddingBottom: 100,
 										paddingTop: 10
 									}}
 									showsVerticalScrollIndicator={false}
-									keyboardDismissMode="interactive"
-									keyboardShouldPersistTaps="handled"
 								/>
 							</View>
 						</KeyboardAvoidingView>
@@ -330,9 +340,10 @@ const PostsPage = () => {
 						<LegendList
 							ref={legendListRef}
 							data={posts}
+							style={{ flex: 1 }}
 							renderItem={renderPostItem}
 							keyExtractor={(item) => item.id.toString()}
-							onEndReached={loadMorePosts}
+							onEndReached={loadMore}
 							onEndReachedThreshold={0.5}
 							ListEmptyComponent={renderEmpty}
 							ListFooterComponent={renderFooter}
@@ -340,7 +351,7 @@ const PostsPage = () => {
 							refreshControl={
 								<RefreshControl
 									refreshing={refreshing}
-									onRefresh={onRefresh}
+									onRefresh={refresh}
 									tintColor={Colors['green-main']}
 								/>
 							}

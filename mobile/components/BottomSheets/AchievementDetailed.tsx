@@ -60,11 +60,11 @@ const AchievementDetailed = (props: IProps) => {
 							{achievement.title}
 						</Text>
 						<Text style={{ fontFamily: fontFamily.medium }} className="text-gray-ab text-xs">
-							Есть у {achievement.claimedPercent}% пользователей
+							Есть у {achievement.claimedPercent ?? 0}% пользователей
 						</Text>
 					</View>
 					<Text style={{ fontFamily: fontFamily.medium }} className="text-gray-ab text-base">
-						{achievement.description}
+						{achievement.description || ''}
 					</Text>
 				</View>
 			</View>

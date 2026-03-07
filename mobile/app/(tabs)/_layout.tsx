@@ -33,7 +33,7 @@ const AppNavigator = (props: { isAuthenticated: boolean }) => {
 const Root = ({ isIOS26OrHigher, isAuthenticated }: { isIOS26OrHigher: boolean; isAuthenticated: boolean }) => {
 	return (
 		<>
-			<NotificationProvider />
+			{/*<NotificationProvider />*/}
 			{isIOS26OrHigher ? <NativeTabsComponent /> : <AppNavigator isAuthenticated={isAuthenticated} />}
 		</>
 	)

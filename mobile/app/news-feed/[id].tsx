@@ -1,5 +1,5 @@
-import React, { useCallback, useEffect, useState } from 'react'
-import { View, ScrollView, Image, Dimensions } from 'react-native'
+import React, { useEffect, useState } from 'react'
+import { View, ScrollView, Dimensions } from 'react-native'
 import { SafeAreaProvider, useSafeAreaInsets } from 'react-native-safe-area-context'
 import { Container } from '@/components/ui/Container'
 import { StatusBar } from 'expo-status-bar'
