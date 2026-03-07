@@ -31,9 +31,9 @@ export class NotificationsController {
 		@User() user: UserData,
 		@NotNegative('page') @Query('page') page: number,
 		@NotNegative('limit') @Query('limit') limit: number,
-		@Query('readed') readed?: boolean,
+		@Query('read') read?: boolean,
 	): Promise<NotificationDto.Entity[]> {
-		return this.service.getNotifications(user.id, page, limit, readed);
+		return this.service.getNotifications(user.id, page, limit, read);
 	}
 
 	/**
@@ -54,5 +54,15 @@ export class NotificationsController {
 	@Patch('read')
 	public read(@User() user: UserData, @Body() dto: NotificationDto.Read): Promise<CommonDto.BooleanResponse> {
 		return this.service.read(user.id, dto.ids);
+	}
+
+	/**
+	 * @tag Notifications
+	 * @security token
+	 * @summary Есть ли непрочинанные уведы
+	 */
+	@Get('have-unread')
+	public haveUnread(@User() user: UserData): Promise<CommonDto.ExistsResponse> {
+		return this.service.haveUnread(user.id);
 	}
 }

@@ -81,6 +81,16 @@ export class NotificationsService {
 		return await query;
 	}
 
+	public async haveUnread(userId: string): Promise<CommonDto.ExistsResponse> {
+		const [query] = await this.db.db
+			.select({ id: notifications.id })
+			.from(notifications)
+			.where(and(eq(notifications.toUserId, userId), isNull(notifications.readedAt)))
+			.limit(1);
+
+		return { exists: !!query };
+	}
+
 	public async read(userId: string, ids: string[]): Promise<CommonDto.BooleanResponse> {
 		await this.db.db
 			.update(notifications)
