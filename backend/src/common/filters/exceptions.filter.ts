@@ -20,7 +20,7 @@ const statusCodeToError = {
 	500: ERRORS.INTERNAL,
 };
 
-function parsePropertyMessage(message: string): PropertyError {
+export function parsePropertyMessage(message: string): PropertyError {
 	const getPropertyFromMessage = (message: string): string => {
 		return message.includes(':') ? message.split(':')[0].slice(1) : 'unknown';
 	};
@@ -34,7 +34,7 @@ function parsePropertyMessage(message: string): PropertyError {
 		message: [getErrorFromMessage(message)],
 	};
 }
-function parsePropertyMessages(messages: string[]): PropertyError[] {
+export function parsePropertyMessages(messages: string[]): PropertyError[] {
 	const errors: PropertyError[] = [];
 	for (const message of messages) {
 		const parsedMessage = parsePropertyMessage(message);
@@ -113,6 +113,7 @@ export class HttpExceptionFilter implements ExceptionFilter {
 						: ERRORS[message]
 							? message
 							: (statusCodeToError[exceptionStatus] ?? ERRORS.UNKNOWN_ERROR),
+					text: exceptionStatus === 500 ? message : undefined,
 				});
 			}
 		}
