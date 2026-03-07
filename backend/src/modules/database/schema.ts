@@ -16,12 +16,14 @@ import {
 	pgEnum,
 } from 'drizzle-orm/pg-core';
 import { enumToPgEnum } from './helpers';
-import { MeasuringUnit, TrainingType, UserActivity } from '@shared/enums';
+import { MeasuringUnit, NotificationType, TrainingType, UserActivity } from '@shared/enums';
+import { NotificationDto } from '../notifications/notifications.dto';
 
 /**
  * ENUMS
  */
 export const trainingTypeEnum = pgEnum('training_type', enumToPgEnum(TrainingType));
+export const notificationTypeEnum = pgEnum('notification_type', enumToPgEnum(NotificationType));
 export const userActivityEnum = pgEnum('user_activity', enumToPgEnum(UserActivity));
 export const measuringUnitEnum = pgEnum('measuring_unit', enumToPgEnum(MeasuringUnit));
 
@@ -314,11 +316,11 @@ export const notifications = pgTable(
 	'notifications',
 	{
 		id: uuid('id').primaryKey().defaultRandom(),
-		iconFilename: varchar('icon_filename', { length: 255 }).references(() => media.filename),
 		toUserId: uuid('to_user_id')
 			.notNull()
 			.references(() => users.id),
-		text: varchar('text', { length: 255 }).notNull(),
+		action: jsonb('action').default({}).notNull().$type<NotificationDto.Action>(),
+		type: notificationTypeEnum().notNull(),
 		createdAt: timestamp('created_at').defaultNow().notNull(),
 		readedAt: timestamp('readed_at'),
 	},

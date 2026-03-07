@@ -35,3 +35,10 @@ export enum SearchType {
 	POSTS = 'posts',
 	USERS = 'users',
 }
+
+export enum NotificationType {
+	TRAINING_INVITE = 'trainig_invite',
+	FRIEND_INVITE = 'friend_invite',
+	TAGGED_IN_POST = 'tagged_in_post',
+	ACHIEVEMENT = 'ACHIEVEMENT',
+}
