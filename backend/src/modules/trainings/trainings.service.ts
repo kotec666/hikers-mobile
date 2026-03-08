@@ -641,35 +641,40 @@ export class TrainingsService {
 		type: TrainingType,
 	): TrainingMetricsDto.Entity {
 		let distanceM = 0;
-		let pausedDistanceM = 0;
-		let maxAltitudeM = 0;
+		let maxAbsAltitudeM = 0;
+
 		let pausedTimeMs = 0;
+		let allTimeMs = 0;
 
 		if (participant.route?.points && participant.route?.points?.length > 0) {
-			participant.route?.points?.reduce((prev, curr) => {
-				distanceM += curr.distance;
-				maxAltitudeM = Math.max(curr.alt, maxAltitudeM);
+			for (let i = 0; i < participant.route.points.length; i++) {
+				const point = participant.route.points[i];
+				if (point.paused) {
+					let prevPoint = point;
+					if (i > 0) {
+						prevPoint = participant.route.points[i - 1];
+					}
 
-				if (prev.paused) {
-					pausedTimeMs += curr.rel_ts - prev.rel_ts;
-					pausedDistanceM += prev.distance;
+					pausedTimeMs += point.rel_ts - prevPoint.rel_ts;
+					continue;
 				}
 
-				return curr;
-			});
+				maxAbsAltitudeM = Math.max(Math.abs(point.alt), maxAbsAltitudeM);
+				distanceM += point.distance;
+			}
+
+			allTimeMs = participant.route.points[participant.route.points.length - 1].rel_ts;
 		}
 
-		distanceM = Math.max(round(distanceM - pausedDistanceM), 0);
 		const distanceKmh = round(distanceM / 1000, 2);
 
-		const allTimeMs = participant.route?.points?.at(-1)?.rel_ts ?? 0;
 		const activeTimeMs = Math.max(allTimeMs - pausedTimeMs, 0);
 		const timeSec = round(activeTimeMs / 1000);
 
 		const avgTempoSecondsPerKm = distanceKmh === 0 ? 0 : round(timeSec / distanceKmh);
 		const avgSpeedMPerSec = timeSec === 0 ? 0 : round(distanceM / timeSec);
 
-		const altitudeGainM = round(maxAltitudeM - (participant.route?.points?.at(0)?.alt ?? 0));
+		const altitudeGainM = round(maxAbsAltitudeM - (participant.route?.points?.at(0)?.alt ?? 0));
 		const kkcal = calculateCalories(activeTimeMs, distanceM, type);
 
 		return {
