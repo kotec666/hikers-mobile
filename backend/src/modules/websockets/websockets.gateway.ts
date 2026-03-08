@@ -3,7 +3,7 @@ import { OnGatewayConnection, OnGatewayDisconnect, WebSocketGateway } from '@nes
 import { Socket } from 'socket.io';
 import { TokenDto } from '../token/token.dto';
 
-@WebSocketGateway()
+@WebSocketGateway(3001, { path: '/ws' })
 export class WebsocketsGateway implements OnGatewayConnection, OnGatewayDisconnect {
 	private static socketsToUserIds = new Map<Socket, string>();
 

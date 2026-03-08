@@ -37,7 +37,8 @@ services:
         networks:
             - hikers-network
         ports:
-            - '3000:3000'
+            - '3000:3000' # http
+            - '3001:3001' # websockets (socket.io)
         depends_on:
             postgres:
                 condition: service_started
