@@ -37,7 +37,7 @@ export class TrainingsController {
 		@NotNegative('limit') @Query('limit') limit: number,
 		@Query('finished') isFinished?: boolean,
 		@ParseEnumArray({ key: 'types', enum: TrainingType }) @Query('types') types?: TrainingType[],
-	): Promise<TrainingDto.SearchEntity[]> {
+	): Promise<TrainingDto.HistoryEntity[]> {
 		return this.service.getMy(user.id, page, limit, isFinished, types);
 	}
 

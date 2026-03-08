@@ -509,7 +509,7 @@ export class TrainingsService {
 		limit: number,
 		isFinished?: boolean,
 		types?: TrainingType[],
-	): Promise<TrainingDto.SearchEntity[]> {
+	): Promise<TrainingDto.HistoryEntity[]> {
 		const offset = Math.max(0, (page - 1) * limit);
 
 		const finishedCond =
@@ -523,10 +523,12 @@ export class TrainingsService {
 				createdAt: training.createdAt,
 				startedAt: training.startedAt,
 				finishedAt: training.finishedAt,
+				distanceM: trainingMetrics.distanceM,
 			})
 			.from(training)
-			.leftJoin(trainingParticipants, eq(trainingParticipants.trainingId, training.id))
+			.innerJoin(trainingParticipants, eq(trainingParticipants.trainingId, training.id))
 			.where(and(eq(trainingParticipants.userId, userId), finishedCond, typesCond))
+			.leftJoin(trainingMetrics, eq(trainingMetrics.participantId, trainingParticipants.id))
 			.orderBy(desc(training.finishedAt, 'first'))
 			.offset(offset)
 			.limit(limit);
