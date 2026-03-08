@@ -94,6 +94,19 @@ export class PostsController {
 
 	/**
 	 * @tag Posts
+	 * @summary Получить пост по id тренировки
+	 * @security token
+	 */
+	@Get('/by-training/:id')
+	public async getByTrainingId(
+		@User() user: UserData,
+		@IsUUID('id') @Param('id') id: string,
+	): Promise<PostDto.Entity> {
+		return await this.service.getByTrainingId(user.id, id);
+	}
+
+	/**
+	 * @tag Posts
 	 * @summary Посты из профиля пользователя
 	 * @security token
 	 */

@@ -187,6 +187,49 @@ export class PostsService {
 		return postEntities;
 	}
 
+	public async getByTrainingId(userId: string, id: string): Promise<PostDto.Entity> {
+		const [post] = await this.db.db
+			.select({
+				id: posts.id,
+				title: posts.title,
+				description: posts.description,
+				trainingId: posts.trainingId,
+				createdAt: posts.createdAt,
+				updatedAt: posts.updatedAt,
+
+				userCreator: {
+					id: users.id,
+					email: users.email,
+					name: users.name,
+					username: users.username,
+					avatarFilename: users.avatarFilename,
+				},
+			})
+			.from(posts)
+			.where(eq(posts.trainingId, id))
+			.innerJoin(users, eq(users.id, posts.userCreatorId))
+			.limit(1);
+		if (!post) {
+			throw new NotFoundException(ERRORS.NOT_FOUND);
+		}
+
+		return this.attachEntityInfo(userId, post.id, post);
+	}
+
+	/** Прицепить инфу к посту, чтобы он соответствовал типу {@link PostDto.Entity} */
+	private async attachEntityInfo(userId: string, id: string, post: any): Promise<PostDto.Entity> {
+		const isLiked = await this.isLiked(userId, id);
+		const likesCount = await this.getLikesCount(id);
+
+		const fileNames = await this.getFileNames(id);
+
+		// Пока что все посты закреплены за своей тренировкой
+		const training = await this.trainings.getExtendedById(post.trainingId!);
+		const isSubscribed = await this.subscribers.isSubscribed(userId, post.userCreator.id);
+
+		return { ...post, isSubscribed, likesCount, isLiked, training, fileNames };
+	}
+
 	public async getById(userId: string, id: string): Promise<PostDto.Entity> {
 		const [post] = await this.db.db
 			.select({
@@ -213,16 +256,7 @@ export class PostsService {
 			throw new NotFoundException(ERRORS.NOT_FOUND);
 		}
 
-		const isLiked = await this.isLiked(userId, id);
-		const likesCount = await this.getLikesCount(id);
-
-		const fileNames = await this.getFileNames(id);
-
-		// Пока что все посты закреплены за своей тренировкой
-		const training = await this.trainings.getExtendedById(post.trainingId!);
-		const isSubscribed = await this.subscribers.isSubscribed(userId, post.userCreator.id);
-
-		return { ...post, isSubscribed, likesCount, isLiked, training, fileNames };
+		return this.attachEntityInfo(userId, id, post);
 	}
 
 	public async create(userId: string, dto: PostDto.Creation): Promise<PostDto.Entity> {
