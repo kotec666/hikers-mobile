@@ -643,12 +643,14 @@ export class TrainingsService {
 		type: TrainingType,
 	): TrainingMetricsDto.Entity {
 		let distanceM = 0;
-		let maxAbsAltitudeM = 0;
+		let altitudeGainM = 0;
 
 		let pausedTimeMs = 0;
 		let allTimeMs = 0;
 
 		if (participant.route?.points && participant.route?.points?.length > 0) {
+			const startPoint = participant.route.points[0];
+
 			for (let i = 0; i < participant.route.points.length; i++) {
 				const point = participant.route.points[i];
 				if (point.paused) {
@@ -661,7 +663,10 @@ export class TrainingsService {
 					continue;
 				}
 
-				maxAbsAltitudeM = Math.max(Math.abs(point.alt), maxAbsAltitudeM);
+				altitudeGainM =
+					Math.abs(point.alt - startPoint.alt) > Math.abs(altitudeGainM)
+						? point.alt - startPoint.alt
+						: altitudeGainM;
 				distanceM += point.distance;
 			}
 
@@ -676,7 +681,6 @@ export class TrainingsService {
 		const avgTempoSecondsPerKm = distanceKmh === 0 ? 0 : round(timeSec / distanceKmh);
 		const avgSpeedMPerSec = timeSec === 0 ? 0 : round(distanceM / timeSec);
 
-		const altitudeGainM = round(maxAbsAltitudeM - (participant.route?.points?.at(0)?.alt ?? 0));
 		const kkcal = calculateCalories(activeTimeMs, distanceM, type);
 
 		return {
