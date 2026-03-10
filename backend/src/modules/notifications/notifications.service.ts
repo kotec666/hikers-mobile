@@ -1,10 +1,9 @@
 ﻿import { Injectable } from '@nestjs/common';
 import { NotificationDto } from './notifications.dto';
 import { DatabaseService } from '../database/database.service';
-import { notifications, users } from '../database/schema';
+import { notifications } from '../database/schema';
 import { and, eq, inArray, isNotNull, isNull, sql } from 'drizzle-orm';
 import { CommonDto } from 'src/common/dto/common.dto';
-import { NotificationType } from '@shared/enums';
 import { WebsocketsGateway } from '../websockets/websockets.gateway';
 
 @Injectable()
@@ -15,22 +14,20 @@ export class NotificationsService {
 		return WebsocketsGateway.emitToUser(userId, 'notification', notif);
 	}
 
-	public async debugCreateAndPush(userId: string, timeMs: number): Promise<NotificationDto.Entity> {
-		const [user] = await this.db.db
-			.select({ avatar: users.avatarFilename })
-			.from(users)
-			.where(eq(users.id, userId))
-			.limit(1);
-
+	public async debugCreateAndPush(
+		userId: string,
+		timeMs: number,
+		dto: NotificationDto.RequestDebug,
+	): Promise<NotificationDto.Entity> {
 		const [notif] = await this.db.db
 			.insert(notifications)
 			.values({
 				toUserId: userId,
-				type: NotificationType.FRIEND_INVITE,
+				type: dto.type,
 				action: {
-					iconFilename: user.avatar ?? 'no avatar',
-					text: Date.now().toString(),
-					relEntityId: userId,
+					iconFilename: dto.iconFilename,
+					text: dto.text,
+					relEntityId: dto.relEntityId ?? null,
 				},
 			})
 			.returning({

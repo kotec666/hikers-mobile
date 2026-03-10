@@ -17,8 +17,12 @@ export class NotificationsController {
 	 * @summary DEBUG. Создать и отправить пуш по ws через time мс
 	 */
 	@Post()
-	public debugPost(@User() user: UserData, @NotNegative('time') @Query('time') time: number) {
-		return this.service.debugCreateAndPush(user.id, time);
+	public debugPost(
+		@User() user: UserData,
+		@NotNegative('time') @Query('time') time: number,
+		@Body() dto: NotificationDto.RequestDebug,
+	) {
+		return this.service.debugCreateAndPush(user.id, time, dto);
 	}
 
 	/**
@@ -42,7 +46,10 @@ export class NotificationsController {
 	 * @summary Удалить уведы. Если боди не передано - удалятся все
 	 */
 	@Delete('delete')
-	public delete(@User() user: UserData, @Body() dto?: NotificationDto.Read): Promise<CommonDto.BooleanResponse> {
+	public delete(
+		@User() user: UserData,
+		@Body() dto?: NotificationDto.RequestRead,
+	): Promise<CommonDto.BooleanResponse> {
 		return this.service.delete(user.id, dto ? dto.ids : undefined);
 	}
 
@@ -52,7 +59,7 @@ export class NotificationsController {
 	 * @summary Пометить уведы как прочитанные
 	 */
 	@Patch('read')
-	public read(@User() user: UserData, @Body() dto: NotificationDto.Read): Promise<CommonDto.BooleanResponse> {
+	public read(@User() user: UserData, @Body() dto: NotificationDto.RequestRead): Promise<CommonDto.BooleanResponse> {
 		return this.service.read(user.id, dto.ids);
 	}
 
