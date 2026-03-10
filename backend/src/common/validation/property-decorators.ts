@@ -129,6 +129,33 @@ export function TypedArray(checkFn: (item: any) => boolean, validationOptions?: 
 	};
 }
 
+export function IsUUIDFilename(validationOptions?: ValidationOptions) {
+	return function (object: object, propertyName: string) {
+		registerDecorator({
+			name: 'IsUUUIDFilename',
+			target: object.constructor,
+			propertyName: propertyName,
+			options: validationOptions,
+			async: true,
+			validator: {
+				validate(value: any) {
+					const strItem = String(value).split('.');
+					if (strItem.length !== 2) {
+						return false;
+					}
+
+					const uuidPart = strItem[0];
+					const extensionPart = strItem[1];
+					return isUUID(uuidPart) && extensionPart.length > 0;
+				},
+				defaultMessage() {
+					return `_${propertyName}:${ERRORS.MISMATCH}`;
+				},
+			},
+		});
+	};
+}
+
 export function isUserActivityEnumValue(item: any): boolean {
 	return Object.values(UserActivity).includes(item);
 }
