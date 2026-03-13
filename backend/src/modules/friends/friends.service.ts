@@ -6,13 +6,15 @@ import { eq, and, or, count } from 'drizzle-orm';
 import { ERRORS } from '@shared/errors';
 import { UserService } from '../user/user.service';
 import { CommonDto } from '../../common/dto/common.dto';
-import { FriendStatus } from '@shared/enums';
+import { FriendStatus, NotificationType } from '@shared/enums';
+import { NotificationsService } from '../notifications/notifications.service';
 
 @Injectable()
 export class FriendsService {
 	constructor(
 		private readonly db: DatabaseService,
 		private readonly users: UserService,
+		private readonly notifications: NotificationsService,
 	) {}
 
 	public async getFriend(userId: string, userFriendId: string): Promise<FriendDto.Entity> {
@@ -227,6 +229,15 @@ export class FriendsService {
 		}
 
 		await this.db.db.insert(userFriendsInvites).values({ userId: fromUserId, invitedUserId: toUserId });
+
+		this.notifications
+			.create(toUserId, {
+				type: NotificationType.FRIEND_INVITE,
+				relEntityId: fromUserId,
+			})
+			.catch((r) => {
+				console.log('Friend invite notification creation failed', r);
+			});
 
 		return { success: true };
 	}
