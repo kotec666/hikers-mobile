@@ -18,6 +18,13 @@ export namespace NotificationDto {
 		relEntityId: string | null;
 	};
 
+	export type Create = {
+		text?: string;
+		type: NotificationType;
+		iconFilename: string;
+		relEntityId?: string;
+	};
+
 	export class RequestPull {
 		@IsPositive({ message: `_page:${ERRORS.MISMATCH}` })
 		page: number;
@@ -32,7 +39,8 @@ export namespace NotificationDto {
 
 	export class RequestDebug {
 		@IsString()
-		text: string;
+		@IsOptional()
+		text?: string;
 
 		@IsUUIDFilename()
 		iconFilename: string;
