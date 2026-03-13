@@ -1,12 +1,13 @@
 ﻿import { BadRequestException, Injectable } from '@nestjs/common';
 import { NotificationDto } from './notifications.dto';
 import { DatabaseService } from '../database/database.service';
-import { notifications } from '../database/schema';
+import { achievements, notifications, posts, trainingInvites, userFriendsInvites, users } from '../database/schema';
 import { and, eq, inArray, isNotNull, isNull, sql } from 'drizzle-orm';
 import { CommonDto } from 'src/common/dto/common.dto';
 import { WebsocketsGateway } from '../websockets/websockets.gateway';
 import { NotificationType } from '@shared/enums';
 import { ERRORS } from '@shared/errors';
+import { desc } from '../database/extensions';
 
 @Injectable()
 export class NotificationsService {
@@ -47,6 +48,7 @@ export class NotificationsService {
 				action: notifications.action,
 			})
 			.from(notifications)
+			.orderBy(desc(notifications.createdAt))
 			.offset(offset)
 			.limit(limit);
 
@@ -90,9 +92,22 @@ export class NotificationsService {
 					isNull(notifications.readedAt),
 					sql`action->>'relEntityId' = ${dto.relEntityId}`,
 				),
-			);
+			)
+			.limit(1);
 		if (existingNotif) {
 			throw new BadRequestException(ERRORS.ALREADY_EXISTS);
+		}
+
+		let notifText = dto.text ?? '';
+		let iconFilename = dto.iconFilename ?? null;
+		if (dto.relEntityId) {
+			const relEntity = await this.getRelatedEntity(dto.type, dto.relEntityId);
+			if (!relEntity) {
+				throw new BadRequestException(ERRORS.BAD_REQUEST);
+			}
+
+			iconFilename = relEntity.iconFilename;
+			notifText = this.getTextByTypeAndEntity(dto.type, relEntity.title);
 		}
 
 		const [notif] = await this.db.db
@@ -101,8 +116,8 @@ export class NotificationsService {
 				toUserId: userId,
 				type: dto.type,
 				action: {
-					iconFilename: dto.iconFilename,
-					text: dto.text ?? this.getTextByTypeAndEntity(dto.type, dto.relEntityId!),
+					iconFilename: iconFilename,
+					text: notifText,
 					relEntityId: dto.relEntityId ?? null,
 				},
 			})
@@ -146,16 +161,92 @@ export class NotificationsService {
 	}
 
 	// @TODO проблема - текст уведа будет всегда на одном и том же языке (русский)
-	private getTextByTypeAndEntity(type: NotificationType, relEntityName: string): string {
+	private getTextByTypeAndEntity(type: NotificationType, relEntityName?: string): string {
 		switch (type) {
 			case NotificationType.ACHIEVEMENT:
-				return `Получено достижение: ${relEntityName}`;
+				return `Получено достижение${relEntityName ? ': ' + relEntityName : ''}`;
 			case NotificationType.FRIEND_INVITE:
-				return `Пользователь ${relEntityName} отправил запрос в друзья`;
+				return `Пользователь ${relEntityName ? relEntityName + ' ' : ''}отправил запрос в друзья`;
 			case NotificationType.TRAINING_INVITE:
-				return `Пользователь ${relEntityName} пригласил вас на тренировку`;
+				return `Пользователь ${relEntityName ? relEntityName + ' ' : ''}пригласил вас на тренировку`;
 			case NotificationType.TAGGED_IN_POST:
-				return `Пользователь ${relEntityName} отметил вас в публикации`;
+				return `Пользователь ${relEntityName ? relEntityName + ' ' : ''}отметил вас в публикации`;
+			default:
+				throw new Error(ERRORS.BAD_REQUEST);
+		}
+	}
+
+	private async getRelatedEntity(
+		type: NotificationType,
+		relEntityId: string,
+	): Promise<{
+		iconFilename: string | null;
+		title: string;
+	} | null> {
+		switch (type) {
+			case NotificationType.ACHIEVEMENT: {
+				const [achieve] = await this.db.db
+					.select({
+						iconFilename: achievements.iconFilename,
+						title: achievements.title,
+					})
+					.from(achievements)
+					.where(eq(achievements.id, relEntityId))
+					.limit(1);
+				if (!achieve) {
+					return null;
+				}
+
+				return achieve;
+			}
+			case NotificationType.FRIEND_INVITE: {
+				const [invite] = await this.db.db
+					.select({
+						iconFilename: users.avatarFilename,
+						title: sql<string>`COALESCE('@' || ${users.username}, '')`.as('title'),
+					})
+					.from(userFriendsInvites)
+					.where(eq(userFriendsInvites.userId, relEntityId))
+					.innerJoin(users, eq(users.id, relEntityId))
+					.limit(1);
+				if (!invite) {
+					return null;
+				}
+
+				return invite;
+			}
+			case NotificationType.TRAINING_INVITE: {
+				const [invite] = await this.db.db
+					.select({
+						iconFilename: users.avatarFilename,
+						title: sql<string>`COALESCE('@' || ${users.username}, '')`.as('title'),
+					})
+					.from(trainingInvites)
+					.where(eq(trainingInvites.userId, relEntityId))
+					.innerJoin(users, eq(users.id, relEntityId))
+					.limit(1);
+				if (!invite) {
+					return null;
+				}
+
+				return invite;
+			}
+			case NotificationType.TAGGED_IN_POST: {
+				const [post] = await this.db.db
+					.select({
+						iconFilename: users.avatarFilename,
+						title: sql<string>`COALESCE('@' || ${users.username}, '')`.as('title'),
+					})
+					.from(posts)
+					.where(eq(posts.id, relEntityId))
+					.innerJoin(users, eq(users.id, posts.userCreatorId))
+					.limit(1);
+				if (!post) {
+					return null;
+				}
+
+				return post;
+			}
 			default:
 				throw new Error(ERRORS.BAD_REQUEST);
 		}

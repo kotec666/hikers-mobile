@@ -14,14 +14,14 @@ export namespace NotificationDto {
 
 	export type Action = {
 		text: string;
-		iconFilename: string;
+		iconFilename: string | null;
 		relEntityId: string | null;
 	};
 
 	export type Create = {
 		text?: string;
 		type: NotificationType;
-		iconFilename: string;
+		iconFilename?: string;
 		relEntityId?: string;
 	};
 
