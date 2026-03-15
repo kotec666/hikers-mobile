@@ -1,6 +1,5 @@
-import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react'
+import React, { useCallback, useEffect, useRef, useState } from 'react'
 import {
-	FlatList,
 	View,
 	Text,
 	Platform,
@@ -27,12 +26,11 @@ import { useLocalSearchParams } from 'expo-router'
 import MapComponent from '@/components/map/MapComponent'
 import { adaptLocations } from '@/helpers/adaptPointsToIWorkoutLocationStorageItem'
 import { Motion } from '@legendapp/motion'
-import { usePaginatedList } from '@/hooks/usePaginatedList'
 import TrainingsEmpty from '@/components/ui/Post/TrainingsEmpty'
 import { SearchType } from '@/shared/enums'
 import { IFoundPost, IFoundUser, searchByAllItems } from '@/api/search'
-import { debounce } from '@/helpers/debounce'
 import { PATH_TO_IMAGE } from '@/constants/PATH_TO_FILES'
+import { useInfiniteQuery, useQueryClient } from '@tanstack/react-query'
 
 const isUser = (item: IFoundUser | IFoundPost): item is IFoundUser => {
 	return 'email' in item
@@ -44,6 +42,8 @@ const isPost = (item: IFoundUser | IFoundPost): item is IFoundPost => {
 
 const PostsPage = () => {
 	const insets = useSafeAreaInsets()
+	const queryClient = useQueryClient()
+
 	const [state, setState] = useState<{
 		isSearchActive: boolean
 		searchMode: SearchType
@@ -54,50 +54,76 @@ const PostsPage = () => {
 
 	// State для поиска
 	const [searchWord, setSearchWord] = useState('')
+	const [debouncedSearchWord, setDebouncedSearchWord] = useState(searchWord)
+
+	const searchLimit = 15
 
 	const {
-		data: searchResults,
-		loading: searchLoading,
-		refreshing: searchRefreshing,
-		loadMore: loadMoreSearch,
-		refresh: refreshSearch
-	} = usePaginatedList<IFoundUser | IFoundPost, { word?: string; type?: SearchType }>({
-		fetchFn: ({ page, limit, word, type }) => {
-			if (!word || word.trim().length < 2) return Promise.resolve([])
-			return searchByAllItems({ page, limit, word, type })
+		data: searchData = [],
+		fetchNextPage: fetchNextSearchPage,
+		hasNextPage: hasNextSearchPage,
+		isFetchingNextPage: isFetchingNextSearchPage,
+		refetch: refetchSearch,
+		isRefetching: isRefetchingSearch
+	} = useInfiniteQuery<
+		IFoundUser[] | IFoundPost[], // тип страницы
+		Error,
+		(IFoundUser | IFoundPost)[], // select
+		['search', string, SearchType], // queryKey: ["search", searchWord, searchMode]
+		number // pageParam
+	>({
+		queryKey: ['search', debouncedSearchWord, state.searchMode],
+		queryFn: ({ pageParam = 1 }) => {
+			if (!debouncedSearchWord || debouncedSearchWord.trim().length < 2) return Promise.resolve([])
+			return searchByAllItems({
+				page: pageParam,
+				limit: searchLimit,
+				word: debouncedSearchWord,
+				type: state.searchMode
+			})
 		},
-		limit: 10, // @TODO Не работает пагинация в поиске
-		autoLoad: false
+		initialPageParam: 1,
+		getNextPageParam: (lastPage, pages) => (lastPage.length < searchLimit ? undefined : pages.length + 1),
+		enabled: debouncedSearchWord.trim().length >= 2,
+		select: (data) => data.pages.flat()
 	})
 
-	const debouncedSearchRef = useRef(
-		debounce((word: string, type: SearchType) => {
-			refreshSearch({ word, type })
-		}, 500)
-	)
-
 	useEffect(() => {
-		if (!searchWord.trim()) {
-			refreshSearch({}) // сброс поиска
-			return
-		}
-		if (searchWord.trim().length >= 2) {
-			debouncedSearchRef.current(searchWord, state.searchMode)
-		}
-	}, [searchWord, state.searchMode])
+		const handler = setTimeout(() => {
+			setDebouncedSearchWord(searchWord.trim())
+		}, 500)
+
+		return () => clearTimeout(handler)
+	}, [searchWord])
 
 	// Состояние для infinite scroll постов
-	const limit = 5
+	const postsLimit = 5
+
 	const {
-		data: posts,
-		setData: setPosts,
-		loading,
-		refreshing,
-		loadMore,
-		refresh
-	} = usePaginatedList<IPost, void>({
-		fetchFn: ({ page, limit }) => getPostsFeed({ page, limit }),
-		limit
+		data: posts = [],
+		fetchNextPage,
+		hasNextPage,
+		isFetchingNextPage,
+		refetch,
+		isRefetching,
+		isFetching
+	} = useInfiniteQuery<IPost[], Error, IPost[], ['posts-feed'], number>({
+		queryKey: ['posts-feed'],
+
+		queryFn: ({ pageParam }) =>
+			getPostsFeed({
+				page: pageParam,
+				limit: postsLimit
+			}),
+
+		initialPageParam: 1,
+
+		getNextPageParam: (lastPage, pages) => {
+			if (lastPage.length < postsLimit) return undefined
+			return pages.length + 1
+		},
+
+		select: (data) => data.pages.flat()
 	})
 
 	const legendListRef = useRef<LegendListRef>(null)
@@ -112,11 +138,18 @@ const PostsPage = () => {
 
 	const toggleSubscribeCallback = useCallback(
 		(isSubscribed: boolean, authorId?: string) => {
-			setPosts((prev) =>
-				prev.map((post) => (post.userCreator.id === authorId ? { ...post, isSubscribed: isSubscribed } : post))
-			)
+			queryClient.setQueryData(['posts-feed'], (oldData: any) => {
+				if (!oldData) return oldData
+
+				return {
+					...oldData,
+					pages: oldData.pages.map((page: IPost[]) =>
+						page.map((post) => (post.userCreator.id === authorId ? { ...post, isSubscribed } : post))
+					)
+				}
+			})
 		},
-		[setPosts]
+		[queryClient]
 	)
 
 	// Функция рендеринга элемента поста
@@ -168,19 +201,21 @@ const PostsPage = () => {
 
 	// Функция рендеринга индикатора загрузки
 	const renderFooter = useCallback(() => {
-		if (!loading) return null
+		if (!isFetchingNextPage) return null
+
 		return (
 			<View style={{ padding: 20 }}>
 				<ActivityIndicator size="small" color={Colors['green-main']} />
 			</View>
 		)
-	}, [loading])
+	}, [isFetchingNextPage])
 
 	// Функция рендеринга пустого состояния
 	const renderEmpty = useCallback(() => {
-		if (loading) return null
+		if (isFetching) return null
+
 		return <TrainingsEmpty text="К сожалению, постов еще не существует, опубликуйте пост после тренировки" />
-	}, [loading])
+	}, [isFetching])
 
 	if (state.isSearchActive) {
 		return (
@@ -259,19 +294,21 @@ const PostsPage = () => {
 									</View>
 								</TouchableWithoutFeedback>
 								<LegendList
-									// key={`${state.searchMode}-${searchWord}`}
-									data={searchResults}
+									key={`${state.searchMode}`}
+									data={searchData ?? []}
 									ListEmptyComponent={
-										<View className="flex-1 justify-center items-center ">
+										<View className="flex-1 justify-center items-center">
 											<Text
 												className="text-gray-ab text-center text-[19px]"
 												style={{ fontFamily: fontFamily.regular }}
 											>
-												Ничего не нашлось
+												{searchWord.trim().length < 2
+													? 'Введите хотя бы 2 символа'
+													: 'Ничего не нашлось'}
 											</Text>
 										</View>
 									}
-									renderItem={({ item, index }) => {
+									renderItem={({ item }) => {
 										if (state.searchMode === SearchType.USERS && isUser(item)) {
 											return (
 												<PeopleListItem
@@ -292,13 +329,22 @@ const PostsPage = () => {
 										return null
 									}}
 									keyExtractor={(item) => item.id}
-									onEndReached={loadMoreSearch}
+									onEndReached={() => {
+										if (hasNextSearchPage && !isFetchingNextSearchPage) {
+											fetchNextSearchPage()
+										}
+									}}
+									refreshControl={
+										<RefreshControl
+											refreshing={isRefetchingSearch}
+											onRefresh={refetchSearch}
+											tintColor={Colors['green-main']}
+										/>
+									}
 									onEndReachedThreshold={0.4}
-									refreshing={searchRefreshing}
-									onRefresh={refreshSearch}
 									ItemSeparatorComponent={() => <View style={{ height: 15 }} />}
 									ListFooterComponent={
-										searchLoading ? (
+										isFetchingNextSearchPage ? (
 											<View style={{ padding: 20 }}>
 												<ActivityIndicator size="small" color={Colors['green-main']} />
 											</View>
@@ -342,16 +388,20 @@ const PostsPage = () => {
 							data={posts}
 							style={{ flex: 1 }}
 							renderItem={renderPostItem}
-							keyExtractor={(item) => item.id.toString()}
-							onEndReached={loadMore}
+							keyExtractor={(item) => item.id}
+							onEndReached={() => {
+								if (hasNextPage && !isFetchingNextPage) {
+									fetchNextPage()
+								}
+							}}
 							onEndReachedThreshold={0.5}
 							ListEmptyComponent={renderEmpty}
 							ListFooterComponent={renderFooter}
 							ItemSeparatorComponent={() => <View style={{ height: 16 }} />}
 							refreshControl={
 								<RefreshControl
-									refreshing={refreshing}
-									onRefresh={refresh}
+									refreshing={isRefetching}
+									onRefresh={refetch}
 									tintColor={Colors['green-main']}
 								/>
 							}

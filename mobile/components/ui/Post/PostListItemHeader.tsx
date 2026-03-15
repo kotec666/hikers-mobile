@@ -9,10 +9,10 @@ import { PATH_TO_IMAGE } from '@/constants/PATH_TO_FILES'
 import { formatRelativeDate } from '@/helpers/formatRelativeDate'
 import { WorkoutTypesData } from '@/constants/WorkoutTypes'
 import { TrainingType } from '@/shared/enums'
-import { useRouter } from 'expo-router'
 import { subscribeToUser, unsubscribeFromUser } from '@/api/subscribers'
 import { useToast } from '@/hooks/useToast'
 import { useOptimisticToggle } from '@/hooks/useOptimisticToggle'
+import { useSafeNavigation } from '@/hooks/useSafeNavigation'
 
 interface IProps {
 	isMyPost?: boolean
@@ -38,7 +38,7 @@ const PostListItemHeader = ({
 	workoutType,
 	onToggleSubscribeCallback
 }: IProps) => {
-	const router = useRouter()
+	const { push } = useSafeNavigation()
 	const toast = useToast()
 	const {
 		value: isSubscribed,
@@ -66,7 +66,7 @@ const PostListItemHeader = ({
 				<Pressable
 					onPress={() => {
 						if (!isMyPost) {
-							router.push({
+							push({
 								pathname: '/user/profile/[id]',
 								params: { id: `${authorId}` }
 							})

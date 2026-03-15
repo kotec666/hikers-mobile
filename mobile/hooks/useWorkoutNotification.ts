@@ -99,6 +99,9 @@ export const useWorkoutNotification = (actions: NotificationActions): UseWorkout
 				autoCancel: false,
 				foregroundServiceTypes: [AndroidForegroundServiceType.FOREGROUND_SERVICE_TYPE_HEALTH],
 				importance: AndroidImportance.LOW,
+				// showChronometer: true, @TODO
+				// chronometerDirection: 'up',
+				// timestamp: meta.startedAt,
 				ongoing: true,
 				visibility: AndroidVisibility.PUBLIC,
 				pressAction: {

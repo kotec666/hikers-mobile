@@ -18,12 +18,12 @@ import { addAsFriend, deleteFriendById, revokeFriendInviteByUserId } from '@/api
 import { FriendStatus } from '@shared/enums'
 import { AnimatedProfilePicture } from '@/components/ui/Profile/AnimatedProfilePicture'
 import { LegendList, LegendListRef } from '@legendapp/list'
-import { getPostsByUserId, getPostsMy, IPost } from '@/api/posts'
+import { getPostsByUserId, IPost } from '@/api/posts'
 import { Colors } from '@/constants/Colors'
 import MapComponent from '@/components/map/MapComponent'
 import { adaptLocations } from '@/helpers/adaptPointsToIWorkoutLocationStorageItem'
 import { useOptimisticToggle } from '@/hooks/useOptimisticToggle'
-import { usePaginatedList } from '@/hooks/usePaginatedList'
+import { useInfiniteQuery, useQueryClient, InfiniteData } from '@tanstack/react-query'
 
 /**
  *
@@ -40,6 +40,7 @@ const friendStatusLabel = {
 const UserProfilePage = () => {
 	const insets = useSafeAreaInsets()
 	const toast = useToast()
+	const queryClient = useQueryClient()
 	const { id } = useLocalSearchParams<{ id: string }>()
 	const legendListRef = useRef<LegendListRef>(null)
 
@@ -47,31 +48,71 @@ const UserProfilePage = () => {
 	const [refreshingProfile, setRefreshingProfile] = useState(false)
 	const [isDeleteModalOpened, setIsDeleteModalOpened] = useState<boolean>(false)
 
-	const limit = 5
-	const fetchPosts = useCallback(
-		({ page, limit }: { page: number; limit: number }) => getPostsByUserId(id, { page, limit }),
-		[id]
-	)
+	// const limit = 5
+	// const fetchPosts = useCallback(
+	// 	({ page, limit }: { page: number; limit: number }) => getPostsByUserId(id, { page, limit }),
+	// 	[id]
+	// )
+	// const {
+	// 	data: posts,
+	// 	setData: setPosts,
+	// 	loading: loadingPosts,
+	// 	refreshing: refreshingPosts,
+	// 	loadMore,
+	// 	refresh: refreshPosts
+	// } = usePaginatedList<IPost, void>({
+	// 	fetchFn: fetchPosts,
+	// 	limit
+	// })
+
+	const postsLimit = 5
 	const {
-		data: posts,
-		setData: setPosts,
-		loading: loadingPosts,
-		refreshing: refreshingPosts,
-		loadMore,
-		refresh: refreshPosts
-	} = usePaginatedList<IPost, void>({
-		fetchFn: fetchPosts,
-		limit
+		data: posts = [],
+		fetchNextPage: fetchNextPostsPage,
+		hasNextPage: hasNextPostsPage,
+		isFetchingNextPage: isFetchingPostsNextPage,
+		refetch: postsRefetch,
+		isRefetching: postsIsRefetching
+		// isFetching: isPostsFetching для renderEmpty
+	} = useInfiniteQuery<IPost[], Error, IPost[], ['posts-profile', string], number>({
+		queryKey: ['posts-profile', id],
+		queryFn: ({ pageParam }) =>
+			getPostsByUserId(id, {
+				page: pageParam,
+				limit: postsLimit
+			}),
+		initialPageParam: 1,
+		getNextPageParam: (lastPage, pages) => {
+			if (lastPage.length < postsLimit) return undefined
+			return pages.length + 1
+		},
+
+		select: (data) => data.pages.flat()
 	})
+
+	const updatePostsSubscription = useCallback(
+		(authorId: string, isSubscribed: boolean) => {
+			queryClient.setQueryData<InfiniteData<IPost[]>>(['posts-profile', id], (old) => {
+				if (!old) return old
+
+				return {
+					...old,
+					pages: old.pages.map((page) =>
+						page.map((post) => (post.userCreator.id === authorId ? { ...post, isSubscribed } : post))
+					)
+				}
+			})
+		},
+		[id, queryClient]
+	)
 
 	const loadProfile = useCallback(async () => {
 		setRefreshingProfile(true)
 		try {
 			const profile = await getUserProfileData(id)
 			setProfileData(profile)
-		} catch (e) {
-			const errors = await e.response?.json?.()
-			getFieldsErrors(errors)
+		} catch (e: unknown) {
+			await getFieldsErrors(e)
 		} finally {
 			setRefreshingProfile(false)
 		}
@@ -79,13 +120,13 @@ const UserProfilePage = () => {
 
 	const onRefreshAll = useCallback(async () => {
 		setRefreshingProfile(true)
-		await Promise.all([loadProfile(), refreshPosts()])
+		await Promise.all([loadProfile(), postsRefetch()]) // , refreshPosts()
 		setRefreshingProfile(false)
-	}, [loadProfile, refreshPosts])
+	}, [loadProfile, postsRefetch]) // refreshPosts
 
 	useEffect(() => {
 		const init = async () => {
-			await Promise.all([loadProfile(), refreshPosts()])
+			await Promise.all([loadProfile()]) // refreshPosts()
 		}
 		init()
 	}, [id, loadProfile])
@@ -104,18 +145,31 @@ const UserProfilePage = () => {
 			if (!profileData?.user?.id) throw new Error('Пользователь не выбран')
 			await unsubscribeFromUser(profileData.user.id)
 		},
-		onError: () => toast.error('Ошибка при подписке/отписке'),
+		onError: (e) => {
+			console.log(e)
+			toast.error('Ошибка при подписке/отписке')
+		},
+		// onSuccess: (val) => {
+		// 	// синхронизируем profileData и ленту
+		// 	updateProfileData((prev) => ({
+		// 		isSubscribed: val,
+		// 		subscribers: (prev.subscribers ?? 0) + (val ? 1 : -1)
+		// 	}))
+		// 	// setPosts((prev) =>
+		// 	// 	prev.map((post) =>
+		// 	// 		post.userCreator.id === profileData?.user?.id ? { ...post, isSubscribed: val } : post
+		// 	// 	)
+		// 	// )
+		// }
 		onSuccess: (val) => {
-			// синхронизируем profileData и ленту
 			updateProfileData((prev) => ({
 				isSubscribed: val,
 				subscribers: (prev.subscribers ?? 0) + (val ? 1 : -1)
 			}))
-			setPosts((prev) =>
-				prev.map((post) =>
-					post.userCreator.id === profileData?.user?.id ? { ...post, isSubscribed: val } : post
-				)
-			)
+
+			if (profileData?.user?.id) {
+				updatePostsSubscription(profileData.user.id, val)
+			}
 		}
 	})
 
@@ -144,11 +198,14 @@ const UserProfilePage = () => {
 				}))
 			}
 
-			setPosts((prev) =>
-				prev.map((post) => (post.userCreator.id === authorId ? { ...post, isSubscribed: isSubscribed } : post))
-			)
+			if (authorId) {
+				updatePostsSubscription(authorId, isSubscribed)
+			}
+			// setPosts((prev) =>
+			// 	prev.map((post) => (post.userCreator.id === authorId ? { ...post, isSubscribed: isSubscribed } : post))
+			// )
 		},
-		[setPosts]
+		[updatePostsSubscription] // setPosts
 	)
 
 	const handleDeleteFromFriends = async () => {
@@ -162,10 +219,9 @@ const UserProfilePage = () => {
 				friends: friendsCount
 			}))
 			toast.success('Пользователь удалён из списка друзей')
-		} catch (e) {
+		} catch (e: unknown) {
 			toast.error('Произошла ошибка, повторите попытку позже')
-			// const errors = await e.response.json()
-			// getFieldsErrors(errors)
+			// await getFieldsErrors(e)
 		} finally {
 			setIsDeleteModalOpened(false)
 		}
@@ -186,10 +242,9 @@ const UserProfilePage = () => {
 				isFriend: FriendStatus.INVITED
 			}))
 			toast.success('Заявка в друзья отправлена')
-		} catch {
+		} catch (e: unknown) {
 			toast.error('Произошла ошибка, повторите попытку позже')
-			// const errors = await e.response.json()
-			// getFieldsErrors(errors)
+			// await getFieldsErrors(e)
 		}
 	}
 
@@ -200,10 +255,9 @@ const UserProfilePage = () => {
 				isFriend: FriendStatus.FALSE
 			}))
 			toast.success('Заявка в друзья отозвана')
-		} catch {
+		} catch (e: unknown) {
 			toast.error('Произошла ошибка, повторите попытку позже')
-			// const errors = await e.response.json()
-			// getFieldsErrors(errors)
+			// await getFieldsErrors(e)
 		}
 	}
 
@@ -262,12 +316,15 @@ const UserProfilePage = () => {
 		[subUnsubCallback]
 	)
 
-	const renderFooter = () =>
-		loadingPosts ? (
+	const renderFooter = useCallback(() => {
+		//if (!loadingPosts) return null
+		if (!isFetchingPostsNextPage) return null
+		return (
 			<View style={{ padding: 20 }}>
 				<ActivityIndicator size="small" color={Colors['green-main']} />
 			</View>
-		) : null
+		)
+	}, [isFetchingPostsNextPage]) // loadingPosts
 
 	return (
 		<>
@@ -277,12 +334,24 @@ const UserProfilePage = () => {
 					data={posts}
 					renderItem={renderPostItem}
 					keyExtractor={(item) => item.id}
-					onEndReached={loadMore}
+					// onEndReached={loadMore}
+					onEndReached={() => {
+						if (hasNextPostsPage && !isFetchingPostsNextPage) {
+							fetchNextPostsPage()
+						}
+					}}
 					onEndReachedThreshold={0.5}
 					ItemSeparatorComponent={() => <View style={{ height: 16 }} />}
 					ListFooterComponent={renderFooter}
+					// refreshControl={
+					// 	<RefreshControl refreshing={refreshingProfile || refreshingPosts} onRefresh={onRefreshAll} />
+					// }
 					refreshControl={
-						<RefreshControl refreshing={refreshingProfile || refreshingPosts} onRefresh={onRefreshAll} />
+						<RefreshControl
+							refreshing={refreshingProfile || postsIsRefetching}
+							onRefresh={onRefreshAll}
+							tintColor={Colors['green-main']}
+						/>
 					}
 					ListHeaderComponent={
 						<>

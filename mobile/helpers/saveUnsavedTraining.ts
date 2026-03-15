@@ -4,10 +4,11 @@ import {
 	getUnsavedWorkoutByStartedAt,
 	markUnsavedWorkoutPointsAsSaved
 } from '@/store/workoutStorage'
-import { finishTraining, startTraining, syncTraining } from '@/api/workout'
+import { deleteNotFinishedTraining, finishTraining, startTraining, syncTraining } from '@/api/workout'
 import { randomHexColor } from '@/helpers/randomHexColor'
 import { chunkArray } from '@/helpers/chunkArray'
 import { prepareLocationsForSync } from '@/helpers/prepareLocationsForSync'
+import { getFieldsErrors } from '@/helpers/getFieldsErrors'
 
 export const saveSingleWorkout = async (startedAt: number, userId?: string): Promise<boolean> => {
 	try {
@@ -74,7 +75,35 @@ export const saveSingleWorkout = async (startedAt: number, userId?: string): Pro
 			}
 		}
 	} catch (e) {
+		const res = await e.response.json()
 		console.error('[sync] syncSingleWorkout error', e)
+		console.error('[sync] syncSingleWorkout error', e.message)
+		console.error('[sync] syncSingleWorkout error', res)
+		console.error('[sync] syncSingleWorkout error', JSON.stringify(res))
 		return false
 	}
+}
+
+export const deleteSingleWorkout = async (startedAt: number, userId?: string): Promise<boolean> => {
+	let workout = getUnsavedWorkoutByStartedAt(startedAt, userId)
+	if (!workout) return false
+
+	let trainingId = workout.id
+
+	// 1. Завершаем тренировку на бэкенде, если у неё есть id
+	if (trainingId) {
+		try {
+			const result = await deleteNotFinishedTraining() // { id: trainingId }
+			if (result.success) {
+				deleteUnsavedTrainingByStartedAt(workout.startedAt, userId)
+			}
+			return result.success
+		} catch (e: unknown) {
+			await getFieldsErrors(e)
+			return false
+		}
+	}
+
+	deleteUnsavedTrainingByStartedAt(workout.startedAt, userId)
+	return true
 }

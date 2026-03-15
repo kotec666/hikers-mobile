@@ -8,6 +8,7 @@ import { BlurView } from 'expo-blur'
 import { cn } from '@/helpers/cn'
 import { useNavBarVisibility } from '@/hooks/useNavBarVisibility'
 import { tabsConfig } from '@/components/ui/Navbar/tabs.config'
+import { useSafeNavigation } from '@/hooks/useSafeNavigation'
 
 type AnimatedButtonProps = {
 	isActive: boolean
@@ -45,7 +46,7 @@ const AnimatedButton: React.FC<AnimatedButtonProps> = ({ isActive, onPress, Icon
 
 const NavBar = () => {
 	const insets = useSafeAreaInsets()
-	const router = useRouter()
+	const { push } = useSafeNavigation()
 	const pathname = usePathname()
 
 	const hidden = useNavBarVisibility(['/newTraining'])
@@ -65,7 +66,7 @@ const NavBar = () => {
 	const handlePress = (href: string) => {
 		const isSameRoute = pathname.startsWith(href)
 
-		router.push({
+		push({
 			pathname: href as RelativePathString,
 			params: isSameRoute ? { scrollToTop: Date.now() } : {}
 		})

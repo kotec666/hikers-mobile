@@ -19,6 +19,7 @@ import MapComponent from '@/components/map/MapComponent'
 import { adaptLocations } from '@/helpers/adaptPointsToIWorkoutLocationStorageItem'
 import { useToast } from '@/hooks/useToast'
 import { VIEWWORKOUT_MODE } from '@/app/training/viewWorkout'
+import { useSafeNavigation } from '@/hooks/useSafeNavigation'
 
 const { height } = Dimensions.get('screen')
 const SLIDE_ASPECT_RATIO = height / 3.6
@@ -27,6 +28,7 @@ const Post = () => {
 	const insets = useSafeAreaInsets()
 	const toast = useToast()
 	const router = useRouter()
+	const { push } = useSafeNavigation()
 	const { id } = useLocalSearchParams<{ id: string }>()
 	const { user } = useAuthStore()
 
@@ -82,11 +84,10 @@ const Post = () => {
 								params={[
 									{
 										label: 'Редактировать',
-										action: () => {
-											router.push(
+										action: () =>
+											push(
 												`/training/viewWorkout?mode=${VIEWWORKOUT_MODE.EDIT}&editPostId=${post?.id}`
 											)
-										}
 									},
 									{ label: 'Удалить', action: handleOpenDeleteModal }
 								]}

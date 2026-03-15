@@ -12,8 +12,11 @@ import { getAuthData } from '@/services/tokenService'
 import { GestureHandlerRootView } from 'react-native-gesture-handler'
 import PortalProvider from '@/components/Portal/PortalProvider'
 import { getItem } from '@/store/storage'
-import './../global.css'
 import { Colors } from '@/constants/Colors'
+import './../global.css'
+
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
+const queryClient = new QueryClient()
 
 YamapInstance.setLocale('ru_RU')
 YamapInstance.init(process.env.EXPO_PUBLIC_YAMAP_KEY || '')
@@ -39,11 +42,15 @@ notifee.onBackgroundEvent(async ({ type, detail }) => {
 	}
 })
 
-notifee.registerForegroundService((_notification) => {
-	return new Promise((resolve) => {
-		// console.log('[Notifee] foreground service started:', notification.id)
-		resolve()
-	})
+// notifee.registerForegroundService((_notification) => {
+// 	return new Promise((resolve) => {
+// 		// console.log('[Notifee] foreground service started:', notification.id)
+// 		resolve()
+// 	})
+// })
+
+notifee.registerForegroundService(() => {
+	return new Promise(() => {})
 })
 
 const Root = ({
@@ -58,36 +65,38 @@ const Root = ({
 	notAuthenticatedRoutes: string[]
 }) => {
 	return (
-		<GestureHandlerRootView className="flex-1">
-			<PortalProvider>
-				<Stack
-					screenOptions={{
-						headerShown: false,
-						contentStyle: {
-							backgroundColor: Colors['black-0d']
-						}
-					}}
-				>
-					{baseRoutes.map((route) => (
-						<Stack.Screen key={route} name={route} />
-					))}
-
-					<Stack.Protected guard={isAuthenticated}>
-						{authenticatedRoutes.map((route) => (
+		<QueryClientProvider client={queryClient}>
+			<GestureHandlerRootView className="flex-1">
+				<PortalProvider>
+					<Stack
+						screenOptions={{
+							headerShown: false,
+							contentStyle: {
+								backgroundColor: Colors['black-0d']
+							}
+						}}
+					>
+						{baseRoutes.map((route) => (
 							<Stack.Screen key={route} name={route} />
 						))}
-					</Stack.Protected>
 
-					<Stack.Protected guard={!isAuthenticated}>
-						{notAuthenticatedRoutes.map((route) => (
-							<Stack.Screen key={route} name={route} />
-						))}
-					</Stack.Protected>
-				</Stack>
+						<Stack.Protected guard={isAuthenticated}>
+							{authenticatedRoutes.map((route) => (
+								<Stack.Screen key={route} name={route} />
+							))}
+						</Stack.Protected>
 
-				<NotificationProvider />
-			</PortalProvider>
-		</GestureHandlerRootView>
+						<Stack.Protected guard={!isAuthenticated}>
+							{notAuthenticatedRoutes.map((route) => (
+								<Stack.Screen key={route} name={route} />
+							))}
+						</Stack.Protected>
+					</Stack>
+
+					<NotificationProvider />
+				</PortalProvider>
+			</GestureHandlerRootView>
+		</QueryClientProvider>
 	)
 }
 
@@ -129,7 +138,7 @@ export default function RootLayout() {
 		'find-people',
 		// 'news-feed/members', // для /news-feed/members
 		'workout-history',
-		'friends/search',
+		// 'friends/search', не используется
 		'friends/my-friends',
 		'friends/friend-requests',
 		'subscribers/my-subscriptions',

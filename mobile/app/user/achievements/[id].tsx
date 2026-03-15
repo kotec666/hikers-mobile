@@ -37,11 +37,9 @@ const UserAchievementsPage = () => {
 			try {
 				const claimedAchievements = await getClaimedAchievementsByUserId(id)
 				setState((s) => ({ ...s, claimedAchievements }))
-			} catch (e) {
-				const errors = await e.response.json()
-				console.log(errors)
+			} catch (e: unknown) {
 				/* const formattedErrors = */
-				getFieldsErrors(errors)
+				await getFieldsErrors(e)
 				// setState((s) => ({ ...s, errors: formattedErrors }))
 			}
 		})()

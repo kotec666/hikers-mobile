@@ -4,13 +4,13 @@ import { View, Text, TouchableOpacity } from 'react-native'
 import { UserAvatar } from '@/components/ui/UserAvatar'
 import LikeSvg from '@/components/svg/LikeSvg'
 import ShareSvg from '@/components/svg/ShareSvg'
-import { useRouter } from 'expo-router'
 import { Colors } from '@/constants/Colors'
 import { IParticipant, likePostById, unlikePostById } from '@/api/posts'
 import { PATH_TO_IMAGE } from '@/constants/PATH_TO_FILES'
 import { useToast } from '@/hooks/useToast'
 import { useOptimisticToggle } from '@/hooks/useOptimisticToggle'
 import { Motion } from '@legendapp/motion'
+import { useSafeNavigation } from '@/hooks/useSafeNavigation'
 
 interface IProps {
 	postId?: string
@@ -23,7 +23,7 @@ interface IProps {
 }
 
 const PostListItemBottom = (props: IProps) => {
-	const router = useRouter()
+	const { push } = useSafeNavigation()
 	const toast = useToast()
 	const participantsCount = props?.participants?.length || 0
 	const [likesCount, setLikesCount] = useState(props.likeData?.likesCount ?? 0)
@@ -50,7 +50,7 @@ const PostListItemBottom = (props: IProps) => {
 
 	return (
 		<View className="flex-row justify-between items-center">
-			<TouchableOpacity onPress={() => router.push(`/news-feed/members/${props.postId}`)}>
+			<TouchableOpacity onPress={() => push(`/news-feed/members/${props.postId}`)}>
 				<View className="flex-row items-center gap-[15px]">
 					<View className="flex-row">
 						{Boolean(props?.participants?.length)

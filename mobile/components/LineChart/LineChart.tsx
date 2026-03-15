@@ -30,10 +30,23 @@ const formatPace = (sec: number) => {
 	return `${m}'${String(s).padStart(2, '0')}"`
 }
 
+// const formatTime = (sec: number) => {
+// 	const m = Math.floor(sec / 60)
+// 	const s = sec % 60
+// 	return `${String(m).padStart(2, '0')}:${String(s).padStart(2, '0')}`
+// }
+
+// С часами
 const formatTime = (sec: number) => {
-	const m = Math.floor(sec / 60)
-	const s = sec % 60
-	return `${String(m).padStart(2, '0')}:${String(s).padStart(2, '0')}`
+	const hours = Math.floor(sec / 3600)
+	const minutes = Math.floor((sec % 3600) / 60)
+	const seconds = Math.floor(sec % 60)
+
+	const hh = hours > 0 ? `${hours}:` : ''
+	const mm = hours > 0 ? String(minutes).padStart(2, '0') : String(minutes)
+	const ss = String(seconds).padStart(2, '0')
+
+	return `${hh}${mm}:${ss}`
 }
 
 // Длительность	Шаг	Точек
@@ -56,13 +69,72 @@ const getStepSeconds = (totalSeconds: number) => {
 	return 300 // 5 мин
 }
 
+// const buildPaceChartData = (points: IWorkoutLocationStorageItem[]): PacePoint[] => {
+// 	if (points.length < 2) return []
+//
+// 	const totalSeconds = (points.at(-1)!.relTs - points[0].relTs) / 1000
+//
+// 	const stepSeconds = getStepSeconds(totalSeconds)
+//
+// 	let accDistance = 0
+// 	let accTime = 0
+// 	let lastTs = points[0].relTs
+// 	let prev = points[0]
+//
+// 	const result: PacePoint[] = []
+//
+// 	for (let i = 1; i < points.length; i++) {
+// 		const curr = points[i]
+// 		if (curr.paused) continue
+//
+// 		const dt = (curr.relTs - lastTs) / 1000
+// 		if (dt <= 0) continue
+//
+// 		const d = haversineDistance(
+// 			prev.locationObject.coords.latitude,
+// 			prev.locationObject.coords.longitude,
+// 			curr.locationObject.coords.latitude,
+// 			curr.locationObject.coords.longitude
+// 		)
+//
+// 		accTime += dt
+// 		accDistance += d
+//
+// 		if (accTime >= stepSeconds && accDistance > 10) {
+// 			const pace = accTime / (accDistance / 1000)
+//
+// 			// фильтр мусора
+// 			if (pace > 150 && pace < 900) {
+// 				result.push({
+// 					t: curr.relTs / 1000,
+// 					pace
+// 				})
+// 			}
+//
+// 			accTime = 0
+// 			accDistance = 0
+// 		}
+//
+// 		prev = curr
+// 		lastTs = curr.relTs
+// 	}
+//
+// 	return result
+// }
+
 const buildPaceChartData = (points: IWorkoutLocationStorageItem[]): PacePoint[] => {
 	if (points.length < 2) return []
 
-	const totalSeconds = (points.at(-1)!.relTs - points[0].relTs) / 1000
+	// Рассчитываем moving time для stepSeconds
+	let movingTotal = 0
+	for (let i = 1; i < points.length; i++) {
+		if (points[i].paused) continue
+		const dt = (points[i].relTs - points[i - 1].relTs) / 1000
+		if (dt > 0) movingTotal += dt
+	}
+	const stepSeconds = getStepSeconds(movingTotal)
 
-	const stepSeconds = getStepSeconds(totalSeconds)
-
+	let movingTime = 0
 	let accDistance = 0
 	let accTime = 0
 	let lastTs = points[0].relTs
@@ -72,10 +144,22 @@ const buildPaceChartData = (points: IWorkoutLocationStorageItem[]): PacePoint[] 
 
 	for (let i = 1; i < points.length; i++) {
 		const curr = points[i]
-		if (curr.paused) continue
 
-		const dt = (curr.relTs - lastTs) / 1000
-		if (dt <= 0) continue
+		if (curr.paused) {
+			lastTs = curr.relTs
+			prev = curr
+			continue
+		}
+
+		let dt = (curr.relTs - lastTs) / 1000
+		if (dt <= 0 || dt > 10) {
+			// фильтр нереального dt
+			lastTs = curr.relTs
+			prev = curr
+			continue
+		}
+
+		movingTime += dt
 
 		const d = haversineDistance(
 			prev.locationObject.coords.latitude,
@@ -89,15 +173,12 @@ const buildPaceChartData = (points: IWorkoutLocationStorageItem[]): PacePoint[] 
 
 		if (accTime >= stepSeconds && accDistance > 10) {
 			const pace = accTime / (accDistance / 1000)
-
-			// фильтр мусора
 			if (pace > 150 && pace < 900) {
 				result.push({
-					t: curr.relTs / 1000,
+					t: movingTime,
 					pace
 				})
 			}
-
 			accTime = 0
 			accDistance = 0
 		}

@@ -6,13 +6,12 @@ import PeopleListItem from '@/components/find-people/PeopleListItem'
 import { SafeAreaProvider, useSafeAreaInsets } from 'react-native-safe-area-context'
 import { fontFamily } from '@/constants/Fonts'
 import RoundedMinusSvg from '@/components/svg/RoundedMinusSvg'
-import { getFieldsErrors } from '@/helpers/getFieldsErrors'
 import { getSubscriptionsList, ISubscribe, unsubscribeFromUser } from '@/api/subscribers'
 import { useToast } from '@/hooks/useToast'
 import { PATH_TO_IMAGE } from '@/constants/PATH_TO_FILES'
 import { LegendList } from '@legendapp/list'
-import { usePaginatedList } from '@/hooks/usePaginatedList'
 import { Colors } from '@/constants/Colors'
+import { useInfiniteQuery } from '@tanstack/react-query'
 
 /**
  * Мои подписки, на кого подписан я
@@ -20,38 +19,70 @@ import { Colors } from '@/constants/Colors'
 const MySubscriptionsPage = () => {
 	const insets = useSafeAreaInsets()
 	const toast = useToast()
-	const limit = 10
+	const limit = 15
+
+	// const {
+	// 	data: subscriptions,
+	// 	setData: setSubscriptions,
+	// 	loading,
+	// 	refreshing,
+	// 	loadMore,
+	// 	refresh
+	// } = usePaginatedList<ISubscribe, void>({
+	// 	fetchFn: async ({ page, limit }) => {
+	// 		try {
+	// 			return await getSubscriptionsList({ page, limit })
+	// 		} catch (e: unknown) {
+	// 			await getFieldsErrors(e)
+	// 			return []
+	// 		}
+	// 	},
+	// 	limit
+	// })
 
 	const {
-		data: subscriptions,
-		setData: setSubscriptions,
-		loading,
-		refreshing,
-		loadMore,
-		refresh
-	} = usePaginatedList<ISubscribe, void>({
-		fetchFn: async ({ page, limit }) => {
-			try {
-				return await getSubscriptionsList({ page, limit })
-			} catch (e) {
-				const errors = await e.response?.json?.()
-				getFieldsErrors(errors)
-				return []
-			}
+		data: subscriptions = [],
+		fetchNextPage,
+		hasNextPage,
+		isFetchingNextPage,
+		refetch,
+		isRefetching,
+		isFetching
+	} = useInfiniteQuery<ISubscribe[], Error, ISubscribe[], ['subscriptionsList'], number>({
+		queryKey: ['subscriptionsList'],
+
+		queryFn: ({ pageParam }) =>
+			getSubscriptionsList({
+				page: pageParam,
+				limit
+			}),
+
+		initialPageParam: 1,
+
+		getNextPageParam: (lastPage, pages) => {
+			if (lastPage.length < limit) return undefined
+			return pages.length + 1
 		},
-		limit
+
+		select: (data) => data.pages.flat()
+		// select: (data) => ({
+		//         ...data,
+		//         pages: data.pages.flat()
+		//       }),
 	})
 
 	const handleUnsubscribe = useCallback(
 		async (unsubUserId: string) => {
 			try {
 				await unsubscribeFromUser(unsubUserId)
-				setSubscriptions((prev) => prev.filter((subscription) => subscription.user.id !== unsubUserId))
+				await refetch()
+				// setSubscriptions((prev) => prev.filter((subscription) => subscription.user.id !== unsubUserId))
 			} catch {
 				toast.error('Произошла ошибка, повторите попытку позже')
 			}
 		},
-		[setSubscriptions, toast]
+		// [setSubscriptions, toast]
+		[toast]
 	)
 
 	const renderItem = useCallback(
@@ -70,20 +101,27 @@ const MySubscriptionsPage = () => {
 		[handleUnsubscribe]
 	)
 
-	const renderFooter = () =>
-		loading ? (
+	const renderFooter = () => {
+		// if (loading) return null
+
+		if (!isFetchingNextPage) return null
+		return (
 			<View style={{ padding: 20 }}>
 				<ActivityIndicator size="small" color={Colors['green-main']} />
 			</View>
-		) : null
+		)
+	}
 
-	const EmptyListComponent = () => (
-		<View style={{ flex: 1 }} className="items-center justify-center">
-			<Text style={{ fontFamily: fontFamily.regular }} className="text-gray-ab text-base">
-				Вы ни на кого не подписаны
-			</Text>
-		</View>
-	)
+	const EmptyListComponent = () => {
+		if (isFetching) return null
+		return (
+			<View style={{ flex: 1 }} className="items-center justify-center">
+				<Text style={{ fontFamily: fontFamily.regular }} className="text-gray-ab text-base">
+					Вы ни на кого не подписаны
+				</Text>
+			</View>
+		)
+	}
 
 	return (
 		<SafeAreaProvider style={{ paddingTop: insets.top }}>
@@ -94,11 +132,23 @@ const MySubscriptionsPage = () => {
 						data={subscriptions}
 						renderItem={renderItem}
 						keyExtractor={(item) => item.user.id}
-						onEndReached={loadMore}
+						// onEndReached={loadMore}
+						onEndReached={() => {
+							if (hasNextPage && !isFetchingNextPage) {
+								fetchNextPage()
+							}
+						}}
 						onEndReachedThreshold={0.5}
 						ItemSeparatorComponent={() => <View style={{ height: 15 }} />}
+						// refreshControl={
+						// 	<RefreshControl refreshing={refreshing} onRefresh={refresh} tintColor="#22CB5A" />
+						// }
 						refreshControl={
-							<RefreshControl refreshing={refreshing} onRefresh={refresh} tintColor="#22CB5A" />
+							<RefreshControl
+								refreshing={isRefetching}
+								onRefresh={refetch}
+								tintColor={Colors['green-main']}
+							/>
 						}
 						ListFooterComponent={renderFooter}
 						ListEmptyComponent={EmptyListComponent}

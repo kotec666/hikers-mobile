@@ -6,50 +6,80 @@ import PeopleListItem from '@/components/find-people/PeopleListItem'
 import { SafeAreaProvider, useSafeAreaInsets } from 'react-native-safe-area-context'
 import { fontFamily } from '@/constants/Fonts'
 import { Button } from '@/components/ui/Button'
-import { getFieldsErrors } from '@/helpers/getFieldsErrors'
 import { deleteFriendById, getMyFriendsList, IFriend } from '@/api/friends'
 import PeopleRemoveSvg from '@/components/svg/PeopleRemoveSvg'
-import { useRouter } from 'expo-router'
 import Modal from '@/components/ui/Modal/Modal'
 import { useToast } from '@/hooks/useToast'
 import { IUser } from '@/store/authStore'
 import { PATH_TO_IMAGE } from '@/constants/PATH_TO_FILES'
 import { LegendList } from '@legendapp/list'
-import { usePaginatedList } from '@/hooks/usePaginatedList'
 import { Colors } from '@/constants/Colors'
+import { useSafeNavigation } from '@/hooks/useSafeNavigation'
+import { useInfiniteQuery } from '@tanstack/react-query'
 
 const MyFriendsPage = () => {
 	const insets = useSafeAreaInsets()
-	const router = useRouter()
+	const { push } = useSafeNavigation()
 	const toast = useToast()
 
 	const [deleteUser, setDeleteUser] = useState<IUser | null>(null)
 	const [isDeleteModalOpened, setIsDeleteModalOpened] = useState(false)
 
-	const limit = 10
+	const limit = 15
+
+	// const {
+	// 	data: friends,
+	// 	setData: setItems,
+	// 	loading,
+	// 	refreshing,
+	// 	loadMore,
+	// 	refresh
+	// } = usePaginatedList<IFriend, void>({
+	// 	fetchFn: async (params) => {
+	// 		try {
+	// 			return await getMyFriendsList(params)
+	// 		} catch (e: unknown) {
+	// 			await getFieldsErrors(e)
+	// 			return []
+	// 		}
+	// 	},
+	// 	limit
+	// })
 
 	const {
-		data: friends,
-		setData: setItems,
-		loading,
-		refreshing,
-		loadMore,
-		refresh
-	} = usePaginatedList<IFriend, void>({
-		fetchFn: async (params) => {
-			try {
-				return await getMyFriendsList(params)
-			} catch (e) {
-				const errors = await e.response?.json?.()
-				getFieldsErrors(errors)
-				return []
-			}
+		data: friends = [],
+		fetchNextPage,
+		hasNextPage,
+		isFetchingNextPage,
+		refetch,
+		isRefetching,
+		isFetching
+	} = useInfiniteQuery<IFriend[], Error, IFriend[], ['friendsList'], number>({
+		queryKey: ['friendsList'],
+
+		queryFn: ({ pageParam }) =>
+			getMyFriendsList({
+				page: pageParam,
+				limit
+			}),
+
+		initialPageParam: 1,
+
+		getNextPageParam: (lastPage, pages) => {
+			if (lastPage.length < limit) return undefined
+			return pages.length + 1
 		},
-		limit
+
+		select: (data) => data.pages.flat()
+		// select: (data) => ({
+		//         ...data,
+		//         pages: data.pages.flat()
+		//       }),
 	})
 
 	const renderFooter = () => {
-		if (!loading || refreshing) return null
+		// if (!loading || refreshing) return null
+		if (!isFetchingNextPage) return null
 
 		return (
 			<View style={{ padding: 20 }}>
@@ -58,13 +88,16 @@ const MyFriendsPage = () => {
 		)
 	}
 
-	const EmptyListComponent = () => (
-		<View style={{ flex: 1 }} className="items-center justify-center">
-			<Text style={{ fontFamily: fontFamily.regular }} className="text-gray-ab text-base">
-				К сожалению никого не нашлось
-			</Text>
-		</View>
-	)
+	const EmptyListComponent = () => {
+		if (isFetching) return null
+		return (
+			<View style={{ flex: 1 }} className="items-center justify-center">
+				<Text style={{ fontFamily: fontFamily.regular }} className="text-gray-ab text-base">
+					К сожалению никого не нашлось
+				</Text>
+			</View>
+		)
+	}
 
 	const handleOpenDeleteModal = (user: IUser) => {
 		setDeleteUser(user)
@@ -84,8 +117,8 @@ const MyFriendsPage = () => {
 
 			await deleteFriendById(deleteUser.id)
 
-			setItems((prev) => prev.filter((friend) => friend.user.id !== deleteUser.id))
-
+			// setItems((prev) => prev.filter((friend) => friend.user.id !== deleteUser.id))
+			await refetch()
 			toast.success('Пользователь удалён из списка друзей')
 		} catch {
 			toast.error('Произошла ошибка, повторите попытку позже')
@@ -134,13 +167,25 @@ const MyFriendsPage = () => {
 							/>
 						)}
 						keyExtractor={(item) => item.user.id}
-						onEndReached={loadMore}
+						//onEndReached={loadMore}
+						onEndReached={() => {
+							if (hasNextPage && !isFetchingNextPage) {
+								fetchNextPage()
+							}
+						}}
 						onEndReachedThreshold={0.5}
 						ItemSeparatorComponent={() => <View style={{ height: 15 }} />}
 						ListEmptyComponent={EmptyListComponent}
 						ListFooterComponent={renderFooter}
+						// refreshControl={
+						// 	<RefreshControl refreshing={refreshing} onRefresh={refresh} tintColor="#22CB5A" />
+						// }
 						refreshControl={
-							<RefreshControl refreshing={refreshing} onRefresh={refresh} tintColor="#22CB5A" />
+							<RefreshControl
+								refreshing={isRefetching}
+								onRefresh={refetch}
+								tintColor={Colors['green-main']}
+							/>
 						}
 						contentContainerStyle={{
 							paddingBottom: 0,
@@ -150,7 +195,7 @@ const MyFriendsPage = () => {
 						showsVerticalScrollIndicator={false}
 					/>
 
-					<Button variant="white" onPress={() => router.push('/friends/friend-requests')}>
+					<Button variant="white" onPress={() => push('/friends/friend-requests')}>
 						Запросы в друзья
 					</Button>
 				</Container>

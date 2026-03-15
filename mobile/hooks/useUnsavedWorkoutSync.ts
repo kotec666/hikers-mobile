@@ -1,7 +1,7 @@
 import { useRef, useState, useCallback } from 'react'
 import { useAuthStore } from '@/store/authStore'
-import { getNotSavedWorkouts, deleteUnsavedTrainingByStartedAt } from '@/store/workoutStorage'
-import { saveSingleWorkout } from '@/helpers/saveUnsavedTraining'
+import { getNotSavedWorkouts } from '@/store/workoutStorage'
+import { deleteSingleWorkout, saveSingleWorkout } from '@/helpers/saveUnsavedTraining'
 
 type QueueItem = {
 	startedAt: number
@@ -67,16 +67,20 @@ export const useUnsavedWorkoutSync = () => {
 		notSavedWorkouts.forEach((w) => enqueueWorkoutSync(w.startedAt))
 	}
 
-	const deleteWorkout = (startedAt: number) => {
-		deleteUnsavedTrainingByStartedAt(startedAt, user?.id)
+	const deleteWorkout = async (startedAt: number) => {
+		await deleteSingleWorkout(startedAt, user?.id)
 		refresh()
 	}
 
-	const deleteAll = () => {
-		notSavedWorkouts.forEach((w) => deleteUnsavedTrainingByStartedAt(w.startedAt, user?.id))
-
+	const deleteAll = async () => {
+		await Promise.all(notSavedWorkouts.map((w) => deleteSingleWorkout(w.startedAt, user?.id)))
 		refresh()
 	}
+
+	// const deleteAll = () => {
+	// 	notSavedWorkouts.forEach((w) => deleteUnsavedTrainingByStartedAt(w.startedAt, user?.id))
+	// 	refresh()
+	// }
 
 	return {
 		notSavedWorkouts,

@@ -22,7 +22,7 @@ import { useAuthStore } from '@/store/authStore'
 import { useLocalSearchParams } from 'expo-router'
 import { Controller, useForm } from 'react-hook-form'
 import { useErrorMessage } from '@/hooks/useErrorMessage'
-import { getFieldsErrors } from '@/helpers/getFieldsErrors'
+import { FieldErrors, getFieldsErrors } from '@/helpers/getFieldsErrors'
 import { loginUser, registrationUser } from '@/api/auth'
 import { cn } from '@/helpers/cn'
 import { lengths } from '@shared/lengths'
@@ -53,12 +53,12 @@ const AuthPage = () => {
 		mode: AUTH_MODE
 		notificationText?: string | boolean
 		isLoading: boolean
-		errors?: { [key: string]: string | boolean | undefined }
+		errors?: FieldErrors
 	}>({
 		mode: mode || AUTH_MODE.REGISTRATION,
 		notificationText: undefined,
 		isLoading: false,
-		errors: {} as { [key: string]: string | boolean | undefined }
+		errors: {} as FieldErrors
 	})
 
 	const { login } = useAuthStore()
@@ -76,11 +76,8 @@ const AuthPage = () => {
 				const { token, ...restParameters } = loginData
 
 				login(loginData.token, restParameters)
-			} catch (e) {
-				console.log('e: ', e)
-				const errors = await e?.response?.json()
-				console.log('errors: ', errors)
-				const formattedErrors = getFieldsErrors(errors)
+			} catch (e: unknown) {
+				const formattedErrors = await getFieldsErrors(e)
 				setData((s) => ({ ...s, errors: formattedErrors }))
 				Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error)
 				// Alert.alert('Ошибка', 'Неверные учетные данные')
@@ -95,11 +92,8 @@ const AuthPage = () => {
 				const { token, ...restParameters } = regData
 
 				login(regData.token, restParameters)
-			} catch (e) {
-				console.log('e: ', e)
-				const errors = await e?.response?.json()
-				console.log('errors: ', errors)
-				const formattedErrors = getFieldsErrors(errors)
+			} catch (e: unknown) {
+				const formattedErrors = await getFieldsErrors(e)
 				setData((s) => ({ ...s, errors: formattedErrors }))
 				Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error)
 				// Alert.alert('Ошибка', 'Неверные учетные данные')
@@ -211,7 +205,7 @@ const AuthPage = () => {
 												message: ErrorMessages.required
 											}
 										}}
-										render={({ field: { onChange, onBlur, value }, fieldState: { error } }) => (
+										render={({ field: { onChange, value }, fieldState: { error } }) => (
 											<Checkbox value={value} error={Boolean(error)} onValueChange={onChange} />
 										)}
 									/>

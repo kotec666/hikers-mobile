@@ -25,7 +25,6 @@ import { Input } from '@/components/ui/Input'
 import CloseCross from '@/components/ui/CloseCross'
 import { useWorkoutResultsAfterFinishStore } from '@/store/workoutResultsAfterFinishStore'
 import { format } from 'date-fns'
-import { useInternetConnection } from '@/hooks/useInternetConnection'
 import { lengths } from '@/shared/lengths'
 import { Controller, useForm } from 'react-hook-form'
 import { useErrorMessage } from '@/hooks/useErrorMessage'
@@ -80,8 +79,12 @@ export default function ViewWorkout() {
 	const router = useRouter()
 	const insets = useSafeAreaInsets()
 	const toast = useToast()
-	const { isConnected: isInternetConnected } = useInternetConnection()
-	const { mode, editPostId } = useLocalSearchParams<{ mode: VIEWWORKOUT_MODE; editPostId?: string }>()
+	// const { isConnected: isInternetConnected } = useInternetConnection()
+	const { mode, editPostId, connection } = useLocalSearchParams<{
+		mode: VIEWWORKOUT_MODE
+		editPostId?: string
+		connection?: 'offline'
+	}>()
 	const [existPost, setExistPost] = useState<IPost | null>(null)
 
 	const { handleSubmit, control, setValue } = useForm<IPostFormState>()
@@ -156,6 +159,8 @@ export default function ViewWorkout() {
 	}
 
 	const onSubmit = async (postFormState: IPostFormState) => {
+		console.log(postFormState)
+		console.log(results)
 		setState((s) => ({ ...s, isLoading: true, errors: undefined }))
 
 		try {
@@ -174,6 +179,7 @@ export default function ViewWorkout() {
 
 			handlePostImages(postImages, formData)
 
+			console.log(formData)
 			if (mode === VIEWWORKOUT_MODE.EDIT && editPostId) {
 				if (deletedImages.length) {
 					formData.append('deletedFilenames', deletedImages.join(','))
@@ -185,10 +191,8 @@ export default function ViewWorkout() {
 
 			toast.success(mode === VIEWWORKOUT_MODE.VIEW ? 'Пост опубликован' : 'Пост отредактирован')
 			router.replace('/(tabs)/profile')
-		} catch (e) {
-			const errors = await e.response.json()
-			console.log(errors.message)
-			const formattedErrors = getFieldsErrors(errors)
+		} catch (e: unknown) {
+			const formattedErrors = await getFieldsErrors(e)
 			setState((s) => ({ ...s, errors: formattedErrors }))
 		} finally {
 			setState((s) => ({ ...s, isLoading: false }))
@@ -443,7 +447,8 @@ export default function ViewWorkout() {
 									</View>
 								)}
 							</View>
-							{isInternetConnected ? (
+							{/*{isInternetConnected ? (*/}
+							{connection !== 'offline' ? (
 								<>
 									<View className="mt-[20px] gap-[15px]">
 										<Text className="text-white text-base" style={{ fontFamily: fontFamily.bold }}>

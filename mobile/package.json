@@ -4,7 +4,7 @@
 	"version": "1.0.0",
 	"scripts": {
 		"start:dev": "expo start --dev-client",
-		"start": "expo start",
+		"start": "expo start --localhost",
 		"start:withVPN": "expo start --tunnel",
 		"optimize": "npx expo-optimize",
 		"build": "expo prebuild && node ./scripts/withLocalProperties.js",
@@ -23,6 +23,7 @@
 		"@notifee/react-native": "^9.1.8",
 		"@shopify/react-native-skia": "^2.4.21",
 		"@shopify/restyle": "^2.4.5",
+		"@tanstack/react-query": "^5.90.21",
 		"@typescript-eslint/eslint-plugin": "^8.40.0",
 		"@typescript-eslint/parser": "^8.40.0",
 		"clsx": "^2.1.1",

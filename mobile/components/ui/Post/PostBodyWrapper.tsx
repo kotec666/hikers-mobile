@@ -1,9 +1,9 @@
 import React from 'react'
-import { Dimensions, TouchableOpacity, View } from 'react-native'
+import { TouchableOpacity, View } from 'react-native'
 import PostListItemSlider from '@/components/ui/Post/PostListItemSlider'
-import { useRouter } from 'expo-router'
 import PostListItemBody from '@/components/ui/Post/PostListItemBody'
 import { ITrainingMetrics } from '@/api/workout'
+import { useSafeNavigation } from '@/hooks/useSafeNavigation'
 
 export enum PostType {
 	FEED_LIST_ITEM = 'FEED_LIST_ITEM',
@@ -22,7 +22,7 @@ interface IProps {
 }
 
 const PostBodyWrapper = (props: IProps) => {
-	const router = useRouter()
+	const { push } = useSafeNavigation()
 	const IS_FEED_LIST_ITEM = props.mode === 'FEED_LIST_ITEM' // Из ленты либо детальный просмотр
 
 	const MapSlide = props.mapComponent ? props.mapComponent : null
@@ -31,7 +31,7 @@ const PostBodyWrapper = (props: IProps) => {
 		<>
 			{IS_FEED_LIST_ITEM ? (
 				<>
-					<TouchableOpacity onPress={() => router.push(`/news-feed/${props.postId}`)}>
+					<TouchableOpacity onPress={() => push(`/news-feed/${props.postId}`)}>
 						<PostListItemBody
 							title={props.title}
 							description={props.description}

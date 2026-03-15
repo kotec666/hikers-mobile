@@ -301,6 +301,24 @@ export const removeAllShortWorkouts = (userId?: string): void => {
 	workoutStorage.remove(KEY_SHORT_WORKOUTS(userId))
 }
 
+export const assignIdToActiveWorkout = (id: string, userId?: string): void => {
+	if (!userId) return console.error('assignIdToActiveWorkout [error]: no userId provided')
+
+	const meta = getWorkoutMeta(userId)
+	if (!meta) {
+		console.warn('[workoutStorage] no active workout to assign id')
+		return
+	}
+
+	// обновляем id в мета
+	const updated: IWorkoutMeta = {
+		...meta,
+		id
+	}
+
+	workoutStorage.set(KEY_ACTIVE_META(userId), JSON.stringify(updated))
+}
+
 export const assignIdToAnUnsavedWorkout = (startedAt: number, id: string, userId?: string): void => {
 	if (!userId) return console.error('assignIdToAnUnsavedWorkout [error]: no userId provided')
 	const key = KEY_NOT_SAVED(userId)

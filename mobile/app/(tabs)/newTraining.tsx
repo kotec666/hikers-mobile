@@ -8,6 +8,7 @@ import * as Notification from 'expo-notifications'
 import * as Location from 'expo-location'
 import * as TaskManager from 'expo-task-manager'
 import {
+	IWorkoutMeta,
 	clearActiveWorkoutData,
 	deleteUnsavedTrainingByStartedAt,
 	getActiveWorkoutPoints,
@@ -15,14 +16,14 @@ import {
 	getUnsavedWorkoutByStartedAt,
 	getUnsavedWorkoutsThatHaveId,
 	getWorkoutMeta,
-	IWorkoutMeta,
 	markUnsavedWorkoutPointsAsSaved,
 	moveActiveWorkoutToNotSaved,
 	moveActiveWorkoutToShortWorkouts,
 	removeAllShortWorkouts,
 	setActiveWorkoutPauseState,
 	setWorkoutItems,
-	startAndStoreNewActiveWorkout
+	startAndStoreNewActiveWorkout,
+	assignIdToActiveWorkout
 } from '@/store/workoutStorage'
 import { useRouter } from 'expo-router'
 import { initializeNotifications } from '@/helpers/notifications'
@@ -299,12 +300,13 @@ export default function NewTraining() {
 			try {
 				const newTraining = await startTraining({ type: workoutType, colorHex: randomHexColor() })
 				newTrainingId = newTraining.id
-			} catch (e) {
+			} catch (e: unknown) {
 				newTrainingId = null
 				console.log('(1) [start-workout-error]:', e)
+				// @ts-ignore
 				const errors = await e?.response?.json()
 				console.log('(2) [start-workout-error]:', errors)
-				getFieldsErrors(errors)
+				/* const formattedErrors = */ await getFieldsErrors(e)
 				// Если человек не закончил предыдущую тренировку, то следующую невозможно начать
 				// @TODO Восстановление/удаление тренировки
 				if (errors?.message === ERRORS.USER_IN_NOT_FINISHED_TRAINING) {
@@ -467,7 +469,6 @@ export default function NewTraining() {
 	// Догрузка незавершенных тренировок на бэк
 	const saveUnsavedWorkoutsBeforeFinish = async () => {
 		const createdWorkouts = getUnsavedWorkoutsThatHaveId(user?.id)
-		console.log('createdWorkouts.length', createdWorkouts.length)
 		if (createdWorkouts.length) {
 			for (const createdWorkout of createdWorkouts) {
 				while (true) {
@@ -562,10 +563,7 @@ export default function NewTraining() {
 					return resetWorkoutState()
 				}
 			} else {
-				calculateMetricsWhenFinished(meta)
-				// Полный сброс состояния карты и переменных
-				resetWorkoutState()
-				router.push(`/training/viewWorkout?mode=${VIEWWORKOUT_MODE.VIEW}`) // - offline - просмотр тренировки до определенного момента, без сохранения
+				router.push(`/training/viewWorkout?mode=${VIEWWORKOUT_MODE.VIEW}&connection=offline`) // - offline - просмотр тренировки до определенного момента, без сохранения
 			}
 
 			if (isInternetConnectedRef.current) {
@@ -588,6 +586,7 @@ export default function NewTraining() {
 						colorHex: randomHexColor(),
 						ts: meta?.startedAt
 					})
+					assignIdToActiveWorkout(newTraining.id, user?.id) // Присвоение id тренировке
 					if (unsavedPoints.length) {
 						const preparedLocations = prepareLocationsForSync(unsavedPoints)
 						await syncTraining(newTraining.id, preparedLocations)
@@ -600,6 +599,10 @@ export default function NewTraining() {
 						clearActiveWorkoutData(user?.id)
 					}
 				} catch {}
+				// Полный сброс состояния карты и переменных
+				const currentMeta = getWorkoutMeta(user?.id)
+				calculateMetricsWhenFinished(currentMeta)
+				resetWorkoutState()
 			} else {
 				toast.info('Нет доступа к интернету, тренировку можно будет сохранить позже')
 				moveActiveWorkoutToNotSaved(user?.id)

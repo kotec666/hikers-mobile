@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useMemo, useState } from 'react'
+import React, { useCallback, useMemo, useState } from 'react'
 import { View, Text, RefreshControl, ActivityIndicator } from 'react-native'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
 import HeaderBack from '@/components/ui/HeaderBack'
@@ -12,7 +12,6 @@ import { format } from 'date-fns'
 import { ru } from 'date-fns/locale'
 import SaveUnsavedTrainingSvg from '@/components/svg/SaveUnsavedTrainingSvg'
 import DeleteTrashSvg from '@/components/svg/DeleteTrashSvg'
-import { usePaginatedList } from '@/hooks/usePaginatedList'
 import { getMyHistoryTrainings, ITrainingHistoryItem } from '@/api/workout'
 import { LegendList } from '@legendapp/list'
 import { Colors } from '@/constants/Colors'
@@ -20,6 +19,8 @@ import CheckMarkIconSvg from '@/components/svg/CheckMarkIconSvg'
 import TrainingsEmpty from '@/components/ui/Post/TrainingsEmpty'
 import { useUnsavedWorkoutSync } from '@/hooks/useUnsavedWorkoutSync'
 import { cn } from '@/helpers/cn'
+import { useInfiniteQuery, useQueryClient } from '@tanstack/react-query'
+import { useToast } from '@/hooks/useToast'
 
 interface WorkoutItem {
 	id: string
@@ -34,80 +35,57 @@ interface WorkoutItem {
 
 const WorkoutHistory = () => {
 	const insets = useSafeAreaInsets()
+	const queryClient = useQueryClient()
+	const toast = useToast()
 	const { notSavedWorkouts, syncingIds, enqueueWorkoutSync, deleteWorkout } = useUnsavedWorkoutSync()
 
-	// const { user } = useAuthStore()
-	// const [notSavedWorkouts, setNotSavedWorkouts] = useState(getNotSavedWorkouts(user?.id))
 	const [selectedType, setSelectedType] = useState<string>('')
 
-	// const syncQueueRef = useRef<QueueItem[]>([])
-	// const isProcessingRef = useRef(false)
-	// const [syncingIds, setSyncingIds] = useState<number[]>([])
+	const limit = 10
+	// const fetchHistory = useCallback(
+	// 	({ page, limit }: { page: number; limit: number }) =>
+	// 		getMyHistoryTrainings({ page, limit, finished: true, types: selectedType }),
+	// 	[selectedType]
+	// )
+	// const {
+	// 	data: history,
+	// 	loading,
+	// 	refreshing,
+	// 	loadMore,
+	// 	refresh
+	// } = usePaginatedList<ITrainingHistoryItem, void>({
+	// 	fetchFn: fetchHistory,
+	// 	limit
+	// })
+	//
+	// useEffect(() => {
+	// 	refresh() // вызываем обновление при смене типа
+	// }, [selectedType])
 
-	// const enqueueWorkoutSync = (startedAt: number) => {
-	// 	if (syncQueueRef.current.some((i) => i.startedAt === startedAt) || syncingIds.includes(startedAt)) return
-	//
-	// 	syncQueueRef.current.push({
-	// 		startedAt,
-	// 		userId: user?.id
-	// 	})
-	//
-	// 	processQueue()
-	// }
-
-	// const processQueue = async () => {
-	// 	if (isProcessingRef.current) return
-	//
-	// 	const nextWorkout = syncQueueRef.current.shift()
-	//
-	// 	if (!nextWorkout) {
-	// 		isProcessingRef.current = false
-	// 		return
-	// 	}
-	//
-	// 	isProcessingRef.current = true
-	// 	setSyncingIds((ids) => [...ids, nextWorkout.startedAt])
-	//
-	// 	try {
-	// 		await saveSingleWorkout(nextWorkout.startedAt, nextWorkout.userId)
-	// 		setNotSavedWorkouts(getNotSavedWorkouts(user?.id))
-	// 	} catch (e) {
-	// 		console.error('sync failed', e)
-	// 	} finally {
-	// 		setSyncingIds((ids) => ids.filter((id) => id !== nextWorkout.startedAt))
-	// 		isProcessingRef.current = false
-	//
-	// 		if (syncQueueRef.current.length) {
-	// 			processQueue()
-	// 		}
-	// 	}
-	// }
-
-	// const handleDelete = (startedAt: number) => {
-	// 	deleteUnsavedTrainingByStartedAt(startedAt, user?.id)
-	// 	setNotSavedWorkouts(getNotSavedWorkouts(user?.id))
-	// }
-
-	const limit = 15
-	const fetchHistory = useCallback(
-		({ page, limit }: { page: number; limit: number }) =>
-			getMyHistoryTrainings({ page, limit, finished: true, types: selectedType }),
-		[selectedType]
-	)
 	const {
-		data: history,
-		loading,
-		refreshing,
-		loadMore,
-		refresh
-	} = usePaginatedList<ITrainingHistoryItem, void>({
-		fetchFn: fetchHistory,
-		limit
-	})
+		data: history = [],
+		isRefetching,
+		fetchNextPage,
+		refetch,
+		hasNextPage,
+		isFetchingNextPage
+	} = useInfiniteQuery<ITrainingHistoryItem[], Error, ITrainingHistoryItem[], ['workout-history', string], number>({
+		queryKey: ['workout-history', selectedType],
+		queryFn: ({ pageParam = 1 }) =>
+			getMyHistoryTrainings({
+				page: pageParam,
+				limit,
+				finished: true,
+				types: selectedType
+			}),
+		initialPageParam: 1,
+		getNextPageParam: (lastPage, allPages) => {
+			if (lastPage.length < limit) return undefined
+			return allPages.length + 1
+		},
 
-	useEffect(() => {
-		refresh() // вызываем обновление при смене типа
-	}, [selectedType])
+		select: (data) => data.pages.flat()
+	})
 
 	const data: WorkoutItem[] = history
 		.map((item) => {
@@ -139,17 +117,31 @@ const WorkoutHistory = () => {
 
 	// Функция рендеринга индикатора загрузки
 	const renderFooter = useCallback(() => {
-		if (!loading) return null
+		//if (!loading) return null
+		if (!isFetchingNextPage) return null
 		return (
 			<View style={{ padding: 20 }}>
 				<ActivityIndicator size="small" color={Colors['green-main']} />
 			</View>
 		)
-	}, [loading])
+	}, [isFetchingNextPage]) // loading
 
 	const workoutTypeMap = useMemo(() => Object.fromEntries(WorkoutTypesData.map((t) => [t.type, t])), [])
 
-	// @TODO ПОСЛЕ СОХРАНЕНИЯ НЕСОХРАНЕННОЙ ТРЕНИРОВКИ НУЖНО ОБНОВЛЯТЬ СПИСОК СОХРАНЕННЫХ И toast.success('Тренировка сохранена успешно')
+	const handleSync = async (startedAt: number) => {
+		try {
+			await enqueueWorkoutSync(startedAt)
+
+			await queryClient.invalidateQueries({
+				queryKey: ['workout-history']
+			})
+
+			toast.success('Тренировка сохранена успешно')
+		} catch {
+			toast.error('Не удалось сохранить тренировку')
+		}
+	}
+
 	return (
 		<View style={{ flex: 1, paddingTop: insets.top }}>
 			<Container className="gap-[20px] mt-[20px] flex-1">
@@ -172,7 +164,7 @@ const WorkoutHistory = () => {
 					placeholder="Выберите тип тренировки"
 				/>
 				<LegendList
-					key={selectedType} // если этого не сделать, то при смене на BIKE, который [] length 0 и смене обратно на ходьбу не вызывается loadMore
+					// key={selectedType} // если этого не сделать, то при смене на BIKE, который [] length 0 и смене обратно на ходьбу не вызывается loadMore
 					style={{ flex: 1 }}
 					data={itemsWithHeaders}
 					ListEmptyComponent={
@@ -180,7 +172,14 @@ const WorkoutHistory = () => {
 							<TrainingsEmpty text="К сожалению, тренировок еще не существует" />
 						) : null
 					}
-					refreshControl={<RefreshControl refreshing={refreshing} onRefresh={refresh} tintColor="#22CB5A" />}
+					// refreshControl={<RefreshControl refreshing={refreshing} onRefresh={refresh} tintColor="#22CB5A" />}
+					refreshControl={
+						<RefreshControl
+							refreshing={isRefetching}
+							onRefresh={refetch}
+							tintColor={Colors['green-main']}
+						/>
+					}
 					ListFooterComponent={renderFooter}
 					contentContainerStyle={{
 						flexGrow: 1,
@@ -219,7 +218,8 @@ const WorkoutHistory = () => {
 											actionIcon={[
 												{
 													iconSvg: <SaveUnsavedTrainingSvg />,
-													iconCb: () => enqueueWorkoutSync(notSavedWorkout.startedAt),
+													//iconCb: () => enqueueWorkoutSync(notSavedWorkout.startedAt),
+													iconCb: () => handleSync(notSavedWorkout.startedAt),
 													disabled: isSyncing
 												},
 												{
@@ -249,10 +249,13 @@ const WorkoutHistory = () => {
 					)}
 					ItemSeparatorComponent={() => <View style={{ height: 16 }} />}
 					keyExtractor={(item) => item.id}
-					onEndReached={loadMore}
+					// onEndReached={loadMore}
+					onEndReached={() => {
+						if (hasNextPage && !isFetchingNextPage) {
+							fetchNextPage()
+						}
+					}}
 					onEndReachedThreshold={0.4}
-					refreshing={refreshing}
-					onRefresh={refresh}
 				/>
 			</Container>
 		</View>

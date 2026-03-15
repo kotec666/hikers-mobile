@@ -8,42 +8,72 @@ import { fontFamily } from '@/constants/Fonts'
 import RoundedPlusSvg from '@/components/svg/RoundedPlusSvg'
 import RoundedMinusSvg from '@/components/svg/RoundedMinusSvg'
 import { acceptFriendRequest, getPendingInvitesList, IInvite, rejectFriendRequest } from '@/api/friends'
-import { getFieldsErrors } from '@/helpers/getFieldsErrors'
 import { useToast } from '@/hooks/useToast'
 import { PATH_TO_IMAGE } from '@/constants/PATH_TO_FILES'
 import { LegendList } from '@legendapp/list'
-import { usePaginatedList } from '@/hooks/usePaginatedList'
 import { Colors } from '@/constants/Colors'
+import { useInfiniteQuery } from '@tanstack/react-query'
 
 const FriendRequestsPage = () => {
 	const insets = useSafeAreaInsets()
 	const toast = useToast()
-	const limit = 10
+	const limit = 15
 
 	const {
-		data: friendRequests,
-		setData: setItems,
-		loading,
-		refreshing,
-		loadMore,
-		refresh
-	} = usePaginatedList<IInvite, void>({
-		fetchFn: async (params) => {
-			try {
-				return await getPendingInvitesList(params)
-			} catch (e) {
-				const errors = await e.response?.json?.()
-				getFieldsErrors(errors)
-				return []
-			}
+		data: friendRequests = [],
+		fetchNextPage,
+		hasNextPage,
+		isFetchingNextPage,
+		refetch,
+		isRefetching,
+		isFetching
+	} = useInfiniteQuery<IInvite[], Error, IInvite[], ['pendingInvites'], number>({
+		queryKey: ['pendingInvites'],
+
+		queryFn: ({ pageParam }) =>
+			getPendingInvitesList({
+				page: pageParam,
+				limit
+			}),
+
+		initialPageParam: 1,
+
+		getNextPageParam: (lastPage, pages) => {
+			if (lastPage.length < limit) return undefined
+			return pages.length + 1
 		},
-		limit
+
+		select: (data) => data.pages.flat()
+		// select: (data) => ({
+		//         ...data,
+		//         pages: data.pages.flat()
+		//       }),
 	})
+
+	// const {
+	// 		data: friendRequests,
+	// 		setData: setItems,
+	// 		loading,
+	// 		refreshing,
+	// 		loadMore,
+	// 		refresh
+	// 	} = usePaginatedList<IInvite, void>({
+	// 		fetchFn: async (params) => {
+	// 			try {
+	// 				return await getPendingInvitesList(params)
+	// 			} catch (e: unknown) {
+	// 				await getFieldsErrors(e)
+	// 				return []
+	// 			}
+	// 		},
+	// 		limit
+	// 	})
 
 	const handleAddFriend = async (newFriendId: string) => {
 		try {
 			await acceptFriendRequest(newFriendId)
-			setItems((prev) => prev.filter((req) => req.user.id !== newFriendId))
+			// setItems((prev) => prev.filter((req) => req.user.id !== newFriendId))
+			await refetch()
 			toast.success('Пользователь добавлен в друзья')
 		} catch {
 			toast.error('Произошла ошибка, повторите попытку позже')
@@ -53,7 +83,8 @@ const FriendRequestsPage = () => {
 	const handleDeleteFriendRequest = async (rejectUserId: string) => {
 		try {
 			await rejectFriendRequest(rejectUserId)
-			setItems((prev) => prev.filter((req) => req.user.id !== rejectUserId))
+			// setItems((prev) => prev.filter((req) => req.user.id !== rejectUserId))
+			await refetch()
 			toast.success('Заявка отклонена')
 		} catch {
 			toast.error('Произошла ошибка, повторите попытку позже')
@@ -61,8 +92,8 @@ const FriendRequestsPage = () => {
 	}
 
 	const renderFooter = () => {
-		if (!loading || refreshing) return null
-
+		// if (!loading || refreshing) return null
+		if (!isFetchingNextPage) return null
 		return (
 			<View style={{ padding: 20 }}>
 				<ActivityIndicator size="small" color={Colors['green-main']} />
@@ -96,20 +127,34 @@ const FriendRequestsPage = () => {
 							/>
 						)}
 						keyExtractor={(item) => item.user.id}
-						onEndReached={loadMore}
+						onEndReached={() => {
+							if (hasNextPage && !isFetchingNextPage) {
+								fetchNextPage()
+							}
+						}}
 						onEndReachedThreshold={0.5}
 						ItemSeparatorComponent={() => <View style={{ height: 15 }} />}
 						ListFooterComponent={renderFooter}
-						ListEmptyComponent={() => (
-							<View style={{ flex: 1 }} className="items-center justify-center">
-								<Text style={{ fontFamily: fontFamily.regular }} className="text-gray-ab text-base">
-									У вас нет заявок в друзья
-								</Text>
-							</View>
-						)}
+						ListEmptyComponent={() => {
+							if (isFetching) return null
+							return (
+								<View style={{ flex: 1 }} className="items-center justify-center">
+									<Text style={{ fontFamily: fontFamily.regular }} className="text-gray-ab text-base">
+										У вас нет заявок в друзья
+									</Text>
+								</View>
+							)
+						}}
 						refreshControl={
-							<RefreshControl refreshing={refreshing} onRefresh={refresh} tintColor="#22CB5A" />
+							<RefreshControl
+								refreshing={isRefetching}
+								onRefresh={refetch}
+								tintColor={Colors['green-main']}
+							/>
 						}
+						// refreshControl={
+						// 							<RefreshControl refreshing={refreshing} onRefresh={refresh} tintColor="#22CB5A" />
+						// 						}
 						contentContainerStyle={{
 							paddingBottom: insets.bottom + 20,
 							paddingTop: 10,

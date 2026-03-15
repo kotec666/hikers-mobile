@@ -9,7 +9,7 @@ import PeopleListItem from '@/components/find-people/PeopleListItem'
 import PeopleRemoveSvg from '@/components/svg/PeopleRemoveSvg'
 import PeopleAddSvg from '@/components/svg/PeopleAddSvg'
 import RoundedCheckMark from '@/components/svg/RoundedCheckMark'
-import { useRouter } from 'expo-router'
+import { useSafeNavigation } from '@/hooks/useSafeNavigation'
 
 export enum FRIEND_STATUS {
 	ADDED = 'added',
@@ -19,6 +19,7 @@ export enum FRIEND_STATUS {
 
 const FindPeople = () => {
 	const insets = useSafeAreaInsets()
+	const { push } = useSafeNavigation()
 
 	const data = [
 		{ id: 1, name: 'Стив Джобс first', avatar: true, icon: <PeopleRemoveSvg /> },
@@ -43,8 +44,6 @@ const FindPeople = () => {
 		{ id: 20, name: 'Джефф Безос last', avatar: false, icon: <PeopleRemoveSvg /> }
 	]
 
-	const router = useRouter()
-
 	return (
 		<SafeAreaProvider style={{ paddingTop: insets.top }}>
 			<View style={{ flex: 1 }}>
@@ -52,11 +51,7 @@ const FindPeople = () => {
 					<HeaderBack>Совместная тренировка</HeaderBack>
 
 					<View className="flex-row gap-[10px]">
-						<Button
-							variant="white"
-							className="w-min px-[30px]"
-							onPress={() => router.push('/(tabs)/profile')}
-						>
+						<Button variant="white" className="w-min px-[30px]" onPress={() => push('/(tabs)/profile')}>
 							Поиск
 						</Button>
 						<Button variant="black" className="w-min px-[30px]">

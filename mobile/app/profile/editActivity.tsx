@@ -25,10 +25,8 @@ const ProfileEditActivity = () => {
 				if (!newActivitiesOrder.length && activities.length) {
 					setNewActivitiesOrder(activities)
 				}
-			} catch (e) {
-				const errors = await e.response.json()
-				console.log(errors)
-				getFieldsErrors(errors)
+			} catch (e: unknown) {
+				await getFieldsErrors(e)
 			}
 		})()
 	}, [])

@@ -19,8 +19,9 @@ import { getPostsMy, IPost } from '@/api/posts'
 import { Colors } from '@/constants/Colors'
 import MapComponent from '@/components/map/MapComponent'
 import { adaptLocations } from '@/helpers/adaptPointsToIWorkoutLocationStorageItem'
-import { usePaginatedList } from '@/hooks/usePaginatedList'
-import { VIEWWORKOUT_MODE } from '@/app/training/viewWorkout'
+import { useSafeNavigation } from '@/hooks/useSafeNavigation'
+import { useInfiniteQuery } from '@tanstack/react-query'
+import TrainingsEmpty from '@/components/ui/Post/TrainingsEmpty'
 
 /**
  *
@@ -37,6 +38,7 @@ type AllowedRoute = (typeof ALLOWED_ROUTES)[keyof typeof ALLOWED_ROUTES]
 
 const Profile = () => {
 	const insets = useSafeAreaInsets()
+	const { push } = useSafeNavigation()
 	const router = useRouter()
 	const { user, setUser, logout } = useAuthStore()
 	const params = useLocalSearchParams()
@@ -46,21 +48,47 @@ const Profile = () => {
 	const [refreshingProfile, setRefreshingProfile] = useState(false)
 
 	// Состояние для infinite scroll постов
-	const limit = 5
-	const fetchPosts = useCallback(
-		({ page, limit }: { page: number; limit: number }) => getPostsMy({ page, limit }),
-		[]
-	)
+	// const limit = 5
+	// const fetchPosts = useCallback(
+	// 	({ page, limit }: { page: number; limit: number }) => getPostsMy({ page, limit }),
+	// 	[]
+	// )
+	// const {
+	// 	data: posts,
+	// 	loading,
+	// 	refreshing,
+	// 	loadMore,
+	// 	refresh
+	// } = usePaginatedList<IPost, void>({
+	// 	fetchFn: fetchPosts,
+	// 	limit,
+	// 	autoLoad: false
+	// })
+
+	const postsLimit = 5
 	const {
-		data: posts,
-		loading,
-		refreshing,
-		loadMore,
-		refresh
-	} = usePaginatedList<IPost, void>({
-		fetchFn: fetchPosts,
-		limit,
-		autoLoad: false
+		data: posts = [],
+		fetchNextPage: fetchNextPostsPage,
+		hasNextPage: hasNextPostsPage,
+		isFetchingNextPage: isFetchingPostsNextPage,
+		refetch: postsRefetch,
+		isRefetching: postsIsRefetching,
+		isFetching: isPostsFetching
+	} = useInfiniteQuery<IPost[], Error, IPost[], ['posts-my-profile'], number>({
+		queryKey: ['posts-my-profile'],
+
+		queryFn: ({ pageParam }) =>
+			getPostsMy({
+				page: pageParam,
+				limit: postsLimit
+			}),
+		initialPageParam: 1,
+		getNextPageParam: (lastPage, pages) => {
+			if (lastPage.length < postsLimit) return undefined
+			return pages.length + 1
+		},
+
+		select: (data) => data.pages.flat()
 	})
 
 	// Если пользователь кликнет на ту же страницу, то пойдёт скролл вверх. Навбар передаст params при переходе на эту же страницу
@@ -71,7 +99,7 @@ const Profile = () => {
 	}, [params.scrollToTop])
 
 	const handleClickRedirect = (page: AllowedRoute) => {
-		router.push(page)
+		push(page)
 	}
 
 	const handleClickExit = () => {
@@ -92,15 +120,15 @@ const Profile = () => {
 
 	const onRefreshAll = useCallback(async () => {
 		setRefreshingProfile(true)
-		await Promise.all([loadProfile(), refresh()])
+		await Promise.all([loadProfile(), postsRefetch()]) // , refresh()
 		setRefreshingProfile(false)
-	}, [loadProfile, refresh])
+	}, [loadProfile, postsRefetch]) // , refresh
 
 	// Первоначальная загрузка данных (при фокусе на странице)
 	useFocusEffect(
 		useCallback(() => {
 			const init = async () => {
-				await Promise.all([loadProfile(), refresh()])
+				await Promise.all([loadProfile()]) // , refresh()
 			}
 			init()
 		}, [loadProfile])
@@ -147,13 +175,20 @@ const Profile = () => {
 
 	// Функция рендеринга индикатора загрузки
 	const renderFooter = useCallback(() => {
-		if (!loading) return null
+		//if (!loading) return null
+		if (!isFetchingPostsNextPage) return null
 		return (
 			<View style={{ padding: 20 }}>
 				<ActivityIndicator size="small" color={Colors['green-main']} />
 			</View>
 		)
-	}, [loading])
+	}, [isFetchingPostsNextPage]) // loading
+
+	const renderEmpty = useCallback(() => {
+		if (isPostsFetching) return null
+
+		return <TrainingsEmpty text="Постов еще не существует, опубликуйте пост после тренировки" />
+	}, [isPostsFetching])
 
 	return (
 		<>
@@ -163,15 +198,28 @@ const Profile = () => {
 					data={posts}
 					renderItem={renderPostItem}
 					keyExtractor={(item) => item.id}
-					onEndReached={loadMore}
+					// onEndReached={loadMore}
+					onEndReached={() => {
+						if (hasNextPostsPage && !isFetchingPostsNextPage) {
+							fetchNextPostsPage()
+						}
+					}}
 					onEndReachedThreshold={0.4}
 					ItemSeparatorComponent={() => <View style={{ height: 16 }} />}
+					ListEmptyComponent={renderEmpty}
 					ListFooterComponent={renderFooter}
+					// refreshControl={
+					// 	<RefreshControl
+					// 		refreshing={refreshingProfile || refreshing}
+					// 		onRefresh={onRefreshAll}
+					// 		tintColor="#22CB5A"
+					// 	/>
+					// }
 					refreshControl={
 						<RefreshControl
-							refreshing={refreshingProfile || refreshing}
+							refreshing={refreshingProfile || postsIsRefetching}
 							onRefresh={onRefreshAll}
-							tintColor="#22CB5A"
+							tintColor={Colors['green-main']}
 						/>
 					}
 					ListHeaderComponent={
@@ -250,12 +298,7 @@ const Profile = () => {
 										hrefTo="/subscribers/my-subscriptions"
 									/>
 								</View>
-								<Button
-									variant="white"
-									onPress={() => {
-										return router.push('/workout-history')
-									}}
-								>
+								<Button variant="white" onPress={() => push('/workout-history')}>
 									История тренировок
 								</Button>
 								<RedirectAchievementsInfo achievements={profileData?.achievements} isMyProfile />
