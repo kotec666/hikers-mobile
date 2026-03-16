@@ -9,7 +9,6 @@ RUN npm install -g @nestjs/cli
 
 COPY ./package.json .
 
-# yarn install --force пока не надо
 RUN yarn install
 
 COPY . .
