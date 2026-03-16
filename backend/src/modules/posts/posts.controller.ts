@@ -8,12 +8,13 @@
 	Patch,
 	Post,
 	Query,
+	UploadedFiles,
 	UseInterceptors,
 } from '@nestjs/common';
 import { User, UserData } from '@decorators/user.decorator';
 import { FilesInterceptor } from '@nestjs/platform-express';
 import { PostsService } from './posts.service';
-import { IsUUID, InjectBodyFiles } from '@validation/parameter-decorators';
+import { IsUUID } from '@validation/parameter-decorators';
 import { NotNegative } from '@validation/query-decorators';
 import { UserInterceptor } from '@interceptors/user.interceptor';
 import { TrainingParticipantDto } from '../trainings/trainings.dto';
@@ -49,7 +50,7 @@ export class PostsController {
 					return callb(new BadRequestException(`_files:${ERRORS.BAD_REQUEST}`), false);
 				}
 
-				callb(null, false);
+				callb(null, true);
 			},
 			limits: {
 				fileSize: MAX_FILE_SIZE_MEGABYTES * 1024 * 1024,
@@ -58,8 +59,13 @@ export class PostsController {
 	)
 	public async create(
 		@User() user: UserData,
-		@InjectBodyFiles() @Body() dto: PostDto.Creation,
+		@Body() dto: PostDto.Creation,
+		@UploadedFiles() files: Express.Multer.File[],
 	): Promise<PostDto.Entity> {
+		if (files.length) {
+			dto.files = files;
+		}
+
 		return await this.service.create(user.id, dto);
 	}
 
@@ -145,7 +151,7 @@ export class PostsController {
 					return callb(new BadRequestException(`_files:${ERRORS.BAD_REQUEST}`), false);
 				}
 
-				callb(null, false);
+				callb(null, true);
 			},
 			limits: {
 				fileSize: MAX_FILE_SIZE_MEGABYTES * 1024 * 1024,
@@ -155,8 +161,13 @@ export class PostsController {
 	public async edit(
 		@IsUUID('id') @Param('id') id: string,
 		@User() user: UserData,
-		@InjectBodyFiles() @Body() dto: PostDto.Edit,
+		@Body() dto: PostDto.Edit,
+		@UploadedFiles() files: Express.Multer.File[],
 	): Promise<CommonDto.BooleanResponse> {
+		if (files.length) {
+			dto.files = files;
+		}
+
 		return await this.service.edit(id, user.id, dto);
 	}
 

@@ -55,12 +55,3 @@ export const ParseEnum = createParamDecorator((data: { key: string; enum: object
 	}
 	return value as keyof typeof data.enum;
 });
-
-export const InjectBodyFiles = createParamDecorator((data: unknown, ctx: ExecutionContext) => {
-	const request = ctx.switchToHttp().getRequest();
-
-	return {
-		...request.body,
-		files: request.files,
-	};
-});
