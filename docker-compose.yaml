@@ -22,9 +22,6 @@ services:
             - hikers-network
         ports:
             - '4173:4173'
-        depends_on:
-            backend:
-                condition: service_started
 
     backend:
         image: hikers-backend:latest
