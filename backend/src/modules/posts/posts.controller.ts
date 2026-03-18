@@ -30,7 +30,6 @@ import {
 import { ERRORS } from '@shared/errors';
 
 @Controller('posts')
-@UseInterceptors(UserInterceptor)
 export class PostsController {
 	constructor(private readonly service: PostsService) {}
 
@@ -41,6 +40,7 @@ export class PostsController {
 	 */
 	@Post()
 	@UseInterceptors(
+		UserInterceptor,
 		FilesInterceptor('files', POST_MAX_FILES_COUNT, {
 			fileFilter: (_req, file, callb) => {
 				if (
@@ -75,6 +75,7 @@ export class PostsController {
 	 * @security token
 	 */
 	@Get('feed')
+	@UseInterceptors(UserInterceptor)
 	public async getFeed(
 		@User() user: UserData,
 		@NotNegative('page') @Query('page') page: number,
@@ -89,6 +90,7 @@ export class PostsController {
 	 * @security token
 	 */
 	@Get('by-user/:id')
+	@UseInterceptors(UserInterceptor)
 	public async getByUser(
 		@User() user: UserData,
 		@IsUUID('id') @Param('id') id: string,
@@ -104,6 +106,7 @@ export class PostsController {
 	 * @security token
 	 */
 	@Get('/by-training/:id')
+	@UseInterceptors(UserInterceptor)
 	public async getByTrainingId(
 		@User() user: UserData,
 		@IsUUID('id') @Param('id') id: string,
@@ -117,6 +120,7 @@ export class PostsController {
 	 * @security token
 	 */
 	@Get('my')
+	@UseInterceptors(UserInterceptor)
 	public async getMy(
 		@User() user: UserData,
 		@NotNegative('page') @Query('page') page: number,
@@ -127,10 +131,20 @@ export class PostsController {
 
 	/**
 	 * @tag Posts
+	 * @summary Получить пост по id. Для неавторизованного юзера
+	 */
+	@Get('for-guest/:id')
+	public async getByIdForGuest(@IsUUID('id') @Param('id') id: string): Promise<PostDto.EntityForGuest> {
+		return await this.service.getByIdForGuest(id);
+	}
+
+	/**
+	 * @tag Posts
 	 * @summary Получить пост по id
 	 * @security token
 	 */
 	@Get(':id')
+	@UseInterceptors(UserInterceptor)
 	public async getById(@User() user: UserData, @IsUUID('id') @Param('id') id: string): Promise<PostDto.Entity> {
 		return await this.service.getById(user.id, id);
 	}
@@ -142,6 +156,7 @@ export class PostsController {
 	 */
 	@Patch(':id')
 	@UseInterceptors(
+		UserInterceptor,
 		FilesInterceptor('files', POST_MAX_FILES_COUNT, {
 			fileFilter: (_req, file, callb) => {
 				if (
@@ -177,6 +192,7 @@ export class PostsController {
 	 * @security token
 	 */
 	@Delete(':id')
+	@UseInterceptors(UserInterceptor)
 	public async deletePost(
 		@User() user: UserData,
 		@IsUUID('id') @Param('id') id: string,
@@ -190,6 +206,7 @@ export class PostsController {
 	 * @security token
 	 */
 	@Post(':id/like')
+	@UseInterceptors(UserInterceptor)
 	public async like(
 		@User() user: UserData,
 		@IsUUID('id') @Param('id') id: string,
@@ -203,6 +220,7 @@ export class PostsController {
 	 * @security token
 	 */
 	@Post(':id/unlike')
+	@UseInterceptors(UserInterceptor)
 	public async unlike(
 		@User() user: UserData,
 		@IsUUID('id') @Param('id') id: string,
@@ -216,6 +234,7 @@ export class PostsController {
 	 * @security token
 	 */
 	@Get(':id/participants')
+	@UseInterceptors(UserInterceptor)
 	public async getParticipants(
 		@User() user: TokenDto.Payload,
 		@IsUUID('id') @Param('id') id: string,

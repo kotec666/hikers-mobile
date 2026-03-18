@@ -6,7 +6,6 @@ import { lengths } from '@shared/lengths';
 export namespace UserDto {
 	export type Entity = {
 		id: string;
-		email: string;
 		name: string | null;
 		username: string | null;
 		avatarFilename: string | null;

@@ -16,8 +16,8 @@ services:
         image: hikers-frontend:latest
         restart: unless-stopped
         build:
-            context: ./frontend
-            dockerfile: Dockerfile
+            context: .
+            dockerfile: frontend/Dockerfile
         networks:
             - hikers-network
         ports:
@@ -27,8 +27,8 @@ services:
         image: hikers-backend:latest
         restart: unless-stopped
         build:
-            context: ./backend
-            dockerfile: Dockerfile
+            context: .
+            dockerfile: backend/Dockerfile
         env_file:
             - .env
         networks:

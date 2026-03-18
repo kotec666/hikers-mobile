@@ -45,7 +45,6 @@ export class FriendsService {
 				name: friendUser.name,
 				username: friendUser.username,
 				avatarFilename: friendUser.avatarFilename,
-				email: friendUser.email,
 			},
 		};
 		return friend;
@@ -76,7 +75,6 @@ export class FriendsService {
 						name: friendUser.name,
 						username: friendUser.username,
 						avatarFilename: friendUser.avatarFilename,
-						email: friendUser.email,
 					},
 				};
 				return friend;
@@ -164,7 +162,6 @@ export class FriendsService {
 						name: invitedUser.name,
 						username: invitedUser.username,
 						avatarFilename: invitedUser.avatarFilename,
-						email: invitedUser.email,
 					},
 				};
 				return invite;
@@ -192,7 +189,6 @@ export class FriendsService {
 						name: user.name,
 						username: user.username,
 						avatarFilename: user.avatarFilename,
-						email: user.email,
 					},
 				};
 				return invite;
