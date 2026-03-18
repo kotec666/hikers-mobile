@@ -34,7 +34,6 @@ export class PostsService {
 
 				userCreator: {
 					id: users.id,
-					email: users.email,
 					name: users.name,
 					username: users.username,
 					avatarFilename: users.avatarFilename,
@@ -110,7 +109,6 @@ export class PostsService {
 
 				userCreator: {
 					id: users.id,
-					email: users.email,
 					name: users.name,
 					username: users.username,
 					avatarFilename: users.avatarFilename,
@@ -156,7 +154,6 @@ export class PostsService {
 
 				userCreator: {
 					id: users.id,
-					email: users.email,
 					name: users.name,
 					username: users.username,
 					avatarFilename: users.avatarFilename,
@@ -199,7 +196,6 @@ export class PostsService {
 
 				userCreator: {
 					id: users.id,
-					email: users.email,
 					name: users.name,
 					username: users.username,
 					avatarFilename: users.avatarFilename,
@@ -242,7 +238,6 @@ export class PostsService {
 
 				userCreator: {
 					id: users.id,
-					email: users.email,
 					name: users.name,
 					username: users.username,
 					avatarFilename: users.avatarFilename,
@@ -277,7 +272,6 @@ export class PostsService {
 
 				userCreator: {
 					id: users.id,
-					email: users.email,
 					name: users.name,
 					username: users.username,
 					avatarFilename: users.avatarFilename,
@@ -489,7 +483,6 @@ export class PostsService {
 				id: users.id,
 				username: users.username,
 				name: users.name,
-				email: users.email,
 				avatarFilename: users.avatarFilename,
 			})
 			.from(postLikes)

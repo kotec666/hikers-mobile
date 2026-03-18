@@ -344,7 +344,6 @@ export class TrainingsService {
 				colorHex: trainingParticipants.colorHex,
 				user: {
 					id: users.id,
-					email: users.email,
 					name: users.name,
 					username: users.username,
 					avatarFilename: users.avatarFilename,
@@ -385,7 +384,6 @@ export class TrainingsService {
 				id: trainingParticipants.id,
 				user: {
 					id: users.id,
-					email: users.email,
 					name: users.name,
 					username: users.username,
 					avatarFilename: users.avatarFilename,
@@ -414,7 +412,6 @@ export class TrainingsService {
 				id: trainingParticipants.id,
 				user: {
 					id: users.id,
-					email: users.email,
 					name: users.name,
 					username: users.username,
 					avatarFilename: users.avatarFilename,
@@ -464,7 +461,6 @@ export class TrainingsService {
 				id: trainingParticipants.id,
 				user: {
 					id: users.id,
-					email: users.email,
 					name: users.name,
 					username: users.username,
 					avatarFilename: users.avatarFilename,
@@ -580,7 +576,6 @@ export class TrainingsService {
 
 				creator: {
 					id: users.id,
-					email: users.email,
 					name: users.name,
 					username: users.username,
 					avatarFilename: users.avatarFilename,

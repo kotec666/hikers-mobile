@@ -23,7 +23,6 @@ export class UserService {
 				id: users.id,
 				name: users.name,
 				username: users.username,
-				email: users.email,
 				avatarFilename: users.avatarFilename,
 			});
 		if (!user) {
@@ -40,7 +39,6 @@ export class UserService {
 			id: users.id,
 			name: users.name,
 			username: users.username,
-			email: users.email,
 			avatarFilename: users.avatarFilename,
 		});
 		if (!user) {
@@ -56,7 +54,6 @@ export class UserService {
 				id: users.id,
 				name: users.name,
 				username: users.username,
-				email: users.email,
 				avatarFilename: users.avatarFilename,
 				password: users.password,
 			})
@@ -76,7 +73,6 @@ export class UserService {
 			id: user.id,
 			name: user.name,
 			username: user.username,
-			email: user.email,
 			avatarFilename: user.avatarFilename,
 		};
 	}
@@ -87,7 +83,6 @@ export class UserService {
 				id: users.id,
 				name: users.name,
 				username: users.username,
-				email: users.email,
 				avatarFilename: users.avatarFilename,
 			})
 			.from(users)
@@ -106,7 +101,6 @@ export class UserService {
 				id: users.id,
 				name: users.name,
 				username: users.username,
-				email: users.email,
 				avatarFilename: users.avatarFilename,
 			})
 			.from(users)
@@ -137,7 +131,6 @@ export class UserService {
 				id: users.id,
 				name: users.name,
 				username: users.username,
-				email: users.email,
 				avatarFilename: users.avatarFilename,
 			})
 			.from(users);
@@ -151,7 +144,6 @@ export class UserService {
 				id: users.id,
 				name: users.name,
 				username: users.username,
-				email: users.email,
 				avatarFilename: users.avatarFilename,
 			})
 			.from(users)
