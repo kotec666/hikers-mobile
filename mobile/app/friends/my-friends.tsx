@@ -27,25 +27,6 @@ const MyFriendsPage = () => {
 
 	const limit = 15
 
-	// const {
-	// 	data: friends,
-	// 	setData: setItems,
-	// 	loading,
-	// 	refreshing,
-	// 	loadMore,
-	// 	refresh
-	// } = usePaginatedList<IFriend, void>({
-	// 	fetchFn: async (params) => {
-	// 		try {
-	// 			return await getMyFriendsList(params)
-	// 		} catch (e: unknown) {
-	// 			await getFieldsErrors(e)
-	// 			return []
-	// 		}
-	// 	},
-	// 	limit
-	// })
-
 	const {
 		data: friends = [],
 		fetchNextPage,

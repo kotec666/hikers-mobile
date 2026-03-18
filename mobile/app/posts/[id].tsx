@@ -40,7 +40,7 @@ const Post = () => {
 			try {
 				const postData = await getPostById(id)
 				setPost(postData)
-			} catch (e) {
+			} catch {
 				toast.info('Ошибка при загрузке поста')
 				router.back()
 			}
@@ -118,6 +118,7 @@ const Post = () => {
 									<MapComponent
 										key={post?.training?.participants?.[0]?.route?.points?.length || 0} // какое-то время points undefined
 										rounded={25}
+										interactiveDisabled
 										minMapHeight={SLIDE_ASPECT_RATIO}
 										maxMapHeight={SLIDE_ASPECT_RATIO}
 										needFinishMarker

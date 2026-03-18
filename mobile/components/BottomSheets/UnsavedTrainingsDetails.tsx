@@ -20,7 +20,13 @@ interface IProps {
 	syncingIds: number[]
 }
 
-const UnsavedTrainingsDetails = (props: IProps) => {
+const UnsavedTrainingsDetails = ({
+	notSavedWorkouts,
+	handleClickSaveOneWorkout,
+	handleClickDelete,
+	handleClickDeleteAll,
+	syncingIds
+}: IProps) => {
 	const insets = useSafeAreaInsets()
 
 	const workoutTypeMap = useMemo(() => Object.fromEntries(WorkoutTypesData.map((t) => [t.type, t])), [])
@@ -33,7 +39,7 @@ const UnsavedTrainingsDetails = (props: IProps) => {
 			const typeData = workoutTypeMap[item.type]
 
 			const IconComponent = typeData?.IconComponent ?? PeopleRunningSvg
-			const isSyncing = props.syncingIds.includes(item.startedAt)
+			const isSyncing = syncingIds.includes(item.startedAt)
 
 			return (
 				<WorkoutHistoryListItem
@@ -43,27 +49,27 @@ const UnsavedTrainingsDetails = (props: IProps) => {
 					actionIcon={[
 						{
 							iconSvg: <SaveUnsavedTrainingSvg />,
-							iconCb: () => props.handleClickSaveOneWorkout(item.startedAt),
+							iconCb: () => handleClickSaveOneWorkout(item.startedAt),
 							disabled: isSyncing
 						},
 						{
 							iconSvg: <DeleteTrashSvg />,
-							iconCb: () => props.handleClickDelete(item.startedAt),
+							iconCb: () => handleClickDelete(item.startedAt),
 							disabled: isSyncing
 						}
 					]}
 				/>
 			)
 		},
-		[props.syncingIds]
+		[syncingIds]
 	)
 
-	const isDeletingDisabled = !props.notSavedWorkouts.length || props.syncingIds.length > 0
+	const isDeletingDisabled = !notSavedWorkouts.length || syncingIds.length > 0
 
 	return (
 		<View className="flex-1 w-full p-[16px]">
 			<LegendList
-				data={props.notSavedWorkouts}
+				data={notSavedWorkouts}
 				renderItem={renderItem}
 				keyExtractor={(item) => String(item.startedAt)}
 				contentContainerStyle={{
@@ -72,7 +78,7 @@ const UnsavedTrainingsDetails = (props: IProps) => {
 				}}
 				ListFooterComponent={
 					<View style={{ marginTop: 20 }}>
-						<Button variant="white" onPress={props.handleClickDeleteAll} disabled={isDeletingDisabled}>
+						<Button variant="white" onPress={handleClickDeleteAll} disabled={isDeletingDisabled}>
 							Удалить все
 						</Button>
 					</View>

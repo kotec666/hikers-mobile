@@ -73,6 +73,11 @@ export const getPostById = async (postId: string): Promise<IPost> => {
 	return (await fetcher.get(`posts/${postId}`)).json()
 }
 
+// Получение подробного поста по id его тренировки
+export const getPostByTrainingId = async (trainingId: string): Promise<IPost> => {
+	return (await fetcher.get(`posts/by-training/${trainingId}`)).json()
+}
+
 // Поставить лайк на пост по его id
 export const likePostById = async (postId: string): Promise<ISuccess> => {
 	return (await fetcher.post(`posts/${postId}/like`)).json()

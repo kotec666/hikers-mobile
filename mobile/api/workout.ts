@@ -134,6 +134,7 @@ export interface ITrainingHistoryItem {
 	id: string
 	type: TrainingType
 	createdAt: string
+	distanceM: number | null
 	startedAt: null | string
 	finishedAt: null | string
 }

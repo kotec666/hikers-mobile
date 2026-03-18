@@ -30,13 +30,6 @@ const formatPace = (sec: number) => {
 	return `${m}'${String(s).padStart(2, '0')}"`
 }
 
-// const formatTime = (sec: number) => {
-// 	const m = Math.floor(sec / 60)
-// 	const s = sec % 60
-// 	return `${String(m).padStart(2, '0')}:${String(s).padStart(2, '0')}`
-// }
-
-// С часами
 const formatTime = (sec: number) => {
 	const hours = Math.floor(sec / 3600)
 	const minutes = Math.floor((sec % 3600) / 60)
@@ -49,142 +42,46 @@ const formatTime = (sec: number) => {
 	return `${hh}${mm}:${ss}`
 }
 
-// Длительность	Шаг	Точек
-// 10 мин	5 сек	~120
-// 30 мин	15 сек	~120
-// 1 час	30 сек	~120
-// 2 часа	60 сек	~120
-// 5 часов	5 мин	~60
-const getStepSeconds = (totalSeconds: number) => {
-	const TARGET_POINTS = 120
-
-	const raw = Math.ceil(totalSeconds / TARGET_POINTS)
-
-	if (raw <= 5) return 5
-	if (raw <= 10) return 10
-	if (raw <= 15) return 15
-	if (raw <= 30) return 30
-	if (raw <= 60) return 60
-	if (raw <= 120) return 120
-	return 300 // 5 мин
-}
-
-// const buildPaceChartData = (points: IWorkoutLocationStorageItem[]): PacePoint[] => {
-// 	if (points.length < 2) return []
-//
-// 	const totalSeconds = (points.at(-1)!.relTs - points[0].relTs) / 1000
-//
-// 	const stepSeconds = getStepSeconds(totalSeconds)
-//
-// 	let accDistance = 0
-// 	let accTime = 0
-// 	let lastTs = points[0].relTs
-// 	let prev = points[0]
-//
-// 	const result: PacePoint[] = []
-//
-// 	for (let i = 1; i < points.length; i++) {
-// 		const curr = points[i]
-// 		if (curr.paused) continue
-//
-// 		const dt = (curr.relTs - lastTs) / 1000
-// 		if (dt <= 0) continue
-//
-// 		const d = haversineDistance(
-// 			prev.locationObject.coords.latitude,
-// 			prev.locationObject.coords.longitude,
-// 			curr.locationObject.coords.latitude,
-// 			curr.locationObject.coords.longitude
-// 		)
-//
-// 		accTime += dt
-// 		accDistance += d
-//
-// 		if (accTime >= stepSeconds && accDistance > 10) {
-// 			const pace = accTime / (accDistance / 1000)
-//
-// 			// фильтр мусора
-// 			if (pace > 150 && pace < 900) {
-// 				result.push({
-// 					t: curr.relTs / 1000,
-// 					pace
-// 				})
-// 			}
-//
-// 			accTime = 0
-// 			accDistance = 0
-// 		}
-//
-// 		prev = curr
-// 		lastTs = curr.relTs
-// 	}
-//
-// 	return result
-// }
-
 const buildPaceChartData = (points: IWorkoutLocationStorageItem[]): PacePoint[] => {
-	if (points.length < 2) return []
+	if (!points || points.length < 2) return []
 
-	// Рассчитываем moving time для stepSeconds
-	let movingTotal = 0
-	for (let i = 1; i < points.length; i++) {
-		if (points[i].paused) continue
-		const dt = (points[i].relTs - points[i - 1].relTs) / 1000
-		if (dt > 0) movingTotal += dt
-	}
-	const stepSeconds = getStepSeconds(movingTotal)
+	const sorted = [...points].sort((a, b) => a.relTs - b.relTs)
 
-	let movingTime = 0
-	let accDistance = 0
-	let accTime = 0
-	let lastTs = points[0].relTs
-	let prev = points[0]
-
+	let activeTime = 0
 	const result: PacePoint[] = []
 
-	for (let i = 1; i < points.length; i++) {
-		const curr = points[i]
+	for (let i = 1; i < sorted.length; i++) {
+		const prev = sorted[i - 1]
+		const cur = sorted[i]
 
-		if (curr.paused) {
-			lastTs = curr.relTs
-			prev = curr
-			continue
+		const dt = (cur.relTs - prev.relTs) / 1000
+		if (dt <= 0) continue
+
+		// если предыдущая точка была пауза — время не увеличиваем
+		if (!prev.paused) {
+			activeTime += dt
 		}
 
-		let dt = (curr.relTs - lastTs) / 1000
-		if (dt <= 0 || dt > 10) {
-			// фильтр нереального dt
-			lastTs = curr.relTs
-			prev = curr
-			continue
-		}
+		// точки паузы не отображаем
+		if (cur.paused || prev.paused) continue
 
-		movingTime += dt
-
-		const d = haversineDistance(
+		const dist = haversineDistance(
 			prev.locationObject.coords.latitude,
 			prev.locationObject.coords.longitude,
-			curr.locationObject.coords.latitude,
-			curr.locationObject.coords.longitude
+			cur.locationObject.coords.latitude,
+			cur.locationObject.coords.longitude
 		)
 
-		accTime += dt
-		accDistance += d
+		if (dist < 1) continue
 
-		if (accTime >= stepSeconds && accDistance > 10) {
-			const pace = accTime / (accDistance / 1000)
-			if (pace > 150 && pace < 900) {
-				result.push({
-					t: movingTime,
-					pace
-				})
-			}
-			accTime = 0
-			accDistance = 0
-		}
+		const pace = dt / (dist / 1000) // sec/km
 
-		prev = curr
-		lastTs = curr.relTs
+		if (!Number.isFinite(pace)) continue
+
+		result.push({
+			t: activeTime,
+			pace
+		})
 	}
 
 	return result
@@ -194,6 +91,7 @@ export const LineChart = (props: { points: IWorkoutLocationStorageItem[] | null 
 	const font = useFont(manrope, 12)
 	const { state, isActive } = useChartPressState({ x: 0, y: { pace: 0 } })
 	const { state: transformState } = useChartTransformState()
+
 	const chartData = React.useMemo(() => {
 		if (!props.points) return []
 		return buildPaceChartData(props.points)

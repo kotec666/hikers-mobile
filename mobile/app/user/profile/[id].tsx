@@ -47,23 +47,7 @@ const UserProfilePage = () => {
 	const [profileData, setProfileData] = useState<INotMyProfile | null>(null)
 	const [refreshingProfile, setRefreshingProfile] = useState(false)
 	const [isDeleteModalOpened, setIsDeleteModalOpened] = useState<boolean>(false)
-
-	// const limit = 5
-	// const fetchPosts = useCallback(
-	// 	({ page, limit }: { page: number; limit: number }) => getPostsByUserId(id, { page, limit }),
-	// 	[id]
-	// )
-	// const {
-	// 	data: posts,
-	// 	setData: setPosts,
-	// 	loading: loadingPosts,
-	// 	refreshing: refreshingPosts,
-	// 	loadMore,
-	// 	refresh: refreshPosts
-	// } = usePaginatedList<IPost, void>({
-	// 	fetchFn: fetchPosts,
-	// 	limit
-	// })
+	const [isFriendLoading, setIsFriendLoading] = useState(false)
 
 	const postsLimit = 5
 	const {
@@ -209,6 +193,8 @@ const UserProfilePage = () => {
 	)
 
 	const handleDeleteFromFriends = async () => {
+		if (isFriendLoading) return
+		setIsFriendLoading(true)
 		try {
 			await deleteFriendById(id)
 			const friendsCount =
@@ -221,8 +207,9 @@ const UserProfilePage = () => {
 			toast.success('Пользователь удалён из списка друзей')
 		} catch (e: unknown) {
 			toast.error('Произошла ошибка, повторите попытку позже')
-			// await getFieldsErrors(e)
+			await getFieldsErrors(e)
 		} finally {
+			setIsFriendLoading(false)
 			setIsDeleteModalOpened(false)
 		}
 	}
@@ -236,6 +223,8 @@ const UserProfilePage = () => {
 	}
 
 	const sendFriendRequest = async () => {
+		if (isFriendLoading) return
+		setIsFriendLoading(true)
 		try {
 			await addAsFriend(id)
 			updateProfileData(() => ({
@@ -244,11 +233,15 @@ const UserProfilePage = () => {
 			toast.success('Заявка в друзья отправлена')
 		} catch (e: unknown) {
 			toast.error('Произошла ошибка, повторите попытку позже')
-			// await getFieldsErrors(e)
+			await getFieldsErrors(e)
+		} finally {
+			setIsFriendLoading(false)
 		}
 	}
 
 	const revokeFriendRequest = async () => {
+		if (isFriendLoading) return
+		setIsFriendLoading(true)
 		try {
 			await revokeFriendInviteByUserId(id)
 			updateProfileData(() => ({
@@ -257,11 +250,14 @@ const UserProfilePage = () => {
 			toast.success('Заявка в друзья отозвана')
 		} catch (e: unknown) {
 			toast.error('Произошла ошибка, повторите попытку позже')
-			// await getFieldsErrors(e)
+			await getFieldsErrors(e)
+		} finally {
+			setIsFriendLoading(false)
 		}
 	}
 
 	const handleClickDeleteAddFriend = async () => {
+		if (isFriendLoading) return
 		switch (profileData?.isFriend) {
 			case FriendStatus.TRUE:
 				return handleOpenDeleteModal()
@@ -456,8 +452,13 @@ const UserProfilePage = () => {
 												}
 												buttonContainerClassName="flex-1"
 												onPress={handleClickDeleteAddFriend}
+												disabled={isFriendLoading}
 											>
-												{profileData && friendStatusLabel[profileData?.isFriend]}
+												{isFriendLoading ? (
+													<ActivityIndicator size="small" color={Colors['green-main']} />
+												) : (
+													profileData && friendStatusLabel[profileData?.isFriend]
+												)}
 											</Button>
 										</View>
 										<RedirectAchievementsInfo

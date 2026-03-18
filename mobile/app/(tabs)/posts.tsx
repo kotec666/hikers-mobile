@@ -59,34 +59,36 @@ const PostsPage = () => {
 	const searchLimit = 15
 
 	const {
-		data: searchData = [],
+		data: searchDataRaw,
 		fetchNextPage: fetchNextSearchPage,
 		hasNextPage: hasNextSearchPage,
 		isFetchingNextPage: isFetchingNextSearchPage,
 		refetch: refetchSearch,
 		isRefetching: isRefetchingSearch
-	} = useInfiniteQuery<
-		IFoundUser[] | IFoundPost[], // тип страницы
-		Error,
-		(IFoundUser | IFoundPost)[], // select
-		['search', string, SearchType], // queryKey: ["search", searchWord, searchMode]
-		number // pageParam
-	>({
+	} = useInfiniteQuery({
 		queryKey: ['search', debouncedSearchWord, state.searchMode],
-		queryFn: ({ pageParam = 1 }) => {
-			if (!debouncedSearchWord || debouncedSearchWord.trim().length < 2) return Promise.resolve([])
-			return searchByAllItems({
-				page: pageParam,
-				limit: searchLimit,
-				word: debouncedSearchWord,
-				type: state.searchMode
-			})
+		queryFn: ({ pageParam = 1, signal }) => {
+			if (!debouncedSearchWord || debouncedSearchWord.trim().length < 2) {
+				return Promise.resolve([])
+			}
+
+			return searchByAllItems(
+				{
+					page: pageParam,
+					limit: searchLimit,
+					word: debouncedSearchWord,
+					type: state.searchMode
+				},
+				signal
+			)
 		},
 		initialPageParam: 1,
-		getNextPageParam: (lastPage, pages) => (lastPage.length < searchLimit ? undefined : pages.length + 1),
-		enabled: debouncedSearchWord.trim().length >= 2,
-		select: (data) => data.pages.flat()
+		getNextPageParam: (lastPage, pages) => (lastPage.length === searchLimit ? pages.length + 1 : undefined),
+		enabled: debouncedSearchWord.trim().length >= 2
+		// select: (data) => data.pages.flat()
 	})
+
+	const searchData = searchDataRaw?.pages.flat() ?? []
 
 	useEffect(() => {
 		const handler = setTimeout(() => {
@@ -294,8 +296,8 @@ const PostsPage = () => {
 									</View>
 								</TouchableWithoutFeedback>
 								<LegendList
-									key={`${state.searchMode}`}
-									data={searchData ?? []}
+									// key={`${state.searchMode}`}
+									data={searchData}
 									ListEmptyComponent={
 										<View className="flex-1 justify-center items-center">
 											<Text
@@ -330,6 +332,7 @@ const PostsPage = () => {
 									}}
 									keyExtractor={(item) => item.id}
 									onEndReached={() => {
+										console.log('onEndReached search')
 										if (hasNextSearchPage && !isFetchingNextSearchPage) {
 											fetchNextSearchPage()
 										}

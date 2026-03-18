@@ -6,7 +6,6 @@ import { IFoundPost } from '@/api/search'
 import { TrainingType } from '@/shared/enums'
 import { WorkoutTypesData } from '@/constants/WorkoutTypes'
 import { formatRelativeDate } from '@/helpers/formatRelativeDate'
-// import PeopleRunningSvg from '@/components/svg/PeopleRunningSvg' @TODO Удалить
 
 const PostSearchResult = (props: IFoundPost) => {
 	const renderIcon = (workoutType?: TrainingType) => {
@@ -18,7 +17,12 @@ const PostSearchResult = (props: IFoundPost) => {
 	}
 
 	return (
-		<Link href={`/news-feed/${props.id}`}>
+		<Link
+			href={{
+				pathname: '/posts/[id]',
+				params: { id: props.id }
+			}}
+		>
 			<View className="flex-row items-center w-full justify-between">
 				<View className="flex-row items-center gap-[15px]">
 					<View className="w-[50px] h-[50px] rounded-[15px] bg-white items-center justify-center">

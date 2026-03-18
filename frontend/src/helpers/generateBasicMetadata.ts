@@ -1,5 +1,6 @@
 import { Metadata } from 'next'
 import { env } from '@/consts/env'
+import { ItunesApp } from 'next/dist/lib/metadata/types/extra-types'
 
 interface IMetaEnter {
 	title?: string
@@ -30,11 +31,13 @@ interface IMetaEnter {
 		description?: string
 		image?: string
 		app?: {
-			name: string
-			id: string
-			url: string
+			id?: Record<string, string>
+			name?: string
+			url: Record<string, string>
 		}
 	}
+	itunes?: Partial<ItunesApp> | null
+	other?: Record<string, string>
 }
 
 export const generateBasicMetadata = (meta: IMetaEnter): Metadata => {
@@ -104,13 +107,26 @@ export const generateBasicMetadata = (meta: IMetaEnter): Metadata => {
 		title: meta.twitter?.title || meta.title,
 		description: meta.twitter?.description || meta.description,
 		images: [meta.twitter?.image || defaultTwitterImage],
-		...(meta.twitter?.app && {
-			app: {
-				id: meta.twitter.app.id,
-				url: meta.twitter.app.url,
-				name: meta.twitter.app.name
-			}
-		})
+		app: {
+			id: meta?.twitter?.app?.id || { iphone: '999999999', ipad: '999999999', googleplay: 'com.hikers.mobile' },
+			name: meta?.twitter?.app?.name || 'хайкерс',
+			url: meta?.twitter?.app?.url
+		}
+	}
+
+	// itunes metadata
+	metadata.itunes = {
+		...meta.itunes,
+		appId: '999999999'
+	}
+
+	metadata.other = {
+		...meta.other,
+		'al:ios:app_store_id': '999999999',
+		'al:ios:app_name': 'хайкерс',
+		'al:android:app_name': 'хайкерс',
+		'al:android:package': 'com.hikers.mobile',
+		'yandex-verification': `${env.ya_verification}`
 	}
 
 	return metadata

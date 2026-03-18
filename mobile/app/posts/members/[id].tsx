@@ -151,26 +151,6 @@ const Members = () => {
 	const queryKey = membersQueryKey(id)
 	const limit = 10
 
-	// const {
-	// 	data: members,
-	// 	setData: setMembers,
-	// 	loading,
-	// 	refreshing,
-	// 	loadMore,
-	// 	refresh
-	// } = usePaginatedList<ITrainingMember, void>({
-	// 	fetchFn: async ({ page, limit }) => {
-	// 		try {
-	// 			return await getTrainingMembersByPostId(id, { page, limit })
-	// 		} catch (error) {
-	// 			console.error('Ошибка при загрузке участников:', error)
-	// 			toast.error('Не удалось загрузить участников')
-	// 			return []
-	// 		}
-	// 	},
-	// 	limit
-	// })
-
 	const {
 		data: members = [],
 		isFetchingNextPage,

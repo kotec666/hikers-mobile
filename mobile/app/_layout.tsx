@@ -136,13 +136,21 @@ export default function RootLayout() {
 
 	const authenticatedRoutes = [
 		'find-people',
-		// 'news-feed/members', // для /news-feed/members
+		'posts/members/[id]',
+		'posts/[id]',
 		'workout-history',
 		// 'friends/search', не используется
+		// 'find-people', не используется
 		'friends/my-friends',
 		'friends/friend-requests',
+		'subscribers/my-subscribers',
 		'subscribers/my-subscriptions',
 		'notifications',
+		'profile/edit',
+		'profile/editActivity',
+		'user/achievements/[id]',
+		'achievements',
+		'user/profile/[id]',
 		'training/viewWorkout'
 	]
 	const baseRoutes = ['index', 'document']

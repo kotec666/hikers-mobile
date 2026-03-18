@@ -7,7 +7,7 @@ import { Button } from '@/components/ui/Button'
 import { useRouter } from 'expo-router'
 import { getIsAccountExist } from '@/store/storage'
 import { AUTH_MODE } from '@/app/auth'
-import { useLayoutEffect } from 'react'
+import { useEffect } from 'react'
 import { useAuthStore } from '@/store/authStore'
 
 const HelloPage = () => {
@@ -23,7 +23,7 @@ const HelloPage = () => {
 		}
 	}
 
-	useLayoutEffect(() => {
+	useEffect(() => {
 		if (isAuthenticated) {
 			router.replace('/(tabs)/profile')
 		}

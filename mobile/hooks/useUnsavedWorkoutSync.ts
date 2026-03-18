@@ -6,6 +6,8 @@ import { deleteSingleWorkout, saveSingleWorkout } from '@/helpers/saveUnsavedTra
 type QueueItem = {
 	startedAt: number
 	userId?: string
+	resolve?: () => void
+	reject?: (e?: unknown) => void
 }
 
 export const useUnsavedWorkoutSync = () => {
@@ -39,8 +41,9 @@ export const useUnsavedWorkoutSync = () => {
 		try {
 			await saveSingleWorkout(nextWorkout.startedAt, nextWorkout.userId)
 			refresh()
+			nextWorkout.resolve?.()
 		} catch (e) {
-			console.error('sync failed', e)
+			nextWorkout.reject?.(e)
 		} finally {
 			setSyncingIds((ids) => ids.filter((id) => id !== nextWorkout.startedAt))
 
@@ -52,19 +55,42 @@ export const useUnsavedWorkoutSync = () => {
 		}
 	}
 
+	// const enqueueWorkoutSync = (startedAt: number) => {
+	// 	if (syncQueueRef.current.some((i) => i.startedAt === startedAt) || syncingIds.includes(startedAt)) return
+	//
+	// 	syncQueueRef.current.push({
+	// 		startedAt,
+	// 		userId: user?.id
+	// 	})
+	//
+	// 	processQueue()
+	// }
+
 	const enqueueWorkoutSync = (startedAt: number) => {
-		if (syncQueueRef.current.some((i) => i.startedAt === startedAt) || syncingIds.includes(startedAt)) return
+		return new Promise<void>((resolve, reject) => {
+			if (syncQueueRef.current.some((i) => i.startedAt === startedAt) || syncingIds.includes(startedAt)) {
+				resolve()
+				return
+			}
 
-		syncQueueRef.current.push({
-			startedAt,
-			userId: user?.id
+			syncQueueRef.current.push({
+				startedAt,
+				userId: user?.id,
+				resolve,
+				reject
+			})
+
+			processQueue()
 		})
-
-		processQueue()
 	}
 
+	// const saveAll = () => {
+	// 	notSavedWorkouts.forEach((w) => enqueueWorkoutSync(w.startedAt))
+	// }
+
 	const saveAll = () => {
-		notSavedWorkouts.forEach((w) => enqueueWorkoutSync(w.startedAt))
+		const promises: Promise<void>[] = notSavedWorkouts.map((w) => enqueueWorkoutSync(w.startedAt))
+		return Promise.all(promises)
 	}
 
 	const deleteWorkout = async (startedAt: number) => {

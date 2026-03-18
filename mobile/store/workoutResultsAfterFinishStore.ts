@@ -11,7 +11,7 @@ export interface IMetrics {
 	totalHeight: number | null
 }
 
-interface IWorkoutResultsStore {
+export interface IWorkoutResultsStore {
 	startedAt: number | null
 	trainingId: string | null
 	metrics: IMetrics | null

@@ -21,25 +21,6 @@ const MySubscriptionsPage = () => {
 	const toast = useToast()
 	const limit = 15
 
-	// const {
-	// 	data: subscriptions,
-	// 	setData: setSubscriptions,
-	// 	loading,
-	// 	refreshing,
-	// 	loadMore,
-	// 	refresh
-	// } = usePaginatedList<ISubscribe, void>({
-	// 	fetchFn: async ({ page, limit }) => {
-	// 		try {
-	// 			return await getSubscriptionsList({ page, limit })
-	// 		} catch (e: unknown) {
-	// 			await getFieldsErrors(e)
-	// 			return []
-	// 		}
-	// 	},
-	// 	limit
-	// })
-
 	const {
 		data: subscriptions = [],
 		fetchNextPage,

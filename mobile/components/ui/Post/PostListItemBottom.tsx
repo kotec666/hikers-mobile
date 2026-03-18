@@ -1,6 +1,6 @@
 import { fontFamily } from '@/constants/Fonts'
-import React, { useState } from 'react'
-import { View, Text, TouchableOpacity } from 'react-native'
+import React, { useRef, useState } from 'react'
+import { View, Text, TouchableOpacity, Share, findNodeHandle } from 'react-native'
 import { UserAvatar } from '@/components/ui/UserAvatar'
 import LikeSvg from '@/components/svg/LikeSvg'
 import ShareSvg from '@/components/svg/ShareSvg'
@@ -25,6 +25,7 @@ interface IProps {
 const PostListItemBottom = (props: IProps) => {
 	const { push } = useSafeNavigation()
 	const toast = useToast()
+	const shareButtonRef = useRef(null)
 	const participantsCount = props?.participants?.length || 0
 	const [likesCount, setLikesCount] = useState(props.likeData?.likesCount ?? 0)
 
@@ -48,9 +49,40 @@ const PostListItemBottom = (props: IProps) => {
 		}
 	})
 
+	const sharePost = async () => {
+		const url = `${process.env.EXPO_PUBLIC_API_URL}/posts/${props.postId}`
+		const anchor = findNodeHandle(shareButtonRef.current) ?? undefined
+
+		try {
+			await Share.share(
+				{
+					message: url,
+					url: url
+				},
+				{
+					dialogTitle: 'Поделиться',
+					excludedActivityTypes: [
+						'com.apple.UIKit.activity.Print',
+						'com.apple.UIKit.activity.AssignToContact'
+					],
+					anchor
+				}
+			)
+		} catch (error) {
+			console.log(error)
+		}
+	}
+
 	return (
 		<View className="flex-row justify-between items-center">
-			<TouchableOpacity onPress={() => push(`/news-feed/members/${props.postId}`)}>
+			<TouchableOpacity
+				onPress={() =>
+					push({
+						pathname: '/posts/members/[id]',
+						params: { id: props.postId! }
+					})
+				}
+			>
 				<View className="flex-row items-center gap-[15px]">
 					<View className="flex-row">
 						{Boolean(props?.participants?.length)
@@ -127,18 +159,20 @@ const PostListItemBottom = (props: IProps) => {
 						{likesCount}
 					</Text>
 				</View>
-				<Motion.Pressable>
-					<Motion.View
-						className="items-center justify-center"
-						whileTap={{ scale: 0.8 }}
-						transition={{
-							type: 'spring',
-							damping: 20,
-							stiffness: 400
-						}}
-					>
-						<ShareSvg />
-					</Motion.View>
+				<Motion.Pressable onPress={sharePost}>
+					<View ref={shareButtonRef}>
+						<Motion.View
+							className="items-center justify-center"
+							whileTap={{ scale: 0.8 }}
+							transition={{
+								type: 'spring',
+								damping: 20,
+								stiffness: 400
+							}}
+						>
+							<ShareSvg />
+						</Motion.View>
+					</View>
 				</Motion.Pressable>
 			</View>
 		</View>

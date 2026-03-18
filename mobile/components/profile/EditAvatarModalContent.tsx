@@ -47,7 +47,7 @@ const EditAvatarModalContent = (props: IProps) => {
 				// save image
 				await saveImage(result.assets[0].uri)
 			}
-		} catch (e) {
+		} catch {
 			toast.error('Ошибка при загрузке изображения')
 			props.handleCloseModal()
 		}

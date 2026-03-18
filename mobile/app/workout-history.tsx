@@ -21,6 +21,9 @@ import { useUnsavedWorkoutSync } from '@/hooks/useUnsavedWorkoutSync'
 import { cn } from '@/helpers/cn'
 import { useInfiniteQuery, useQueryClient } from '@tanstack/react-query'
 import { useToast } from '@/hooks/useToast'
+import { formatDistance } from '@/helpers/distance'
+import { useInternetConnection } from '@/hooks/useInternetConnection'
+import { useLocalSearchParams, useRouter } from 'expo-router'
 
 interface WorkoutItem {
 	id: string
@@ -37,31 +40,15 @@ const WorkoutHistory = () => {
 	const insets = useSafeAreaInsets()
 	const queryClient = useQueryClient()
 	const toast = useToast()
+	const { isConnected } = useInternetConnection()
+
+	const { from } = useLocalSearchParams<{ from?: string }>()
+
 	const { notSavedWorkouts, syncingIds, enqueueWorkoutSync, deleteWorkout } = useUnsavedWorkoutSync()
 
 	const [selectedType, setSelectedType] = useState<string>('')
 
-	const limit = 10
-	// const fetchHistory = useCallback(
-	// 	({ page, limit }: { page: number; limit: number }) =>
-	// 		getMyHistoryTrainings({ page, limit, finished: true, types: selectedType }),
-	// 	[selectedType]
-	// )
-	// const {
-	// 	data: history,
-	// 	loading,
-	// 	refreshing,
-	// 	loadMore,
-	// 	refresh
-	// } = usePaginatedList<ITrainingHistoryItem, void>({
-	// 	fetchFn: fetchHistory,
-	// 	limit
-	// })
-	//
-	// useEffect(() => {
-	// 	refresh() // вызываем обновление при смене типа
-	// }, [selectedType])
-
+	const limit = 15
 	const {
 		data: history = [],
 		isRefetching,
@@ -95,9 +82,10 @@ const WorkoutHistory = () => {
 			const typeData = WorkoutTypesData.find((t) => t.type === item.type)
 			const IconComponent = typeData?.IconComponent ?? PeopleRunningSvg
 
+			const distance = Number(item?.distanceM)
 			return {
 				id: item.id,
-				title,
+				title: `${title} ${Number.isFinite(distance) && distance >= 0 ? `, ${formatDistance(distance)}` : ''}`,
 				month,
 				icon: <IconComponent width={26} height={26} />,
 				startedAt: date.getTime(),
@@ -128,6 +116,14 @@ const WorkoutHistory = () => {
 
 	const workoutTypeMap = useMemo(() => Object.fromEntries(WorkoutTypesData.map((t) => [t.type, t])), [])
 
+	const handleDelete = async (startedAt: number) => {
+		try {
+			await deleteWorkout(startedAt)
+			toast.success('Тренировка удалена')
+		} catch {
+			toast.error('Не удалось удалить тренировку')
+		}
+	}
 	const handleSync = async (startedAt: number) => {
 		try {
 			await enqueueWorkoutSync(startedAt)
@@ -142,10 +138,23 @@ const WorkoutHistory = () => {
 		}
 	}
 
+	const router = useRouter()
+
+	const goBack = () => {
+		switch (from) {
+			case 'viewWorkout':
+				return '/(tabs)/newTraining'
+			case 'profile':
+				return '/(tabs)/profile'
+			default:
+				return '/(tabs)/profile'
+		}
+	}
+
 	return (
 		<View style={{ flex: 1, paddingTop: insets.top }}>
 			<Container className="gap-[20px] mt-[20px] flex-1">
-				<HeaderBack>История тренировок</HeaderBack>
+				<HeaderBack returnCallback={() => router.replace(goBack())}>История тренировок</HeaderBack>
 				<Select
 					options={[
 						{
@@ -224,7 +233,7 @@ const WorkoutHistory = () => {
 												},
 												{
 													iconSvg: <DeleteTrashSvg />,
-													iconCb: () => deleteWorkout(notSavedWorkout.startedAt),
+													iconCb: () => handleDelete(notSavedWorkout.startedAt),
 													disabled: isSyncing
 												}
 											]}
@@ -244,7 +253,7 @@ const WorkoutHistory = () => {
 									{item.month.charAt(0).toUpperCase() + item.month.slice(1)}
 								</Text>
 							)}
-							<WorkoutHistoryListItem {...item} />
+							<WorkoutHistoryListItem isHistoryListItem isInternetConnected={isConnected} {...item} />
 						</>
 					)}
 					ItemSeparatorComponent={() => <View style={{ height: 16 }} />}

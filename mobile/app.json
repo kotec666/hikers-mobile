@@ -5,10 +5,10 @@
 		"version": "1.0.0",
 		"orientation": "portrait",
 		"icon": "./assets/images/icon.png",
-		"scheme": "mobile",
+		"scheme": "hikers",
 		"userInterfaceStyle": "automatic",
 		"backgroundColor": "#0D0D0D",
-        "newArchEnabled": true,
+		"newArchEnabled": true,
 		"ios": {
 			"supportsTablet": true,
 			"bundleIdentifier": "com.hikers.mobile"

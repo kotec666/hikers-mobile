@@ -1,9 +1,11 @@
 import React from 'react'
-import { TouchableOpacity, View } from 'react-native'
+import { Pressable, TouchableOpacity, View } from 'react-native'
 import PostListItemSlider from '@/components/ui/Post/PostListItemSlider'
 import PostListItemBody from '@/components/ui/Post/PostListItemBody'
 import { ITrainingMetrics } from '@/api/workout'
 import { useSafeNavigation } from '@/hooks/useSafeNavigation'
+import { useFullscreenMap } from '@/hooks/useFullscreenMap'
+import FullscreenMap from '@/components/map/FullscreenMap'
 
 export enum PostType {
 	FEED_LIST_ITEM = 'FEED_LIST_ITEM',
@@ -24,6 +26,7 @@ interface IProps {
 const PostBodyWrapper = (props: IProps) => {
 	const { push } = useSafeNavigation()
 	const IS_FEED_LIST_ITEM = props.mode === 'FEED_LIST_ITEM' // Из ленты либо детальный просмотр
+	const { isVisible, open, close } = useFullscreenMap()
 
 	const MapSlide = props.mapComponent ? props.mapComponent : null
 
@@ -31,7 +34,14 @@ const PostBodyWrapper = (props: IProps) => {
 		<>
 			{IS_FEED_LIST_ITEM ? (
 				<>
-					<TouchableOpacity onPress={() => push(`/news-feed/${props.postId}`)}>
+					<TouchableOpacity
+						onPress={() =>
+							push({
+								pathname: '/posts/[id]',
+								params: { id: props.postId! }
+							})
+						}
+					>
 						<PostListItemBody
 							title={props.title}
 							description={props.description}
@@ -51,7 +61,12 @@ const PostBodyWrapper = (props: IProps) => {
 						metrics={props.metrics}
 						isDetail={props.isDetail}
 					/>
-					{props.mapComponent}
+					{props.mapComponent && (
+						<Pressable className="flex-1" onPress={open}>
+							{props.mapComponent}
+						</Pressable>
+					)}
+					<FullscreenMap visible={isVisible} onClose={close} map={props.mapComponent} />
 				</>
 			)}
 		</>

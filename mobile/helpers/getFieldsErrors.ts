@@ -165,26 +165,32 @@ type ErrorObject = {
 export type FieldErrors = Record<string, string | boolean>
 
 export const getFieldsErrors = async (e: unknown): Promise<FieldErrors> => {
+	const { showNotification } = useNotificationStore.getState()
+
 	if (e instanceof TypeError && e.message === 'Network request failed') {
-		const { showNotification } = useNotificationStore.getState()
-
 		showNotification('Отсутствует подключение к интернету', NotificationInAppType.ERROR)
-
 		return {
 			global: true,
 			message: 'Отсутствует подключение к интернету'
 		}
 	}
 
+	if (e instanceof Error && e.message.includes('Request timed out')) {
+		showNotification('Превышено время ожидания ответа от сервера', NotificationInAppType.ERROR)
+		return {
+			global: true,
+			message: 'Превышено время ожидания ответа от сервера'
+		}
+	}
+
 	if (typeof e === 'object' && e !== null && 'response' in e) {
 		const response = (e as any).response
-		const errorObject: ErrorObject | ErrorObjectArr = await response.json()
+		const errorObject: ErrorObject | ErrorObjectArr = await response.json().catch(() => null)
 
 		const errors: { [key: string]: string | boolean } = {}
 
 		if (!errorObject?.message) {
 			console.log('Непредвиденная ошибка ', e)
-			const { showNotification } = useNotificationStore.getState()
 			showNotification('Непредвиденная ошибка', NotificationInAppType.ERROR)
 
 			return {
@@ -222,7 +228,6 @@ export const getFieldsErrors = async (e: unknown): Promise<FieldErrors> => {
 			const errorMessage = errorFields[errorObject.message as keyof ErrorFields]?.message
 
 			if (errorMessage) {
-				const { showNotification } = useNotificationStore.getState()
 				showNotification(errorMessage, NotificationInAppType.ERROR)
 			}
 

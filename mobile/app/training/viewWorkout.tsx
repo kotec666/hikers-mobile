@@ -23,7 +23,7 @@ import EyeSvg from '@/components/svg/EyeSvg'
 import { Colors } from '@/constants/Colors'
 import { Input } from '@/components/ui/Input'
 import CloseCross from '@/components/ui/CloseCross'
-import { useWorkoutResultsAfterFinishStore } from '@/store/workoutResultsAfterFinishStore'
+import { IWorkoutResultsStore, useWorkoutResultsAfterFinishStore } from '@/store/workoutResultsAfterFinishStore'
 import { format } from 'date-fns'
 import { lengths } from '@/shared/lengths'
 import { Controller, useForm } from 'react-hook-form'
@@ -37,18 +37,82 @@ import CameraSvg from '@/components/svg/CameraSvg'
 import GallerySvg from '@/components/svg/GallerySvg'
 import ImagePickerButton from '@/components/ui/ImagePickerButton'
 import { useToast } from '@/hooks/useToast'
-import { createPost, editPostById, getPostById, IPost } from '@/api/posts'
+import { createPost, editPostById, getPostById, getPostByTrainingId, IPost } from '@/api/posts'
 import { CharacterCounter } from '@/components/ui/CharacterCounter'
 import { PATH_TO_IMAGE } from '@/constants/PATH_TO_FILES'
 import { TrainingType } from '@shared/enums'
-import { WorkoutTypesData } from '@/constants/WorkoutTypes'
+import { WorkoutTypesMap } from '@/constants/WorkoutTypes'
 import { formatDistance } from '@/helpers/distance'
 import { formatRelativeDate } from '@/helpers/formatRelativeDate'
+import { adaptLocations } from '@/helpers/adaptPointsToIWorkoutLocationStorageItem'
+import { validateFile } from '@/helpers/fileValidation'
+import { getExtendedDetails, IExtendedTrainingResponse, ITrainingMetrics } from '@/api/workout'
+import { useAuthStore } from '@/store/authStore'
 import { formatTimeFromSecondsCompact } from '@/helpers/formatTime'
 import { mpsToKmph } from '@/helpers/mpsToKmph'
-import { adaptLocations } from '@/helpers/adaptPointsToIWorkoutLocationStorageItem'
 import { formatBackendPace } from '@/helpers/formatBackendPace'
-import { validateFile } from '@/helpers/fileValidation'
+
+type Param = {
+	label: string
+	value?: string | number | null
+}
+
+const getWorkoutParams = ({
+	mode,
+	results,
+	creatorMetrics,
+	myMetrics
+}: {
+	mode: VIEWWORKOUT_MODE
+	results: IWorkoutResultsStore
+	creatorMetrics?: ITrainingMetrics
+	myMetrics?: ITrainingMetrics
+}): [Param[], Param[]] => {
+	if (mode === VIEWWORKOUT_MODE.VIEW) {
+		return [
+			[
+				{ label: 'Время', value: results.metrics?.totalTimeFormatted },
+				{ label: 'Дистанция', value: results.metrics?.totalDistanceFormatted },
+				{ label: 'Ккал', value: results.metrics?.totalCalories }
+			],
+			[
+				{ label: 'Высота', value: results.metrics?.totalHeight },
+				{ label: 'Ср. скорость', value: results.metrics?.totalAvgSpeed },
+				{ label: 'Cр. темп', value: results.metrics?.totalAvgPace }
+			]
+		]
+	}
+
+	const metrics = mode === VIEWWORKOUT_MODE.FROM_HISTORY ? myMetrics : creatorMetrics
+
+	return [
+		[
+			{
+				label: 'Время',
+				value: formatTimeFromSecondsCompact(metrics?.timeSec)
+			},
+			{
+				label: 'Дистанция',
+				value: formatDistance(metrics?.distanceM || 0)
+			},
+			{ label: 'Ккал', value: metrics?.kkcal }
+		],
+		[
+			{
+				label: 'Высота',
+				value: `${metrics?.altitudeGainM || '-'} м`
+			},
+			{
+				label: 'Ср. скорость',
+				value: mpsToKmph(metrics?.avgSpeedMPerSec || 0)
+			},
+			{
+				label: 'Cр. темп',
+				value: formatBackendPace(metrics?.avgTempoSecondsPerKm)
+			}
+		]
+	]
+}
 
 interface IPostFormState {
 	title: string
@@ -72,20 +136,27 @@ const data = [
 
 export enum VIEWWORKOUT_MODE {
 	VIEW = 'view',
-	EDIT = 'edit'
+	EDIT = 'edit',
+	FROM_HISTORY = 'from_history'
 }
 
 export default function ViewWorkout() {
+	const { user } = useAuthStore()
 	const router = useRouter()
 	const insets = useSafeAreaInsets()
 	const toast = useToast()
-	// const { isConnected: isInternetConnected } = useInternetConnection()
-	const { mode, editPostId, connection } = useLocalSearchParams<{
+	const { mode, editPostId, connection, historyTrainingId } = useLocalSearchParams<{
 		mode: VIEWWORKOUT_MODE
 		editPostId?: string
 		connection?: 'offline'
+		historyTrainingId?: string
 	}>()
+	const isView = mode === VIEWWORKOUT_MODE.VIEW
+	const isEdit = mode === VIEWWORKOUT_MODE.EDIT
+	const isFromHistory = mode === VIEWWORKOUT_MODE.FROM_HISTORY
+
 	const [existPost, setExistPost] = useState<IPost | null>(null)
+	const [extendedTraining, setExtendedTraining] = useState<IExtendedTrainingResponse | null>(null)
 
 	const { handleSubmit, control, setValue } = useForm<IPostFormState>()
 	const { ErrorMessages } = useErrorMessage()
@@ -96,6 +167,7 @@ export default function ViewWorkout() {
 	const [deletedImages, setDeletedImages] = useState<string[]>([]) // только для редактирования
 	const [existingImages, setExistingImages] = useState<string[]>([]) // только для редактирования
 	const [postImages, setPostImages] = useState<string[]>([])
+	const [isTrainingAuthor, setIsTrainingAuthor] = useState<boolean>(false)
 	const [state, setState] = useState<{
 		switchChartView: 'map' | 'chart'
 		editPost: null | IPost
@@ -111,7 +183,7 @@ export default function ViewWorkout() {
 	useEffect(() => {
 		;(async () => {
 			try {
-				if (mode === VIEWWORKOUT_MODE.EDIT && editPostId) {
+				if (isEdit && editPostId) {
 					const postData = await getPostById(editPostId)
 					setExistPost(postData)
 					setExistingImages(postData.fileNames)
@@ -119,8 +191,38 @@ export default function ViewWorkout() {
 					setValue('description', postData.description || '')
 				}
 			} catch {
-				toast.info('Ошибка при загрузке поста')
+				toast.error('Ошибка при загрузке поста')
 				router.back()
+			}
+			if (isFromHistory && historyTrainingId) {
+				let trainingData: IExtendedTrainingResponse | null = null
+				let postData: IPost | null = null
+				try {
+					trainingData = await getExtendedDetails(historyTrainingId)
+					setExtendedTraining(trainingData)
+				} catch {
+					toast.error('Ошибка при загрузке тренировки')
+					router.back()
+				}
+
+				if (trainingData?.creatorId === user?.id) {
+					setIsTrainingAuthor(true)
+					try {
+						postData = await getPostByTrainingId(historyTrainingId)
+					} catch (e) {
+						console.log(e)
+						console.log(await e.response.json())
+					}
+				} else {
+					setIsTrainingAuthor(false)
+				}
+
+				if (postData !== null) {
+					setExistPost(postData)
+					setExistingImages(postData.fileNames)
+					setValue('title', postData.title)
+					setValue('description', postData.description || '')
+				}
 			}
 		})()
 	}, [])
@@ -159,16 +261,15 @@ export default function ViewWorkout() {
 	}
 
 	const onSubmit = async (postFormState: IPostFormState) => {
-		console.log(postFormState)
-		console.log(results)
 		setState((s) => ({ ...s, isLoading: true, errors: undefined }))
 
 		try {
 			const formData = new FormData()
-			if (mode === VIEWWORKOUT_MODE.VIEW) {
-				if (results.trainingId) {
-					formData.append('trainingId', results.trainingId)
-				}
+			if (isView && results.trainingId) {
+				formData.append('trainingId', results.trainingId)
+			}
+			if (isFromHistory && historyTrainingId && !existPost) {
+				formData.append('trainingId', historyTrainingId)
 			}
 
 			formData.append('title', postFormState.title)
@@ -178,19 +279,38 @@ export default function ViewWorkout() {
 			}
 
 			handlePostImages(postImages, formData)
-
-			console.log(formData)
-			if (mode === VIEWWORKOUT_MODE.EDIT && editPostId) {
+			if (isView) {
+				await createPost(formData)
+			}
+			if (isEdit && editPostId) {
 				if (deletedImages.length) {
 					formData.append('deletedFilenames', deletedImages.join(','))
 				}
 				await editPostById(editPostId, formData)
-			} else {
+			}
+			if (isFromHistory && !existPost) {
 				await createPost(formData)
 			}
+			if (isFromHistory && existPost) {
+				if (deletedImages.length) {
+					formData.append('deletedFilenames', deletedImages.join(','))
+				}
+				await editPostById(existPost.id, formData)
+			}
+			if (isView) {
+				toast.success('Пост опубликован')
+			}
+			if (isEdit) {
+				toast.success('Пост отредактирован')
+			}
+			if (isFromHistory && !existPost) {
+				toast.success('Пост опубликован')
+			}
+			if (isFromHistory && existPost) {
+				toast.success('Пост отредактирован')
+			}
 
-			toast.success(mode === VIEWWORKOUT_MODE.VIEW ? 'Пост опубликован' : 'Пост отредактирован')
-			router.replace('/(tabs)/profile')
+			return router.replace('/(tabs)/profile')
 		} catch (e: unknown) {
 			const formattedErrors = await getFieldsErrors(e)
 			setState((s) => ({ ...s, errors: formattedErrors }))
@@ -236,7 +356,7 @@ export default function ViewWorkout() {
 			}
 
 			setPostImages((prev) => [...prev, pickedUri])
-		} catch (e: any) {
+		} catch {
 			toast.error('Ошибка при загрузке изображения')
 		}
 	}
@@ -251,17 +371,64 @@ export default function ViewWorkout() {
 	}
 
 	const renderIconForExistPost = (workoutType?: TrainingType) => {
-		if (!workoutType) return
-		const found = WorkoutTypesData.find((w) => w.type === workoutType)
-		if (found) {
-			return <found.IconComponent color="black" width={21} height={21} />
-		}
+		const found = workoutType ? WorkoutTypesMap[workoutType] : null
+		if (!found) return null
+		return <found.IconComponent color="black" width={21} height={21} />
 	}
 
+	const myParticipant = extendedTraining?.participants.find((p) => p.user.id === user?.id)
+
+	const adaptedLocationsFromHistory = adaptLocations(myParticipant?.route?.points || [])
 	const adaptedLocations = adaptLocations(existPost?.training?.participants?.[0]?.route?.points || [])
+
 	const creatorMetrics = existPost?.training.participants.find(
 		(participant) => participant.user.id === existPost?.userCreator.id
 	)?.metrics
+	const myMetrics = myParticipant?.metrics
+
+	const distanceText = isView
+		? results.metrics?.totalDistanceFormatted
+		: formatDistance((isEdit ? creatorMetrics : myMetrics)?.distanceM || 0)
+
+	const dateText = isView
+		? `Сегодня, ${results.startedAt ? format(results.startedAt, 'HH:mm') : ''} - ${format(Date.now(), 'HH:mm')}`
+		: formatRelativeDate(isEdit ? existPost?.createdAt : extendedTraining?.createdAt)
+
+	const mapLocations = isView ? pointsRef : { current: isEdit ? adaptedLocations : adaptedLocationsFromHistory }
+	const chartPoints = isView ? results.points : isEdit ? adaptedLocations : adaptedLocationsFromHistory
+	const canPublish = isView || isEdit || (isFromHistory && isTrainingAuthor)
+
+	const [leftParams, rightParams] = getWorkoutParams({
+		mode,
+		results,
+		creatorMetrics,
+		myMetrics
+	})
+
+	const getSubmitButtonText = () => {
+		if (isView) return 'Поделиться'
+		if (isEdit) return 'Отредактировать'
+
+		if (isFromHistory) {
+			if (existPost) return 'Отредактировать'
+			return 'Поделиться'
+		}
+	}
+
+	const getTitleText = () => {
+		if (isView) return 'Публикация'
+		if (isEdit) return 'Редактирование публикации'
+		if (isFromHistory && isTrainingAuthor && existPost) return 'Редактирование публикации'
+		if (isFromHistory && isTrainingAuthor && !existPost) return 'Публикация'
+	}
+
+	const offlineActionText = isView
+		? 'создать'
+		: isEdit
+			? 'отредактировать'
+			: existPost
+				? 'отредактировать'
+				: 'создать'
 
 	return (
 		<>
@@ -303,8 +470,13 @@ export default function ViewWorkout() {
 							>
 								<Pressable
 									onPress={() => {
-										if (mode === VIEWWORKOUT_MODE.VIEW) {
-											router.replace('/workout-history')
+										if (isView) {
+											router.replace({
+												pathname: '/workout-history',
+												params: {
+													from: 'viewWorkout'
+												}
+											})
 										} else {
 											router.back()
 										}
@@ -315,36 +487,20 @@ export default function ViewWorkout() {
 								<View className="flex-row w-full justify-between items-center">
 									<View className="flex-row items-center gap-[10px]">
 										<View className="bg-white rounded-xl items-center justify-center w-[40px] h-[40px]">
-											{mode === VIEWWORKOUT_MODE.VIEW
-												? renderIcon(results?.type?.IconComponent, '#000')
-												: renderIconForExistPost(existPost?.training.type)}
-											{/* <PeopleRunningSvg width={21} height={21} /> */}
+											{isView && renderIcon(results?.type?.IconComponent, '#000')}
+											{isEdit && renderIconForExistPost(existPost?.training?.type)}
+											{isFromHistory && renderIconForExistPost(extendedTraining?.type)}
 										</View>
 										<Text
 											className="text-white text-[23px]"
 											style={{ fontFamily: fontFamily.bold }}
 										>
-											{mode === VIEWWORKOUT_MODE.VIEW
-												? results.metrics?.totalDistanceFormatted
-												: formatDistance(creatorMetrics?.distanceM || 0)}
+											{distanceText}
 										</Text>
 									</View>
-									{mode === VIEWWORKOUT_MODE.VIEW ? (
-										<Text
-											className="text-white text-[13px]"
-											style={{ fontFamily: fontFamily.medium }}
-										>
-											Сегодня, {results.startedAt && format(results.startedAt, 'HH:mm')} -{' '}
-											{format(Date.now(), 'HH:mm')}
-										</Text>
-									) : (
-										<Text
-											className="text-white text-[13px]"
-											style={{ fontFamily: fontFamily.medium }}
-										>
-											{formatRelativeDate(existPost?.createdAt)}
-										</Text>
-									)}
+									<Text className="text-white text-[13px]" style={{ fontFamily: fontFamily.medium }}>
+										{dateText}
+									</Text>
 								</View>
 							</Container>
 						</View>
@@ -355,54 +511,19 @@ export default function ViewWorkout() {
 									<Text className="text-base text-white" style={{ fontFamily: fontFamily.bold }}>
 										Сведения о тренировке
 									</Text>
-									{mode === VIEWWORKOUT_MODE.VIEW ? (
-										<View className="w-full flex-row justify-between">
-											<View className="gap-[15px]">
-												<Parameter label="Время" value={results.metrics?.totalTimeFormatted} />
-												<Parameter
-													label="Дистанция"
-													value={results.metrics?.totalDistanceFormatted}
-												/>
-												<Parameter label="Ккал" value={results.metrics?.totalCalories} />
-											</View>
-											<View className="gap-[15px]">
-												<Parameter label="Высота" value={results.metrics?.totalHeight} />
-												<Parameter
-													label="Ср. скорость"
-													value={results.metrics?.totalAvgSpeed}
-												/>
-												<Parameter label="Cр. темп" value={results.metrics?.totalAvgPace} />
-											</View>
+									<View className="w-full flex-row justify-between">
+										<View className="gap-[15px]">
+											{leftParams.map((p) => (
+												<Parameter key={p.label} label={p.label} value={p.value} />
+											))}
 										</View>
-									) : (
-										<View className="w-full flex-row justify-between">
-											<View className="gap-[15px]">
-												<Parameter
-													label="Время"
-													value={formatTimeFromSecondsCompact(creatorMetrics?.timeSec)}
-												/>
-												<Parameter
-													label="Дистанция"
-													value={formatDistance(creatorMetrics?.distanceM || 0)}
-												/>
-												<Parameter label="Ккал" value={creatorMetrics?.kkcal} />
-											</View>
-											<View className="gap-[15px]">
-												<Parameter
-													label="Высота"
-													value={`${creatorMetrics?.altitudeGainM || '-'} м`}
-												/>
-												<Parameter
-													label="Ср. скорость"
-													value={mpsToKmph(creatorMetrics?.avgSpeedMPerSec || 0)}
-												/>
-												<Parameter
-													label="Cр. темп"
-													value={formatBackendPace(creatorMetrics?.avgTempoSecondsPerKm)}
-												/>
-											</View>
+
+										<View className="gap-[15px]">
+											{rightParams.map((p) => (
+												<Parameter key={p.label} label={p.label} value={p.value} />
+											))}
 										</View>
-									)}
+									</View>
 								</View>
 
 								<View className="flex-row gap-[10px]">
@@ -426,9 +547,7 @@ export default function ViewWorkout() {
 										minMapHeight={320}
 										rounded={25}
 										needFinishMarker
-										initialLocations={
-											mode === VIEWWORKOUT_MODE.VIEW ? pointsRef : { current: adaptedLocations }
-										}
+										initialLocations={mapLocations}
 									/>
 								)}
 								{state.switchChartView === 'chart' && (
@@ -441,13 +560,10 @@ export default function ViewWorkout() {
 												График темпа
 											</Text>
 										</View>
-										<LineChart
-											points={mode === VIEWWORKOUT_MODE.VIEW ? results.points : adaptedLocations}
-										/>
+										<LineChart points={chartPoints} />
 									</View>
 								)}
 							</View>
-							{/*{isInternetConnected ? (*/}
 							{connection !== 'offline' ? (
 								<>
 									<View className="mt-[20px] gap-[15px]">
@@ -472,126 +588,147 @@ export default function ViewWorkout() {
 											))}
 										</View>
 									</View>
-									<View className="mt-[20px] gap-[15px]">
-										<Text className="text-white text-base" style={{ fontFamily: fontFamily.bold }}>
-											{mode === VIEWWORKOUT_MODE.VIEW
-												? 'Публикация'
-												: 'Редактирование публикации'}
-										</Text>
-										<View className="gap-[10px]">
-											<Controller
-												name="title"
-												control={control}
-												rules={{
-													required: {
-														value: true,
-														message: ErrorMessages.required
-													},
-													minLength: {
-														value: lengths.post.title.min,
-														message: ErrorMessages.optionalMin(lengths.post.title.min)
-													},
-													maxLength: {
-														value: lengths.post.title.max,
-														message: ErrorMessages.optionalMax(lengths.post.title.max)
-													}
-												}}
-												render={({
-													field: { onChange, onBlur, value },
-													fieldState: { error }
-												}) => (
-													<Input
-														placeholder="Введите заголовок"
-														error={error?.message || state.errors?.title}
-														onChangeText={onChange}
-														value={value}
-														onBlur={onBlur}
-													/>
-												)}
-											/>
-											<Controller
-												name="description"
-												control={control}
-												rules={{
-													minLength: {
-														value: lengths.post.description.min,
-														message: ErrorMessages.optionalMin(lengths.post.description.min)
-													},
-													maxLength: {
-														value: lengths.post.description.max,
-														message: ErrorMessages.optionalMax(lengths.post.description.max)
-													}
-												}}
-												render={({
-													field: { onChange, onBlur, value },
-													fieldState: { error }
-												}) => {
-													const currentLength = value?.length || 0
-													const maxLength = lengths.post.description.max
+									{canPublish ? (
+										<View className="mt-[20px] gap-[15px]">
+											<Text
+												className="text-white text-base"
+												style={{ fontFamily: fontFamily.bold }}
+											>
+												{getTitleText()}
+											</Text>
+											<View className="gap-[10px]">
+												<Controller
+													name="title"
+													control={control}
+													rules={{
+														required: {
+															value: true,
+															message: ErrorMessages.required
+														},
+														minLength: {
+															value: lengths.post.title.min,
+															message: ErrorMessages.optionalMin(lengths.post.title.min)
+														},
+														maxLength: {
+															value: lengths.post.title.max,
+															message: ErrorMessages.optionalMax(lengths.post.title.max)
+														}
+													}}
+													render={({
+														field: { onChange, onBlur, value },
+														fieldState: { error }
+													}) => (
+														<Input
+															placeholder="Введите заголовок"
+															error={error?.message || state.errors?.title}
+															onChangeText={onChange}
+															value={value}
+															onBlur={onBlur}
+														/>
+													)}
+												/>
+												<Controller
+													name="description"
+													control={control}
+													rules={{
+														minLength: {
+															value: lengths.post.description.min,
+															message: ErrorMessages.optionalMin(
+																lengths.post.description.min
+															)
+														},
+														maxLength: {
+															value: lengths.post.description.max,
+															message: ErrorMessages.optionalMax(
+																lengths.post.description.max
+															)
+														}
+													}}
+													render={({
+														field: { onChange, onBlur, value },
+														fieldState: { error }
+													}) => {
+														const currentLength = value?.length || 0
+														const maxLength = lengths.post.description.max
 
-													return (
-														<View className="gap-[6px]">
-															<Input
-																multiline
-																placeholder="Введите описание"
-																error={error?.message || state.errors?.description}
-																onChangeText={onChange}
-																value={value}
-																onBlur={onBlur}
-															/>
-															<View className="items-end">
-																<CharacterCounter
-																	valueLength={currentLength}
-																	maxLength={maxLength}
+														return (
+															<View className="gap-[6px]">
+																<Input
+																	multiline
+																	placeholder="Введите описание"
+																	error={error?.message || state.errors?.description}
+																	onChangeText={onChange}
+																	value={value}
+																	onBlur={onBlur}
 																/>
+																<View className="items-end">
+																	<CharacterCounter
+																		valueLength={currentLength}
+																		maxLength={maxLength}
+																	/>
+																</View>
 															</View>
-														</View>
-													)
-												}}
-											/>
-										</View>
-										<View className="flex-row flex-wrap -mx-[7.5px] gap-y-[15px] mt-[10px]">
-											{mode === VIEWWORKOUT_MODE.EDIT &&
-												existingImages.map((fileName) => (
-													<View key={fileName} className="w-1/2 px-[7.5px] relative">
+														)
+													}}
+												/>
+											</View>
+											<View className="flex-row flex-wrap -mx-[7.5px] gap-y-[15px] mt-[10px]">
+												{isEdit ||
+													(isFromHistory &&
+														isTrainingAuthor &&
+														existPost &&
+														existingImages.map((fileName) => (
+															<View key={fileName} className="w-1/2 px-[7.5px] relative">
+																<Image
+																	source={{ uri: `${PATH_TO_IMAGE}${fileName}` }}
+																	className="w-full aspect-square rounded-[15px] border-[1px] border-white/20"
+																	resizeMode="cover"
+																/>
+																<View className="absolute right-[12px] top-[12px] rounded-full w-[28px] h-[28px] bg-black/40 items-center justify-center">
+																	<CloseCross
+																		handleClose={() =>
+																			handleDeleteExistingImage(fileName)
+																		}
+																	/>
+																</View>
+															</View>
+														)))}
+												{postImages.map((uri, index) => (
+													<View key={uri} className="w-1/2 px-[7.5px] relative">
 														<Image
-															source={{ uri: `${PATH_TO_IMAGE}${fileName}` }}
+															source={{ uri }}
 															className="w-full aspect-square rounded-[15px] border-[1px] border-white/20"
 															resizeMode="cover"
 														/>
 														<View className="absolute right-[12px] top-[12px] rounded-full w-[28px] h-[28px] bg-black/40 items-center justify-center">
 															<CloseCross
-																handleClose={() => handleDeleteExistingImage(fileName)}
+																handleClose={() => handleDeletePostImage(index)}
 															/>
 														</View>
 													</View>
 												))}
-											{postImages.map((uri, index) => (
-												<View key={uri} className="w-1/2 px-[7.5px] relative">
-													<Image
-														source={{ uri }}
-														className="w-full aspect-square rounded-[15px] border-[1px] border-white/20"
-														resizeMode="cover"
-													/>
-													<View className="absolute right-[12px] top-[12px] rounded-full w-[28px] h-[28px] bg-black/40 items-center justify-center">
-														<CloseCross handleClose={() => handleDeletePostImage(index)} />
-													</View>
-												</View>
-											))}
+											</View>
+											<View className="gap-[10px] mt-[15px]">
+												<Button variant="white" onPress={() => setIsPhotoModalOpen(true)}>
+													Добавить фото
+												</Button>
+												<Button
+													variant="green"
+													onPress={handleSubmit(onSubmit)}
+													isLoading={state.isLoading}
+												>
+													{getSubmitButtonText()}
+												</Button>
+											</View>
 										</View>
-										<View className="gap-[10px] mt-[15px]">
-											<Button variant="white" onPress={() => setIsPhotoModalOpen(true)}>
-												Добавить фото
-											</Button>
-											<Button
-												variant="green"
-												onPress={handleSubmit(onSubmit)}
-												isLoading={state.isLoading}
-											>
-												{mode === VIEWWORKOUT_MODE.VIEW ? 'Поделиться' : 'Отредактировать'}
-											</Button>
-										</View>
-									</View>
+									) : (
+										<Text
+											style={{ fontFamily: fontFamily.medium }}
+											className="text-gray-ab text-base text-center"
+										>
+											Опубликовать пост может только создатель тренировки
+										</Text>
+									)}
 								</>
 							) : (
 								<View className="my-[16px]">
@@ -599,9 +736,7 @@ export default function ViewWorkout() {
 										style={{ fontFamily: fontFamily.medium }}
 										className="text-gray-ab text-base text-center"
 									>
-										Нет подключения к интернету,{' '}
-										{mode === VIEWWORKOUT_MODE.VIEW ? 'создать' : 'отредактировать'} пост можно
-										будет позже
+										Нет подключения к интернету, {offlineActionText} пост можно будет позже
 									</Text>
 								</View>
 							)}

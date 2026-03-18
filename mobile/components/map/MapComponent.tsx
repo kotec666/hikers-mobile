@@ -7,13 +7,13 @@ import { debounce } from '@/helpers/debounce'
 import PauseLocationMarker from '@/components/map/markers/PauseLocationMarker'
 import ResumeLocationMarker from '@/components/map/markers/ResumeLocationMarker'
 import StartLocationMarker from '@/components/map/markers/StartLocationMarker'
+import FinishLocationMarker from '@/components/map/markers/FinishLocationMarker'
 import { getMapSettings, updateMapSettings } from '@/store/mapStorage'
 import { PolylineComponentInstanceRef, PolylineCustom } from '@/components/map/PolylineCustom'
 import { PolylineNativeProps } from 'react-native-yamap-plus/src/spec/PolylineNativeComponent'
 import UserLocationMarker, {
 	UserLocationMarkerHandle
 } from '@/components/map/markers/UserLocationMarker/UserLocationMarker'
-import FinishLocationMarker from '@/components/map/markers/FinishLocationMarker'
 
 interface IProps {
 	needSaveCenter?: boolean
@@ -23,6 +23,10 @@ interface IProps {
 	maxContainerHeight?: number
 	minMapHeight?: number
 	rounded?: number
+	logoPosition?: {
+		horizontal?: 'left' | 'center' | 'right'
+		vertical?: 'top' | 'bottom'
+	}
 	initialMarkerLocation?: Point | null
 	userLocationMarkerRef?: React.RefObject<UserLocationMarkerHandle | null>
 	initialLocations?: React.RefObject<IWorkoutLocationStorageItem[]>
@@ -319,7 +323,7 @@ const MapComponent = forwardRef<MapComponentHandle, IProps>((props, ref) => {
 				nightMode
 				initialRegion={mapInitialRegionSettingsRef}
 				style={{ flex: 1, maxHeight: props.maxMapHeight, minHeight: props.minMapHeight }}
-				logoPosition={{ horizontal: 'right', vertical: 'top' }}
+				logoPosition={props.logoPosition || { horizontal: 'right', vertical: 'top' }}
 				showUserPosition={false}
 				interactiveDisabled={props.interactiveDisabled}
 				tiltGesturesDisabled={true}

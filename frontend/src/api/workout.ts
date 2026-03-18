@@ -46,8 +46,8 @@ export interface ITrainingRoute {
 
 export interface IParticipantTrainingRoute {
 	id: string
-	colorHex: string
 	user: ITrainingParticipant
+	colorHex: string
 	route: ITrainingRoute
 	metrics: ITrainingMetrics
 }

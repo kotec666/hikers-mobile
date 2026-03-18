@@ -1,6 +1,5 @@
 import { Tabs, Stack, Redirect } from 'expo-router'
 import { useAuthStore } from '@/store/authStore'
-import { NotificationProvider } from '@/components/providers/NotificationProvider'
 import { Platform } from 'react-native'
 import NativeTabsComponent from '@/components/ui/Navbar/NativeTabsComponent'
 import NavBar from '@/components/ui/Navbar/NavBar'

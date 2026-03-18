@@ -1,61 +1,28 @@
 'use client'
-import React, { useEffect, useState } from 'react'
-import 'leaflet/dist/leaflet.css'
+import React, { useState } from 'react'
 import { format } from 'date-fns'
-import './map.css'
-import dynamic from 'next/dynamic'
 import { getExtendedDetails, getMyHistory, ITraining, ITrainingPoint } from '@/api/workout'
-import { kalmanFilter } from '@/helpers/kalmanFilter'
-const MapComponent = dynamic(() => import('./components/MapComponent'), { ssr: false })
+import { cn } from '@/helpers/cn'
+import MapComponent from '@/app/components/ui/map/MapComponent'
 
 export default function Page() {
 	const [token, setToken] = useState('')
 	const [history, setHistory] = useState<ITraining[]>([])
 	const [rawPoints, setRawPoints] = useState<ITrainingPoint[]>([])
-	const [smoothPoints, setSmoothPoints] = useState<ITrainingPoint[]>([])
-	const [rawMap, setRawMap] = useState<L.Map | null>(null)
-	const [smoothMap, setSmoothMap] = useState<L.Map | null>(null)
+	const [selectedId, setSelectedId] = useState<string | null>(null)
 
 	const handleClickFetchHistory = async () => {
 		const history = await getMyHistory(token)
 		setHistory(history)
 	}
+
 	const handleClickOnHistoryItem = async (trainingId: string) => {
+		setSelectedId(trainingId)
+
 		const details = await getExtendedDetails(trainingId, token)
 		const newPoints = details.participants[0].route.points
 		setRawPoints(newPoints)
-		const smoothedPoints = kalmanFilter(newPoints)
-		console.log(newPoints)
-		setSmoothPoints(smoothedPoints)
 	}
-
-	useEffect(() => {
-		if (!rawMap || !smoothMap) return
-
-		let isSyncing = false
-
-		const sync = (source: L.Map, target: L.Map) => {
-			if (isSyncing) return
-			isSyncing = true
-
-			target.setView(source.getCenter(), source.getZoom(), {
-				animate: false
-			})
-
-			isSyncing = false
-		}
-
-		const onRawMove = () => sync(rawMap, smoothMap)
-		const onSmoothMove = () => sync(smoothMap, rawMap)
-
-		rawMap.on('move zoom', onRawMove)
-		smoothMap.on('move zoom', onSmoothMove)
-
-		return () => {
-			rawMap.off('move zoom', onRawMove)
-			smoothMap.off('move zoom', onSmoothMove)
-		}
-	}, [rawMap, smoothMap])
 
 	return (
 		<div className="h-screen w-full flex flex-col bg-gray-50">
@@ -89,9 +56,12 @@ export default function Page() {
 							<div
 								key={t.id}
 								onClick={() => handleClickOnHistoryItem(t.id)}
-								className={`p-3 rounded-xl border flex justify-between items-center shadow-sm cursor-pointer ${
-									t.finishedAt ? 'bg-green-50 border-green-300' : 'bg-red-50 border-red-300'
-								}`}
+								className={cn(
+									'p-3 rounded-xl border flex justify-between items-center shadow-sm cursor-pointer transition',
+									t.finishedAt ? 'bg-green-50 border-green-300' : 'bg-red-50 border-red-300',
+									'hover:ring-2 hover:ring-blue-400',
+									selectedId === t.id && 'ring-2 ring-blue-600 border-blue-600 bg-blue-50'
+								)}
 							>
 								<div className="flex flex-col">
 									<span className="font-medium text-gray-700">{t.type}</span>
@@ -111,22 +81,9 @@ export default function Page() {
 					</div>
 				</div>
 
-				{/* Map */}
 				<div className="flex-1 flex flex-col md:flex-row h-full">
-					{/* Raw Map */}
 					<div className="flex-1 h-1/2 md:h-full relative border-b md:border-b-0 md:border-r border-gray-200">
-						<div className="absolute top-4 right-4 z-[500] bg-white/90 backdrop-blur px-3 py-1 rounded shadow text-xs font-bold text-red-600 border border-red-200">
-							RAW GPS (Noisy)
-						</div>
-						<MapComponent points={rawPoints} type="raw" setMapInstance={setRawMap} />
-					</div>
-
-					{/* Smoothed Map */}
-					<div className="flex-1 h-1/2 md:h-full relative">
-						<div className="absolute top-4 right-4 z-[500] bg-white/90 backdrop-blur px-3 py-1 rounded shadow text-xs font-bold text-blue-600 border border-blue-200">
-							KALMAN FILTERED
-						</div>
-						<MapComponent points={smoothPoints} type="smooth" setMapInstance={setSmoothMap} />
+						<MapComponent points={rawPoints} />
 					</div>
 				</div>
 			</div>

@@ -114,13 +114,13 @@ export default function HomeScreen() {
 					<Button variant="black" onPress={() => router.navigate('/')}>
 						To hello screen
 					</Button>
-					<Button variant="black" onPress={() => router.navigate('/friends/search')}>
-						Страница поиска друга
-					</Button>
+					{/*<Button variant="black" onPress={() => router.navigate('/friends/search')}>*/}
+					{/*	Страница поиска друга*/}
+					{/*</Button>*/}
 					<Button variant="black" onPress={() => router.navigate('/friends/my-friends')}>
 						Страница списка друзей
 					</Button>
-					<Button variant="black" onPress={() => router.navigate('/news-feed/1')}>
+					<Button variant="black" onPress={() => router.navigate('/posts/[id]')}>
 						Страница поста
 					</Button>
 					<Button variant="black" onPress={() => router.navigate('/friends/friend-requests')}>
@@ -138,7 +138,7 @@ export default function HomeScreen() {
 					<Button variant="black" onPress={() => router.navigate('/achievements')}>
 						Страница достижений
 					</Button>
-					<Button variant="black" onPress={() => router.navigate('/workout-history')}>
+					<Button variant="black" onPress={() => router.navigate('/workout-history?from=profile')}>
 						Страница истории тренировок
 					</Button>
 					<Button variant="black" onPress={() => router.navigate('/training/viewWorkout')}>

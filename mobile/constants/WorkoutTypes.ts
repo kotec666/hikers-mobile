@@ -8,3 +8,5 @@ export const WorkoutTypesData = [
 	{ id: 2, type: TrainingType.RUN, name: 'Забег', IconComponent: WorkoutRunning },
 	{ id: 3, type: TrainingType.BICYCLE, name: 'Велосипед', IconComponent: WorkoutBicycle }
 ]
+
+export const WorkoutTypesMap = Object.fromEntries(WorkoutTypesData.map((w) => [w.type, w]))

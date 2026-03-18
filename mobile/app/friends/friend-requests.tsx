@@ -12,22 +12,25 @@ import { useToast } from '@/hooks/useToast'
 import { PATH_TO_IMAGE } from '@/constants/PATH_TO_FILES'
 import { LegendList } from '@legendapp/list'
 import { Colors } from '@/constants/Colors'
-import { useInfiniteQuery } from '@tanstack/react-query'
+import { useInfiniteQuery, useQueryClient } from '@tanstack/react-query'
 
 const FriendRequestsPage = () => {
 	const insets = useSafeAreaInsets()
 	const toast = useToast()
+	const loadingIdsRef = React.useRef<Set<string>>(new Set())
+	const queryClient = useQueryClient()
+
 	const limit = 15
 
 	const {
-		data: friendRequests = [],
+		data: friendRequestsRaw,
 		fetchNextPage,
 		hasNextPage,
 		isFetchingNextPage,
 		refetch,
 		isRefetching,
 		isFetching
-	} = useInfiniteQuery<IInvite[], Error, IInvite[], ['pendingInvites'], number>({
+	} = useInfiniteQuery({
 		queryKey: ['pendingInvites'],
 
 		queryFn: ({ pageParam }) =>
@@ -41,58 +44,60 @@ const FriendRequestsPage = () => {
 		getNextPageParam: (lastPage, pages) => {
 			if (lastPage.length < limit) return undefined
 			return pages.length + 1
-		},
-
-		select: (data) => data.pages.flat()
-		// select: (data) => ({
-		//         ...data,
-		//         pages: data.pages.flat()
-		//       }),
+		}
 	})
 
-	// const {
-	// 		data: friendRequests,
-	// 		setData: setItems,
-	// 		loading,
-	// 		refreshing,
-	// 		loadMore,
-	// 		refresh
-	// 	} = usePaginatedList<IInvite, void>({
-	// 		fetchFn: async (params) => {
-	// 			try {
-	// 				return await getPendingInvitesList(params)
-	// 			} catch (e: unknown) {
-	// 				await getFieldsErrors(e)
-	// 				return []
-	// 			}
-	// 		},
-	// 		limit
-	// 	})
+	const friendRequests = friendRequestsRaw?.pages.flat() ?? []
 
 	const handleAddFriend = async (newFriendId: string) => {
+		if (loadingIdsRef.current.has(newFriendId)) return
+		loadingIdsRef.current.add(newFriendId)
+
 		try {
 			await acceptFriendRequest(newFriendId)
 			// setItems((prev) => prev.filter((req) => req.user.id !== newFriendId))
-			await refetch()
+			// await refetch()
+			queryClient.setQueryData(['pendingInvites'], (oldData: any) => {
+				if (!oldData) return oldData
+
+				return {
+					...oldData,
+					pages: oldData.pages.map((page: IInvite[]) => page.filter((req) => req.user.id !== newFriendId))
+				}
+			})
 			toast.success('Пользователь добавлен в друзья')
 		} catch {
 			toast.error('Произошла ошибка, повторите попытку позже')
+		} finally {
+			loadingIdsRef.current.delete(newFriendId)
 		}
 	}
 
 	const handleDeleteFriendRequest = async (rejectUserId: string) => {
+		if (loadingIdsRef.current.has(rejectUserId)) return
+		loadingIdsRef.current.add(rejectUserId)
+
 		try {
 			await rejectFriendRequest(rejectUserId)
 			// setItems((prev) => prev.filter((req) => req.user.id !== rejectUserId))
-			await refetch()
+			// await refetch()
+			queryClient.setQueryData(['pendingInvites'], (oldData: any) => {
+				if (!oldData) return oldData
+
+				return {
+					...oldData,
+					pages: oldData.pages.map((page: IInvite[]) => page.filter((req) => req.user.id !== rejectUserId))
+				}
+			})
 			toast.success('Заявка отклонена')
 		} catch {
 			toast.error('Произошла ошибка, повторите попытку позже')
+		} finally {
+			loadingIdsRef.current.delete(rejectUserId)
 		}
 	}
 
 	const renderFooter = () => {
-		// if (!loading || refreshing) return null
 		if (!isFetchingNextPage) return null
 		return (
 			<View style={{ padding: 20 }}>
@@ -152,9 +157,6 @@ const FriendRequestsPage = () => {
 								tintColor={Colors['green-main']}
 							/>
 						}
-						// refreshControl={
-						// 							<RefreshControl refreshing={refreshing} onRefresh={refresh} tintColor="#22CB5A" />
-						// 						}
 						contentContainerStyle={{
 							paddingBottom: insets.bottom + 20,
 							paddingTop: 10,

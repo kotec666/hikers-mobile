@@ -52,7 +52,6 @@ import { useAuthStore } from '@/store/authStore'
 import { VIEWWORKOUT_MODE } from '@/app/training/viewWorkout'
 import { Colors } from '@/constants/Colors'
 import { getFieldsErrors } from '@/helpers/getFieldsErrors'
-import { ERRORS } from '@shared/errors'
 import { chunkArray } from '@/helpers/chunkArray'
 // Debugging
 TaskManager.getRegisteredTasksAsync().then((tasks) => {
@@ -303,21 +302,21 @@ export default function NewTraining() {
 			} catch (e: unknown) {
 				newTrainingId = null
 				console.log('(1) [start-workout-error]:', e)
-				// @ts-ignore
-				const errors = await e?.response?.json()
-				console.log('(2) [start-workout-error]:', errors)
-				/* const formattedErrors = */ await getFieldsErrors(e)
+				return await getFieldsErrors(e)
 				// Если человек не закончил предыдущую тренировку, то следующую невозможно начать
 				// @TODO Восстановление/удаление тренировки
-				if (errors?.message === ERRORS.USER_IN_NOT_FINISHED_TRAINING) {
-					return
-				}
-				if (
-					errors?.message === ERRORS.USER_IS_TRAINING_PARTICIPANT ||
-					errors?.message === ERRORS.USER_IS_NOT_TRAINING_PARTICIPANT
-				) {
-					return
-				}
+				// if (typeof e === 'object' && e !== null && 'response' in e) {
+				// 	const response = (e as any).response
+				// 	const errors = await response.json()
+				// 	if (errors?.message === ERRORS.USER_IN_NOT_FINISHED_TRAINING) {
+				// 	}
+				// 	if (
+				// 		errors?.message === ERRORS.USER_IS_TRAINING_PARTICIPANT ||
+				// 		errors?.message === ERRORS.USER_IS_NOT_TRAINING_PARTICIPANT
+				// 	) {
+				// 		return
+				// 	}
+				// }
 			}
 			setIsWorkoutStarted(true)
 			startAndStoreNewActiveWorkout(workoutType, newTrainingId, user?.id)
@@ -539,6 +538,7 @@ export default function NewTraining() {
 			await stopNotificationTimer()
 
 			const meta = getWorkoutMeta(user?.id)
+			calculateMetricsWhenFinished(meta)
 
 			// Если завершил рано
 			if (isWorkoutTooShort(user?.id)) {
@@ -562,8 +562,6 @@ export default function NewTraining() {
 					moveActiveWorkoutToShortWorkouts(user?.id)
 					return resetWorkoutState()
 				}
-			} else {
-				router.push(`/training/viewWorkout?mode=${VIEWWORKOUT_MODE.VIEW}&connection=offline`) // - offline - просмотр тренировки до определенного момента, без сохранения
 			}
 
 			if (isInternetConnectedRef.current) {
@@ -600,17 +598,17 @@ export default function NewTraining() {
 					}
 				} catch {}
 				// Полный сброс состояния карты и переменных
-				const currentMeta = getWorkoutMeta(user?.id)
-				calculateMetricsWhenFinished(currentMeta)
 				resetWorkoutState()
 			} else {
 				toast.info('Нет доступа к интернету, тренировку можно будет сохранить позже')
 				moveActiveWorkoutToNotSaved(user?.id)
 			}
-		} catch (e) {
+			router.push(
+				`/training/viewWorkout?mode=${VIEWWORKOUT_MODE.VIEW}&connection=${!isInternetConnectedRef.current && 'offline'}`
+			) // - offline - просмотр тренировки до определенного момента, без сохранения
+		} catch (e: unknown) {
 			console.error('handleClickEndWorkout error: ', e)
-			const errors = e.response.json()
-			console.log(errors)
+			await getFieldsErrors(e)
 		}
 	}, [
 		chosenWorkout.type,

@@ -2,6 +2,8 @@ import React from 'react'
 import { View, Text, TouchableOpacity, ActivityIndicator } from 'react-native'
 import { fontFamily } from '@/constants/Fonts'
 import { Colors } from '@/constants/Colors'
+import { Link } from 'expo-router'
+import { VIEWWORKOUT_MODE } from '@/app/training/viewWorkout'
 
 interface IIcon {
 	iconSvg: React.JSX.Element | null
@@ -10,15 +12,18 @@ interface IIcon {
 }
 
 interface IProps {
+	id?: string
+	isInternetConnected?: boolean
 	title: string
 	icon?: React.JSX.Element
 	actionIcon?: IIcon | IIcon[]
 	isLoading?: boolean
+	isHistoryListItem?: boolean
 }
 
-const WorkoutHistoryListItem = (props: IProps) => {
+const WorkoutHistoryListItemContent = (props: IProps) => {
 	return (
-		<View className="flex-row items-center justify-between">
+		<>
 			<View className="flex-row gap-[15px] items-center">
 				<View className="w-[50px] h-[50px] rounded-[15px] bg-white items-center justify-center">
 					{props.icon}
@@ -51,6 +56,25 @@ const WorkoutHistoryListItem = (props: IProps) => {
 					{props.actionIcon?.iconSvg}
 				</TouchableOpacity>
 			)}
+		</>
+	)
+}
+
+const WorkoutHistoryListItem = (props: IProps) => {
+	if (props.isHistoryListItem) {
+		return (
+			<Link
+				href={`/training/viewWorkout?mode=${VIEWWORKOUT_MODE.FROM_HISTORY}&historyTrainingId=${props.id}&connection=${!props.isInternetConnected && 'offline'}`}
+				className="flex-row items-center justify-between"
+			>
+				<WorkoutHistoryListItemContent {...props} />
+			</Link>
+		)
+	}
+
+	return (
+		<View className="flex-row items-center justify-between">
+			<WorkoutHistoryListItemContent {...props} />
 		</View>
 	)
 }

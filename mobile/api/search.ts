@@ -19,11 +19,14 @@ export interface IFoundPost {
 }
 
 // Поиск люди / посты
-export const searchByAllItems = async (data: {
-	type: SearchType
-	word: string
-	page: number
-	limit: number
-}): Promise<IFoundUser[] | IFoundPost[]> => {
-	return (await fetcher.get(`search?${toQs(data)}`)).json()
+export const searchByAllItems = async (
+	data: {
+		type: SearchType
+		word: string
+		page: number
+		limit: number
+	},
+	signal?: AbortSignal
+): Promise<IFoundUser[] | IFoundPost[]> => {
+	return (await fetcher.get(`search?${toQs(data)}`, { signal })).json()
 }

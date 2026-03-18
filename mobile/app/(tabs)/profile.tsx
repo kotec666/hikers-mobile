@@ -22,6 +22,7 @@ import { adaptLocations } from '@/helpers/adaptPointsToIWorkoutLocationStorageIt
 import { useSafeNavigation } from '@/hooks/useSafeNavigation'
 import { useInfiniteQuery } from '@tanstack/react-query'
 import TrainingsEmpty from '@/components/ui/Post/TrainingsEmpty'
+import { getFieldsErrors } from '@/helpers/getFieldsErrors'
 
 /**
  *
@@ -46,24 +47,6 @@ const Profile = () => {
 
 	const [profileData, setProfileData] = useState<IProfile | undefined>(undefined)
 	const [refreshingProfile, setRefreshingProfile] = useState(false)
-
-	// Состояние для infinite scroll постов
-	// const limit = 5
-	// const fetchPosts = useCallback(
-	// 	({ page, limit }: { page: number; limit: number }) => getPostsMy({ page, limit }),
-	// 	[]
-	// )
-	// const {
-	// 	data: posts,
-	// 	loading,
-	// 	refreshing,
-	// 	loadMore,
-	// 	refresh
-	// } = usePaginatedList<IPost, void>({
-	// 	fetchFn: fetchPosts,
-	// 	limit,
-	// 	autoLoad: false
-	// })
 
 	const postsLimit = 5
 	const {
@@ -113,6 +96,8 @@ const Profile = () => {
 			const profile = await getProfileData()
 			setProfileData(profile)
 			setUser(profile.user)
+		} catch (e: unknown) {
+			await getFieldsErrors(e)
 		} finally {
 			setRefreshingProfile(false)
 		}
@@ -298,7 +283,7 @@ const Profile = () => {
 										hrefTo="/subscribers/my-subscriptions"
 									/>
 								</View>
-								<Button variant="white" onPress={() => push('/workout-history')}>
+								<Button variant="white" onPress={() => push('/workout-history?from=profile')}>
 									История тренировок
 								</Button>
 								<RedirectAchievementsInfo achievements={profileData?.achievements} isMyProfile />
@@ -312,7 +297,7 @@ const Profile = () => {
 							</Text>
 						</View>
 					}
-					contentContainerStyle={{ paddingBottom: 100, paddingHorizontal: 16 }}
+					contentContainerStyle={{ flexGrow: 1, paddingBottom: 100, paddingHorizontal: 16 }}
 				/>
 			</SafeAreaProvider>
 		</>

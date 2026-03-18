@@ -18,24 +18,6 @@ const MySubscribersPage = () => {
 	const insets = useSafeAreaInsets()
 	const limit = 15
 
-	// const {
-	// 	data: subscribers,
-	// 	loading,
-	// 	refreshing,
-	// 	loadMore,
-	// 	refresh
-	// } = usePaginatedList<ISubscribe, void>({
-	// 	fetchFn: async ({ page, limit }) => {
-	// 		try {
-	// 			return await getSubscribersList({ page, limit })
-	// 		} catch (e: unknown) {
-	// 			await getFieldsErrors(e)
-	// 			return []
-	// 		}
-	// 	},
-	// 	limit
-	// })
-
 	const {
 		data: subscribers = [],
 		fetchNextPage,

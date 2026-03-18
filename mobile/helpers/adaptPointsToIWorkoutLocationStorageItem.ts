@@ -5,10 +5,9 @@ import { ITrainingPoint } from '@/api/workout'
 const isWorkoutLocationStorageItem = (
 	items: IWorkoutLocationStorageItem[] | ITrainingPoint[]
 ): items is IWorkoutLocationStorageItem[] => {
-	return items.length > 0 && 'locationObject' in items[0]
+	return items.length > 0 && 'relTs' in items[0]
 }
 
-// Адаптер для преобразования ITrainingPoint в IWorkoutLocationStorageItem
 const adaptTrainingPoint = (
 	point: ITrainingPoint,
 	index: number,
@@ -27,7 +26,7 @@ const adaptTrainingPoint = (
 				heading: null, // нет в ITrainingPoint
 				speed: point.speed_kmh ? point.speed_kmh / 3.6 : null // км/ч -> м/с
 			},
-			timestamp: point.rel_ts * 1000, // предположительно rel_ts в секундах
+			timestamp: 0, // startedAt + point.rel_ts * 1000
 			mocked: false
 		},
 		paused: point.paused,
