@@ -29,6 +29,8 @@ export namespace PostDto {
 		likesCount: number;
 	};
 
+	export type EntityForGuest = Omit<Entity, 'isLiked' | 'isSubscribed'>;
+
 	export type SearchEntity = {
 		id: string;
 		training: TrainingDto.SearchEntity | null;
