@@ -49,6 +49,16 @@ export namespace TrainingDto {
 		finishedAt: Date | null;
 	};
 
+	export type HistoryEntity = {
+		id: string;
+		type: TrainingType;
+		distanceM: number | null;
+
+		createdAt: Date;
+		startedAt: Date | null;
+		finishedAt: Date | null;
+	};
+
 	export type SearchEntity = {
 		id: string;
 		type: TrainingType;

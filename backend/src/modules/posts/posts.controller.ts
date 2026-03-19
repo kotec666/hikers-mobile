@@ -8,12 +8,13 @@
 	Patch,
 	Post,
 	Query,
+	UploadedFiles,
 	UseInterceptors,
 } from '@nestjs/common';
 import { User, UserData } from '@decorators/user.decorator';
 import { FilesInterceptor } from '@nestjs/platform-express';
 import { PostsService } from './posts.service';
-import { IsUUID, InjectBodyFiles } from '@validation/parameter-decorators';
+import { IsUUID } from '@validation/parameter-decorators';
 import { NotNegative } from '@validation/query-decorators';
 import { UserInterceptor } from '@interceptors/user.interceptor';
 import { TrainingParticipantDto } from '../trainings/trainings.dto';
@@ -29,7 +30,6 @@ import {
 import { ERRORS } from '@shared/errors';
 
 @Controller('posts')
-@UseInterceptors(UserInterceptor)
 export class PostsController {
 	constructor(private readonly service: PostsService) {}
 
@@ -40,6 +40,7 @@ export class PostsController {
 	 */
 	@Post()
 	@UseInterceptors(
+		UserInterceptor,
 		FilesInterceptor('files', POST_MAX_FILES_COUNT, {
 			fileFilter: (_req, file, callb) => {
 				if (
@@ -49,7 +50,7 @@ export class PostsController {
 					return callb(new BadRequestException(`_files:${ERRORS.BAD_REQUEST}`), false);
 				}
 
-				callb(null, false);
+				callb(null, true);
 			},
 			limits: {
 				fileSize: MAX_FILE_SIZE_MEGABYTES * 1024 * 1024,
@@ -58,8 +59,13 @@ export class PostsController {
 	)
 	public async create(
 		@User() user: UserData,
-		@InjectBodyFiles() @Body() dto: PostDto.Creation,
+		@Body() dto: PostDto.Creation,
+		@UploadedFiles() files: Express.Multer.File[],
 	): Promise<PostDto.Entity> {
+		if (files.length) {
+			dto.files = files;
+		}
+
 		return await this.service.create(user.id, dto);
 	}
 
@@ -69,6 +75,7 @@ export class PostsController {
 	 * @security token
 	 */
 	@Get('feed')
+	@UseInterceptors(UserInterceptor)
 	public async getFeed(
 		@User() user: UserData,
 		@NotNegative('page') @Query('page') page: number,
@@ -83,6 +90,7 @@ export class PostsController {
 	 * @security token
 	 */
 	@Get('by-user/:id')
+	@UseInterceptors(UserInterceptor)
 	public async getByUser(
 		@User() user: UserData,
 		@IsUUID('id') @Param('id') id: string,
@@ -94,10 +102,25 @@ export class PostsController {
 
 	/**
 	 * @tag Posts
+	 * @summary Получить пост по id тренировки
+	 * @security token
+	 */
+	@Get('/by-training/:id')
+	@UseInterceptors(UserInterceptor)
+	public async getByTrainingId(
+		@User() user: UserData,
+		@IsUUID('id') @Param('id') id: string,
+	): Promise<PostDto.Entity> {
+		return await this.service.getByTrainingId(user.id, id);
+	}
+
+	/**
+	 * @tag Posts
 	 * @summary Посты из профиля пользователя
 	 * @security token
 	 */
 	@Get('my')
+	@UseInterceptors(UserInterceptor)
 	public async getMy(
 		@User() user: UserData,
 		@NotNegative('page') @Query('page') page: number,
@@ -108,10 +131,20 @@ export class PostsController {
 
 	/**
 	 * @tag Posts
+	 * @summary Получить пост по id. Для неавторизованного юзера
+	 */
+	@Get('for-guest/:id')
+	public async getByIdForGuest(@IsUUID('id') @Param('id') id: string): Promise<PostDto.EntityForGuest> {
+		return await this.service.getByIdForGuest(id);
+	}
+
+	/**
+	 * @tag Posts
 	 * @summary Получить пост по id
 	 * @security token
 	 */
 	@Get(':id')
+	@UseInterceptors(UserInterceptor)
 	public async getById(@User() user: UserData, @IsUUID('id') @Param('id') id: string): Promise<PostDto.Entity> {
 		return await this.service.getById(user.id, id);
 	}
@@ -123,6 +156,7 @@ export class PostsController {
 	 */
 	@Patch(':id')
 	@UseInterceptors(
+		UserInterceptor,
 		FilesInterceptor('files', POST_MAX_FILES_COUNT, {
 			fileFilter: (_req, file, callb) => {
 				if (
@@ -132,7 +166,7 @@ export class PostsController {
 					return callb(new BadRequestException(`_files:${ERRORS.BAD_REQUEST}`), false);
 				}
 
-				callb(null, false);
+				callb(null, true);
 			},
 			limits: {
 				fileSize: MAX_FILE_SIZE_MEGABYTES * 1024 * 1024,
@@ -142,8 +176,13 @@ export class PostsController {
 	public async edit(
 		@IsUUID('id') @Param('id') id: string,
 		@User() user: UserData,
-		@InjectBodyFiles() @Body() dto: PostDto.Edit,
+		@Body() dto: PostDto.Edit,
+		@UploadedFiles() files: Express.Multer.File[],
 	): Promise<CommonDto.BooleanResponse> {
+		if (files.length) {
+			dto.files = files;
+		}
+
 		return await this.service.edit(id, user.id, dto);
 	}
 
@@ -153,6 +192,7 @@ export class PostsController {
 	 * @security token
 	 */
 	@Delete(':id')
+	@UseInterceptors(UserInterceptor)
 	public async deletePost(
 		@User() user: UserData,
 		@IsUUID('id') @Param('id') id: string,
@@ -166,6 +206,7 @@ export class PostsController {
 	 * @security token
 	 */
 	@Post(':id/like')
+	@UseInterceptors(UserInterceptor)
 	public async like(
 		@User() user: UserData,
 		@IsUUID('id') @Param('id') id: string,
@@ -179,6 +220,7 @@ export class PostsController {
 	 * @security token
 	 */
 	@Post(':id/unlike')
+	@UseInterceptors(UserInterceptor)
 	public async unlike(
 		@User() user: UserData,
 		@IsUUID('id') @Param('id') id: string,
@@ -192,6 +234,7 @@ export class PostsController {
 	 * @security token
 	 */
 	@Get(':id/participants')
+	@UseInterceptors(UserInterceptor)
 	public async getParticipants(
 		@User() user: TokenDto.Payload,
 		@IsUUID('id') @Param('id') id: string,

@@ -16,28 +16,26 @@ services:
         image: hikers-frontend:latest
         restart: unless-stopped
         build:
-            context: ./frontend
-            dockerfile: Dockerfile
+            context: .
+            dockerfile: frontend/Dockerfile
         networks:
             - hikers-network
         ports:
             - '4173:4173'
-        depends_on:
-            backend:
-                condition: service_started
 
     backend:
         image: hikers-backend:latest
         restart: unless-stopped
         build:
-            context: ./backend
-            dockerfile: Dockerfile
+            context: .
+            dockerfile: backend/Dockerfile
         env_file:
             - .env
         networks:
             - hikers-network
         ports:
-            - '3000:3000'
+            - '3000:3000' # http
+            - '3001:3001' # websockets (socket.io)
         depends_on:
             postgres:
                 condition: service_started

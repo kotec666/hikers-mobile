@@ -1,13 +1,15 @@
-FROM node:22-alpine
+FROM node:24 AS builder
 
 WORKDIR /app
 
-COPY package.json .
+COPY frontend/package.json frontend/yarn.lock ./
 
-RUN yarn
+RUN yarn install --frozen-lockfile
 RUN npm i -g serve
 
-COPY . .
+COPY frontend/ .
+
+COPY shared/ ./src/shared/
 
 RUN yarn build
 

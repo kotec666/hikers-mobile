@@ -58,7 +58,7 @@ export class ProfileController {
 					return callb(new BadRequestException(`_avatarFilename:${ERRORS.BAD_REQUEST}`), false);
 				}
 
-				callb(null, false);
+				callb(null, true);
 			},
 			limits: {
 				fileSize: MAX_FILE_SIZE_MEGABYTES * 1024 * 1024,

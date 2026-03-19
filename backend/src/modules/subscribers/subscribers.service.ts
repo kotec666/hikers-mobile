@@ -18,7 +18,6 @@ export class SubscribersService {
 			.select({
 				user: {
 					id: users.id,
-					email: users.email,
 					name: users.name,
 					username: users.username,
 					avatarFilename: users.avatarFilename,
@@ -39,7 +38,6 @@ export class SubscribersService {
 			.select({
 				user: {
 					id: users.id,
-					email: users.email,
 					name: users.name,
 					username: users.username,
 					avatarFilename: users.avatarFilename,

@@ -344,7 +344,6 @@ export class TrainingsService {
 				colorHex: trainingParticipants.colorHex,
 				user: {
 					id: users.id,
-					email: users.email,
 					name: users.name,
 					username: users.username,
 					avatarFilename: users.avatarFilename,
@@ -385,7 +384,6 @@ export class TrainingsService {
 				id: trainingParticipants.id,
 				user: {
 					id: users.id,
-					email: users.email,
 					name: users.name,
 					username: users.username,
 					avatarFilename: users.avatarFilename,
@@ -414,7 +412,6 @@ export class TrainingsService {
 				id: trainingParticipants.id,
 				user: {
 					id: users.id,
-					email: users.email,
 					name: users.name,
 					username: users.username,
 					avatarFilename: users.avatarFilename,
@@ -464,7 +461,6 @@ export class TrainingsService {
 				id: trainingParticipants.id,
 				user: {
 					id: users.id,
-					email: users.email,
 					name: users.name,
 					username: users.username,
 					avatarFilename: users.avatarFilename,
@@ -509,7 +505,7 @@ export class TrainingsService {
 		limit: number,
 		isFinished?: boolean,
 		types?: TrainingType[],
-	): Promise<TrainingDto.SearchEntity[]> {
+	): Promise<TrainingDto.HistoryEntity[]> {
 		const offset = Math.max(0, (page - 1) * limit);
 
 		const finishedCond =
@@ -523,10 +519,12 @@ export class TrainingsService {
 				createdAt: training.createdAt,
 				startedAt: training.startedAt,
 				finishedAt: training.finishedAt,
+				distanceM: trainingMetrics.distanceM,
 			})
 			.from(training)
-			.leftJoin(trainingParticipants, eq(trainingParticipants.trainingId, training.id))
+			.innerJoin(trainingParticipants, eq(trainingParticipants.trainingId, training.id))
 			.where(and(eq(trainingParticipants.userId, userId), finishedCond, typesCond))
+			.leftJoin(trainingMetrics, eq(trainingMetrics.participantId, trainingParticipants.id))
 			.orderBy(desc(training.finishedAt, 'first'))
 			.offset(offset)
 			.limit(limit);
@@ -578,7 +576,6 @@ export class TrainingsService {
 
 				creator: {
 					id: users.id,
-					email: users.email,
 					name: users.name,
 					username: users.username,
 					avatarFilename: users.avatarFilename,
@@ -641,35 +638,44 @@ export class TrainingsService {
 		type: TrainingType,
 	): TrainingMetricsDto.Entity {
 		let distanceM = 0;
-		let pausedDistanceM = 0;
-		let maxAltitudeM = 0;
+		let altitudeGainM = 0;
+
 		let pausedTimeMs = 0;
+		let allTimeMs = 0;
 
 		if (participant.route?.points && participant.route?.points?.length > 0) {
-			participant.route?.points?.reduce((prev, curr) => {
-				distanceM += curr.distance;
-				maxAltitudeM = Math.max(curr.alt, maxAltitudeM);
+			const startPoint = participant.route.points[0];
 
-				if (prev.paused) {
-					pausedTimeMs += curr.rel_ts - prev.rel_ts;
-					pausedDistanceM += prev.distance;
+			for (let i = 0; i < participant.route.points.length; i++) {
+				const point = participant.route.points[i];
+				if (point.paused) {
+					let prevPoint = point;
+					if (i > 0) {
+						prevPoint = participant.route.points[i - 1];
+					}
+
+					pausedTimeMs += point.rel_ts - prevPoint.rel_ts;
+					continue;
 				}
 
-				return curr;
-			});
+				altitudeGainM =
+					Math.abs(point.alt - startPoint.alt) > Math.abs(altitudeGainM)
+						? point.alt - startPoint.alt
+						: altitudeGainM;
+				distanceM += point.distance;
+			}
+
+			allTimeMs = participant.route.points[participant.route.points.length - 1].rel_ts;
 		}
 
-		distanceM = Math.max(round(distanceM - pausedDistanceM), 0);
 		const distanceKmh = round(distanceM / 1000, 2);
 
-		const allTimeMs = participant.route?.points?.at(-1)?.rel_ts ?? 0;
 		const activeTimeMs = Math.max(allTimeMs - pausedTimeMs, 0);
 		const timeSec = round(activeTimeMs / 1000);
 
 		const avgTempoSecondsPerKm = distanceKmh === 0 ? 0 : round(timeSec / distanceKmh);
 		const avgSpeedMPerSec = timeSec === 0 ? 0 : round(distanceM / timeSec);
 
-		const altitudeGainM = round(maxAltitudeM - (participant.route?.points?.at(0)?.alt ?? 0));
 		const kkcal = calculateCalories(activeTimeMs, distanceM, type);
 
 		return {
