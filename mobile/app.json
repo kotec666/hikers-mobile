@@ -4,14 +4,14 @@
 		"slug": "hikers",
 		"version": "1.0.0",
 		"orientation": "portrait",
-		"icon": "./assets/images/icon.png",
 		"scheme": "hikers",
 		"userInterfaceStyle": "automatic",
 		"backgroundColor": "#0D0D0D",
 		"newArchEnabled": true,
 		"ios": {
 			"supportsTablet": true,
-			"bundleIdentifier": "com.hikers.mobile"
+			"bundleIdentifier": "com.hikers.mobile",
+            "icon": "./assets/images/icon-ios.icon"
 		},
 		"android": {
 			"adaptiveIcon": {
