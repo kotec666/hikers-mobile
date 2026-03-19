@@ -1,12 +1,12 @@
 import { TrainingType } from '@shared/enums'
 import fetcher from './fetcher'
 import { ITrainingMetrics, ITrainingRoute } from '@/api/workout'
-import { IUser } from '@/types/interfaces'
+import { IPublicUser, IUser } from '@/types/interfaces'
 import { cache } from 'react'
 
 export interface IParticipant {
 	id: string
-	user: IUser
+	user: IPublicUser
 	colorHex: null | string
 	route: ITrainingRoute
 	metrics: ITrainingMetrics
@@ -19,7 +19,7 @@ export interface IPostTraining {
 	createdAt: string
 	startedAt: null | string
 	finishedAt: null | string
-	creator: IUser
+	creator: IPublicUser
 	participants: IParticipant[]
 }
 
@@ -37,6 +37,8 @@ export interface IPost {
 	likesCount: number
 }
 
+export type IGuestPost = Omit<IPost, 'isSubscribed' | 'isLiked'>
+
 // Получение подробного поста по его id
 export const getPostById = async (postId: string, token: string): Promise<IPost> => {
 	return (
@@ -48,6 +50,11 @@ export const getPostById = async (postId: string, token: string): Promise<IPost>
 	).json()
 }
 
-export const getPostByIdCached = cache(async (postId: string, token: string): Promise<IPost> => {
-	return await fetcher.get(`posts/${postId}`, { headers: { Authorization: `Bearer ${token}` } }).json()
+// Получение поста по его id для неавторизованного пользователя
+export const getPostByIdForGuest = async (postId: string): Promise<IGuestPost> => {
+	return (await fetcher.get(`posts/for-guest/${postId}`)).json()
+}
+
+export const getPostByIdForGuestCached = cache(async (postId: string): Promise<IGuestPost> => {
+	return await fetcher.get(`posts/for-guest/${postId}`).json()
 })

@@ -1,7 +1,7 @@
 import React from 'react'
 import { WorkoutPost } from '@/app/posts/[slug]/components/WorkoutPost'
 import { BackgroundPattern } from '@/app/posts/[slug]/components/BackgroundPattern'
-import { getPostByIdCached, IPost } from '@/api/posts'
+import { getPostByIdForGuestCached, IGuestPost } from '@/api/posts'
 import { Metadata } from 'next'
 import { generateBasicMetadata } from '@/helpers/generateBasicMetadata'
 import { WorkoutTypesMap } from '@/consts/workout-types'
@@ -15,14 +15,11 @@ interface PostProps {
 	params: { slug: string }
 }
 
-const token =
-	'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6IjgwMGRiYmI2LTBmMTUtNGE5OS1hOGQ3LTIxZTFmNTMyYjY5YiIsImhzIjoiOTBmYWMwNmM0OWMyZDI4OWMyYzNhZWY4ZjM2NmQ2NmNlOTRmMDBkZWYzMGQ4MDM4NTVmZThlM2Q4MjBhZDBiZiIsImlhdCI6MTc3Mzg0MDM2NiwiZXhwIjoxNzczODQyMTY2fQ.3w6_oFAQfG6y4kmwg4dQPmvFRMdVc6YbZalot02KJas'
-
 export async function generateMetadata({ params }: PostProps): Promise<Metadata> {
 	const { slug } = await params
-	let postData: null | IPost = null
+	let postData: null | IGuestPost = null
 	try {
-		postData = await getPostByIdCached(slug, token)
+		postData = await getPostByIdForGuestCached(slug)
 	} catch (e) {
 		console.log(e)
 	}
@@ -79,10 +76,10 @@ export async function generateMetadata({ params }: PostProps): Promise<Metadata>
 
 const Post = async ({ params }: PostProps) => {
 	const { slug } = await params
-	let postData: null | IPost = null
+	let postData: null | IGuestPost = null
 
 	try {
-		postData = await getPostByIdCached(slug, token)
+		postData = await getPostByIdForGuestCached(slug)
 	} catch (e) {
 		console.log(e)
 	}

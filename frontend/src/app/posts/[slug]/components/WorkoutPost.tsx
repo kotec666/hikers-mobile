@@ -4,12 +4,13 @@ import { WorkoutTypesMap } from '@/consts/workout-types'
 import Image from 'next/image'
 import { formatRelativeDate } from '@/helpers/formatRelativeDate'
 import { cn } from '@/helpers/cn'
-import { IPost } from '@/api/posts'
+import { IGuestPost } from '@/api/posts'
 import { formatDistance } from '@/helpers/formatDistance'
 import { formatTimeFromSecondsCompact } from '@/helpers/formatTime'
 import { PATH_TO_IMAGE } from '@/consts/PATH_TO_FILES'
 import MapComponent from '@/app/components/ui/map/MapComponent'
 import NotFoundPost from '@/app/posts/[slug]/components/NotFoundPost'
+import UserAvatar from '@/app/posts/[slug]/components/UserAvatar'
 
 type LayoutItem = {
 	className: string
@@ -49,7 +50,7 @@ const getLayout = (count: number): LayoutItem[] => {
 }
 
 interface WorkoutPostProps {
-	post: IPost | null
+	post: IGuestPost | null
 }
 
 export function WorkoutPost({ post }: WorkoutPostProps) {
@@ -85,13 +86,7 @@ export function WorkoutPost({ post }: WorkoutPostProps) {
 		<div className="bg-[#212121] rounded-2xl overflow-hidden max-w-2xl mx-auto">
 			<div className="p-4">
 				<div className="flex items-center gap-3">
-					<Image
-						src={`${PATH_TO_IMAGE}${post?.userCreator.avatarFilename}`}
-						alt={username || ''}
-						width={48}
-						height={48}
-						className="w-12 h-12 rounded-full object-cover"
-					/>
+					<UserAvatar bordered iconSize={24} avatarFilename={post?.userCreator.avatarFilename} />
 					<div>
 						<div className="flex flex-col gap-2">
 							<span className="text-white font-medium">{username}</span>
