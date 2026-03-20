@@ -46,9 +46,7 @@ export default function Page() {
 				</button>
 			</div>
 
-			{/* Layout: Sidebar + Map */}
 			<div className="flex flex-1 overflow-hidden">
-				{/* Sidebar */}
 				<div className="w-72 bg-white border-r shadow-inner overflow-y-auto p-4 space-y-4">
 					<h2 className="text-lg font-semibold text-gray-800">История тренировок</h2>
 
@@ -87,7 +85,7 @@ export default function Page() {
 						<MapProvider
 							apiUrl={`https://api-maps.yandex.ru/v3/?apikey=${process.env.NEXT_PUBLIC_YANDEX_MAPS_KEY}&lang=ru_RU`}
 						>
-							<YandexMap className="rounded-xl" ref={mapRef} />
+							<YandexMap ref={mapRef} />
 						</MapProvider>
 					</div>
 				</div>
