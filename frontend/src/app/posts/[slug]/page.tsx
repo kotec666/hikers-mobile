@@ -15,6 +15,8 @@ interface PostProps {
 	params: { slug: string }
 }
 
+export const dynamic = 'force-dynamic'
+
 export async function generateMetadata({ params }: PostProps): Promise<Metadata> {
 	const { slug } = await params
 	let postData: null | IGuestPost = null
@@ -30,11 +32,9 @@ export async function generateMetadata({ params }: PostProps): Promise<Metadata>
 		return generateBasicMetadata({
 			title: 'Хайкерс',
 			keywords: 'хайкерс, тренировка',
-			description: '',
+			description: 'Посмотри тренировку в Hikers',
 			openGraph: {
-				width: 500,
-				height: 500,
-				image_url: defaultImage
+				type: 'article'
 			},
 			alternates: { canonical: Routes.POSTS }
 		})
@@ -45,13 +45,14 @@ export async function generateMetadata({ params }: PostProps): Promise<Metadata>
 		keywords: `${postData.title}, ${WorkoutTypesMap[postData.training.type].name}, хайкерс, hikers, тренировка`,
 		description: postData.description || '',
 		openGraph: {
-			width: 500,
-			height: 500,
+			type: 'article',
+			publishedTime: postData.createdAt,
+			authors: ['пользователь Hikers'],
 			url: `${Routes.POSTS}/${postData.id}`,
 			image_url: `${postData.fileNames.length ? `${PATH_TO_IMAGE}${postData.fileNames[0]}` : defaultImage}`
 		},
 		twitter: {
-			card: 'app',
+			card: 'summary_large_image',
 			app: {
 				url: {
 					iphone: `hikers://posts/${postData.id}`,

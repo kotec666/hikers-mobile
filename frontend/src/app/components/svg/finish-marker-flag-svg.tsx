@@ -29,7 +29,7 @@ const FinishMarkerFlagSvg = ({ size = 32, color = 'currentColor', ...props }: Sv
 				>
 					<path
 						d="M3 8.48s.498-.5 1.994-.5c1.495 0 2.492.998 3.987.998s1.994-.499 1.994-.499V2.997s-.499.498-1.994.498-2.492-.997-3.987-.997C3.498 2.498 3 2.997 3 2.997m0 8.971V2"
-						stroke={color}
+						stroke={props.fill || color}
 						strokeWidth={1.6}
 						strokeLinecap="round"
 						strokeLinejoin="round"

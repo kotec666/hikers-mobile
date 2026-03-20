@@ -108,8 +108,8 @@ const PostListItemSlider = (props: IProps) => {
 				ItemSeparatorComponent={() => <View style={{ width: 16 }} />}
 			/>
 			<FullscreenMap visible={isVisible} onClose={close} map={props.firstElement} />
-			<Modal visible={visible} transparent animationType="none">
-				<View style={{ flex: 1 }}>
+			<Modal visible={visible} animationType="none">
+				<View style={{ flex: 1, backgroundColor: 'black' }}>
 					<GestureViewer
 						data={props.images || []}
 						initialIndex={selectedIndex}

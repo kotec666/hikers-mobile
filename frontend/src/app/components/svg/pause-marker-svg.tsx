@@ -28,7 +28,7 @@ const PauseMarkerSvg = ({ size = 32, color = 'currentColor', ...props }: SvgIcon
 					xmlns="http://www.w3.org/2000/svg"
 				>
 					<path
-						fill={color}
+						fill={props.fill || color}
 						d="M6 5a2 2 0 1 1 4 0v14a2 2 0 1 1-4 0V5ZM14 5a2 2 0 1 1 4 0v14a2 2 0 1 1-4 0V5Z"
 					/>
 				</svg>

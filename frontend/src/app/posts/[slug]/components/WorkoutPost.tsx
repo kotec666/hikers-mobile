@@ -8,9 +8,10 @@ import { IGuestPost } from '@/api/posts'
 import { formatDistance } from '@/helpers/formatDistance'
 import { formatTimeFromSecondsCompact } from '@/helpers/formatTime'
 import { PATH_TO_IMAGE } from '@/consts/PATH_TO_FILES'
-import MapComponent from '@/app/components/ui/map/MapComponent'
 import NotFoundPost from '@/app/posts/[slug]/components/NotFoundPost'
 import UserAvatar from '@/app/posts/[slug]/components/UserAvatar'
+import { MapProvider } from '@/app/components/providers/MapProvider'
+import YandexMap from '@/app/components/ui/map/YandexMap'
 
 type LayoutItem = {
 	className: string
@@ -128,7 +129,11 @@ export function WorkoutPost({ post }: WorkoutPostProps) {
 			</div>
 
 			<div className="px-4 pb-4 h-64 overflow-hidden">
-				<MapComponent className="rounded-xl" points={creatorPoints} />
+				<MapProvider
+					apiUrl={`https://api-maps.yandex.ru/v3/?apikey=${process.env.NEXT_PUBLIC_YANDEX_MAPS_KEY}&lang=ru_RU`}
+				>
+					<YandexMap className="rounded-xl" points={creatorPoints} />
+				</MapProvider>
 			</div>
 
 			{count > 0 && (

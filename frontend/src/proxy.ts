@@ -76,15 +76,22 @@ export function proxy(request: NextRequest) {
 
 	// child-src https://youtube.com для iframe
 
+	const yandexDomains = `
+  https://api-maps.yandex.ru
+  https://yastatic.net
+  https://*.yandex.ru
+  https://*.yandex.net
+`
+
 	const cspHeader = `
     default-src 'self';
-    script-src ${scriptSrc};
-    script-src-elem 'self' 'unsafe-inline';
+    script-src ${scriptSrc} ${yandexDomains};
+    script-src-elem 'self' 'unsafe-inline' ${yandexDomains};
     style-src 'self' 'unsafe-inline';
     media-src 'self';
     img-src 'self' blob: data: https://*;
     font-src 'self';
-    connect-src 'self' ${env.api};
+    connect-src 'self' ${env.api} ${yandexDomains};
     object-src 'none';
     base-uri 'self';
     manifest-src 'self';

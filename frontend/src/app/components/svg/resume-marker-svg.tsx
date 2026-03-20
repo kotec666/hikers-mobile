@@ -29,7 +29,7 @@ const ResumeMarkerSvg = ({ size = 32, color = 'currentColor', ...props }: SvgIco
 					xmlns="http://www.w3.org/2000/svg"
 				>
 					<path
-						fill={color}
+						fill={props.fill || color}
 						d="M18 10.268c1.333.77 1.333 2.694 0 3.464l-9 5.196c-1.333.77-3-.192-3-1.732V6.804c0-1.54 1.667-2.502 3-1.732l9 5.196Z"
 					/>
 				</svg>

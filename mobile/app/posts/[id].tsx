@@ -67,6 +67,14 @@ const Post = () => {
 		(participant) => participant.user.id === post?.userCreator.id
 	)?.metrics
 
+	const handleClickBack = () => {
+		if (router.canGoBack()) {
+			router.back()
+		} else {
+			router.push('/(tabs)/profile')
+		}
+	}
+
 	return (
 		<SafeAreaProvider style={{ paddingTop: insets.top, paddingBottom: insets.bottom }}>
 			<View style={{ flex: 1, alignItems: 'center' }}>
@@ -77,7 +85,7 @@ const Post = () => {
 				/>
 				<Container className="gap-[20px]">
 					<View className="flex-row justify-between items-center">
-						<HeaderBack>Просмотр поста</HeaderBack>
+						<HeaderBack returnCallback={handleClickBack}>Просмотр поста</HeaderBack>
 						{post?.userCreator?.id === user?.id && (
 							<MoreOptionsButton
 								icon={<MoreOptionsSvg />}

@@ -14,7 +14,7 @@ const RedirectComponentAppStore = () => {
 	return (
 		<a
 			href={Routes.APP_STORE}
-			className="bg-[#2c2c2c] hover:bg-[#3c3c3c] text-white px-4 py-2.5 rounded-full font-medium transition-colors flex items-center gap-2"
+			className="bg-[#2c2c2c] hover:bg-[#3c3c3c] text-nowrap text-white text-xs md:text-base px-4 py-2.5 rounded-full font-medium transition-colors flex items-center gap-2"
 		>
 			<AppleSvg className="text-white" />
 			App Store
@@ -26,7 +26,7 @@ const RedirectComponentGooglePlay = () => {
 	return (
 		<a
 			href={Routes.GOOGLE_PLAY}
-			className="bg-[#4CAF50] hover:bg-[#45a049] text-white px-4 py-2.5 rounded-full font-medium transition-colors flex items-center gap-2"
+			className="bg-[#4CAF50] hover:bg-[#45a049] text-nowrap text-white text-xs md:text-base px-4 py-2.5 rounded-full font-medium transition-colors flex items-center gap-2"
 		>
 			<GooglePlaySvg className="text-white" />
 			Google Play

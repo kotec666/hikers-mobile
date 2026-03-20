@@ -6,7 +6,7 @@ const RedirectScheme = ({ scheme, postId }: { scheme: string; postId?: string })
 		if (postId) {
 			window.location.href = `${scheme}${postId}`
 		}
-	}, [postId])
+	}, [postId, scheme])
 	return null
 }
 

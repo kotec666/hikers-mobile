@@ -51,7 +51,8 @@ export const generateBasicMetadata = (meta: IMetaEnter): Metadata => {
 		description: meta.description,
 		keywords: meta.keywords,
 		manifest: '/manifest.json',
-		robots: meta.robots || 'index, follow',
+		// robots: meta.robots || 'index, follow',
+		robots: meta.robots || 'noindex, nofollow',
 		authors: [{ name: 'hikers' }],
 		creator: 'hikers',
 		publisher: 'hikers',
@@ -60,11 +61,7 @@ export const generateBasicMetadata = (meta: IMetaEnter): Metadata => {
 			address: false,
 			telephone: false
 		},
-		// verification: {
-		//     google: env.google_verification,
-		//     yandex: env.yandex_verification,
-		// },
-		category: 'technology',
+		category: 'fitness',
 		alternates: {
 			canonical: meta?.alternates?.canonical ? `${env.web_url}${meta.alternates.canonical}` : env.web_url
 			// languages: meta?.alternates?.languages || {

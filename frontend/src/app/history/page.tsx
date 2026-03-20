@@ -1,14 +1,15 @@
 'use client'
-import React, { useState } from 'react'
+import React, { useRef, useState } from 'react'
 import { format } from 'date-fns'
-import { getExtendedDetails, getMyHistory, ITraining, ITrainingPoint } from '@/api/workout'
+import { getExtendedDetails, getMyHistory, ITraining } from '@/api/workout'
 import { cn } from '@/helpers/cn'
-import MapComponent from '@/app/components/ui/map/MapComponent'
+import YandexMap, { YandexMapRef } from '@/app/components/ui/map/YandexMap'
+import { MapProvider } from '@/app/components/providers/MapProvider'
 
 export default function Page() {
+	const mapRef = useRef<YandexMapRef>(null)
 	const [token, setToken] = useState('')
 	const [history, setHistory] = useState<ITraining[]>([])
-	const [rawPoints, setRawPoints] = useState<ITrainingPoint[]>([])
 	const [selectedId, setSelectedId] = useState<string | null>(null)
 
 	const handleClickFetchHistory = async () => {
@@ -21,7 +22,7 @@ export default function Page() {
 
 		const details = await getExtendedDetails(trainingId, token)
 		const newPoints = details.participants[0].route.points
-		setRawPoints(newPoints)
+		mapRef.current?.setPath(newPoints)
 	}
 
 	return (
@@ -83,7 +84,11 @@ export default function Page() {
 
 				<div className="flex-1 flex flex-col md:flex-row h-full">
 					<div className="flex-1 h-1/2 md:h-full relative border-b md:border-b-0 md:border-r border-gray-200">
-						<MapComponent points={rawPoints} />
+						<MapProvider
+							apiUrl={`https://api-maps.yandex.ru/v3/?apikey=${process.env.NEXT_PUBLIC_YANDEX_MAPS_KEY}&lang=ru_RU`}
+						>
+							<YandexMap className="rounded-xl" ref={mapRef} />
+						</MapProvider>
 					</div>
 				</div>
 			</div>

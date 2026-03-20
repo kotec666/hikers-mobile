@@ -22,7 +22,7 @@ const StartMarkerSvg = ({ size = 32, color = 'currentColor', ...props }: SvgIcon
 				cy={centerY}
 				r={circleRadius}
 				fill="#fff"
-				stroke={color}
+				stroke={props.fill || color}
 				strokeWidth={circleRadius - 2}
 			/>
 		</svg>
