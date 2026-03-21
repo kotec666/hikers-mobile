@@ -23,12 +23,14 @@ import { PostsModule } from './modules/posts/posts.module';
 import { SerachModule } from './modules/search/search.module';
 import { NotificationsModule } from './modules/notifications/notifications.module';
 import { WebsocketsModule } from './modules/websockets/websockets.module';
+import { EventEmitterModule } from '@nestjs/event-emitter';
 
 config({ quiet: true });
 
 @Module({
 	controllers: [AppController],
 	imports: [
+		EventEmitterModule.forRoot({ ignoreErrors: true }),
 		LoggerModule.forRoot({
 			assignResponse: true,
 		}),
