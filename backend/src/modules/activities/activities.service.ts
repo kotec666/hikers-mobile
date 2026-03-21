@@ -1,10 +1,15 @@
-﻿import { Injectable } from '@nestjs/common';
+﻿import { Injectable, NotFoundException } from '@nestjs/common';
 import { DatabaseService } from '../database/database.service';
 import { ActivitiyDto } from './activities.dto';
-import { userActivities } from '../database/schema';
-import { and, eq } from 'drizzle-orm';
-import { UserActivity } from '@shared/enums';
+import { training, trainingMetrics, trainingParticipants, userActivities } from '../database/schema';
+import { and, eq, sql } from 'drizzle-orm';
+import { TrainingType, UserActivity } from '@shared/enums';
 import { asc } from '../database/extensions';
+import { OnEvent } from '@nestjs/event-emitter';
+import { Event } from '@events/constants';
+import { ERRORS } from '@shared/errors';
+import { getActivityByTrainingType, getDefaultMeasuringUnitByActivity } from '@shared/helpers';
+import { CommonDto } from 'src/common/dto/common.dto';
 
 @Injectable()
 export class ActivitiesService {
@@ -56,5 +61,71 @@ export class ActivitiesService {
 		}
 
 		return query;
+	}
+
+	public async getByType(userId: string, type: UserActivity): Promise<ActivitiyDto.Entity> {
+		const [act] = await this.db.db
+			.select({
+				place: userActivities.placeForShow,
+				goal: userActivities.goal,
+				name: userActivities.name,
+				measuringUnit: userActivities.measuringUnit,
+			})
+			.from(userActivities)
+			.where(and(eq(userActivities.userId, userId), eq(userActivities.name, type)))
+			.limit(1);
+		if (!act) {
+			throw new NotFoundException(ERRORS.NOT_FOUND);
+		}
+
+		return act;
+	}
+
+	public async addGoalProgress(
+		userId: string,
+		name: UserActivity,
+		progressToAdd: number,
+	): Promise<CommonDto.BooleanResponse> {
+		await this.db.db
+			.insert(userActivities)
+			.values({
+				userId,
+				goal: Math.trunc(progressToAdd),
+				name: name,
+				measuringUnit: getDefaultMeasuringUnitByActivity(name),
+			})
+			.onConflictDoUpdate({
+				set: {
+					goal: sql`${userActivities.goal} + ${progressToAdd}`,
+				},
+				target: [userActivities.userId, userActivities.name],
+			});
+
+		return { success: true };
+	}
+
+	// @TODO повесить на событие реги юзера
+	public async upsertAllActivities(userId: string): Promise<ActivitiyDto.Entity[]> {
+		// @TODO на транзу переписать и проверить
+		return Promise.all(
+			Object.values(UserActivity).map(async (name) => {
+				const [act] = await this.db.db
+					.insert(userActivities)
+					.values({
+						userId,
+						goal: 0,
+						name: name,
+						measuringUnit: getDefaultMeasuringUnitByActivity(name),
+					})
+					.onConflictDoNothing()
+					.returning({
+						place: userActivities.placeForShow,
+						goal: userActivities.goal,
+						name: userActivities.name,
+						measuringUnit: userActivities.measuringUnit,
+					});
+				return act;
+			}),
+		);
 	}
 }
