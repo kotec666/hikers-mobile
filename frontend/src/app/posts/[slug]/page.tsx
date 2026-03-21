@@ -52,6 +52,7 @@ export async function generateMetadata({ params }: PostProps): Promise<Metadata>
 			image_url: `${postData.fileNames.length ? `${PATH_TO_IMAGE}${postData.fileNames[0]}` : defaultImage}`
 		},
 		twitter: {
+			image: `${postData.fileNames.length ? `${PATH_TO_IMAGE}${postData.fileNames[0]}` : defaultImage}`,
 			card: 'summary_large_image',
 			app: {
 				url: {
@@ -63,9 +64,6 @@ export async function generateMetadata({ params }: PostProps): Promise<Metadata>
 		},
 		alternates: {
 			canonical: `${Routes.POSTS}/${postData.id}`
-		},
-		itunes: {
-			appArgument: `hikers://posts/${postData.id}`
 		},
 		other: {
 			'al:ios:url': `hikers://posts/${postData.id}`,

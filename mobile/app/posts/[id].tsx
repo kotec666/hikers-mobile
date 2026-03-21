@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react'
-import { View, ScrollView, Dimensions } from 'react-native'
+import { View, ScrollView, Dimensions, ActivityIndicator } from 'react-native'
 import { SafeAreaProvider, useSafeAreaInsets } from 'react-native-safe-area-context'
 import { Container } from '@/components/ui/Container'
 import { StatusBar } from 'expo-status-bar'
@@ -20,6 +20,7 @@ import { adaptLocations } from '@/helpers/adaptPointsToIWorkoutLocationStorageIt
 import { useToast } from '@/hooks/useToast'
 import { VIEWWORKOUT_MODE } from '@/app/training/viewWorkout'
 import { useSafeNavigation } from '@/hooks/useSafeNavigation'
+import { Colors } from '@/constants/Colors'
 
 const { height } = Dimensions.get('screen')
 const SLIDE_ASPECT_RATIO = height / 3.6
@@ -34,15 +35,19 @@ const Post = () => {
 
 	const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false)
 	const [post, setPost] = useState<IPost | null>(null)
+	const [isPageLoading, setIsPageLoading] = useState<boolean>(false)
 
 	useEffect(() => {
 		;(async () => {
+			setIsPageLoading(true)
 			try {
 				const postData = await getPostById(id)
 				setPost(postData)
 			} catch {
 				toast.info('Ошибка при загрузке поста')
 				router.back()
+			} finally {
+				setIsPageLoading(false)
 			}
 		})()
 	}, [])
@@ -73,6 +78,14 @@ const Post = () => {
 		} else {
 			router.push('/(tabs)/profile')
 		}
+	}
+
+	if (isPageLoading) {
+		return (
+			<View className="flex-1 items-center justify-center">
+				<ActivityIndicator size="large" color={Colors['green-main']} />
+			</View>
+		)
 	}
 
 	return (
