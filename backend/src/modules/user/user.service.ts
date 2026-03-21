@@ -77,6 +77,25 @@ export class UserService {
 		};
 	}
 
+	public async getUserByUsername(username: string): Promise<UserDto.Entity> {
+		const [user] = await this.db.db
+			.select({
+				id: users.id,
+				name: users.name,
+				username: users.username,
+				email: users.email,
+				avatarFilename: users.avatarFilename,
+			})
+			.from(users)
+			.where(eq(users.username, username))
+			.limit(1);
+		if (!user) {
+			throw new NotFoundException(ERRORS.NOT_FOUND);
+		}
+
+		return user;
+	}
+
 	public async getUserByEmail(email: string): Promise<UserDto.Entity> {
 		const [user] = await this.db.db
 			.select({

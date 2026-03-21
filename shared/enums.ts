@@ -39,6 +39,7 @@ export enum SearchType {
 export enum NotificationType {
 	TRAINING_INVITE = 'trainig_invite',
 	FRIEND_INVITE = 'friend_invite',
+	NEW_SUBSCRIBER = 'new_subscriber',
 	TAGGED_IN_POST = 'tagged_in_post',
 	ACHIEVEMENT = 'ACHIEVEMENT',
 }
