@@ -5,10 +5,15 @@ import { SubscriberDto, SubscriptionDto } from './subscribers.dto';
 import { and, count, eq } from 'drizzle-orm';
 import { CommonDto } from '../../common/dto/common.dto';
 import { ERRORS } from '@shared/errors';
+import { NotificationsService } from '../notifications/notifications.service';
+import { NotificationType } from '@shared/enums';
 
 @Injectable()
 export class SubscribersService {
-	constructor(private readonly db: DatabaseService) {}
+	constructor(
+		private readonly db: DatabaseService,
+		private readonly notifications: NotificationsService,
+	) {}
 
 	/** Получить подписки */
 	public async getSubscriptions(userId: string, page: number, limit: number): Promise<SubscriptionDto.Entity[]> {
@@ -97,6 +102,15 @@ export class SubscribersService {
 			userId: toUserId,
 			userSubscriberId: subscriberUserId,
 		});
+
+		this.notifications
+			.create(toUserId, {
+				type: NotificationType.NEW_SUBSCRIBER,
+				relEntityId: subscriberUserId,
+			})
+			.catch((r) => {
+				console.log('New subscriber notification creation failed', r);
+			});
 
 		return { success: true };
 	}
