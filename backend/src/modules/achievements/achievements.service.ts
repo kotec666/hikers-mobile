@@ -4,12 +4,17 @@ import { AchievementDto } from './achievements.dto';
 import { achievements, userAchievements } from '../database/schema';
 import { eq, notInArray, sql, and } from 'drizzle-orm';
 import { asc } from '../database/extensions';
+import { NotificationsService } from '../notifications/notifications.service';
 import { CommonDto } from 'src/common/dto/common.dto';
 import { ERRORS } from '@shared/errors';
+import { NotificationType } from '@shared/enums';
 
 @Injectable()
 export class AchievementsService {
-	constructor(private readonly db: DatabaseService) {}
+	constructor(
+		private readonly db: DatabaseService,
+		private readonly notifications: NotificationsService,
+	) {}
 
 	public async addProgress(
 		userId: string,
@@ -73,6 +78,15 @@ export class AchievementsService {
 			.onConflictDoUpdate({
 				target: [userAchievements.userId, userAchievements.achievementId],
 				set: { progress: 100, claimedAt: sql`NOW()` },
+			});
+
+		this.notifications
+			.create(userId, {
+				type: NotificationType.ACHIEVEMENT,
+				relEntityId: achievementId,
+			})
+			.catch((r) => {
+				console.log('New achievement notification creation failed', r);
 			});
 
 		return { success: true };
