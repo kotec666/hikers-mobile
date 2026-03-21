@@ -1,5 +1,5 @@
-import React, { useEffect, useState } from 'react'
-import { FlatList, View, Text, RefreshControl } from 'react-native'
+import React from 'react'
+import { ActivityIndicator, View, Text, RefreshControl } from 'react-native'
 import { Container } from '@/components/ui/Container'
 import HeaderBack from '@/components/ui/HeaderBack'
 import PeopleListItem from '@/components/find-people/PeopleListItem'
@@ -8,82 +8,111 @@ import { fontFamily } from '@/constants/Fonts'
 import RoundedPlusSvg from '@/components/svg/RoundedPlusSvg'
 import RoundedMinusSvg from '@/components/svg/RoundedMinusSvg'
 import { acceptFriendRequest, getPendingInvitesList, IInvite, rejectFriendRequest } from '@/api/friends'
-import { getFieldsErrors } from '@/helpers/getFieldsErrors'
 import { useToast } from '@/hooks/useToast'
 import { PATH_TO_IMAGE } from '@/constants/PATH_TO_FILES'
+import { LegendList } from '@legendapp/list'
+import { Colors } from '@/constants/Colors'
+import { useInfiniteQuery, useQueryClient } from '@tanstack/react-query'
 
 const FriendRequestsPage = () => {
 	const insets = useSafeAreaInsets()
 	const toast = useToast()
-	const [data, setData] = useState<{
-		friendRequests: IInvite[]
-		refreshing: boolean
-	}>({
-		friendRequests: [],
-		refreshing: false
+	const loadingIdsRef = React.useRef<Set<string>>(new Set())
+	const queryClient = useQueryClient()
+
+	const limit = 15
+
+	const {
+		data: friendRequestsRaw,
+		fetchNextPage,
+		hasNextPage,
+		isFetchingNextPage,
+		refetch,
+		isRefetching,
+		isFetching
+	} = useInfiniteQuery({
+		queryKey: ['pendingInvites'],
+
+		queryFn: ({ pageParam }) =>
+			getPendingInvitesList({
+				page: pageParam,
+				limit
+			}),
+
+		initialPageParam: 1,
+
+		getNextPageParam: (lastPage, pages) => {
+			if (lastPage.length < limit) return undefined
+			return pages.length + 1
+		}
 	})
 
+	const friendRequests = friendRequestsRaw?.pages.flat() ?? []
+
 	const handleAddFriend = async (newFriendId: string) => {
+		if (loadingIdsRef.current.has(newFriendId)) return
+		loadingIdsRef.current.add(newFriendId)
+
 		try {
 			await acceptFriendRequest(newFriendId)
-			const withoutAddedUser = data.friendRequests.filter(
-				(friendRequest) => friendRequest.user.id !== newFriendId
-			)
-			setData((s) => ({ ...s, friendRequests: withoutAddedUser }))
-		} catch (e) {
+			// setItems((prev) => prev.filter((req) => req.user.id !== newFriendId))
+			// await refetch()
+			queryClient.setQueryData(['pendingInvites'], (oldData: any) => {
+				if (!oldData) return oldData
+
+				return {
+					...oldData,
+					pages: oldData.pages.map((page: IInvite[]) => page.filter((req) => req.user.id !== newFriendId))
+				}
+			})
+			toast.success('Пользователь добавлен в друзья')
+		} catch {
 			toast.error('Произошла ошибка, повторите попытку позже')
+		} finally {
+			loadingIdsRef.current.delete(newFriendId)
 		}
 	}
 
 	const handleDeleteFriendRequest = async (rejectUserId: string) => {
+		if (loadingIdsRef.current.has(rejectUserId)) return
+		loadingIdsRef.current.add(rejectUserId)
+
 		try {
 			await rejectFriendRequest(rejectUserId)
-			const withoutRejectedUser = data.friendRequests.filter(
-				(friendRequest) => friendRequest.user.id !== rejectUserId
-			)
-			setData((s) => ({ ...s, friendRequests: withoutRejectedUser }))
-		} catch (e) {
+			// setItems((prev) => prev.filter((req) => req.user.id !== rejectUserId))
+			// await refetch()
+			queryClient.setQueryData(['pendingInvites'], (oldData: any) => {
+				if (!oldData) return oldData
+
+				return {
+					...oldData,
+					pages: oldData.pages.map((page: IInvite[]) => page.filter((req) => req.user.id !== rejectUserId))
+				}
+			})
+			toast.success('Заявка отклонена')
+		} catch {
 			toast.error('Произошла ошибка, повторите попытку позже')
-		}
-	}
-
-	const handleGetAndSetData = async () => {
-		try {
-			const friendRequests = await getPendingInvitesList()
-			setData((s) => ({ ...s, friendRequests: friendRequests }))
-		} catch (e) {
-			const errors = await e.response.json()
-			console.log(errors)
-			getFieldsErrors(errors)
 		} finally {
-			setData((s) => ({ ...s, refreshing: false }))
+			loadingIdsRef.current.delete(rejectUserId)
 		}
 	}
 
-	const onRefresh = React.useCallback(async () => {
-		setData((s) => ({ ...s, refreshing: true }))
-		await handleGetAndSetData()
-	}, [])
-
-	useEffect(() => {
-		handleGetAndSetData()
-	}, [])
-
-	const EmptyListComponent = () => (
-		<View style={{ flex: 1 }} className="items-center justify-center">
-			<Text style={{ fontFamily: fontFamily.regular }} className="text-gray-ab text-base">
-				У вас нет заявок в друзья
-			</Text>
-		</View>
-	)
+	const renderFooter = () => {
+		if (!isFetchingNextPage) return null
+		return (
+			<View style={{ padding: 20 }}>
+				<ActivityIndicator size="small" color={Colors['green-main']} />
+			</View>
+		)
+	}
 
 	return (
 		<SafeAreaProvider style={{ paddingTop: insets.top }}>
 			<View style={{ flex: 1 }}>
 				<Container className="gap-[20px] mt-[20px] flex-1">
 					<HeaderBack>Запросы в друзья</HeaderBack>
-					<FlatList
-						data={data.friendRequests}
+					<LegendList
+						data={friendRequests}
 						renderItem={({ item }) => (
 							<PeopleListItem
 								id={item.user.id}
@@ -103,17 +132,37 @@ const FriendRequestsPage = () => {
 							/>
 						)}
 						keyExtractor={(item) => item.user.id}
+						onEndReached={() => {
+							if (hasNextPage && !isFetchingNextPage) {
+								fetchNextPage()
+							}
+						}}
+						onEndReachedThreshold={0.5}
 						ItemSeparatorComponent={() => <View style={{ height: 15 }} />}
+						ListFooterComponent={renderFooter}
+						ListEmptyComponent={() => {
+							if (isFetching) return null
+							return (
+								<View style={{ flex: 1 }} className="items-center justify-center">
+									<Text style={{ fontFamily: fontFamily.regular }} className="text-gray-ab text-base">
+										У вас нет заявок в друзья
+									</Text>
+								</View>
+							)
+						}}
+						refreshControl={
+							<RefreshControl
+								refreshing={isRefetching}
+								onRefresh={refetch}
+								tintColor={Colors['green-main']}
+							/>
+						}
 						contentContainerStyle={{
 							paddingBottom: insets.bottom + 20,
 							paddingTop: 10,
-							flex: data.friendRequests.length === 0 ? 1 : undefined
+							flexGrow: friendRequests.length === 0 ? 1 : undefined
 						}}
 						showsVerticalScrollIndicator={false}
-						refreshControl={
-							<RefreshControl refreshing={data.refreshing} onRefresh={onRefresh} tintColor="#22CB5A" />
-						}
-						ListEmptyComponent={EmptyListComponent}
 					/>
 				</Container>
 			</View>

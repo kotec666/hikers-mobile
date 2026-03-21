@@ -1,8 +1,11 @@
 import React from 'react'
-import { TouchableOpacity, View } from 'react-native'
+import { Pressable, TouchableOpacity, View } from 'react-native'
 import PostListItemSlider from '@/components/ui/Post/PostListItemSlider'
-import { useRouter } from 'expo-router'
 import PostListItemBody from '@/components/ui/Post/PostListItemBody'
+import { ITrainingMetrics } from '@/api/workout'
+import { useSafeNavigation } from '@/hooks/useSafeNavigation'
+import { useFullscreenMap } from '@/hooks/useFullscreenMap'
+import FullscreenMap from '@/components/map/FullscreenMap'
 
 export enum PostType {
 	FEED_LIST_ITEM = 'FEED_LIST_ITEM',
@@ -11,31 +14,60 @@ export enum PostType {
 
 interface IProps {
 	mode: PostType
+	postId?: string
+	title?: string
+	description?: string | null
+	images?: string[]
+	metrics?: ITrainingMetrics
+	mapComponent?: React.ReactNode
+	isDetail?: boolean
 }
 
 const PostBodyWrapper = (props: IProps) => {
-	const router = useRouter()
-	const PostSliderItems = [
-		{ id: 1, image: require('@/assets/images/carousel/carousel-2.webp') },
-		{ id: 2, image: require('@/assets/images/carousel/carousel-2.webp') },
-		{ id: 3, image: require('@/assets/images/carousel/carousel-2.webp') }
-	]
+	const { push } = useSafeNavigation()
+	const IS_FEED_LIST_ITEM = props.mode === 'FEED_LIST_ITEM' // Из ленты либо детальный просмотр
+	const { isVisible, open, close } = useFullscreenMap()
 
-	const IS_FEED_LIST_ITEM = props.mode === 'FEED_LIST_ITEM'
+	const MapSlide = props.mapComponent ? props.mapComponent : null
 
 	return (
 		<>
 			{IS_FEED_LIST_ITEM ? (
 				<>
-					<TouchableOpacity onPress={() => router.push('/news-feed/1')}>
-						<PostListItemBody />
+					<TouchableOpacity
+						onPress={() =>
+							push({
+								pathname: '/posts/[id]',
+								params: { id: props.postId! }
+							})
+						}
+					>
+						<PostListItemBody
+							title={props.title}
+							description={props.description}
+							metrics={props.metrics}
+							isDetail={props.isDetail}
+						/>
 					</TouchableOpacity>
 					<View>
-						<PostListItemSlider data={PostSliderItems} />
+						<PostListItemSlider images={props.images} firstElement={MapSlide} />
 					</View>
 				</>
 			) : (
-				<PostListItemBody />
+				<>
+					<PostListItemBody
+						title={props.title}
+						description={props.description}
+						metrics={props.metrics}
+						isDetail={props.isDetail}
+					/>
+					{props.mapComponent && (
+						<Pressable className="flex-1" onPress={open}>
+							{props.mapComponent}
+						</Pressable>
+					)}
+					<FullscreenMap visible={isVisible} onClose={close} map={props.mapComponent} />
+				</>
 			)}
 		</>
 	)

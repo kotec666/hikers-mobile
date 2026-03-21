@@ -4,7 +4,7 @@ import { fontFamily } from '@/constants/Fonts'
 import PenSvg from '@/components/svg/PenSvg'
 import CheckMarkIconSvg from '@/components/svg/CheckMarkIconSvg'
 import { cn } from '@/helpers/cn'
-import { MeasuringUnit } from '../../../../shared/enums'
+import { MeasuringUnit } from '@/shared/enums'
 import { getNoun } from '@/helpers/getNoun'
 
 const WorkoutStats = (props: {
@@ -17,14 +17,26 @@ const WorkoutStats = (props: {
 	measuringUnit: MeasuringUnit
 }) => {
 	const getMeasuringUnit = (unit: MeasuringUnit, goal: number) => {
-		const allUnits = {
-			[MeasuringUnit.METER]: 'м',
-			[MeasuringUnit.KILOMETER]: 'км',
-			[MeasuringUnit.COUNT]: getNoun(goal, 'раз', 'раза', 'раз').split(' ')[1],
-			[MeasuringUnit.REPEATS]: getNoun(goal, 'повторение', 'повторения', 'повторений').split(' ')[1]
-		}
+		switch (unit) {
+			case MeasuringUnit.METER:
+				return 'м'
 
-		return allUnits[unit]
+			case MeasuringUnit.KILOMETER:
+				return 'км'
+
+			case MeasuringUnit.COUNT: {
+				const { word } = getNoun(goal, 'раз', 'раза', 'раз')
+				return word
+			}
+
+			case MeasuringUnit.REPEATS: {
+				const { word } = getNoun(goal, 'повторение', 'повторения', 'повторений')
+				return word
+			}
+
+			default:
+				return ''
+		}
 	}
 
 	return (

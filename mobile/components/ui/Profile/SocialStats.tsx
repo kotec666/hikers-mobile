@@ -1,7 +1,8 @@
 import React from 'react'
-import { Text, TouchableOpacity, View } from 'react-native'
+import { TouchableOpacity, View, Text } from 'react-native'
 import { fontFamily } from '@/constants/Fonts'
-import { RelativePathString, useRouter } from 'expo-router'
+import { RelativePathString } from 'expo-router'
+import { useSafeNavigation } from '@/hooks/useSafeNavigation'
 
 interface IProps {
 	label?: string
@@ -23,12 +24,12 @@ const InnerSocialStatsData = ({ label, content }: Pick<IProps, 'label' | 'conten
 }
 
 const SocialStats = ({ label, content, hrefTo }: IProps) => {
-	const router = useRouter()
+	const { push } = useSafeNavigation()
 
 	if (hrefTo) {
 		return (
 			<TouchableOpacity
-				onPress={() => router.push(hrefTo as RelativePathString)}
+				onPress={() => push(hrefTo as RelativePathString)}
 				className="bg-black-25 rounded-[15px] px-[15px] flex-1 py-[20px]"
 			>
 				<InnerSocialStatsData label={label} content={content} />

@@ -26,7 +26,7 @@ export const calculateTotalDistance = (points: IWorkoutLocationStorageItem[]): n
 	let prev: IWorkoutLocationStorageItem | null = null
 
 	for (const point of points) {
-		if (point.isPausedPoint) {
+		if (point.paused) {
 			prev = null // разрываем трек, первая точка после паузы не соединяется с предыдущей
 			continue
 		}
@@ -59,7 +59,7 @@ export const calculateTotalDistance = (points: IWorkoutLocationStorageItem[]): n
 // С фильтрацией только активных точек
 // export const calculateTotalDistance = (points: IWorkoutLocationStorageItem[]): number => {
 //     // Фильтруем только активные точки (не паузы)
-//     const activePoints = points.filter(point => !point.isPausedPoint)
+//     const activePoints = points.filter(point => !point.paused)
 //
 //     let totalDistance = 0
 //

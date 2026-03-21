@@ -1,10 +1,6 @@
 import { AppState, PermissionsAndroid, Platform, StyleSheet, View } from 'react-native'
 import { SafeAreaProvider, useSafeAreaInsets } from 'react-native-safe-area-context'
-import { GestureHandlerRootView } from 'react-native-gesture-handler'
 import React, { useCallback, useEffect, useRef, useState } from 'react'
-import WorkoutRunning from '@/components/svg/WorkoutRunning'
-import WorkoutWalking from '@/components/svg/WorkoutWalking'
-import WorkoutBicycle from '@/components/svg/WorkoutBicycle'
 import { useToast } from '@/hooks/useToast'
 import WorkoutStarted from '@/components/training/WorkoutStarted'
 import NewWorkout, { IWorkoutModeElement } from '@/components/training/NewWorkout'
@@ -12,25 +8,51 @@ import * as Notification from 'expo-notifications'
 import * as Location from 'expo-location'
 import * as TaskManager from 'expo-task-manager'
 import {
+	IWorkoutMeta,
+	clearActiveWorkoutData,
+	deleteUnsavedTrainingByStartedAt,
+	getActiveWorkoutPoints,
+	getShortWorkouts,
+	getUnsavedWorkoutByStartedAt,
+	getUnsavedWorkoutsThatHaveId,
 	getWorkoutMeta,
+	markUnsavedWorkoutPointsAsSaved,
 	moveActiveWorkoutToNotSaved,
+	moveActiveWorkoutToShortWorkouts,
+	removeAllShortWorkouts,
 	setActiveWorkoutPauseState,
 	setWorkoutItems,
-	startAndStoreNewActiveWorkout
+	startAndStoreNewActiveWorkout,
+	assignIdToActiveWorkout
 } from '@/store/workoutStorage'
 import { useRouter } from 'expo-router'
 import { initializeNotifications } from '@/helpers/notifications'
 import { AllGeolocationPermissionsHandle } from '@/components/AllGeolocationPermissions'
-import { TrainingType } from '../../../shared/enums'
 import { debounce } from '@/helpers/debounce'
 import { throttle } from '@/helpers/throttle'
 import { useWorkoutNotification } from '@/hooks/useWorkoutNotification'
 import { initializeBackgroundLocationTask, isTrackingLocation, startTracking } from '@/hooks/track-location/track'
 import { useLocationData, useLocationTracking } from '@/hooks/track-location'
 import { updateMapSettings } from '@/store/mapStorage'
-import { finishTraining, startTraining } from '@/api/workout'
+import { deleteNotFinishedTraining, finishTraining, startTraining, syncTraining } from '@/api/workout'
 import { randomHexColor } from '@/helpers/randomHexColor'
-
+import { prepareLocationsForSync } from '@/helpers/prepareLocationsForSync'
+import { deserializeGetterType } from '@/helpers/binarySerializer'
+import { isWorkoutTooShort } from '@/helpers/isWorkoutTooShort'
+import { useInternetConnectionRef } from '@/hooks/useInternetConnectionRef'
+import { formatTime } from '@/helpers/formatTime'
+import { calculateCalories } from '@/helpers/calculateCalories'
+import { calculatePace } from '@/helpers/calculatePace'
+import { getWorkoutHeight } from '@/helpers/getWorkoutHeight'
+import { useWorkoutResultsAfterFinishStore } from '@/store/workoutResultsAfterFinishStore'
+import { formatDistance } from '@/helpers/distance'
+import { WorkoutTypesData } from '@/constants/WorkoutTypes'
+import { TrainingType } from '@shared/enums'
+import { useAuthStore } from '@/store/authStore'
+import { VIEWWORKOUT_MODE } from '@/app/training/viewWorkout'
+import { Colors } from '@/constants/Colors'
+import { getFieldsErrors } from '@/helpers/getFieldsErrors'
+import { chunkArray } from '@/helpers/chunkArray'
 // Debugging
 TaskManager.getRegisteredTasksAsync().then((tasks) => {
 	console.log(tasks)
@@ -48,12 +70,6 @@ const promise = new Promise<void>((resolve) => {
 initializeNotifications(promise)
 initializeBackgroundLocationTask(promise)
 
-const WorkoutTypesData = [
-	{ id: 1, type: TrainingType.RUN, name: 'Забег', IconComponent: WorkoutRunning },
-	{ id: 2, type: TrainingType.RUN, name: 'Ходьба', IconComponent: WorkoutWalking },
-	{ id: 3, type: TrainingType.BICYCLE, name: 'Велосипед last', IconComponent: WorkoutBicycle }
-]
-
 const HEADING_THROTTLE_MS = 750
 const PAUSE_DEBOUNCE_MS = 300
 const INITIAL_MAP_ZOOM = 14
@@ -61,10 +77,14 @@ const INITIAL_MAP_ZOOM = 14
 export default function NewTraining() {
 	const insets = useSafeAreaInsets()
 	const toast = useToast()
+	const { user } = useAuthStore()
+	const { setTrainingId, setStartedAt, setType, setPoints, setMetrics } = useWorkoutResultsAfterFinishStore()
+
 	const router = useRouter()
 	const permissionsRef = useRef<AllGeolocationPermissionsHandle>(null)
 	const headingSubscriptionRef = useRef<null | Location.LocationSubscription>(null)
 	const activeLocationSubscriptionRef = useRef<null | Location.LocationSubscription>(null)
+	const isInternetConnectedRef = useInternetConnectionRef()
 
 	const [chosenWorkout, setChosenWorkout] = useState<IWorkoutModeElement>(WorkoutTypesData[0])
 	// Добавляем флаг ожидания старта после получения прав
@@ -234,50 +254,82 @@ export default function NewTraining() {
 	}
 
 	const startWorkout = async (workoutType: TrainingType, afterReboot: boolean) => {
-		try {
-			const {
-				foregroundStatus,
-				backgroundStatus,
-				isGPSEnabled,
-				isPhysicalActivityPermissionGranted,
-				isNotificationsGranted
-			} = await checkPermissions()
+		const shortWorkouts = getShortWorkouts(user?.id)
+		const isShortWorkoutsExist = shortWorkouts.length
 
-			const hasLocationPermissions = foregroundStatus?.granted && backgroundStatus?.granted && isGPSEnabled
-
-			const hasAndroidExtras =
-				Platform.OS === 'android' ? isNotificationsGranted && isPhysicalActivityPermissionGranted : true // на iOS просто true
-
-			// Если мы восстанавливаемся после ребута, мы предполагаем, что права уже есть.
-			// Если их нет, мы не можем молча упасть, лучше показать ошибку, но можно сделать проверку мягче.
-			if (!hasLocationPermissions || !hasAndroidExtras) {
-				if (!afterReboot) {
-					// Устанавливаем флаг, что мы пытались начать тренировку
-					isPendingStartRef.current = true
-					// toast.error('Невозможно начать тренировку без предоставления всех разрешений') // Убрал тост, чтобы не мешал модалкам
+		if (isInternetConnectedRef.current && isShortWorkoutsExist) {
+			try {
+				const result = await deleteNotFinishedTraining()
+				if (result.success) {
+					removeAllShortWorkouts(user?.id) // (storage)
 				}
-				return permissionsRef.current?.checkPermissions()
+			} catch (e) {
+				console.log('Ошибка deleteNotFinishedTraining', e)
+			}
+		}
+
+		const {
+			foregroundStatus,
+			backgroundStatus,
+			isGPSEnabled,
+			isPhysicalActivityPermissionGranted,
+			isNotificationsGranted
+		} = await checkPermissions()
+
+		const hasLocationPermissions = foregroundStatus?.granted && backgroundStatus?.granted && isGPSEnabled
+
+		const hasAndroidExtras =
+			Platform.OS === 'android' ? isNotificationsGranted && isPhysicalActivityPermissionGranted : true // на iOS просто true
+
+		// Если мы восстанавливаемся после ребута, мы предполагаем, что права уже есть.
+		// Если их нет, мы не можем молча упасть, лучше показать ошибку, но можно сделать проверку мягче.
+		if (!hasLocationPermissions || !hasAndroidExtras) {
+			if (!afterReboot) {
+				// Устанавливаем флаг, что мы пытались начать тренировку
+				isPendingStartRef.current = true
+				// toast.error('Невозможно начать тренировку без предоставления всех разрешений') // Убрал тост, чтобы не мешал модалкам
+			}
+			return permissionsRef.current?.checkPermissions()
+		}
+
+		isPendingStartRef.current = false // сбрасываем, когда начинаем тренировку
+
+		if (!afterReboot) {
+			let newTrainingId = null
+			try {
+				const newTraining = await startTraining({ type: workoutType, colorHex: randomHexColor() })
+				newTrainingId = newTraining.id
+			} catch (e: unknown) {
+				newTrainingId = null
+				console.log('(1) [start-workout-error]:', e)
+				return await getFieldsErrors(e)
+				// Если человек не закончил предыдущую тренировку, то следующую невозможно начать
+				// @TODO Восстановление/удаление тренировки
+				// if (typeof e === 'object' && e !== null && 'response' in e) {
+				// 	const response = (e as any).response
+				// 	const errors = await response.json()
+				// 	if (errors?.message === ERRORS.USER_IN_NOT_FINISHED_TRAINING) {
+				// 	}
+				// 	if (
+				// 		errors?.message === ERRORS.USER_IS_TRAINING_PARTICIPANT ||
+				// 		errors?.message === ERRORS.USER_IS_NOT_TRAINING_PARTICIPANT
+				// 	) {
+				// 		return
+				// 	}
+				// }
 			}
 			setIsWorkoutStarted(true)
-			isPendingStartRef.current = false // сбрасываем, когда начинаем тренировку
-
-			if (!afterReboot) {
-				const newTraining = await startTraining({ type: workoutType, colorHex: randomHexColor() })
-				startAndStoreNewActiveWorkout(workoutType, newTraining.id)
-				acceptLivePointsRef.current = true // включаем live точки сразу после старта
-			}
-
-			stopActiveTracking()
-			await startHeadingTracking()
-			if (isNotificationsGranted && isPhysicalActivityPermissionGranted) {
-				await startNotificationTimer() // опционально, если уведомления разрешены
-			}
-
-			return startTrackingLocation()
-		} catch (error) {
-			console.error('Ошибка при старте тренировки:', error)
-			toast.error('Произошла ошибка при запуске тренировки')
+			startAndStoreNewActiveWorkout(workoutType, newTrainingId, user?.id)
+			acceptLivePointsRef.current = true // включаем live точки сразу после старта
 		}
+
+		stopActiveTracking()
+		await startHeadingTracking()
+		if (isNotificationsGranted && isPhysicalActivityPermissionGranted) {
+			await startNotificationTimer(user?.id) // опционально, если уведомления разрешены
+		}
+
+		return startTrackingLocation()
 	}
 
 	const handleClickStart = useCallback(
@@ -330,7 +382,7 @@ export default function NewTraining() {
 	}, [chosenWorkout.type, getFastUserPosAndSetWithCenter])
 
 	useEffect(() => {
-		const meta = getWorkoutMeta()
+		const meta = getWorkoutMeta(user?.id)
 		// Если нет мета - значит тренировка не активна, можно запускать трекинг в активном режиме
 		if (!meta) {
 			isPendingActiveTrackingRef.current = true
@@ -347,17 +399,17 @@ export default function NewTraining() {
 			metricSpeedRef.current?.setSpeed(0)
 			setIsPaused((prevState) => {
 				const nextPauseState = !prevState
-				setActiveWorkoutPauseState(nextPauseState)
+				setActiveWorkoutPauseState(nextPauseState, user?.id)
 				return nextPauseState
 			})
 			// Fix: Используем последнюю позицию из маршрута, если это доступно.
 			// Это убирает прыгание к "Настоящей GPS" позиции, когда мы используем моковый маршрут.
 			if (pointsRef.current.length > 0) {
 				const lastPoint = pointsRef.current[pointsRef.current.length - 1]
-				setWorkoutItems([lastPoint.locationObject])
+				setWorkoutItems([lastPoint.locationObject], user?.id)
 			} else {
 				const lastUserPosition = await getLastUserPosition()
-				setWorkoutItems([lastUserPosition]) // save pause position
+				setWorkoutItems([lastUserPosition], user?.id) // save pause position
 			}
 		} catch (e) {
 			console.log('handleClickPause error:', e)
@@ -370,64 +422,241 @@ export default function NewTraining() {
 
 	const pauseDebounced = useCallback(debounce(handleClickPause, PAUSE_DEBOUNCE_MS), [])
 
+	const calculateMetricsWhenFinished = (meta: IWorkoutMeta | null | void) => {
+		if (!meta) return
+
+		// Время
+		let timeElapsed = 0 // в миллисекундах
+		if (meta) {
+			if (meta.isPaused && meta.lastPauseAt) {
+				timeElapsed = meta.lastPauseAt - meta.startedAt - meta.totalPausedMs
+			} else {
+				timeElapsed = Date.now() - meta.startedAt - meta.totalPausedMs
+			}
+		}
+
+		// Ср. скорость
+		let avgKmh = 0
+
+		if (timeElapsed > 0) {
+			avgKmh = (accumulatedDistanceRef.current * 3600) / timeElapsed // distance(m) → km/h
+		}
+
+		if (!Number.isFinite(avgKmh) || avgKmh < 0) avgKmh = 0
+
+		const totalAvgSpeed = Math.round(avgKmh) + 'км/ч'
+		const totalTimeFormatted = formatTime(timeElapsed)
+		const totalCalories = calculateCalories(timeElapsed, accumulatedDistanceRef.current, chosenWorkout.type, 70) // @TODO вес пользователя
+		const totalDistanceFormatted = formatDistance(accumulatedDistanceRef.current)
+		const totalAvgPace = calculatePace(timeElapsed, accumulatedDistanceRef.current)
+		const totalHeight = getWorkoutHeight(pointsRef.current)
+
+		setTrainingId(meta.id)
+		setStartedAt(meta.startedAt)
+		setType(chosenWorkout)
+		setPoints(pointsRef.current)
+		return setMetrics({
+			totalAvgSpeed,
+			totalTimeFormatted,
+			totalCalories,
+			totalDistanceFormatted,
+			totalAvgPace,
+			totalHeight
+		})
+	}
+
+	// Догрузка незавершенных тренировок на бэк
+	const saveUnsavedWorkoutsBeforeFinish = async () => {
+		const createdWorkouts = getUnsavedWorkoutsThatHaveId(user?.id)
+		if (createdWorkouts.length) {
+			for (const createdWorkout of createdWorkouts) {
+				while (true) {
+					const workout = getUnsavedWorkoutByStartedAt(createdWorkout.startedAt, user?.id)
+
+					if (!workout) break
+
+					const unsavedPoints = workout.locations.filter((point) => !point.isSavedToServer)
+
+					// 1. Все точки уже синхронизированы → завершаем тренировку
+					if (unsavedPoints.length === 0) {
+						try {
+							const result = await finishTraining({
+								ts: workout.locations[workout.locations.length - 1].relTs + workout.startedAt || 1
+							})
+
+							if (result.success) {
+								deleteUnsavedTrainingByStartedAt(createdWorkout.startedAt, user?.id)
+							}
+						} catch (e) {
+							console.error('[sync] finishTraining failed', e)
+						}
+
+						break
+					}
+
+					// 2. Берём актуальный батч
+					const [batch] = chunkArray(unsavedPoints)
+
+					const syncResult = await syncTraining(workout.id, prepareLocationsForSync(batch))
+
+					if (!syncResult?.success) {
+						console.warn('[sync] Training partially synced, will retry later:', createdWorkout.id)
+						break
+					}
+
+					const prevCount = unsavedPoints.length
+
+					// 3. Маркируем точки как сохранённые
+					markUnsavedWorkoutPointsAsSaved(
+						workout.startedAt,
+						batch.map((p) => p.pointId),
+						user?.id
+					)
+
+					const updated = getUnsavedWorkoutByStartedAt(workout.startedAt, user?.id)
+
+					const nextCount = updated?.locations.filter((p) => !p.isSavedToServer).length ?? 0
+
+					// защита от зависания
+					if (nextCount >= prevCount) {
+						console.error('[sync] No progress, abort loop')
+						break
+					}
+				}
+			}
+		}
+	}
+
 	const handleClickEndWorkout = useCallback(async () => {
-		// @TODO требуется проверка на то что тренировка завершилась слишком рано
 		try {
-			router.push('/training/viewWorkout')
 			await tracking.stopTracking()
 
 			if (headingSubscriptionRef.current) {
 				headingSubscriptionRef.current.remove()
 				headingSubscriptionRef.current = null
 			}
-			moveActiveWorkoutToNotSaved()
 			await stopNotificationTimer()
-			// Полный сброс состояния карты и переменных
-			resetWorkoutState()
-			await finishTraining()
-		} catch (e) {
+
+			const meta = getWorkoutMeta(user?.id)
+			calculateMetricsWhenFinished(meta)
+
+			// Если завершил рано
+			if (isWorkoutTooShort(user?.id)) {
+				toast.info('Тренировка завершена слишком рано')
+				if (isInternetConnectedRef.current && meta?.id) {
+					// тренировка существует на бэкенде
+					const result = await deleteNotFinishedTraining()
+					if (result.success) {
+						// удаление сразу
+						clearActiveWorkoutData(user?.id)
+						return resetWorkoutState()
+					}
+				} else if (!meta?.id) {
+					// тренировка не существует на бэкенде
+					// удаление сразу
+					clearActiveWorkoutData(user?.id)
+					return resetWorkoutState()
+				} else if (!isInternetConnectedRef.current && meta?.id) {
+					// нет интернета, но тренировка существует на бэкенде
+					// для последующего удаления с фронта и бэкенда
+					moveActiveWorkoutToShortWorkouts(user?.id)
+					return resetWorkoutState()
+				}
+			}
+
+			if (isInternetConnectedRef.current) {
+				// Догрузка уже созданных на бэкенде тренировок
+				await saveUnsavedWorkoutsBeforeFinish()
+
+				// Догрузка несохраненных точек в активной тренировке
+				const unsavedPoints = getActiveWorkoutPoints(deserializeGetterType.NOT_SAVED, user?.id)
+
+				if (meta?.id) {
+					// Тренировка существует на бэкенде
+					if (unsavedPoints.length) {
+						const preparedLocations = prepareLocationsForSync(unsavedPoints)
+						await syncTraining(meta.id, preparedLocations)
+					}
+				} else {
+					// Тренировка не существует на бэкенде
+					const newTraining = await startTraining({
+						type: chosenWorkout.type,
+						colorHex: randomHexColor(),
+						ts: meta?.startedAt
+					})
+					assignIdToActiveWorkout(newTraining.id, user?.id) // Присвоение id тренировке
+					if (unsavedPoints.length) {
+						const preparedLocations = prepareLocationsForSync(unsavedPoints)
+						await syncTraining(newTraining.id, preparedLocations)
+					}
+				}
+
+				try {
+					const result = await finishTraining()
+					if (result.success) {
+						clearActiveWorkoutData(user?.id)
+					}
+				} catch {}
+				// Полный сброс состояния карты и переменных
+				resetWorkoutState()
+			} else {
+				toast.info('Нет доступа к интернету, тренировку можно будет сохранить позже')
+				moveActiveWorkoutToNotSaved(user?.id)
+			}
+			router.push(
+				`/training/viewWorkout?mode=${VIEWWORKOUT_MODE.VIEW}&connection=${!isInternetConnectedRef.current && 'offline'}`
+			) // - offline - просмотр тренировки до определенного момента, без сохранения
+		} catch (e: unknown) {
 			console.error('handleClickEndWorkout error: ', e)
+			await getFieldsErrors(e)
 		}
-	}, [resetWorkoutState, stopNotificationTimer, tracking])
+	}, [
+		chosenWorkout.type,
+		user?.id,
+		isInternetConnectedRef,
+		resetWorkoutState,
+		router,
+		stopNotificationTimer,
+		toast,
+		tracking
+	])
 
 	return (
-		<SafeAreaProvider style={{ paddingTop: insets.top }}>
-			<GestureHandlerRootView style={{ flex: 1 }}>
-				<View style={styles.container}>
-					{isWorkoutStarted ? (
-						<WorkoutStarted
-							handleClickPause={pauseDebounced}
-							handleClickEndWorkout={handleClickEndWorkout}
-							workoutType={chosenWorkout.type}
-							isPaused={isPaused}
-							mapComponentRef={mapComponentRef}
-							metricAvgSpeedRef={metricAvgSpeedRef}
-							metricSpeedRef={metricSpeedRef}
-							metricDistanceRef={metricDistanceRef}
-							metricCaloriesRef={metricCaloriesRef}
-							metricHeightRef={metricHeightRef}
-							accumulatedDistanceRef={accumulatedDistanceRef} // Для темпа
-							initialLocationsState={initialLocationsState}
-							userLocationMarkerRef={userLocationMarkerRef}
-							initialMarkerLocation={initialMarkerLocationState}
-							latestUserMarkerLocationRef={latestUserMarkerLocationRef}
-						/>
-					) : (
-						<NewWorkout
-							userLocationMarkerRef={userLocationMarkerRef}
-							initialMarkerLocation={initialMarkerLocationState}
-							latestUserMarkerLocationRef={latestUserMarkerLocationRef}
-							allPermsGranted={allPermissionsGrantedCallback}
-							handleClickStart={handleClickStart}
-							handleChangeWorkout={handleChangeWorkout}
-							chosenWorkout={chosenWorkout}
-							WorkoutTypesData={WorkoutTypesData}
-							permissionsRef={permissionsRef}
-							mapComponentRef={mapComponentRef}
-						/>
-					)}
-				</View>
-			</GestureHandlerRootView>
+		<SafeAreaProvider style={{ paddingTop: insets.top, backgroundColor: Colors['black-0d'] }}>
+			<View style={styles.container}>
+				{isWorkoutStarted ? (
+					<WorkoutStarted
+						handleClickPause={pauseDebounced}
+						handleClickEndWorkout={handleClickEndWorkout}
+						workoutType={chosenWorkout.type}
+						isPaused={isPaused}
+						mapComponentRef={mapComponentRef}
+						metricAvgSpeedRef={metricAvgSpeedRef}
+						metricSpeedRef={metricSpeedRef}
+						metricDistanceRef={metricDistanceRef}
+						metricCaloriesRef={metricCaloriesRef}
+						metricHeightRef={metricHeightRef}
+						accumulatedDistanceRef={accumulatedDistanceRef} // Для темпа
+						initialLocationsState={initialLocationsState}
+						userLocationMarkerRef={userLocationMarkerRef}
+						initialMarkerLocation={initialMarkerLocationState}
+						latestUserMarkerLocationRef={latestUserMarkerLocationRef}
+					/>
+				) : (
+					<NewWorkout
+						userLocationMarkerRef={userLocationMarkerRef}
+						initialMarkerLocation={initialMarkerLocationState}
+						latestUserMarkerLocationRef={latestUserMarkerLocationRef}
+						allPermsGranted={allPermissionsGrantedCallback}
+						handleClickStart={handleClickStart}
+						handleChangeWorkout={handleChangeWorkout}
+						chosenWorkout={chosenWorkout}
+						WorkoutTypesData={WorkoutTypesData}
+						permissionsRef={permissionsRef}
+						mapComponentRef={mapComponentRef}
+					/>
+				)}
+			</View>
 		</SafeAreaProvider>
 	)
 }

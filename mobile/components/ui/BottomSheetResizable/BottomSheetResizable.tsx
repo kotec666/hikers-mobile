@@ -19,6 +19,8 @@ const MAX_SHEET_TRANSLATION = -SCREEN_HEIGHT // + 50
 export type BottomSheetResizableRef = {
 	scrollTo: (destination: number) => void
 	isActive: () => boolean
+	close: () => void
+	open: (destination?: number) => void
 }
 
 type BottomSheetResizableProps = {
@@ -39,7 +41,28 @@ const BottomSheetResizable = forwardRef<BottomSheetResizableRef, BottomSheetResi
 
 	const isActive = useCallback(() => isSheetActive.value, [])
 
-	useImperativeHandle(ref, () => ({ scrollTo, isActive }), [scrollTo, isActive])
+	const close = useCallback(() => {
+		'worklet'
+		isSheetActive.value = false
+		translateY.value = withSpring(0, { damping: 50, stiffness: 200 })
+	}, [])
+
+	const open = useCallback((destination = SNAP_POINTS[0]) => {
+		'worklet'
+		isSheetActive.value = true
+		translateY.value = withSpring(destination, { damping: 50, stiffness: 200 })
+	}, [])
+
+	useImperativeHandle(
+		ref,
+		() => ({
+			scrollTo,
+			isActive,
+			close,
+			open
+		}),
+		[scrollTo, isActive, close, open]
+	)
 
 	// Snap points: 25%, 50%, 100%
 	const SNAP_POINTS = [-SCREEN_HEIGHT * 0.25, -SCREEN_HEIGHT * 0.5, MAX_SHEET_TRANSLATION]

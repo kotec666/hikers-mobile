@@ -1,15 +1,17 @@
-import React, { useEffect, useState } from 'react'
-import { FlatList, View, Text, RefreshControl } from 'react-native'
+import React, { useCallback } from 'react'
+import { View, Text, RefreshControl, ActivityIndicator } from 'react-native'
 import { Container } from '@/components/ui/Container'
 import HeaderBack from '@/components/ui/HeaderBack'
 import PeopleListItem from '@/components/find-people/PeopleListItem'
 import { SafeAreaProvider, useSafeAreaInsets } from 'react-native-safe-area-context'
 import { fontFamily } from '@/constants/Fonts'
 import RoundedMinusSvg from '@/components/svg/RoundedMinusSvg'
-import { getFieldsErrors } from '@/helpers/getFieldsErrors'
 import { getSubscriptionsList, ISubscribe, unsubscribeFromUser } from '@/api/subscribers'
 import { useToast } from '@/hooks/useToast'
 import { PATH_TO_IMAGE } from '@/constants/PATH_TO_FILES'
+import { LegendList } from '@legendapp/list'
+import { Colors } from '@/constants/Colors'
+import { useInfiniteQuery } from '@tanstack/react-query'
 
 /**
  * Мои подписки, на кого подписан я
@@ -17,87 +19,125 @@ import { PATH_TO_IMAGE } from '@/constants/PATH_TO_FILES'
 const MySubscriptionsPage = () => {
 	const insets = useSafeAreaInsets()
 	const toast = useToast()
-	const [data, setData] = useState<{
-		subscriptions: ISubscribe[]
-		refreshing: boolean
-	}>({
-		subscriptions: [],
-		refreshing: false
+	const limit = 15
+
+	const {
+		data: subscriptions = [],
+		fetchNextPage,
+		hasNextPage,
+		isFetchingNextPage,
+		refetch,
+		isRefetching,
+		isFetching
+	} = useInfiniteQuery<ISubscribe[], Error, ISubscribe[], ['subscriptionsList'], number>({
+		queryKey: ['subscriptionsList'],
+
+		queryFn: ({ pageParam }) =>
+			getSubscriptionsList({
+				page: pageParam,
+				limit
+			}),
+
+		initialPageParam: 1,
+
+		getNextPageParam: (lastPage, pages) => {
+			if (lastPage.length < limit) return undefined
+			return pages.length + 1
+		},
+
+		select: (data) => data.pages.flat()
+		// select: (data) => ({
+		//         ...data,
+		//         pages: data.pages.flat()
+		//       }),
 	})
 
-	const handleUnsubscribe = async (unsubUserId: string) => {
-		try {
-			await unsubscribeFromUser(unsubUserId)
-			const withoutUnsubscribedUser = data.subscriptions.filter(
-				(subscription) => subscription.user.id !== unsubUserId
-			)
-			setData((s) => ({ ...s, subscriptions: withoutUnsubscribedUser }))
-		} catch (e) {
-			toast.error('Произошла ошибка, повторите попытку позже')
-		}
-	}
-
-	const handleGetAndSetData = async () => {
-		try {
-			const subscriptionsList = await getSubscriptionsList()
-			setData((s) => ({ ...s, subscriptions: subscriptionsList }))
-		} catch (e) {
-			const errors = await e.response.json()
-			console.log(errors)
-			getFieldsErrors(errors)
-		} finally {
-			setData((s) => ({ ...s, refreshing: false }))
-		}
-	}
-
-	const onRefresh = React.useCallback(async () => {
-		setData((s) => ({ ...s, refreshing: true }))
-		await handleGetAndSetData()
-	}, [])
-
-	useEffect(() => {
-		handleGetAndSetData()
-	}, [])
-
-	const EmptyListComponent = () => (
-		<View style={{ flex: 1 }} className="items-center justify-center">
-			<Text style={{ fontFamily: fontFamily.regular }} className="text-gray-ab text-base">
-				Вы ни на кого не подписаны
-			</Text>
-		</View>
+	const handleUnsubscribe = useCallback(
+		async (unsubUserId: string) => {
+			try {
+				await unsubscribeFromUser(unsubUserId)
+				await refetch()
+				// setSubscriptions((prev) => prev.filter((subscription) => subscription.user.id !== unsubUserId))
+			} catch {
+				toast.error('Произошла ошибка, повторите попытку позже')
+			}
+		},
+		// [setSubscriptions, toast]
+		[toast]
 	)
+
+	const renderItem = useCallback(
+		({ item }: { item: ISubscribe }) => (
+			<PeopleListItem
+				id={item.user.id}
+				username={item.user.username}
+				name={item.user.name}
+				avatar={item.user.avatarFilename ? `${PATH_TO_IMAGE}${item.user.avatarFilename}` : null}
+				icon={{
+					iconSvg: <RoundedMinusSvg />,
+					iconCb: () => handleUnsubscribe(item.user.id)
+				}}
+			/>
+		),
+		[handleUnsubscribe]
+	)
+
+	const renderFooter = () => {
+		// if (loading) return null
+
+		if (!isFetchingNextPage) return null
+		return (
+			<View style={{ padding: 20 }}>
+				<ActivityIndicator size="small" color={Colors['green-main']} />
+			</View>
+		)
+	}
+
+	const EmptyListComponent = () => {
+		if (isFetching) return null
+		return (
+			<View style={{ flex: 1 }} className="items-center justify-center">
+				<Text style={{ fontFamily: fontFamily.regular }} className="text-gray-ab text-base">
+					Вы ни на кого не подписаны
+				</Text>
+			</View>
+		)
+	}
 
 	return (
 		<SafeAreaProvider style={{ paddingTop: insets.top }}>
 			<View style={{ flex: 1 }}>
 				<Container className="gap-[20px] mt-[20px] flex-1">
 					<HeaderBack>Подписки</HeaderBack>
-					<FlatList
-						data={data.subscriptions}
-						renderItem={({ item }) => (
-							<PeopleListItem
-								id={item.user.id}
-								username={item.user.username}
-								name={item.user.name}
-								avatar={item.user.avatarFilename ? `${PATH_TO_IMAGE}${item.user.avatarFilename}` : null}
-								icon={{
-									iconSvg: <RoundedMinusSvg />,
-									iconCb: () => handleUnsubscribe(item.user.id)
-								}}
-							/>
-						)}
+					<LegendList
+						data={subscriptions}
+						renderItem={renderItem}
+						keyExtractor={(item) => item.user.id}
+						// onEndReached={loadMore}
+						onEndReached={() => {
+							if (hasNextPage && !isFetchingNextPage) {
+								fetchNextPage()
+							}
+						}}
+						onEndReachedThreshold={0.5}
 						ItemSeparatorComponent={() => <View style={{ height: 15 }} />}
+						// refreshControl={
+						// 	<RefreshControl refreshing={refreshing} onRefresh={refresh} tintColor="#22CB5A" />
+						// }
+						refreshControl={
+							<RefreshControl
+								refreshing={isRefetching}
+								onRefresh={refetch}
+								tintColor={Colors['green-main']}
+							/>
+						}
+						ListFooterComponent={renderFooter}
+						ListEmptyComponent={EmptyListComponent}
 						contentContainerStyle={{
 							paddingBottom: insets.bottom + 20,
 							paddingTop: 10,
-							flex: data.subscriptions.length === 0 ? 1 : undefined
+							flex: subscriptions.length === 0 ? 1 : undefined
 						}}
-						showsVerticalScrollIndicator={false}
-						keyExtractor={(item) => item.user.id}
-						refreshControl={
-							<RefreshControl refreshing={data.refreshing} onRefresh={onRefresh} tintColor="#22CB5A" />
-						}
-						ListEmptyComponent={EmptyListComponent}
 					/>
 				</Container>
 			</View>

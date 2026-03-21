@@ -1,6 +1,6 @@
 import { Image, ImageStyle, StyleProp, View, ViewStyle } from 'react-native'
 import PeopleSvg from '@/components/svg/PeopleSvg'
-import React from 'react'
+import React, { useEffect, useState } from 'react'
 import { cn } from '@/helpers/cn'
 import PenSvg from '@/components/svg/PenSvg'
 
@@ -14,7 +14,18 @@ export interface IProps {
 }
 
 export function UserAvatar(props: IProps) {
-	if (typeof props.avatar === 'string' && !props.avatar.includes('undefined') && !props.avatar.includes('null')) {
+	const [imageError, setImageError] = useState(false)
+
+	useEffect(() => {
+		setImageError(false)
+	}, [props.avatar])
+
+	if (
+		typeof props.avatar === 'string' &&
+		!props.avatar.includes('undefined') &&
+		!props.avatar.includes('null') &&
+		!imageError
+	) {
 		return (
 			<View
 				className={cn('relative rounded-full', {
@@ -25,6 +36,7 @@ export function UserAvatar(props: IProps) {
 					source={{ uri: props.avatar }}
 					className={cn('h-[50px] w-[50px] rounded-full', props.className)}
 					style={props.style as StyleProp<ImageStyle>}
+					onError={() => setImageError(true)}
 				/>
 				{props.isEditMode && (
 					<View

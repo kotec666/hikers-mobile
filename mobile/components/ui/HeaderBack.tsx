@@ -1,13 +1,15 @@
-import { Pressable, Text, View } from 'react-native'
+import { Text, View } from 'react-native'
 import ArrowBackSvg from '@/components/svg/ArrowBackSvg'
 import { fontFamily } from '@/constants/Fonts'
-import { memo, PropsWithChildren } from 'react'
+import { memo } from 'react'
 import { useRouter } from 'expo-router'
 import { cn } from '@/helpers/cn'
+import { Motion } from '@legendapp/motion'
 
-interface IProps extends PropsWithChildren {
+interface IProps {
 	className?: string
 	returnCallback?: () => void
+	children: string
 }
 
 const HeaderBack = memo((props: IProps) => {
@@ -23,9 +25,18 @@ const HeaderBack = memo((props: IProps) => {
 
 	return (
 		<View className={cn('flex-row gap-x-[16px]', props.className)}>
-			<Pressable onPress={handleClickBack}>
-				<ArrowBackSvg />
-			</Pressable>
+			<Motion.Pressable onPress={handleClickBack}>
+				<Motion.View
+					whileTap={{ scale: 0.8 }}
+					transition={{
+						type: 'spring',
+						damping: 20,
+						stiffness: 400
+					}}
+				>
+					<ArrowBackSvg />
+				</Motion.View>
+			</Motion.Pressable>
 			<Text className="text-[20px] text-white" style={{ fontFamily: fontFamily.bold }}>
 				{props.children}
 			</Text>

@@ -9,12 +9,14 @@ import { LinearGradient } from 'expo-linear-gradient'
 
 interface IProps {
 	achievement: IAchievement
-	progress?: number
 }
 
 const AchievementDetailed = (props: IProps) => {
-	const { achievement, progress = 60 } = props
-	const progressHeight = Math.min(Math.max(progress, 0), 100)
+	const { achievement } = props
+
+	const MAX_HEIGHT = 80
+	const progress = achievement.progress
+	const progressPx = (Math.min(Math.max(progress, 0), 100) / 100) * MAX_HEIGHT
 
 	const colorHex = achievement.colorHex || '#4F7DF9' // fallback color
 
@@ -39,11 +41,11 @@ const AchievementDetailed = (props: IProps) => {
 			<View className="items-center gap-[20px] w-full">
 				<View className="relative overflow-hidden p-[16px] items-center justify-center border-white/20 border-[1px] rounded-[16px] h-[80px] w-[80px]">
 					<LinearGradient
-						colors={progressHeight === 100 ? notTransparentColors : transparentColors}
-						locations={progressHeight === 100 ? notTransparentLocations : transparentLocations}
+						colors={progress === 100 ? notTransparentColors : transparentColors}
+						locations={progress === 100 ? notTransparentLocations : transparentLocations}
 						start={{ x: 0, y: 1 }}
 						end={{ x: 0, y: 0 }}
-						style={[styles.progressVertical, { height: `${progressHeight}%` }]}
+						style={[styles.progressVertical, { height: progressPx }]}
 					/>
 					<Image
 						className="w-[43px] h-[43px] z-10"
@@ -58,11 +60,11 @@ const AchievementDetailed = (props: IProps) => {
 							{achievement.title}
 						</Text>
 						<Text style={{ fontFamily: fontFamily.medium }} className="text-gray-ab text-xs">
-							Есть у {achievement.claimedPercent}% пользователей
+							Есть у {achievement.claimedPercent ?? 0}% пользователей
 						</Text>
 					</View>
 					<Text style={{ fontFamily: fontFamily.medium }} className="text-gray-ab text-base">
-						{achievement.description}
+						{achievement.description || ''}
 					</Text>
 				</View>
 			</View>

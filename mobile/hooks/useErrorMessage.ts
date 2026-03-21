@@ -20,7 +20,8 @@ export const useErrorMessage = (minCount: number = 1, maxCount: number = 100) =>
 	}
 
 	const getParameterNoun = (count: number) => {
-		return getNoun(+count, symbolWord.one, symbolWord.two, symbolWord.five)
+		const result = getNoun(+count, symbolWord.one, symbolWord.two, symbolWord.five)
+		return `${count} ${result.word}`
 	}
 
 	const ErrorMessages: IErrorMessages = {

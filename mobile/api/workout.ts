@@ -1,6 +1,7 @@
 import fetcher from '@/api/fetcher'
 import { TrainingType } from '@shared/enums'
-import { LocationObject, LocationObjectCoords } from 'expo-location'
+import { LocationObject } from 'expo-location'
+import { toQs } from '@/helpers/toQs'
 
 export interface ITraining {
 	id: string
@@ -47,8 +48,8 @@ export interface ITrainingRoute {
 
 export interface IParticipantTrainingRoute {
 	id: string
-	colorHex: string
 	user: ITrainingParticipant
+	colorHex: string
 	route: ITrainingRoute
 	metrics: ITrainingMetrics
 }
@@ -70,7 +71,7 @@ export const getMyHistory = async (): Promise<ITraining[]> => {
 }
 
 // Получить детали тренировки по ID
-export const getExtendedDetails = async (trainingId: string): Promise<IExtendedTrainingResponse[]> => {
+export const getExtendedDetails = async (trainingId: string): Promise<IExtendedTrainingResponse> => {
 	return (await fetcher.get(`trainings/extended/${trainingId}`)).json()
 }
 
@@ -80,7 +81,11 @@ export const getTrainingInfo = async (trainingId: string): Promise<ITraining[]> 
 }
 
 // Начать тренировку
-export const startTraining = async (data: { type: TrainingType; colorHex: string }): Promise<ITraining> => {
+export const startTraining = async (data: {
+	type: TrainingType
+	colorHex: string
+	ts?: number
+}): Promise<ITraining> => {
 	return (
 		await fetcher.post(`trainings/start`, {
 			json: data
@@ -89,13 +94,17 @@ export const startTraining = async (data: { type: TrainingType; colorHex: string
 }
 
 // Завершить тренировку
-export const finishTraining = async (): Promise<{ success: boolean }> => {
-	return (await fetcher.post('trainings/finish')).json()
+export const finishTraining = async (data?: { ts?: number }): Promise<{ success: boolean }> => {
+	return (
+		await fetcher.post('trainings/finish', {
+			json: data
+		})
+	).json()
 }
 
 // Передать метрики по тренировке (можно частями)
 export const syncTraining = async (
-	trainingId: string,
+	trainingId: string | null,
 	metrics: {
 		relTs: number
 		alt: number
@@ -106,6 +115,7 @@ export const syncTraining = async (
 		locationObject: Omit<LocationObject, 'mocked'>
 	}[]
 ): Promise<{ success: boolean }> => {
+	if (!trainingId) return { success: false }
 	return (
 		await fetcher.patch(`trainings/sync/${trainingId}`, {
 			json: {
@@ -118,4 +128,22 @@ export const syncTraining = async (
 // Удалить незавершенную тренировку (не будет отображена в истории тренировок)
 export const deleteNotFinishedTraining = async (): Promise<{ success: boolean }> => {
 	return (await fetcher.delete(`trainings/delete-not-finished`)).json()
+}
+
+export interface ITrainingHistoryItem {
+	id: string
+	type: TrainingType
+	createdAt: string
+	distanceM: number | null
+	startedAt: null | string
+	finishedAt: null | string
+}
+// Получить историю своих тренировок
+export const getMyHistoryTrainings = async (data: {
+	page: number
+	limit: number
+	finished: boolean
+	types?: string // run,run,run
+}): Promise<ITrainingHistoryItem[]> => {
+	return (await fetcher.get(`trainings/my?${toQs(data)}`)).json()
 }

@@ -1,8 +1,6 @@
-import React, { useEffect, useState } from 'react'
+import React, { useCallback, useEffect, useRef, useState } from 'react'
 import { SafeAreaProvider, useSafeAreaInsets } from 'react-native-safe-area-context'
-import { Container } from '@/components/ui/Container'
-import { ScrollView, View, Text, RefreshControl } from 'react-native'
-import { UserAvatar } from '@/components/ui/UserAvatar'
+import { View, RefreshControl, ActivityIndicator, Text } from 'react-native'
 import SettingsSvg from '@/components/svg/SettingsSvg'
 import MoreOptionsButton from '@/components/ui/MoreOptionsButton/MoreOptionsButton'
 import { fontFamily } from '@/constants/Fonts'
@@ -11,13 +9,20 @@ import { Button } from '@/components/ui/Button'
 import ActivityInfo from '@/components/ui/Profile/ActivityInfo'
 import RedirectAchievementsInfo from '@/components/ui/Profile/RedirectAchievementsInfo'
 import PostListItem from '@/components/ui/Post/PostListItem'
-import { RelativePathString, useRouter } from 'expo-router'
+import { RelativePathString, useLocalSearchParams, useRouter, useFocusEffect } from 'expo-router'
 import { useAuthStore } from '@/store/authStore'
-import NavBar from '@/components/ui/NavBar'
 import { getProfileData, IProfile } from '@/api/profile'
-import { getFieldsErrors } from '@/helpers/getFieldsErrors'
 import { PATH_TO_IMAGE } from '@/constants/PATH_TO_FILES'
-import { useEditActivitiesStore } from '@/store/editActivitiesStore'
+import { AnimatedProfilePicture } from '@/components/ui/Profile/AnimatedProfilePicture'
+import { LegendList, LegendListRef } from '@legendapp/list'
+import { getPostsMy, IPost } from '@/api/posts'
+import { Colors } from '@/constants/Colors'
+import MapComponent from '@/components/map/MapComponent'
+import { adaptLocations } from '@/helpers/adaptPointsToIWorkoutLocationStorageItem'
+import { useSafeNavigation } from '@/hooks/useSafeNavigation'
+import { useInfiniteQuery } from '@tanstack/react-query'
+import TrainingsEmpty from '@/components/ui/Post/TrainingsEmpty'
+import { getFieldsErrors } from '@/helpers/getFieldsErrors'
 
 /**
  *
@@ -27,160 +32,273 @@ import { useEditActivitiesStore } from '@/store/editActivitiesStore'
 
 const ALLOWED_ROUTES = {
 	EDIT_PROFILE: '/profile/edit' as RelativePathString,
-	DOCUMENT: '/document' as RelativePathString,
-	TABS_UI: '/(tabs-ui-kit)' as RelativePathString
+	DOCUMENT: '/document' as RelativePathString
 } as const satisfies Record<string, RelativePathString>
 
 type AllowedRoute = (typeof ALLOWED_ROUTES)[keyof typeof ALLOWED_ROUTES]
 
 const Profile = () => {
 	const insets = useSafeAreaInsets()
+	const { push } = useSafeNavigation()
 	const router = useRouter()
-	const { logout, user, setUser } = useAuthStore()
-	const { newActivitiesOrder } = useEditActivitiesStore()
-	const [data, setData] = useState<{
-		profileData?: IProfile
-		refreshing: boolean
-	}>({
-		profileData: undefined,
-		refreshing: false
+	const { user, setUser, logout } = useAuthStore()
+	const params = useLocalSearchParams()
+	const legendListRef = useRef<LegendListRef>(null)
+
+	const [profileData, setProfileData] = useState<IProfile | undefined>(undefined)
+	const [refreshingProfile, setRefreshingProfile] = useState(false)
+
+	const postsLimit = 5
+	const {
+		data: posts = [],
+		fetchNextPage: fetchNextPostsPage,
+		hasNextPage: hasNextPostsPage,
+		isFetchingNextPage: isFetchingPostsNextPage,
+		refetch: postsRefetch,
+		isRefetching: postsIsRefetching,
+		isFetching: isPostsFetching
+	} = useInfiniteQuery<IPost[], Error, IPost[], ['posts-my-profile'], number>({
+		queryKey: ['posts-my-profile'],
+
+		queryFn: ({ pageParam }) =>
+			getPostsMy({
+				page: pageParam,
+				limit: postsLimit
+			}),
+		initialPageParam: 1,
+		getNextPageParam: (lastPage, pages) => {
+			if (lastPage.length < postsLimit) return undefined
+			return pages.length + 1
+		},
+
+		select: (data) => data.pages.flat()
 	})
 
+	// Если пользователь кликнет на ту же страницу, то пойдёт скролл вверх. Навбар передаст params при переходе на эту же страницу
+	useEffect(() => {
+		if (params.scrollToTop && legendListRef.current) {
+			legendListRef.current.scrollToOffset({ offset: 0, animated: true })
+		}
+	}, [params.scrollToTop])
+
 	const handleClickRedirect = (page: AllowedRoute) => {
-		router.push(page)
+		push(page)
 	}
 
 	const handleClickExit = () => {
 		logout()
+		router.replace('/')
 	}
 
-	const posts = [
-		{ id: 1, authorName: 'Сергей Авдотьев', date: 'Вчера' },
-		{ id: 2, authorName: 'Сергей Авдотьев', date: 'Вчера' },
-		{ id: 3, authorName: 'Сергей Авдотьев', date: 'Вчера' }
-	]
-
-	const handleGetAndSetData = async () => {
+	const loadProfile = useCallback(async () => {
+		setRefreshingProfile(true)
 		try {
-			const profileData = await getProfileData()
-			setData((s) => ({ ...s, profileData: profileData }))
-			setUser(profileData.user)
-		} catch (e) {
-			const errors = await e.response.json()
-			console.log(errors)
-			getFieldsErrors(errors)
+			const profile = await getProfileData()
+			setProfileData(profile)
+			setUser(profile.user)
+		} catch (e: unknown) {
+			await getFieldsErrors(e)
 		} finally {
-			setData((s) => ({ ...s, refreshing: false }))
+			setRefreshingProfile(false)
 		}
-	}
+	}, [setUser])
 
-	useEffect(() => {
-		handleGetAndSetData()
-	}, [])
+	const onRefreshAll = useCallback(async () => {
+		setRefreshingProfile(true)
+		await Promise.all([loadProfile(), postsRefetch()]) // , refresh()
+		setRefreshingProfile(false)
+	}, [loadProfile, postsRefetch]) // , refresh
 
-	const onRefresh = React.useCallback(async () => {
-		setData((s) => ({ ...s, refreshing: true }))
-		await handleGetAndSetData()
-	}, [])
+	// Первоначальная загрузка данных (при фокусе на странице)
+	useFocusEffect(
+		useCallback(() => {
+			const init = async () => {
+				await Promise.all([loadProfile()]) // , refresh()
+			}
+			init()
+		}, [loadProfile])
+	)
 
-	const sourceArray = newActivitiesOrder?.length ? newActivitiesOrder : data.profileData?.activities || []
-	const activitiesToRender = sourceArray?.length >= 3 ? sourceArray?.slice(0, 3) : []
+	// Функция рендеринга элемента поста
+	const renderPostItem = useCallback(
+		({ item }: { item: IPost }) => {
+			const userMetrics = item.training.participants.find((p) => p.user.id === user?.id)?.metrics
+			return (
+				<PostListItem
+					key={item.id}
+					{...item}
+					isMyPost
+					postId={item.id}
+					authorId={item.userCreator?.id || ''}
+					authorName={item.userCreator?.name || ''}
+					avatar={item.userCreator.avatarFilename}
+					createdAt={item.createdAt}
+					workoutType={item.training.type}
+					title={item.title}
+					description={item.description}
+					images={item.fileNames}
+					metrics={userMetrics}
+					likeData={{
+						isLiked: item.isLiked,
+						likesCount: item.likesCount,
+						postId: item.id
+					}}
+					participants={item.training.participants}
+					mapComponent={
+						<MapComponent
+							rounded={25}
+							interactiveDisabled
+							needFinishMarker
+							initialLocations={{ current: adaptLocations(item.training.participants[0].route.points) }}
+						/>
+					}
+				/>
+			)
+		},
+		[user?.id]
+	)
+
+	// Функция рендеринга индикатора загрузки
+	const renderFooter = useCallback(() => {
+		//if (!loading) return null
+		if (!isFetchingPostsNextPage) return null
+		return (
+			<View style={{ padding: 20 }}>
+				<ActivityIndicator size="small" color={Colors['green-main']} />
+			</View>
+		)
+	}, [isFetchingPostsNextPage]) // loading
+
+	const renderEmpty = useCallback(() => {
+		if (isPostsFetching) return null
+
+		return <TrainingsEmpty text="Постов еще не существует, опубликуйте пост после тренировки" />
+	}, [isPostsFetching])
 
 	return (
 		<>
-			<NavBar />
 			<SafeAreaProvider style={{ paddingTop: insets.top, paddingBottom: insets.bottom }}>
-				<ScrollView
+				<LegendList
+					ref={legendListRef}
+					data={posts}
+					renderItem={renderPostItem}
+					keyExtractor={(item) => item.id}
+					// onEndReached={loadMore}
+					onEndReached={() => {
+						if (hasNextPostsPage && !isFetchingPostsNextPage) {
+							fetchNextPostsPage()
+						}
+					}}
+					onEndReachedThreshold={0.4}
+					ItemSeparatorComponent={() => <View style={{ height: 16 }} />}
+					ListEmptyComponent={renderEmpty}
+					ListFooterComponent={renderFooter}
+					// refreshControl={
+					// 	<RefreshControl
+					// 		refreshing={refreshingProfile || refreshing}
+					// 		onRefresh={onRefreshAll}
+					// 		tintColor="#22CB5A"
+					// 	/>
+					// }
 					refreshControl={
-						<RefreshControl refreshing={data.refreshing} onRefresh={onRefresh} tintColor="#22CB5A" />
+						<RefreshControl
+							refreshing={refreshingProfile || postsIsRefetching}
+							onRefresh={onRefreshAll}
+							tintColor={Colors['green-main']}
+						/>
 					}
-				>
-					<Container className="gap-[20px]">
-						<View className="gap-[20px]">
-							<View className="gap-[16px]">
-								<View className="flex-row justify-between w-full">
-									<UserAvatar
-										bordered
-										className="w-[117px] h-[117px]"
-										iconSize={{ width: 60, height: 60 }}
-										avatar={`${PATH_TO_IMAGE}${user?.avatarFilename}`}
+					ListHeaderComponent={
+						<View className="gap-[20px] mb-[16px]">
+							<View className="gap-[20px]">
+								<View className="gap-[16px]">
+									<View className="flex-row justify-between w-full">
+										<AnimatedProfilePicture
+											size={117}
+											bordered
+											imageUrl={`${PATH_TO_IMAGE}${user?.avatarFilename}`}
+										/>
+										<MoreOptionsButton
+											icon={<SettingsSvg />}
+											params={[
+												{
+													label: 'Редактировать профиль',
+													action: () => handleClickRedirect(ALLOWED_ROUTES.EDIT_PROFILE)
+												},
+												{
+													label: 'Политика конфиденциальности',
+													action: () => handleClickRedirect(ALLOWED_ROUTES.DOCUMENT)
+												},
+												{
+													label: 'Политика обработки персональных данных',
+													action: () => handleClickRedirect(ALLOWED_ROUTES.DOCUMENT)
+												},
+												// {
+												// 	label: 'Tabs ui',
+												// 	action: () => handleClickRedirect('/(tabs-ui-kit)' as AllowedRoute)
+												// },
+												// {
+												// 	label: 'To view workout',
+												// 	action: () =>
+												// 		handleClickRedirect(
+												// 			`/training/viewWorkout?mode=${VIEWWORKOUT_MODE.VIEW}` as AllowedRoute
+												// 		)
+												// },
+												{ label: 'Выход', action: handleClickExit }
+											]}
+										/>
+									</View>
+									<View>
+										{user?.name && (
+											<Text
+												className="text-[19px] text-white"
+												style={{ fontFamily: fontFamily.bold }}
+											>
+												{user?.name}
+											</Text>
+										)}
+										{user?.username && (
+											<Text
+												className="text-base text-gray-ab"
+												style={{ fontFamily: fontFamily.medium }}
+											>
+												@{user?.username}
+											</Text>
+										)}
+									</View>
+								</View>
+								<View className="flex-row justify-between gap-[10px]">
+									<SocialStats
+										label="Подписчики"
+										content={profileData?.subscribers}
+										hrefTo="/subscribers/my-subscribers"
 									/>
-									<MoreOptionsButton
-										icon={<SettingsSvg />}
-										params={[
-											{
-												label: 'Редактировать профиль',
-												action: () => handleClickRedirect(ALLOWED_ROUTES.EDIT_PROFILE)
-											},
-											{
-												label: 'Политика конфиденциальности',
-												action: () => handleClickRedirect(ALLOWED_ROUTES.DOCUMENT)
-											},
-											{
-												label: 'Политика обработки персональных данных',
-												action: () => handleClickRedirect(ALLOWED_ROUTES.DOCUMENT)
-											},
-											{
-												label: 'Tabs ui',
-												action: () => handleClickRedirect(ALLOWED_ROUTES.TABS_UI)
-											},
-											{ label: 'Выход', action: handleClickExit }
-										]}
+									<SocialStats
+										label="Друзья"
+										content={profileData?.friends}
+										hrefTo="/friends/my-friends"
+									/>
+									<SocialStats
+										label="Подписки"
+										content={profileData?.subscriptions}
+										hrefTo="/subscribers/my-subscriptions"
 									/>
 								</View>
-								<View>
-									{user?.name && (
-										<Text
-											className="text-[19px] text-white"
-											style={{ fontFamily: fontFamily.bold }}
-										>
-											{user?.name}
-										</Text>
-									)}
-									{user?.username && (
-										<Text
-											className="text-base text-gray-ab"
-											style={{ fontFamily: fontFamily.medium }}
-										>
-											@{user?.username}
-										</Text>
-									)}
-								</View>
+								<Button variant="white" onPress={() => push('/workout-history?from=profile')}>
+									История тренировок
+								</Button>
+								<RedirectAchievementsInfo achievements={profileData?.achievements} isMyProfile />
+								<ActivityInfo label="Активности" activities={profileData?.activities || []} />
 							</View>
-							<View className="flex-row justify-between gap-[10px]">
-								<SocialStats
-									label="Подписчики"
-									content={data.profileData?.subscribers}
-									hrefTo="/subscribers/my-subscribers"
-								/>
-								<SocialStats
-									label="Друзья"
-									content={data.profileData?.friends}
-									hrefTo="/friends/my-friends"
-								/>
-								<SocialStats
-									label="Подписки"
-									content={data.profileData?.subscriptions}
-									hrefTo="/subscribers/my-subscriptions"
-								/>
-							</View>
-							<Button variant="white">История тренировок</Button>
-							<RedirectAchievementsInfo achievements={data.profileData?.achievements} isMyProfile />
-							<ActivityInfo label="Активности" activities={activitiesToRender || []} />
+							<Text
+								className="text-base text-white border-b-[1px] border-b-black-44 py-[20px]"
+								style={{ fontFamily: fontFamily.bold }}
+							>
+								Лента
+							</Text>
 						</View>
-					</Container>
-					<Container className="gap-[15px]" style={{ paddingBottom: 100 }}>
-						<Text
-							className="text-base text-white border-b-[1px] border-b-black-44 py-[20px]"
-							style={{ fontFamily: fontFamily.bold }}
-						>
-							Лента
-						</Text>
-						{posts.map((post) => (
-							<PostListItem key={post.id} {...post} isMyPost />
-						))}
-					</Container>
-				</ScrollView>
+					}
+					contentContainerStyle={{ flexGrow: 1, paddingBottom: 100, paddingHorizontal: 16 }}
+				/>
 			</SafeAreaProvider>
 		</>
 	)

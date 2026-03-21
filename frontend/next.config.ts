@@ -4,6 +4,9 @@ const nextConfig: NextConfig = {
 	poweredByHeader: false,
 	compress: true,
 	reactStrictMode: true,
+	images: {
+		remotePatterns: [new URL('https://hikers.run/api/static/**')]
+	},
 	env: {
 		ya_verification: process.env.NEXT_PUBLIC_YANDEX_VERIFICATION
 	},

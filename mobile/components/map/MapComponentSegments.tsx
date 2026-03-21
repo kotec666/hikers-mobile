@@ -1,9 +1,8 @@
 import { Animation, InitialRegion, Point, Yamap, YamapRef } from 'react-native-yamap-plus'
 import React, { forwardRef, useCallback, useEffect, useImperativeHandle, useMemo, useRef, useState } from 'react'
 import { View } from 'react-native'
-import { IWorkoutLocationStorageItem, removeAllWorkoutStorage } from '@/store/workoutStorage'
+import { IWorkoutLocationStorageItem } from '@/store/workoutStorage'
 import { Colors } from '@/constants/Colors'
-import { Button } from '@/components/ui/Button'
 import { debounce } from '@/helpers/debounce'
 import PauseLocationMarker from '@/components/map/markers/PauseLocationMarker'
 import ResumeLocationMarker from '@/components/map/markers/ResumeLocationMarker'
@@ -99,7 +98,7 @@ const MapComponentSegments = forwardRef<MapComponentSegmentsHandle, IProps>((pro
 				lat: loc.locationObject.coords.latitude,
 				lon: loc.locationObject.coords.longitude
 			}
-			const isPaused = loc.isPausedPoint
+			const isPaused = loc.paused
 			const expectedColor = isPaused ? pausedLineColor : activeLineColor
 
 			if (!lastSegment) {
@@ -273,9 +272,6 @@ const MapComponentSegments = forwardRef<MapComponentSegmentsHandle, IProps>((pro
 				maxHeight: props.maxContainerHeight ?? 'auto'
 			}}
 		>
-			<Button variant="white" onPress={() => removeAllWorkoutStorage()}>
-				REMOVE ALL WORKOUT STORAGE
-			</Button>
 			{shouldRenderMap && (
 				<Yamap
 					ref={mapRef}
@@ -285,7 +281,7 @@ const MapComponentSegments = forwardRef<MapComponentSegmentsHandle, IProps>((pro
 					logoPosition={{ horizontal: 'right', vertical: 'top' }}
 					showUserPosition={false}
 					tiltGesturesDisabled={true}
-					rotateGesturesDisabled={true} // @TODO включить после дебага
+					rotateGesturesDisabled={false} // @TODO включить после дебага
 					onCameraPositionChange={(e) => {
 						if (['GESTURES', 'UNKNOWN'].includes(e.nativeEvent.reason)) {
 							handleBlockAnimation()

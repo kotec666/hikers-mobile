@@ -1,7 +1,5 @@
 import { useFonts } from 'expo-font'
 import { Stack } from 'expo-router'
-import { Colors } from '@/constants/Colors'
-import './../global.css'
 import { fontFamily } from '@/constants/Fonts'
 import { YamapInstance } from 'react-native-yamap-plus'
 import { useAuthStore } from '@/store/authStore'
@@ -11,6 +9,14 @@ import { NotificationProvider } from '@/components/providers/NotificationProvide
 import notifee, { EventType } from '@notifee/react-native'
 import { setActiveWorkoutPauseState } from '@/store/workoutStorage'
 import { getAuthData } from '@/services/tokenService'
+import { GestureHandlerRootView } from 'react-native-gesture-handler'
+import PortalProvider from '@/components/Portal/PortalProvider'
+import { getItem } from '@/store/storage'
+import { Colors } from '@/constants/Colors'
+import './../global.css'
+
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
+const queryClient = new QueryClient()
 
 YamapInstance.setLocale('ru_RU')
 YamapInstance.init(process.env.EXPO_PUBLIC_YAMAP_KEY || '')
@@ -23,25 +29,76 @@ YamapInstance.init(process.env.EXPO_PUBLIC_YAMAP_KEY || '')
 notifee.onBackgroundEvent(async ({ type, detail }) => {
 	if (type === EventType.ACTION_PRESS) {
 		const actionId = detail.pressAction?.id
+		const user = getItem('authData')?.user
 
 		switch (actionId) {
 			case 'pause':
-				setActiveWorkoutPauseState(true)
+				setActiveWorkoutPauseState(true, user?.id)
 				break
 			case 'resume':
-				setActiveWorkoutPauseState(false)
+				setActiveWorkoutPauseState(false, user?.id)
 				break
 		}
 	}
 })
 
-notifee.registerForegroundService((_notification) => {
-	return new Promise((resolve) => {
-		// console.log('[Notifee] foreground service started:', notification.id)
-		// Можно выполнять любую долгую задачу, например, трекинг GPS
-		resolve()
-	})
+// notifee.registerForegroundService((_notification) => {
+// 	return new Promise((resolve) => {
+// 		// console.log('[Notifee] foreground service started:', notification.id)
+// 		resolve()
+// 	})
+// })
+
+notifee.registerForegroundService(() => {
+	return new Promise(() => {})
 })
+
+const Root = ({
+	isAuthenticated,
+	authenticatedRoutes,
+	baseRoutes,
+	notAuthenticatedRoutes
+}: {
+	isAuthenticated: boolean
+	authenticatedRoutes: string[]
+	baseRoutes: string[]
+	notAuthenticatedRoutes: string[]
+}) => {
+	return (
+		<QueryClientProvider client={queryClient}>
+			<GestureHandlerRootView className="flex-1">
+				<PortalProvider>
+					<Stack
+						screenOptions={{
+							headerShown: false,
+							contentStyle: {
+								backgroundColor: Colors['black-0d']
+							}
+						}}
+					>
+						{baseRoutes.map((route) => (
+							<Stack.Screen key={route} name={route} />
+						))}
+
+						<Stack.Protected guard={isAuthenticated}>
+							{authenticatedRoutes.map((route) => (
+								<Stack.Screen key={route} name={route} />
+							))}
+						</Stack.Protected>
+
+						<Stack.Protected guard={!isAuthenticated}>
+							{notAuthenticatedRoutes.map((route) => (
+								<Stack.Screen key={route} name={route} />
+							))}
+						</Stack.Protected>
+					</Stack>
+
+					<NotificationProvider />
+				</PortalProvider>
+			</GestureHandlerRootView>
+		</QueryClientProvider>
+	)
+}
 
 export default function RootLayout() {
 	const [isLoading, setIsLoading] = useState(true)
@@ -79,43 +136,32 @@ export default function RootLayout() {
 
 	const authenticatedRoutes = [
 		'find-people',
-		'news-feed/members', // для /news-feed/members
+		'posts/members/[id]',
+		'posts/[id]',
 		'workout-history',
-		'friends/search',
+		// 'friends/search', не используется
+		// 'find-people', не используется
 		'friends/my-friends',
 		'friends/friend-requests',
+		'subscribers/my-subscribers',
 		'subscribers/my-subscriptions',
 		'notifications',
+		'profile/edit',
+		'profile/editActivity',
+		'user/achievements/[id]',
+		'achievements',
+		'user/profile/[id]',
 		'training/viewWorkout'
 	]
 	const baseRoutes = ['index', 'document']
 	const notAuthenticatedRoutes = ['auth']
 
 	return (
-		<>
-			<Stack
-				screenOptions={{
-					headerShown: false,
-					contentStyle: {
-						backgroundColor: Colors['black-0d']
-					}
-				}}
-			>
-				{baseRoutes.map((route) => (
-					<Stack.Screen key={route} name={route} options={{ headerShown: false }} />
-				))}
-				<Stack.Protected guard={isAuthenticated}>
-					{authenticatedRoutes.map((route) => (
-						<Stack.Screen key={route} name={route} options={{ headerShown: false }} />
-					))}
-				</Stack.Protected>
-				<Stack.Protected guard={!isAuthenticated}>
-					{notAuthenticatedRoutes.map((route) => (
-						<Stack.Screen key={route} name={route} options={{ headerShown: false }} />
-					))}
-				</Stack.Protected>
-			</Stack>
-			<NotificationProvider />
-		</>
+		<Root
+			isAuthenticated={isAuthenticated}
+			authenticatedRoutes={authenticatedRoutes}
+			baseRoutes={baseRoutes}
+			notAuthenticatedRoutes={notAuthenticatedRoutes}
+		/>
 	)
 }

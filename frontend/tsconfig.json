@@ -1,5 +1,7 @@
 {
 	"compilerOptions": {
+		//"types": ["@yandex/ymaps3-types"],
+		"typeRoots": ["./node_modules/@types", "./node_modules/@yandex/ymaps3-types"],
 		"target": "ES2017",
 		"lib": ["dom", "dom.iterable", "esnext"],
 		"allowJs": true,
@@ -23,6 +25,14 @@
 			"@shared/*": ["./src/shared/*"]
 		}
 	},
-	"include": ["next-env.d.ts", "**/*.ts", "**/*.tsx", ".next/types/**/*.ts", ".next/dev/types/**/*.ts", "**/*.mts"],
+	"include": [
+		"next-env.d.ts",
+		"**/*.ts",
+		"**/*.tsx",
+		".next/types/**/*.ts",
+		".next/dev/types/**/*.ts",
+		"**/*.mts",
+		"**/*.d.ts"
+	],
 	"exclude": ["node_modules"]
 }

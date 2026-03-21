@@ -26,18 +26,6 @@ export interface ITrainingPoint {
 	rel_ts: number
 	distance: number
 	speed_kmh: number
-	locationObject: {
-		coords: {
-			speed: number
-			heading: number
-			accuracy: number
-			altitude: number
-			latitude: number
-			longitude: number
-			altitudeAccuracy: number
-		}
-		timestamp: number
-	}
 }
 
 export interface ITrainingMetrics {
@@ -58,8 +46,8 @@ export interface ITrainingRoute {
 
 export interface IParticipantTrainingRoute {
 	id: string
-	colorHex: string
 	user: ITrainingParticipant
+	colorHex: string
 	route: ITrainingRoute
 	metrics: ITrainingMetrics
 }

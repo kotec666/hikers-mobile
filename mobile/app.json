@@ -4,14 +4,14 @@
 		"slug": "hikers",
 		"version": "1.0.0",
 		"orientation": "portrait",
-		"icon": "./assets/images/icon.png",
-		"scheme": "mobile",
+		"scheme": "hikers",
 		"userInterfaceStyle": "automatic",
-		"newArchEnabled": true,
 		"backgroundColor": "#0D0D0D",
+		"newArchEnabled": true,
 		"ios": {
 			"supportsTablet": true,
-			"bundleIdentifier": "com.hikers.mobile"
+			"bundleIdentifier": "com.hikers.mobile",
+            "icon": "./assets/images/icon-ios.icon"
 		},
 		"android": {
 			"adaptiveIcon": {
@@ -38,6 +38,12 @@
 		"plugins": [
 			"expo-router",
 			[
+				"expo-sensors",
+				{
+					"motionPermission": "Разрешите хайкерс доступ к датчикам устройства"
+				}
+			],
+			[
 				"expo-splash-screen",
 				{
 					"image": "./assets/images/splash-icon.png",
@@ -49,7 +55,7 @@
 			[
 				"expo-location",
 				{
-					"locationAlwaysAndWhenInUsePermission": "Включите определение вашего местоположения для hikers",
+					"locationAlwaysAndWhenInUsePermission": "Включите определение вашего местоположения для хайкерс",
 					"isAndroidForegroundServiceEnabled": true,
 					"isAndroidBackgroundLocationEnabled": true,
 					"isIosBackgroundLocationEnabled": true
@@ -74,8 +80,8 @@
 			[
 				"expo-image-picker",
 				{
-					"photosPermission": "Приложению требуется доступ к вашей галереи для выбора аватара",
-					"cameraPermission": "Приложению требуется доступ к вашей камере для добавления аватара"
+					"photosPermission": "Приложению требуется доступ к вашей галереи для выбора изображения",
+					"cameraPermission": "Приложению требуется доступ к вашей камере для добавления изображения"
 				}
 			],
 			"expo-font"

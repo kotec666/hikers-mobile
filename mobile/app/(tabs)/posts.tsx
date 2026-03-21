@@ -1,141 +1,287 @@
+import React, { useCallback, useEffect, useRef, useState } from 'react'
 import {
-	FlatList,
 	View,
 	Text,
 	Platform,
 	KeyboardAvoidingView,
 	TouchableWithoutFeedback,
 	Keyboard,
-	Pressable
+	RefreshControl,
+	ActivityIndicator
 } from 'react-native'
 import { SafeAreaProvider, useSafeAreaInsets } from 'react-native-safe-area-context'
-import { StatusBar } from 'expo-status-bar'
 import { Input } from '@/components/ui/Input'
 import { Container } from '@/components/ui/Container'
 import { NotificationsButton } from '@/components/ui/Notifications/NotificationsButton'
 import PostListItem from '@/components/ui/Post/PostListItem'
-import React, { useState } from 'react'
-import PostsEmpty from '@/components/ui/Post/PostsEmpty'
 import { fontFamily } from '@/constants/Fonts'
 import PeopleListItem from '@/components/find-people/PeopleListItem'
 import { Button } from '@/components/ui/Button'
 import ArrowBackSvg from '@/components/svg/ArrowBackSvg'
 import PostSearchResult from '@/components/ui/Post/PostSearchResult'
+import { LegendList, LegendListRef } from '@legendapp/list'
+import { getPostsFeed, IPost } from '@/api/posts'
+import { Colors } from '@/constants/Colors'
+import { useLocalSearchParams } from 'expo-router'
+import MapComponent from '@/components/map/MapComponent'
+import { adaptLocations } from '@/helpers/adaptPointsToIWorkoutLocationStorageItem'
+import { Motion } from '@legendapp/motion'
+import TrainingsEmpty from '@/components/ui/Post/TrainingsEmpty'
+import { SearchType } from '@/shared/enums'
+import { IFoundPost, IFoundUser, searchByAllItems } from '@/api/search'
+import { PATH_TO_IMAGE } from '@/constants/PATH_TO_FILES'
+import { useInfiniteQuery, useQueryClient } from '@tanstack/react-query'
 
-enum SearchMode {
-	PEOPLE = 'people',
-	POSTS = 'posts'
+const isUser = (item: IFoundUser | IFoundPost): item is IFoundUser => {
+	return 'email' in item
+}
+
+const isPost = (item: IFoundUser | IFoundPost): item is IFoundPost => {
+	return 'training' in item
 }
 
 const PostsPage = () => {
 	const insets = useSafeAreaInsets()
+	const queryClient = useQueryClient()
+
 	const [state, setState] = useState<{
 		isSearchActive: boolean
-		searchMode: SearchMode
+		searchMode: SearchType
 	}>({
 		isSearchActive: false,
-		searchMode: SearchMode.PEOPLE
+		searchMode: SearchType.USERS
 	})
 
-	const posts = [
-		{ id: 1, authorName: 'Сергей Авдотьев', date: 'Вчера' },
-		{ id: 2, authorName: 'Сергей Авдотьев', date: 'Вчера' },
-		{ id: 3, authorName: 'Сергей Авдотьев', date: 'Вчера' }
-	]
+	// State для поиска
+	const [searchWord, setSearchWord] = useState('')
+	const [debouncedSearchWord, setDebouncedSearchWord] = useState(searchWord)
 
-	const data = [
-		{ id: 1, name: 'Стив Джобс first', avatar: true },
-		{ id: 2, name: 'Джефф Безос', avatar: false },
-		{ id: 3, name: 'Джефф Безос', avatar: false },
-		{ id: 4, name: 'Джефф Безос', avatar: false },
-		{ id: 5, name: 'Джефф Безос', avatar: false },
-		{ id: 6, name: 'Джефф Безос', avatar: false },
-		{ id: 7, name: 'Джефф Безос', avatar: false },
-		{ id: 8, name: 'Джефф Безос', avatar: false },
-		{ id: 9, name: 'Джефф Безос', avatar: false },
-		{ id: 10, name: 'Джефф Безос', avatar: false },
-		{ id: 11, name: 'Джефф Безос', avatar: false },
-		{ id: 12, name: 'Джефф Безос', avatar: false },
-		{ id: 13, name: 'Джефф Безос', avatar: false },
-		{ id: 14, name: 'Джефф Безос', avatar: false },
-		{ id: 15, name: 'Джефф Безос', avatar: false },
-		{ id: 16, name: 'Джефф Безос', avatar: false },
-		{ id: 17, name: 'Джефф Безос', avatar: false },
-		{ id: 18, name: 'Джефф Безос', avatar: false },
-		{ id: 19, name: 'Джефф Безос', avatar: false },
-		{ id: 20, name: 'Джефф Безос last', avatar: false }
-	]
+	const searchLimit = 15
 
-	return (
-		<SafeAreaProvider style={{ paddingTop: insets.top }}>
-			<View style={{ flex: 1 }}>
-				<Container className="gap-[20px] flex-1">
-					<View className="flex-row justify-center items-center gap-[10px] w-full">
-						{state.isSearchActive && (
-							<Pressable
+	const {
+		data: searchDataRaw,
+		fetchNextPage: fetchNextSearchPage,
+		hasNextPage: hasNextSearchPage,
+		isFetchingNextPage: isFetchingNextSearchPage,
+		refetch: refetchSearch,
+		isRefetching: isRefetchingSearch
+	} = useInfiniteQuery({
+		queryKey: ['search', debouncedSearchWord, state.searchMode],
+		queryFn: ({ pageParam = 1, signal }) => {
+			if (!debouncedSearchWord || debouncedSearchWord.trim().length < 2) {
+				return Promise.resolve([])
+			}
+
+			return searchByAllItems(
+				{
+					page: pageParam,
+					limit: searchLimit,
+					word: debouncedSearchWord,
+					type: state.searchMode
+				},
+				signal
+			)
+		},
+		initialPageParam: 1,
+		getNextPageParam: (lastPage, pages) => (lastPage.length === searchLimit ? pages.length + 1 : undefined),
+		enabled: debouncedSearchWord.trim().length >= 2
+		// select: (data) => data.pages.flat()
+	})
+
+	const searchData = searchDataRaw?.pages.flat() ?? []
+
+	useEffect(() => {
+		const handler = setTimeout(() => {
+			setDebouncedSearchWord(searchWord.trim())
+		}, 500)
+
+		return () => clearTimeout(handler)
+	}, [searchWord])
+
+	// Состояние для infinite scroll постов
+	const postsLimit = 5
+
+	const {
+		data: posts = [],
+		fetchNextPage,
+		hasNextPage,
+		isFetchingNextPage,
+		refetch,
+		isRefetching,
+		isFetching
+	} = useInfiniteQuery<IPost[], Error, IPost[], ['posts-feed'], number>({
+		queryKey: ['posts-feed'],
+
+		queryFn: ({ pageParam }) =>
+			getPostsFeed({
+				page: pageParam,
+				limit: postsLimit
+			}),
+
+		initialPageParam: 1,
+
+		getNextPageParam: (lastPage, pages) => {
+			if (lastPage.length < postsLimit) return undefined
+			return pages.length + 1
+		},
+
+		select: (data) => data.pages.flat()
+	})
+
+	const legendListRef = useRef<LegendListRef>(null)
+	const params = useLocalSearchParams()
+
+	// Если пользователь кликнет на ту же страницу, то пойдёт скролл вверх. Навбар передаст params при переходе на эту же страницу
+	useEffect(() => {
+		if (params.scrollToTop && legendListRef.current) {
+			legendListRef.current.scrollToOffset({ offset: 0, animated: true })
+		}
+	}, [params.scrollToTop])
+
+	const toggleSubscribeCallback = useCallback(
+		(isSubscribed: boolean, authorId?: string) => {
+			queryClient.setQueryData(['posts-feed'], (oldData: any) => {
+				if (!oldData) return oldData
+
+				return {
+					...oldData,
+					pages: oldData.pages.map((page: IPost[]) =>
+						page.map((post) => (post.userCreator.id === authorId ? { ...post, isSubscribed } : post))
+					)
+				}
+			})
+		},
+		[queryClient]
+	)
+
+	// Функция рендеринга элемента поста
+	const renderPostItem = useCallback(
+		({ item }: { item: IPost }) => {
+			// Находим метрики текущего пользователя среди участников
+			const userMetrics = item.training.participants.find(
+				(participant) => participant.user.id === item.userCreator.id
+			)?.metrics
+
+			return (
+				<PostListItem
+					key={item.id}
+					{...item}
+					postId={item.id}
+					authorId={item.userCreator?.id || ''}
+					authorName={item.userCreator?.name || ''}
+					avatar={item.userCreator.avatarFilename}
+					createdAt={item.createdAt}
+					workoutType={item.training.type}
+					title={item.title}
+					description={item.description}
+					metrics={userMetrics}
+					participants={item.training.participants}
+					images={item.fileNames}
+					subscribeData={{
+						authorId: item.userCreator.id,
+						isSubscribed: item.isSubscribed
+					}}
+					likeData={{
+						isLiked: item.isLiked,
+						postId: item.id,
+						likesCount: item.likesCount
+					}}
+					onToggleSubscribeCallback={toggleSubscribeCallback}
+					mapComponent={
+						<MapComponent
+							rounded={25}
+							needFinishMarker
+							interactiveDisabled
+							initialLocations={{ current: adaptLocations(item.training.participants[0].route.points) }}
+						/>
+					}
+				/>
+			)
+		},
+		[toggleSubscribeCallback]
+	)
+
+	// Функция рендеринга индикатора загрузки
+	const renderFooter = useCallback(() => {
+		if (!isFetchingNextPage) return null
+
+		return (
+			<View style={{ padding: 20 }}>
+				<ActivityIndicator size="small" color={Colors['green-main']} />
+			</View>
+		)
+	}, [isFetchingNextPage])
+
+	// Функция рендеринга пустого состояния
+	const renderEmpty = useCallback(() => {
+		if (isFetching) return null
+
+		return <TrainingsEmpty text="К сожалению, постов еще не существует, опубликуйте пост после тренировки" />
+	}, [isFetching])
+
+	if (state.isSearchActive) {
+		return (
+			<SafeAreaProvider
+				style={{ paddingTop: insets.top, paddingBottom: insets.bottom, backgroundColor: Colors['black-0d'] }}
+			>
+				<View style={{ flex: 1 }}>
+					<Container className="gap-[20px] flex-1">
+						<View className="flex-row justify-center items-center gap-[10px] w-full">
+							<Motion.Pressable
 								onPress={() => {
 									Keyboard.dismiss()
 									setState((s) => ({ ...s, isSearchActive: false }))
 								}}
-								className="border-2 relative rounded-full h-[50px] w-[50px] border-black-44 justify-center items-center"
 							>
-								<ArrowBackSvg height={19} width={19} />
-							</Pressable>
-						)}
-						<Input
-							containerClassName="flex-1"
-							onPress={() => setState((s) => ({ ...s, isSearchActive: true }))}
-							isFind
-							placeholder="Поиск"
-						/>
-						<NotificationsButton />
-					</View>
-
-					{!state.isSearchActive ? (
-						<View style={{ flex: 1 }}>
-							{!posts.length ? (
-								<PostsEmpty />
-							) : (
-								<FlatList
-									data={posts}
-									renderItem={({ item }) => <PostListItem key={item.id} {...item} />}
-									keyExtractor={(item) => item.id.toString()}
-									ItemSeparatorComponent={() => <View style={{ height: 15 }} />}
-									contentContainerStyle={{
-										paddingBottom: insets.bottom + 20
+								<Motion.View
+									className="border-2 relative rounded-full h-[50px] w-[50px] border-black-44 justify-center items-center"
+									whileTap={{ scale: 0.8 }}
+									transition={{
+										type: 'spring',
+										damping: 20,
+										stiffness: 400
 									}}
-									showsVerticalScrollIndicator={false}
-								/>
-							)}
+								>
+									<ArrowBackSvg height={19} width={19} />
+								</Motion.View>
+							</Motion.Pressable>
+							<Input
+								isFind
+								containerClassName="flex-1"
+								onPress={() => setState((s) => ({ ...s, isSearchActive: true }))}
+								value={searchWord}
+								onChangeText={setSearchWord}
+								placeholder="Поиск"
+							/>
+							<NotificationsButton />
 						</View>
-					) : (
+
 						<KeyboardAvoidingView
 							behavior={Platform.OS === 'ios' ? 'position' : 'height'}
 							style={{ flex: 1 }}
-							keyboardVerticalOffset={Platform.OS === 'ios' ? 90 : 0} // @TODO чекнуть на ios
+							keyboardVerticalOffset={Platform.OS === 'ios' ? 90 : 0}
 						>
 							<View style={{ flex: 1 }}>
-								<TouchableWithoutFeedback
-									onPress={Keyboard.dismiss}
-									style={{ borderWidth: 2, borderColor: 'red' }}
-								>
+								<TouchableWithoutFeedback onPress={Keyboard.dismiss}>
 									<View>
 										<View className="flex-row gap-[10px] mb-4">
 											<Button
 												onPress={() =>
-													setState((s) => ({ ...s, searchMode: SearchMode.PEOPLE }))
+													setState((s) => ({ ...s, searchMode: SearchType.USERS }))
 												}
-												variant={state.searchMode === SearchMode.PEOPLE ? 'white' : 'black'}
+												variant={state.searchMode === SearchType.USERS ? 'white' : 'black'}
 												className="w-min px-[30px]"
+												buttonContainerClassName="flex-1"
 											>
 												Люди
 											</Button>
 											<Button
 												onPress={() =>
-													setState((s) => ({ ...s, searchMode: SearchMode.POSTS }))
+													setState((s) => ({ ...s, searchMode: SearchType.POSTS }))
 												}
-												variant={state.searchMode === SearchMode.POSTS ? 'white' : 'black'}
+												variant={state.searchMode === SearchType.POSTS ? 'white' : 'black'}
 												className="w-min px-[30px]"
+												buttonContainerClassName="flex-1"
 											>
 												Посты
 											</Button>
@@ -145,36 +291,132 @@ const PostsPage = () => {
 											className="text-white text-base mb-3"
 											style={{ fontFamily: fontFamily.bold }}
 										>
-											{state.searchMode === SearchMode.PEOPLE ? 'Люди' : 'Посты'}
+											{state.searchMode === SearchType.USERS ? 'Люди' : 'Посты'}
 										</Text>
 									</View>
 								</TouchableWithoutFeedback>
-								<FlatList
-									data={data}
-									renderItem={({ item, index }) => {
-										switch (state.searchMode) {
-											case SearchMode.PEOPLE:
-												return <PeopleListItem key={item.id} {...item} />
-											case SearchMode.POSTS:
-												return <PostSearchResult key={item.id} {...item} index={index} />
+								<LegendList
+									// key={`${state.searchMode}`}
+									data={searchData}
+									ListEmptyComponent={
+										<View className="flex-1 justify-center items-center">
+											<Text
+												className="text-gray-ab text-center text-[19px]"
+												style={{ fontFamily: fontFamily.regular }}
+											>
+												{searchWord.trim().length < 2
+													? 'Введите хотя бы 2 символа'
+													: 'Ничего не нашлось'}
+											</Text>
+										</View>
+									}
+									renderItem={({ item }) => {
+										if (state.searchMode === SearchType.USERS && isUser(item)) {
+											return (
+												<PeopleListItem
+													{...item}
+													avatar={
+														item.avatarFilename
+															? `${PATH_TO_IMAGE}${item.avatarFilename}`
+															: null
+													}
+												/>
+											)
+										}
+
+										if (state.searchMode === SearchType.POSTS && isPost(item)) {
+											return <PostSearchResult {...item} />
+										}
+
+										return null
+									}}
+									keyExtractor={(item) => item.id}
+									onEndReached={() => {
+										console.log('onEndReached search')
+										if (hasNextSearchPage && !isFetchingNextSearchPage) {
+											fetchNextSearchPage()
 										}
 									}}
-									keyExtractor={(item) => item.id.toString()}
+									refreshControl={
+										<RefreshControl
+											refreshing={isRefetchingSearch}
+											onRefresh={refetchSearch}
+											tintColor={Colors['green-main']}
+										/>
+									}
+									onEndReachedThreshold={0.4}
 									ItemSeparatorComponent={() => <View style={{ height: 15 }} />}
+									ListFooterComponent={
+										isFetchingNextSearchPage ? (
+											<View style={{ padding: 20 }}>
+												<ActivityIndicator size="small" color={Colors['green-main']} />
+											</View>
+										) : null
+									}
 									contentContainerStyle={{
-										paddingBottom: insets.bottom + 20,
+										flexGrow: 1,
+										paddingBottom: 100,
 										paddingTop: 10
 									}}
 									showsVerticalScrollIndicator={false}
-									keyboardDismissMode="interactive"
-									keyboardShouldPersistTaps="handled"
 								/>
 							</View>
 						</KeyboardAvoidingView>
-					)}
+					</Container>
+				</View>
+			</SafeAreaProvider>
+		)
+	}
+
+	// Основная лента постов
+	return (
+		<SafeAreaProvider
+			style={{ paddingTop: insets.top, paddingBottom: insets.bottom, backgroundColor: Colors['black-0d'] }}
+		>
+			<View style={{ flex: 1 }}>
+				<Container className="gap-[20px] flex-1">
+					<View className="flex-row justify-center items-center gap-[10px] w-full">
+						<Input
+							isFind
+							containerClassName="flex-1"
+							onPress={() => setState((s) => ({ ...s, isSearchActive: true }))}
+							placeholder="Поиск"
+						/>
+						<NotificationsButton />
+					</View>
+
+					<View style={{ flex: 1 }}>
+						<LegendList
+							ref={legendListRef}
+							data={posts}
+							style={{ flex: 1 }}
+							renderItem={renderPostItem}
+							keyExtractor={(item) => item.id}
+							onEndReached={() => {
+								if (hasNextPage && !isFetchingNextPage) {
+									fetchNextPage()
+								}
+							}}
+							onEndReachedThreshold={0.5}
+							ListEmptyComponent={renderEmpty}
+							ListFooterComponent={renderFooter}
+							ItemSeparatorComponent={() => <View style={{ height: 16 }} />}
+							refreshControl={
+								<RefreshControl
+									refreshing={isRefetching}
+									onRefresh={refetch}
+									tintColor={Colors['green-main']}
+								/>
+							}
+							contentContainerStyle={{
+								paddingBottom: 100,
+								flexGrow: 1
+							}}
+							showsVerticalScrollIndicator={false}
+						/>
+					</View>
 				</Container>
 			</View>
-			<StatusBar style="light" />
 		</SafeAreaProvider>
 	)
 }

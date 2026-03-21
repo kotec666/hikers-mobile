@@ -21,6 +21,7 @@ import { PATH_TO_IMAGE } from '@/constants/PATH_TO_FILES'
 import { IActivity } from '@/api/activities'
 import { useAuthStore } from '@/store/authStore'
 import { useEditActivitiesStore } from '@/store/editActivitiesStore'
+import { useSafeNavigation } from '@/hooks/useSafeNavigation'
 
 interface IEditProfileFormState {
 	name: string
@@ -33,6 +34,7 @@ const FormData = global.FormData
 const ProfileEdit = () => {
 	const insets = useSafeAreaInsets()
 	const router = useRouter()
+	const { push } = useSafeNavigation()
 	const {
 		handleSubmit,
 		control,
@@ -76,10 +78,8 @@ const ProfileEdit = () => {
 				setValue('username', profileData.user.username)
 				setValue('name', profileData.user.name || '')
 				setData((s) => ({ ...s, activities: profileData.activities }))
-			} catch (e) {
-				const errors = await e.response.json()
-				console.log(errors)
-				const formattedErrors = getFieldsErrors(errors)
+			} catch (e: unknown) {
+				const formattedErrors = await getFieldsErrors(e)
 				setData((s) => ({ ...s, errors: formattedErrors }))
 			}
 		})()
@@ -121,10 +121,8 @@ const ProfileEdit = () => {
 			Keyboard.dismiss()
 			setData((s) => ({ ...s, isSaved: true }))
 			toast.success('Данные успешно сохранены')
-		} catch (e) {
-			const errors = await e.response.json()
-			console.log(errors.message)
-			const formattedErrors = getFieldsErrors(errors)
+		} catch (e: unknown) {
+			const formattedErrors = await getFieldsErrors(e)
 			setData((s) => ({ ...s, errors: formattedErrors }))
 			Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error)
 			// Alert.alert('Ошибка', 'Неверные учетные данные')
@@ -290,7 +288,7 @@ const ProfileEdit = () => {
 								/>
 							</View>
 						</View>
-						<TouchableOpacity onPress={() => router.push('/profile/editActivity')}>
+						<TouchableOpacity onPress={() => push('/profile/editActivity')}>
 							<ActivityInfo
 								activities={activitiesToRender}
 								isEditMode

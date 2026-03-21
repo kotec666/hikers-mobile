@@ -1,13 +1,13 @@
 import { Animation, InitialRegion, Point, Yamap, YamapRef } from 'react-native-yamap-plus'
 import React, { forwardRef, useCallback, useEffect, useImperativeHandle, useRef, useState } from 'react'
 import { View } from 'react-native'
-import { IWorkoutLocationStorageItem, removeAllWorkoutStorage } from '@/store/workoutStorage'
+import { IWorkoutLocationStorageItem } from '@/store/workoutStorage'
 import { Colors } from '@/constants/Colors'
-import { Button } from '@/components/ui/Button'
 import { debounce } from '@/helpers/debounce'
 import PauseLocationMarker from '@/components/map/markers/PauseLocationMarker'
 import ResumeLocationMarker from '@/components/map/markers/ResumeLocationMarker'
 import StartLocationMarker from '@/components/map/markers/StartLocationMarker'
+import FinishLocationMarker from '@/components/map/markers/FinishLocationMarker'
 import { getMapSettings, updateMapSettings } from '@/store/mapStorage'
 import { PolylineComponentInstanceRef, PolylineCustom } from '@/components/map/PolylineCustom'
 import { PolylineNativeProps } from 'react-native-yamap-plus/src/spec/PolylineNativeComponent'
@@ -16,10 +16,17 @@ import UserLocationMarker, {
 } from '@/components/map/markers/UserLocationMarker/UserLocationMarker'
 
 interface IProps {
+	needSaveCenter?: boolean
+	needFinishMarker?: boolean
+	interactiveDisabled?: boolean
 	maxMapHeight?: number
 	maxContainerHeight?: number
 	minMapHeight?: number
 	rounded?: number
+	logoPosition?: {
+		horizontal?: 'left' | 'center' | 'right'
+		vertical?: 'top' | 'bottom'
+	}
 	initialMarkerLocation?: Point | null
 	userLocationMarkerRef?: React.RefObject<UserLocationMarkerHandle | null>
 	initialLocations?: React.RefObject<IWorkoutLocationStorageItem[]>
@@ -91,7 +98,7 @@ const MapComponent = forwardRef<MapComponentHandle, IProps>((props, ref) => {
 		return () => {
 			if (idleId) cancelIdleCallback(idleId)
 		}
-	}, [])
+	}, [props.initialLocations?.current])
 
 	const parseLocationsToSegments = (locations: IWorkoutLocationStorageItem[]) => {
 		if (!locations || locations.length === 0) return { segments: [], markers: [] }
@@ -105,7 +112,7 @@ const MapComponent = forwardRef<MapComponentHandle, IProps>((props, ref) => {
 			const prev = locations[i - 1]
 			const curr = locations[i]
 
-			const sameState = prev.isPausedPoint === curr.isPausedPoint
+			const sameState = prev.paused === curr.paused
 
 			if (sameState) {
 				currentGroup.push(curr)
@@ -114,16 +121,16 @@ const MapComponent = forwardRef<MapComponentHandle, IProps>((props, ref) => {
 				currentGroup.push(curr)
 
 				resultSegments.push({
-					isPaused: prev.isPausedPoint,
+					isPaused: prev.paused,
 					points: currentGroup.map((l) => ({
 						lat: l.locationObject.coords.latitude,
 						lon: l.locationObject.coords.longitude
 					})),
-					color: prev.isPausedPoint ? pausedLineColor : activeLineColor
+					color: prev.paused ? pausedLineColor : activeLineColor
 				})
 
 				markers.push({
-					type: prev.isPausedPoint ? 'resume' : 'pause',
+					type: prev.paused ? 'resume' : 'pause',
 					position: { lat: curr.locationObject.coords.latitude, lon: curr.locationObject.coords.longitude },
 					id: `marker-${i}`
 				})
@@ -135,12 +142,12 @@ const MapComponent = forwardRef<MapComponentHandle, IProps>((props, ref) => {
 		// Add the final group
 		if (currentGroup.length > 0) {
 			resultSegments.push({
-				isPaused: currentGroup[0].isPausedPoint,
+				isPaused: currentGroup[0].paused,
 				points: currentGroup.map((l) => ({
 					lat: l.locationObject.coords.latitude,
 					lon: l.locationObject.coords.longitude
 				})),
-				color: currentGroup[0].isPausedPoint ? pausedLineColor : activeLineColor
+				color: currentGroup[0].paused ? pausedLineColor : activeLineColor
 			})
 		}
 
@@ -157,19 +164,19 @@ const MapComponent = forwardRef<MapComponentHandle, IProps>((props, ref) => {
 			// Case 0: No segments exist yet
 			if (segments.length === 0 && currentSegmentPointsRef.current.length === 0) {
 				const newSegment: Segment = {
-					isPaused: newItem.isPausedPoint,
+					isPaused: newItem.paused,
 					points: [newPoint],
-					color: newItem.isPausedPoint ? pausedLineColor : activeLineColor
+					color: newItem.paused ? pausedLineColor : activeLineColor
 				}
 				currentSegmentPointsRef.current = [newPoint]
-				lastSegmentPausedRef.current = newItem.isPausedPoint
+				lastSegmentPausedRef.current = newItem.paused
 				setSegments([newSegment])
 				return
 			}
 
 			// Используем ref для проверки состояния, так как state segments может быть "старым" в замыкании
 			// если обновления идут часто, но ререндер еще не произошел.
-			const isStateSame = lastSegmentPausedRef.current === newItem.isPausedPoint
+			const isStateSame = lastSegmentPausedRef.current === newItem.paused
 
 			if (isStateSame) {
 				// === SAME STATE: OPTIMIZED UPDATE (NO RENDER) ===
@@ -193,12 +200,12 @@ const MapComponent = forwardRef<MapComponentHandle, IProps>((props, ref) => {
 				currentSegmentPointsRef.current = [...newSegmentStartPoints]
 
 				// Обновляем статус в ref
-				lastSegmentPausedRef.current = newItem.isPausedPoint
+				lastSegmentPausedRef.current = newItem.paused
 
 				const newSegment: Segment = {
-					isPaused: newItem.isPausedPoint,
+					isPaused: newItem.paused,
 					points: newSegmentStartPoints,
-					color: newItem.isPausedPoint ? pausedLineColor : activeLineColor
+					color: newItem.paused ? pausedLineColor : activeLineColor
 				}
 
 				// 3. Update State to create new Polyline component (Triggers Render)
@@ -217,7 +224,7 @@ const MapComponent = forwardRef<MapComponentHandle, IProps>((props, ref) => {
 				setTransitionMarkers((prev) => [
 					...prev,
 					{
-						type: !newItem.isPausedPoint ? 'resume' : 'pause',
+						type: !newItem.paused ? 'resume' : 'pause',
 						position: newPoint,
 						id: `trans-${Date.now()}`
 					}
@@ -285,33 +292,49 @@ const MapComponent = forwardRef<MapComponentHandle, IProps>((props, ref) => {
 		}
 	}, [])
 
+	const lastPoint: Point | null = (() => {
+		if (currentSegmentPointsRef.current.length > 0) {
+			return currentSegmentPointsRef.current[currentSegmentPointsRef.current.length - 1]
+		}
+
+		// fallback: из segments (например при initial load)
+		if (segments.length > 0) {
+			const lastSegment = segments[segments.length - 1]
+			if (lastSegment.points.length > 0) {
+				return lastSegment.points[lastSegment.points.length - 1]
+			}
+		}
+
+		return null
+	})()
+
 	return (
 		<View
-			className="flex-1"
+			pointerEvents={props.interactiveDisabled ? 'none' : 'auto'}
+			className="flex-1 border-[1px] border-white/20"
 			style={{
 				overflow: 'hidden',
 				borderRadius: props.rounded || 0,
 				maxHeight: props.maxContainerHeight ?? 'auto'
 			}}
 		>
-			<Button variant="white" onPress={() => removeAllWorkoutStorage()}>
-				REMOVE ALL WORKOUT STORAGE
-			</Button>
 			<Yamap
 				ref={mapRef}
 				nightMode
 				initialRegion={mapInitialRegionSettingsRef}
 				style={{ flex: 1, maxHeight: props.maxMapHeight, minHeight: props.minMapHeight }}
-				logoPosition={{ horizontal: 'right', vertical: 'top' }}
+				logoPosition={props.logoPosition || { horizontal: 'right', vertical: 'top' }}
 				showUserPosition={false}
+				interactiveDisabled={props.interactiveDisabled}
 				tiltGesturesDisabled={true}
-				rotateGesturesDisabled={true} // @TODO включить после дебага
+				rotateGesturesDisabled={false}
 				onCameraPositionChange={(e) => {
 					if (['GESTURES', 'UNKNOWN'].includes(e.nativeEvent.reason)) {
 						handleBlockAnimation()
 					}
 				}}
 				onCameraPositionChangeEnd={() => {
+					if (!props.needSaveCenter) return
 					mapRef.current?.getCameraPosition((pos) => {
 						updateMapSettingsDebounced({
 							lat: pos.point.lat,
@@ -320,6 +343,9 @@ const MapComponent = forwardRef<MapComponentHandle, IProps>((props, ref) => {
 							azimuth: pos.azimuth
 						})
 					})
+				}}
+				onMapLoaded={() => {
+					fitAllMarkers(0)
 				}}
 			>
 				{/*<DirectionMarkersDebug center={{ lat: 53.374451, lon: 49.460469 }} />*/}
@@ -362,7 +388,7 @@ const MapComponent = forwardRef<MapComponentHandle, IProps>((props, ref) => {
 					)
 				)}
 
-				{/*<FinishLocationMarker position={{ lat: 53.374451, lon: 49.660469 }} />*/}
+				{props.needFinishMarker && lastPoint && <FinishLocationMarker position={lastPoint} />}
 			</Yamap>
 		</View>
 	)

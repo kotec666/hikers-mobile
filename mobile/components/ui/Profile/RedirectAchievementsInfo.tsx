@@ -3,21 +3,24 @@ import { Text, TouchableOpacity, View } from 'react-native'
 import { fontFamily } from '@/constants/Fonts'
 import ArrowBackSvg from '@/components/svg/ArrowBackSvg'
 import AchievementsStats from '@/components/ui/Profile/AchievementsStats'
-import { RelativePathString, useRouter } from 'expo-router'
 import { IProfileAchievement } from '@/api/profile'
+import { useSafeNavigation } from '@/hooks/useSafeNavigation'
 
 const RedirectAchievementsInfo = (props: {
 	achievements?: IProfileAchievement[]
 	isMyProfile?: boolean
 	userId?: string
 }) => {
-	const router = useRouter()
+	const { push } = useSafeNavigation()
 
 	const handleClickRedirect = () => {
 		if (props.userId) {
-			return router.push(`/user/achievements/${props.userId}` as RelativePathString)
+			return push({
+				pathname: '/user/achievements/[id]',
+				params: { id: props.userId }
+			})
 		} else {
-			return router.push('/achievements')
+			return push('/achievements')
 		}
 	}
 

@@ -2,7 +2,7 @@ import { IWorkoutLocationStorageItem } from '@/store/workoutStorage'
 
 export const getWorkoutHeight = (points: IWorkoutLocationStorageItem[]) => {
 	// Высота над WGS84 в метрах
-	const notPausedPoints = points.filter((point) => !point.isPausedPoint)
+	const notPausedPoints = points.filter((point) => !point.paused)
 	if (notPausedPoints.length >= 2) {
 		const firstPoint = notPausedPoints[0]
 		const lastPoint = notPausedPoints.at(-1)

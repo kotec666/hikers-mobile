@@ -1,23 +1,39 @@
 import React from 'react'
 import { View, Text } from 'react-native'
-import PeopleRunningSvg from '@/components/svg/PeopleRunningSvg'
 import { fontFamily } from '@/constants/Fonts'
 import { Link } from 'expo-router'
+import { IFoundPost } from '@/api/search'
+import { TrainingType } from '@/shared/enums'
+import { WorkoutTypesData } from '@/constants/WorkoutTypes'
+import { formatRelativeDate } from '@/helpers/formatRelativeDate'
 
-const PostSearchResult = (props: { index: number }) => {
+const PostSearchResult = (props: IFoundPost) => {
+	const renderIcon = (workoutType?: TrainingType) => {
+		if (!workoutType) return
+		const found = WorkoutTypesData.find((w) => w.type === workoutType)
+		if (found) {
+			return <found.IconComponent color="black" width={26} height={26} />
+		}
+	}
+
 	return (
-		<Link href="/">
+		<Link
+			href={{
+				pathname: '/posts/[id]',
+				params: { id: props.id }
+			}}
+		>
 			<View className="flex-row items-center w-full justify-between">
 				<View className="flex-row items-center gap-[15px]">
 					<View className="w-[50px] h-[50px] rounded-[15px] bg-white items-center justify-center">
-						<PeopleRunningSvg width={26} height={26} />
+						{renderIcon(props.training.type)}
 					</View>
 					<Text className="text-base text-gray-ab" style={{ fontFamily: fontFamily.medium }}>
-						Я сегодня пробежал 2 ... idx:({props.index + 1})
+						{props.title}
 					</Text>
 				</View>
 				<Text className="text-xs text-gray-ab" style={{ fontFamily: fontFamily.regular }}>
-					Сегодня
+					{formatRelativeDate(props.createdAt)}
 				</Text>
 			</View>
 		</Link>

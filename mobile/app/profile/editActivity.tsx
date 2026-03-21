@@ -3,7 +3,6 @@ import { SafeAreaProvider, useSafeAreaInsets } from 'react-native-safe-area-cont
 import { Container } from '@/components/ui/Container'
 import ActivityInfo from '@/components/ui/Profile/ActivityInfo'
 import HeaderBack from '@/components/ui/HeaderBack'
-import { GestureHandlerRootView } from 'react-native-gesture-handler'
 import { getFieldsErrors } from '@/helpers/getFieldsErrors'
 import { getActivities, IActivity } from '@/api/activities'
 import { useEditActivitiesStore } from '@/store/editActivitiesStore'
@@ -23,25 +22,24 @@ const ProfileEditActivity = () => {
 			try {
 				const activities = await getActivities()
 				setData((s) => ({ ...s, activities }))
-				if (!Boolean(newActivitiesOrder?.length)) {
+				if (!newActivitiesOrder.length && activities.length) {
 					setNewActivitiesOrder(activities)
 				}
-			} catch (e) {
-				const errors = await e.response.json()
-				console.log(errors)
-				getFieldsErrors(errors)
+			} catch (e: unknown) {
+				await getFieldsErrors(e)
 			}
 		})()
 	}, [])
 
 	return (
 		<SafeAreaProvider style={{ paddingTop: insets.top, paddingBottom: insets.bottom }}>
-			<GestureHandlerRootView style={{ flex: 1 }}>
-				<Container className="gap-[20px]">
-					<HeaderBack>Топ 3 активности на показ</HeaderBack>
-				</Container>
-				{Boolean(data.activities?.length) && <ActivityInfo activities={data.activities || []} isChooseMode />}
-			</GestureHandlerRootView>
+			<Container className="gap-[20px]">
+				<HeaderBack>Топ 3 активности на показ</HeaderBack>
+			</Container>
+			<ActivityInfo
+				activities={newActivitiesOrder.length ? newActivitiesOrder : data.activities || []}
+				isChooseMode
+			/>
 		</SafeAreaProvider>
 	)
 }
