@@ -1,7 +1,15 @@
 ﻿import { BadRequestException, Injectable } from '@nestjs/common';
 import { NotificationDto } from './notifications.dto';
 import { DatabaseService } from '../database/database.service';
-import { achievements, notifications, posts, trainingInvites, userFriendsInvites, users } from '../database/schema';
+import {
+	achievements,
+	notifications,
+	posts,
+	trainingInvites,
+	userFriendsInvites,
+	users,
+	userSubscribers,
+} from '../database/schema';
 import { and, eq, inArray, isNotNull, isNull, sql } from 'drizzle-orm';
 import { CommonDto } from 'src/common/dto/common.dto';
 import { WebsocketsGateway } from '../websockets/websockets.gateway';
@@ -167,7 +175,8 @@ export class NotificationsService {
 				return `Получено достижение${relEntityName ? ': ' + relEntityName : ''}`;
 			case NotificationType.FRIEND_INVITE:
 				return `Пользователь ${relEntityName ? relEntityName + ' ' : ''}отправил запрос в друзья`;
-
+			case NotificationType.NEW_SUBSCRIBER:
+				return `Пользователь ${relEntityName ? relEntityName + ' ' : ''}подписался на вас`;
 			case NotificationType.TRAINING_INVITE:
 				return `Пользователь ${relEntityName ? relEntityName + ' ' : ''}пригласил вас на тренировку`;
 			case NotificationType.TAGGED_IN_POST:
@@ -212,6 +221,27 @@ export class NotificationsService {
 						and(
 							eq(userFriendsInvites.userId, relEntityId),
 							eq(userFriendsInvites.invitedUserId, notificatedUserId),
+						),
+					)
+					.innerJoin(users, eq(users.id, relEntityId))
+					.limit(1);
+				if (!invite) {
+					return null;
+				}
+
+				return invite;
+			}
+			case NotificationType.NEW_SUBSCRIBER: {
+				const [invite] = await this.db.db
+					.select({
+						iconFilename: users.avatarFilename,
+						title: sql<string>`COALESCE('@' || ${users.username}, '')`.as('title'),
+					})
+					.from(userSubscribers)
+					.where(
+						and(
+							eq(userSubscribers.userSubscriberId, relEntityId),
+							eq(userSubscribers.userId, notificatedUserId),
 						),
 					)
 					.innerJoin(users, eq(users.id, relEntityId))
