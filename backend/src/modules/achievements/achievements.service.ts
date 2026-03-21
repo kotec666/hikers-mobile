@@ -3,7 +3,7 @@ import { DatabaseService } from '../database/database.service';
 import { AchievementDto } from './achievements.dto';
 import { achievements, userAchievements } from '../database/schema';
 import { eq, notInArray, sql, and } from 'drizzle-orm';
-import { asc } from '../database/extensions';
+import { asc, desc } from '../database/extensions';
 import { NotificationsService } from '../notifications/notifications.service';
 import { CommonDto } from 'src/common/dto/common.dto';
 import { ERRORS } from '@shared/errors';
@@ -190,6 +190,8 @@ export class AchievementsService {
 
 		if (typeof limit === 'number') {
 			query.limit(limit).orderBy(asc(userAchievements.placeForShow, 'last'));
+		} else {
+			query.orderBy(desc(userAchievements.claimedAt, 'last'));
 		}
 
 		return query;
