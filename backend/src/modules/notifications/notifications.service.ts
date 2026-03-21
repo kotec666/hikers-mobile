@@ -101,7 +101,7 @@ export class NotificationsService {
 		let notifText = dto.text ?? '';
 		let iconFilename = dto.iconFilename ?? null;
 		if (dto.relEntityId) {
-			const relEntity = await this.getRelatedEntity(dto.type, dto.relEntityId);
+			const relEntity = await this.getRelatedEntity(dto.type, userId, dto.relEntityId);
 			if (!relEntity) {
 				throw new BadRequestException(ERRORS.BAD_REQUEST);
 			}
@@ -167,6 +167,7 @@ export class NotificationsService {
 				return `Получено достижение${relEntityName ? ': ' + relEntityName : ''}`;
 			case NotificationType.FRIEND_INVITE:
 				return `Пользователь ${relEntityName ? relEntityName + ' ' : ''}отправил запрос в друзья`;
+
 			case NotificationType.TRAINING_INVITE:
 				return `Пользователь ${relEntityName ? relEntityName + ' ' : ''}пригласил вас на тренировку`;
 			case NotificationType.TAGGED_IN_POST:
@@ -178,6 +179,7 @@ export class NotificationsService {
 
 	private async getRelatedEntity(
 		type: NotificationType,
+		notificatedUserId: string,
 		relEntityId: string,
 	): Promise<{
 		iconFilename: string | null;
@@ -206,7 +208,12 @@ export class NotificationsService {
 						title: sql<string>`COALESCE('@' || ${users.username}, '')`.as('title'),
 					})
 					.from(userFriendsInvites)
-					.where(eq(userFriendsInvites.userId, relEntityId))
+					.where(
+						and(
+							eq(userFriendsInvites.userId, relEntityId),
+							eq(userFriendsInvites.invitedUserId, notificatedUserId),
+						),
+					)
 					.innerJoin(users, eq(users.id, relEntityId))
 					.limit(1);
 				if (!invite) {
@@ -222,7 +229,13 @@ export class NotificationsService {
 						title: sql<string>`COALESCE('@' || ${users.username}, '')`.as('title'),
 					})
 					.from(trainingInvites)
-					.where(eq(trainingInvites.userId, relEntityId))
+					.where(
+						and(
+							// @TODO возможно стоит добавить айди инвайта, тк вдруг инвайтов будет несколько
+							eq(trainingInvites.userId, relEntityId),
+							eq(trainingInvites.invitedUserId, notificatedUserId),
+						),
+					)
 					.innerJoin(users, eq(users.id, relEntityId))
 					.limit(1);
 				if (!invite) {
