@@ -38,11 +38,24 @@ export class ProfileController {
 	 * @security token
 	 */
 	@Get(':userId')
-	public async getSomeone(
+	public async getSomeoneById(
 		@User() user: UserData,
 		@IsUUID('userId') @Param('userId') userId: string,
 	): Promise<ProfileDto.Entity> {
-		return await this.service.getOtherProfile(user.id, userId);
+		return await this.service.getOtherProfileById(user.id, userId);
+	}
+
+	/**
+	 * @tag Profile
+	 * @summary Чужой профиль по username
+	 * @security token
+	 */
+	@Get('/by-username/:username')
+	public async getSomeoneByUsername(
+		@User() user: UserData,
+		@Param('username') username: string,
+	): Promise<ProfileDto.Entity> {
+		return await this.service.getOtherProfileByUsername(user.id, username);
 	}
 
 	/**

@@ -14,8 +14,15 @@ export namespace NotificationDto {
 
 	export type Action = {
 		text: string;
-		iconFilename: string;
+		iconFilename: string | null;
 		relEntityId: string | null;
+	};
+
+	export type Create = {
+		text?: string;
+		type: NotificationType;
+		iconFilename?: string;
+		relEntityId?: string;
 	};
 
 	export class RequestPull {
@@ -32,7 +39,8 @@ export namespace NotificationDto {
 
 	export class RequestDebug {
 		@IsString()
-		text: string;
+		@IsOptional()
+		text?: string;
 
 		@IsUUIDFilename()
 		iconFilename: string;

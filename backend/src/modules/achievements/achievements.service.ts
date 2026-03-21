@@ -3,14 +3,97 @@ import { DatabaseService } from '../database/database.service';
 import { AchievementDto } from './achievements.dto';
 import { achievements, userAchievements } from '../database/schema';
 import { eq, notInArray, sql, and } from 'drizzle-orm';
-import { asc } from '../database/extensions';
+import { asc, desc } from '../database/extensions';
+import { NotificationsService } from '../notifications/notifications.service';
+import { CommonDto } from 'src/common/dto/common.dto';
+import { ERRORS } from '@shared/errors';
+import { NotificationType } from '@shared/enums';
 
 @Injectable()
 export class AchievementsService {
-	constructor(private readonly db: DatabaseService) {}
+	constructor(
+		private readonly db: DatabaseService,
+		private readonly notifications: NotificationsService,
+	) {}
+
+	public async addProgress(
+		userId: string,
+		achievementId: string,
+		progress: number,
+	): Promise<CommonDto.BooleanResponse> {
+		const [achieve] = await this.db.db
+			.select({
+				progress: userAchievements.progress,
+				claimedAt: userAchievements.claimedAt,
+			})
+			.from(userAchievements)
+			.where(and(eq(userAchievements.userId, userId), eq(userAchievements.achievementId, achievementId)));
+		if (!achieve) {
+			throw new NotFoundException(ERRORS.NOT_FOUND);
+		}
+
+		const newProgress = Math.min(100, achieve.progress + progress);
+		return this.setProgress(userId, achievementId, newProgress);
+	}
+
+	public async setProgress(
+		userId: string,
+		achievementId: string,
+		newProgress: number,
+	): Promise<CommonDto.BooleanResponse> {
+		newProgress = Math.max(Math.min(newProgress, 100), 0);
+
+		if (newProgress >= 100) {
+			return this.giveAchievement(userId, achievementId);
+		}
+
+		await this.db.db
+			.insert(userAchievements)
+			.values({
+				userId,
+				achievementId,
+				progress: newProgress,
+			})
+			.onConflictDoUpdate({
+				target: [userAchievements.userId, userAchievements.achievementId],
+				set: { progress: newProgress },
+			});
+
+		return { success: true };
+	}
+
+	public async giveAchievement(
+		userId: string,
+		achievementId: string,
+		progress?: number,
+	): Promise<CommonDto.BooleanResponse> {
+		await this.db.db
+			.insert(userAchievements)
+			.values({
+				userId,
+				achievementId,
+				claimedAt: sql`NOW()`,
+				progress: progress ?? 100,
+			})
+			.onConflictDoUpdate({
+				target: [userAchievements.userId, userAchievements.achievementId],
+				set: { progress: 100, claimedAt: sql`NOW()` },
+			});
+
+		this.notifications
+			.create(userId, {
+				type: NotificationType.ACHIEVEMENT,
+				relEntityId: achievementId,
+			})
+			.catch((r) => {
+				console.log('New achievement notification creation failed', r);
+			});
+
+		return { success: true };
+	}
 
 	/** Обновление расстановки мест ачивок. Ближе к началу списка - выше в топе, остальные ачивки обнуляют место */
-	public async updatePlaces(userId: string, ids: string[]): Promise<void> {
+	public async updatePlaces(userId: string, ids: string[]): Promise<CommonDto.BooleanResponse> {
 		// Сначала сбрасываем все другие места в топе
 		await this.db.db
 			.update(userAchievements)
@@ -33,6 +116,8 @@ export class AchievementsService {
 			// Не инкрементируем если ачивки у юзера нет
 			if (exists) place++;
 		}
+
+		return { success: true };
 	}
 
 	public async getAll(userId: string): Promise<AchievementDto.Entity[]> {
@@ -105,6 +190,8 @@ export class AchievementsService {
 
 		if (typeof limit === 'number') {
 			query.limit(limit).orderBy(asc(userAchievements.placeForShow, 'last'));
+		} else {
+			query.orderBy(desc(userAchievements.claimedAt, 'last'));
 		}
 
 		return query;

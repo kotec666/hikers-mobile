@@ -5,11 +5,12 @@ import { DatabaseModule } from '../database/database.module';
 import { TrainingsModule } from '../trainings/trainings.module';
 import { StaticModule } from '../static/static.module';
 import { SubscribersModule } from '../subscribers/subscribers.module';
+import { NotificationsModule } from '../notifications/notifications.module';
 
 @Module({
 	controllers: [PostsController],
 	exports: [PostsService],
-	imports: [DatabaseModule, StaticModule, TrainingsModule, SubscribersModule],
+	imports: [DatabaseModule, StaticModule, TrainingsModule, SubscribersModule, NotificationsModule],
 	providers: [PostsService],
 })
 export class PostsModule {}

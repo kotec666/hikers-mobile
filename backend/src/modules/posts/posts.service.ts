@@ -1,7 +1,7 @@
 ﻿import { BadRequestException, ForbiddenException, Injectable, NotFoundException } from '@nestjs/common';
 import { DatabaseService } from '../database/database.service';
 import { PostDto } from './posts.dto';
-import { postLikes, postMedia, posts, training, users } from '../database/schema';
+import { postLikes, postMedia, posts, training, trainingParticipants, users } from '../database/schema';
 import { desc, eq, ne, count, and, sql, ilike, or } from 'drizzle-orm';
 import { ERRORS } from '@shared/errors';
 import { TrainingsService } from '../trainings/trainings.service';
@@ -10,6 +10,8 @@ import { CommonDto } from '../../common/dto/common.dto';
 import { UserDto } from '../user/user.dto';
 import { SubscribersService } from '../subscribers/subscribers.service';
 import { TrainingParticipantDto } from '../trainings/trainings.dto';
+import { NotificationsService } from '../notifications/notifications.service';
+import { NotificationType } from '@shared/enums';
 
 @Injectable()
 export class PostsService {
@@ -18,6 +20,7 @@ export class PostsService {
 		private readonly files: StaticService,
 		private readonly trainings: TrainingsService,
 		private readonly subscribers: SubscribersService,
+		private readonly notifications: NotificationsService,
 	) {}
 
 	public async getAll(userId: string, page: number, limit: number): Promise<PostDto.Entity[]> {
@@ -289,22 +292,25 @@ export class PostsService {
 	}
 
 	public async create(userId: string, dto: PostDto.Creation): Promise<PostDto.Entity> {
-		const [trainingRow] = await this.db.db
+		const trainingParticipantsRows = await this.db.db
 			.select({
 				id: training.id,
 				userCreatorId: training.userCreatorId,
 				finishedAt: training.finishedAt,
+				participantUserId: trainingParticipants.userId,
 			})
 			.from(training)
 			.where(eq(training.id, dto.trainingId))
-			.limit(1);
-		if (!trainingRow) {
+			.leftJoin(trainingParticipants, eq(trainingParticipants.trainingId, training.id));
+
+		// (строк столько же, сколько и участников)
+		if (trainingParticipantsRows.length === 0) {
 			throw new NotFoundException(ERRORS.NOT_FOUND);
 		}
-		if (trainingRow.userCreatorId !== userId) {
+		if (trainingParticipantsRows[0].userCreatorId !== userId) {
 			throw new NotFoundException(ERRORS.FORBIDDEN);
 		}
-		if (!trainingRow.finishedAt) {
+		if (!trainingParticipantsRows[0].finishedAt) {
 			throw new NotFoundException(ERRORS.USER_IN_NOT_FINISHED_TRAINING);
 		}
 
@@ -324,6 +330,25 @@ export class PostsService {
 			await this.attachFiles(post.id, dto.files);
 		}
 		// @TODO try...catch на кетч ошибки загруженные файлы откатывать
+
+		for (const participant of trainingParticipantsRows) {
+			// Не шлём увед создателю поста
+			if (!participant.participantUserId || participant.participantUserId === participant.userCreatorId) {
+				continue;
+			}
+
+			this.notifications
+				.create(participant.participantUserId, {
+					type: NotificationType.TAGGED_IN_POST,
+					relEntityId: post.id,
+				})
+				.catch((r) => {
+					console.log(
+						`Post tagged notification creation failed for userId: ${participant.participantUserId}`,
+						r,
+					);
+				});
+		}
 
 		return await this.getById(userId, post.id);
 	}
