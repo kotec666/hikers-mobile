@@ -3,7 +3,7 @@ import { DatabaseService } from '../database/database.service';
 import { ActivitiyDto } from './activities.dto';
 import { training, trainingMetrics, trainingParticipants, userActivities } from '../database/schema';
 import { and, eq, sql } from 'drizzle-orm';
-import { TrainingType, UserActivity } from '@shared/enums';
+import { UserActivity } from '@shared/enums';
 import { asc } from '../database/extensions';
 import { OnEvent } from '@nestjs/event-emitter';
 import { Event } from '@events/constants';
@@ -15,8 +15,58 @@ import { CommonDto } from 'src/common/dto/common.dto';
 export class ActivitiesService {
 	constructor(private readonly db: DatabaseService) {}
 
-	// @TODO создание своих активностей?
-	// public async create(userId: string) {}
+	@OnEvent(Event.TRAINING_FINISHED)
+	private async handleTrainingFinished(id: string) {
+		const participants = await this.db.db
+			.select({
+				type: training.type,
+				userId: trainingParticipants.userId,
+				metrics: {
+					timeSec: trainingMetrics.timeSec,
+					avgSpeedMPerSec: trainingMetrics.avgSpeedMPerSec,
+					avgTempoSecondsPerKm: trainingMetrics.avgTempoSecondsPerKm,
+					distanceM: trainingMetrics.distanceM,
+					altitudeGainM: trainingMetrics.altitudeGainM,
+					kkcal: trainingMetrics.kkcal,
+				},
+			})
+			.from(training)
+			.where(eq(training.id, id))
+			.innerJoin(trainingParticipants, eq(trainingParticipants.trainingId, id))
+			// Inner, поскольку участники без метрик нас не интересуют
+			.innerJoin(trainingMetrics, eq(trainingMetrics.participantId, trainingParticipants.id));
+
+		for (const participant of participants) {
+			const activity = getActivityByTrainingType(participant.type);
+			if (!activity) continue;
+
+			let goalToAdd = 0;
+			switch (activity) {
+				case UserActivity.STEPS: {
+					// Считать шаги пока не умеем, можно по жопной формуле от дистанции канешн
+					continue;
+				}
+				case UserActivity.BICYCLE: {
+					goalToAdd = Math.trunc(participant.metrics.distanceM / 1000);
+					break;
+				}
+				case UserActivity.RUN: {
+					goalToAdd = Math.trunc(participant.metrics.distanceM / 1000);
+					break;
+				}
+				case UserActivity.TRACK: {
+					goalToAdd = Math.trunc(participant.metrics.distanceM / 1000);
+					break;
+				}
+
+				default: {
+					continue;
+				}
+			}
+
+			await this.addGoalProgress(participant.userId, activity, goalToAdd);
+		}
+	}
 
 	/** Обновление расстановки мест активностей. Ближе к началу списка - выше в топе, остальные активности обнуляют место */
 	public async updatePlaces(userId: string, names: UserActivity[]): Promise<void> {
@@ -86,6 +136,10 @@ export class ActivitiesService {
 		name: UserActivity,
 		progressToAdd: number,
 	): Promise<CommonDto.BooleanResponse> {
+		if (progressToAdd <= 0) {
+			return { success: false };
+		}
+
 		await this.db.db
 			.insert(userActivities)
 			.values({
