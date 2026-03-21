@@ -14,8 +14,6 @@ COPY backend/ .
 
 COPY shared/ ./src/shared/
 
-RUN yarn db:push
-
 RUN yarn build
 
-CMD ["sh", "-c", "node dist/src/main.js"]
+CMD ["sh", "-c", "yarn db:push node dist/src/main.js"]
