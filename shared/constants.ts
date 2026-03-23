@@ -1,7 +1,4 @@
-﻿import { User } from '@decorators/user.decorator';
-import { MeasuringUnit, UserActivity } from './enums';
-
-export const MAX_FILE_SIZE_MEGABYTES = 5;
+﻿export const MAX_FILE_SIZE_MEGABYTES = 5;
 export const POST_MAX_FILES_COUNT = 10;
 
 export const VALID_IMAGE_MIME_TYPES = [
