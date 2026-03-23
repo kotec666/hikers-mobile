@@ -15,6 +15,13 @@ import { CommonDto } from 'src/common/dto/common.dto';
 export class ActivitiesService {
 	constructor(private readonly db: DatabaseService) {}
 
+	@OnEvent(Event.USER_CREATED)
+	private async handleUserCreated(id: string) {
+		this.upsertAllActivities(id).catch((reason) => {
+			console.error(`Failed to upsert activities for user ${id}:`, reason);
+		});
+	}
+
 	@OnEvent(Event.TRAINING_FINISHED)
 	private async handleTrainingFinished(id: string) {
 		const participants = await this.db.db
@@ -158,7 +165,6 @@ export class ActivitiesService {
 		return { success: true };
 	}
 
-	// @TODO повесить на событие реги юзера
 	public async upsertAllActivities(userId: string): Promise<ActivitiyDto.Entity[]> {
 		// @TODO на транзу переписать и проверить
 		return Promise.all(
