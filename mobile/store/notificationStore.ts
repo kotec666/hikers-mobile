@@ -20,8 +20,27 @@ export const useNotificationStore = create<NotificationStore>((set, get) => ({
 	showNotification: (text: string, type: NotificationInAppType) => {
 		const id = Date.now().toString()
 
-		set((state) => ({
-			notifications: [...state.notifications, { id, text, type }]
+		// set((state) => ({
+		// 	notifications: [...state.notifications, { id, text, type }] // в бесконечную очередь уведомлений
+		// }))
+
+		// показ только трёх уведомлений за раз, самое старое затирается
+		// set((state) => {
+		// 		const newNotification = { id, text, type }
+		//
+		// 		// если уже 3 — убираем самое старое (первый элемент)
+		// 		const trimmed =
+		// 			state.notifications.length >= 3
+		// 				? state.notifications.slice(1)
+		// 				: state.notifications
+		//
+		// 		return {
+		// 			notifications: [...trimmed, newNotification]
+		// 		}
+		// 	})
+
+		set(() => ({
+			notifications: [{ id, text, type }] // только одно за раз
 		}))
 
 		setTimeout(() => {

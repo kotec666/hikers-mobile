@@ -283,7 +283,7 @@ const Profile = () => {
 										hrefTo="/subscribers/my-subscriptions"
 									/>
 								</View>
-								<Button variant="white" onPress={() => push('/workout-history?from=profile')}>
+								<Button variant="white" onPress={() => push('/workout-history')}>
 									История тренировок
 								</Button>
 								<RedirectAchievementsInfo achievements={profileData?.achievements} isMyProfile />

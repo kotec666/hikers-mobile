@@ -138,7 +138,7 @@ export default function HomeScreen() {
 					<Button variant="black" onPress={() => router.navigate('/achievements')}>
 						Страница достижений
 					</Button>
-					<Button variant="black" onPress={() => router.navigate('/workout-history?from=profile')}>
+					<Button variant="black" onPress={() => router.navigate('/workout-history')}>
 						Страница истории тренировок
 					</Button>
 					<Button variant="black" onPress={() => router.navigate('/training/viewWorkout')}>

@@ -100,7 +100,7 @@ export const deleteSingleWorkout = async (startedAt: number, userId?: string): P
 			return result.success
 		} catch (e: unknown) {
 			await getFieldsErrors(e)
-			return false
+			throw e
 		}
 	}
 

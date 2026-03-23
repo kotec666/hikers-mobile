@@ -30,7 +30,7 @@ import { initializeNotifications } from '@/helpers/notifications'
 import { AllGeolocationPermissionsHandle } from '@/components/AllGeolocationPermissions'
 import { debounce } from '@/helpers/debounce'
 import { throttle } from '@/helpers/throttle'
-import { useWorkoutNotification } from '@/hooks/useWorkoutNotification'
+// import { useWorkoutNotification } from '@/hooks/useWorkoutNotification' @TODO
 import { initializeBackgroundLocationTask, isTrackingLocation, startTracking } from '@/hooks/track-location/track'
 import { useLocationData, useLocationTracking } from '@/hooks/track-location'
 import { updateMapSettings } from '@/store/mapStorage'
@@ -325,9 +325,10 @@ export default function NewTraining() {
 
 		stopActiveTracking()
 		await startHeadingTracking()
-		if (isNotificationsGranted && isPhysicalActivityPermissionGranted) {
-			await startNotificationTimer(user?.id) // опционально, если уведомления разрешены
-		}
+		// @TODO
+		// if (isNotificationsGranted && isPhysicalActivityPermissionGranted) {
+		// 	await startNotificationTimer(user?.id) // опционально, если уведомления разрешены
+		// }
 
 		return startTrackingLocation()
 	}
@@ -416,9 +417,10 @@ export default function NewTraining() {
 		}
 	}, [])
 
-	const { startNotificationTimer, stopNotificationTimer } = useWorkoutNotification({
-		handleClickPause
-	})
+	// @TODO
+	// const { startNotificationTimer, stopNotificationTimer } = useWorkoutNotification({
+	// 	handleClickPause
+	// })
 
 	const pauseDebounced = useCallback(debounce(handleClickPause, PAUSE_DEBOUNCE_MS), [])
 
@@ -535,7 +537,8 @@ export default function NewTraining() {
 				headingSubscriptionRef.current.remove()
 				headingSubscriptionRef.current = null
 			}
-			await stopNotificationTimer()
+			// @TODO
+			// await stopNotificationTimer()
 
 			const meta = getWorkoutMeta(user?.id)
 			calculateMetricsWhenFinished(meta)
@@ -597,12 +600,12 @@ export default function NewTraining() {
 						clearActiveWorkoutData(user?.id)
 					}
 				} catch {}
-				// Полный сброс состояния карты и переменных
-				resetWorkoutState()
 			} else {
 				toast.info('Нет доступа к интернету, тренировку можно будет сохранить позже')
 				moveActiveWorkoutToNotSaved(user?.id)
 			}
+			// Полный сброс состояния карты и переменных
+			resetWorkoutState()
 			router.push(
 				`/training/viewWorkout?mode=${VIEWWORKOUT_MODE.VIEW}&connection=${!isInternetConnectedRef.current && 'offline'}`
 			) // - offline - просмотр тренировки до определенного момента, без сохранения
@@ -616,7 +619,7 @@ export default function NewTraining() {
 		isInternetConnectedRef,
 		resetWorkoutState,
 		router,
-		stopNotificationTimer,
+		// stopNotificationTimer, @TODO
 		toast,
 		tracking
 	])

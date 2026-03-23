@@ -23,7 +23,7 @@ import { useInfiniteQuery, useQueryClient } from '@tanstack/react-query'
 import { useToast } from '@/hooks/useToast'
 import { formatDistance } from '@/helpers/distance'
 import { useInternetConnection } from '@/hooks/useInternetConnection'
-import { useLocalSearchParams, useRouter } from 'expo-router'
+import { useRouter } from 'expo-router'
 
 interface WorkoutItem {
 	id: string
@@ -41,8 +41,6 @@ const WorkoutHistory = () => {
 	const queryClient = useQueryClient()
 	const toast = useToast()
 	const { isConnected } = useInternetConnection()
-
-	const { from } = useLocalSearchParams<{ from?: string }>()
 
 	const { notSavedWorkouts, syncingIds, enqueueWorkoutSync, deleteWorkout } = useUnsavedWorkoutSync()
 
@@ -120,9 +118,7 @@ const WorkoutHistory = () => {
 		try {
 			await deleteWorkout(startedAt)
 			toast.success('Тренировка удалена')
-		} catch {
-			toast.error('Не удалось удалить тренировку')
-		}
+		} catch {}
 	}
 	const handleSync = async (startedAt: number) => {
 		try {
@@ -138,23 +134,10 @@ const WorkoutHistory = () => {
 		}
 	}
 
-	const router = useRouter()
-
-	const goBack = () => {
-		switch (from) {
-			case 'viewWorkout':
-				return '/(tabs)/newTraining'
-			case 'profile':
-				return '/(tabs)/profile'
-			default:
-				return '/(tabs)/profile'
-		}
-	}
-
 	return (
 		<View style={{ flex: 1, paddingTop: insets.top }}>
 			<Container className="gap-[20px] mt-[20px] flex-1">
-				<HeaderBack returnCallback={() => router.replace(goBack())}>История тренировок</HeaderBack>
+				<HeaderBack>История тренировок</HeaderBack>
 				<Select
 					options={[
 						{

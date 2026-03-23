@@ -42,6 +42,7 @@ const UserProfilePage = () => {
 	const toast = useToast()
 	const queryClient = useQueryClient()
 	const { id } = useLocalSearchParams<{ id: string }>()
+	const friendActionLockRef = useRef(false)
 	const legendListRef = useRef<LegendListRef>(null)
 
 	const [profileData, setProfileData] = useState<INotMyProfile | null>(null)
@@ -194,6 +195,7 @@ const UserProfilePage = () => {
 
 	const handleDeleteFromFriends = async () => {
 		if (isFriendLoading) return
+		friendActionLockRef.current = true
 		setIsFriendLoading(true)
 		try {
 			await deleteFriendById(id)
@@ -209,6 +211,7 @@ const UserProfilePage = () => {
 			toast.error('Произошла ошибка, повторите попытку позже')
 			await getFieldsErrors(e)
 		} finally {
+			friendActionLockRef.current = false
 			setIsFriendLoading(false)
 			setIsDeleteModalOpened(false)
 		}
@@ -224,6 +227,7 @@ const UserProfilePage = () => {
 
 	const sendFriendRequest = async () => {
 		if (isFriendLoading) return
+		friendActionLockRef.current = true
 		setIsFriendLoading(true)
 		try {
 			await addAsFriend(id)
@@ -235,12 +239,14 @@ const UserProfilePage = () => {
 			toast.error('Произошла ошибка, повторите попытку позже')
 			await getFieldsErrors(e)
 		} finally {
+			friendActionLockRef.current = false
 			setIsFriendLoading(false)
 		}
 	}
 
 	const revokeFriendRequest = async () => {
 		if (isFriendLoading) return
+		friendActionLockRef.current = true
 		setIsFriendLoading(true)
 		try {
 			await revokeFriendInviteByUserId(id)
@@ -252,12 +258,13 @@ const UserProfilePage = () => {
 			toast.error('Произошла ошибка, повторите попытку позже')
 			await getFieldsErrors(e)
 		} finally {
+			friendActionLockRef.current = false
 			setIsFriendLoading(false)
 		}
 	}
 
 	const handleClickDeleteAddFriend = async () => {
-		if (isFriendLoading) return
+		if (isFriendLoading || friendActionLockRef.current) return
 		switch (profileData?.isFriend) {
 			case FriendStatus.TRUE:
 				return handleOpenDeleteModal()
