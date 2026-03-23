@@ -1,4 +1,4 @@
-﻿import { MeasuringUnit, TrainingType, UserActivity } from './enums';
+﻿import { TrainingType } from './enums';
 
 /**
  * timeMs: общее активное время (без пауз)
