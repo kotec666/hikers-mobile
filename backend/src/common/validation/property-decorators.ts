@@ -4,6 +4,34 @@ import { ERRORS } from '@shared/errors';
 import { validate } from 'uuid';
 import { FinishedTrainingParticipantValidator, UniqueEmailValidator } from './validators';
 
+export function NotNegative(validationOptions?: ValidationOptions) {
+	return function (object: object, propertyName: string) {
+		registerDecorator({
+			name: 'NotNegative',
+			target: object.constructor,
+			propertyName: propertyName,
+			options: validationOptions,
+			async: true,
+			validator: {
+				validate(value: any) {
+					if (typeof value !== 'number') {
+						return false;
+					}
+
+					if (Number.isNaN(value)) {
+						return false;
+					}
+
+					return Number(value) >= 0;
+				},
+				defaultMessage() {
+					return `_${propertyName}:${ERRORS.BAD_REQUEST}`;
+				},
+			},
+		});
+	};
+}
+
 export function IsUUID(validationOptions?: ValidationOptions) {
 	return function (object: object, propertyName: string) {
 		registerDecorator({

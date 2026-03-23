@@ -22,8 +22,14 @@ const statusCodeToError = {
 
 export function parsePropertyMessage(message: string): PropertyError {
 	const getPropertyFromMessage = (message: string): string => {
-		return message.includes(':') ? message.split(':')[0].slice(1) : 'unknown';
+		if (message.includes(':')) {
+			const prop = message.split(':')[0];
+			return prop.replaceAll('_', '');
+		}
+
+		return 'unknown';
 	};
+
 	const getErrorFromMessage = (message: string): ERRORS => {
 		const possiblyError: string = message.includes(':') ? message.split(':')[1] : ERRORS.UNKNOWN_ERROR;
 		return Object.values(ERRORS).find((err) => String(err) === possiblyError) ?? ERRORS.UNKNOWN_ERROR;
