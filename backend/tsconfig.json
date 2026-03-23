@@ -16,6 +16,7 @@
 			"@interceptors/*": ["./src/common/interceptors/*"],
 			"@decorators/*": ["./src/common/decorators/*"],
 			"@shared/*": ["./src/shared/*"],
+			"@events/*": ["./src/common/events/*"],
 			"@helpers": ["./src/common/helpers"]
 		},
 		"incremental": true,

@@ -18,12 +18,17 @@ import { TrainingType } from '@shared/enums';
 import { round, clampToPgInt } from '@helpers';
 import { calculateCalories, haversineDistance } from '@shared/helpers';
 import { desc } from '../database/extensions';
+import { EventEmitter2 } from '@nestjs/event-emitter';
+import { Event } from '@events/constants';
 
 const MAX_TIME_TO_SYNC_AFTER_FINISH_TRAINING = 60 * 1000; // 1 минута
 
 @Injectable()
 export class TrainingsService {
-	constructor(private readonly db: DatabaseService) {
+	constructor(
+		private readonly db: DatabaseService,
+		private readonly eventEmitter: EventEmitter2,
+	) {
 		// @TODO интервал на чистку пустых тренировок
 		// @TODO восстановление тренировок на паузе из бд
 	}
@@ -133,6 +138,8 @@ export class TrainingsService {
 					...this.calcMetrics(participant, activeTraining.type),
 				});
 			}
+
+			this.eventEmitter.emit(Event.TRAINING_FINISHED, activeTraining.id);
 
 			return { success: true };
 		});
