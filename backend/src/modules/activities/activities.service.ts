@@ -3,13 +3,13 @@ import { DatabaseService } from '../database/database.service';
 import { ActivitiyDto } from './activities.dto';
 import { training, trainingMetrics, trainingParticipants, userActivities } from '../database/schema';
 import { and, eq, sql } from 'drizzle-orm';
-import { UserActivity } from '@shared/enums';
+import { MeasuringUnit, TrainingType, UserActivity } from '@shared/enums';
 import { asc } from '../database/extensions';
 import { OnEvent } from '@nestjs/event-emitter';
 import { Event } from '@events/constants';
 import { ERRORS } from '@shared/errors';
-import { getActivityByTrainingType, getDefaultMeasuringUnitByActivity } from '@shared/helpers';
 import { CommonDto } from 'src/common/dto/common.dto';
+import { getActivityByTrainingType, getDefaultMeasuringUnitByActivity } from './helpers';
 
 @Injectable()
 export class ActivitiesService {
@@ -44,34 +44,54 @@ export class ActivitiesService {
 			.innerJoin(trainingMetrics, eq(trainingMetrics.participantId, trainingParticipants.id));
 
 		for (const participant of participants) {
-			const activity = getActivityByTrainingType(participant.type);
-			if (!activity) continue;
-
-			let goalToAdd = 0;
-			switch (activity) {
-				case UserActivity.STEPS: {
-					// Считать шаги пока не умеем, можно по жопной формуле от дистанции канешн
-					continue;
-				}
-				case UserActivity.BICYCLE: {
-					goalToAdd = Math.trunc(participant.metrics.distanceM / 1000);
-					break;
-				}
-				case UserActivity.RUN: {
-					goalToAdd = Math.trunc(participant.metrics.distanceM / 1000);
-					break;
-				}
-				case UserActivity.TRACK: {
-					goalToAdd = Math.trunc(participant.metrics.distanceM / 1000);
-					break;
-				}
-
-				default: {
-					continue;
-				}
+			const activities: UserActivity[] = [];
+			if (
+				participant.type === TrainingType.RUN ||
+				participant.type === TrainingType.TRACK ||
+				participant.type === TrainingType.WALK
+			) {
+				activities.push(UserActivity.STEPS);
 			}
 
-			await this.addGoalProgress(participant.userId, activity, goalToAdd);
+			const activity = getActivityByTrainingType(participant.type);
+			if (!activity) continue;
+			activities.push(activity);
+
+			for (const activity of activities) {
+				let goalToAdd = 0;
+				const unit = getDefaultMeasuringUnitByActivity(activity);
+
+				switch (activity) {
+					case UserActivity.STEPS: {
+						if (unit === MeasuringUnit.COUNT) {
+							const AVERAGE_STRIDE_LENGTH = 0.75;
+
+							if (participant.metrics.distanceM) {
+								goalToAdd = Math.trunc(participant.metrics.distanceM / AVERAGE_STRIDE_LENGTH);
+							}
+						}
+
+						break;
+					}
+
+					case UserActivity.RUN:
+					case UserActivity.TRACK:
+					case UserActivity.BICYCLE: {
+						if (unit === MeasuringUnit.KILOMETER) {
+							goalToAdd = Math.trunc(participant.metrics.distanceM / 1000);
+						} else if (unit === MeasuringUnit.METER) {
+							goalToAdd = Math.trunc(participant.metrics.distanceM);
+						}
+						break;
+					}
+
+					default: {
+						continue;
+					}
+				}
+
+				await this.addGoalProgress(participant.userId, activity, goalToAdd);
+			}
 		}
 	}
 
