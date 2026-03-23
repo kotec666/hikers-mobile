@@ -1,13 +1,15 @@
 ﻿import { Injectable, NotFoundException } from '@nestjs/common';
 import { DatabaseService } from '../database/database.service';
 import { AchievementDto } from './achievements.dto';
-import { achievements, userAchievements } from '../database/schema';
+import { achievements, training, trainingMetrics, trainingParticipants, userAchievements } from '../database/schema';
 import { eq, notInArray, sql, and } from 'drizzle-orm';
 import { asc, desc } from '../database/extensions';
 import { NotificationsService } from '../notifications/notifications.service';
 import { CommonDto } from 'src/common/dto/common.dto';
 import { ERRORS } from '@shared/errors';
 import { NotificationType } from '@shared/enums';
+import { OnEvent } from '@nestjs/event-emitter';
+import { Event } from '@events/constants';
 
 @Injectable()
 export class AchievementsService {
@@ -15,6 +17,58 @@ export class AchievementsService {
 		private readonly db: DatabaseService,
 		private readonly notifications: NotificationsService,
 	) {}
+
+	@OnEvent(Event.TRAINING_FINISHED)
+	private async handleTrainingFinished(id: string) {
+		const participants = await this.db.db
+			.select({
+				type: training.type,
+				userId: trainingParticipants.userId,
+				metrics: {
+					timeSec: trainingMetrics.timeSec,
+					avgSpeedMPerSec: trainingMetrics.avgSpeedMPerSec,
+					avgTempoSecondsPerKm: trainingMetrics.avgTempoSecondsPerKm,
+					distanceM: trainingMetrics.distanceM,
+					altitudeGainM: trainingMetrics.altitudeGainM,
+					kkcal: trainingMetrics.kkcal,
+				},
+			})
+			.from(training)
+			.where(eq(training.id, id))
+			.innerJoin(trainingParticipants, eq(trainingParticipants.trainingId, id))
+			// Inner, поскольку участники без метрик нас не интересуют
+			.innerJoin(trainingMetrics, eq(trainingMetrics.participantId, trainingParticipants.id));
+
+		// @TODO доделать после сидера
+		// eslint-disable-next-line @typescript-eslint/no-unused-vars
+		for (const participant of participants) {
+			// 	const activity = getActivityByTrainingType(participant.type);
+			// 	if (!activity) continue;
+			// 	let goalToAdd = 0;
+			// 	switch (activity) {
+			// 		case UserActivity.STEPS: {
+			// 			// Считать шаги пока не умеем, можно по жопной формуле от дистанции канешн
+			// 			continue;
+			// 		}
+			// 		case UserActivity.BICYCLE: {
+			// 			goalToAdd = Math.trunc(participant.metrics.distanceM / 1000);
+			// 			break;
+			// 		}
+			// 		case UserActivity.RUN: {
+			// 			goalToAdd = Math.trunc(participant.metrics.distanceM / 1000);
+			// 			break;
+			// 		}
+			// 		case UserActivity.TRACK: {
+			// 			goalToAdd = Math.trunc(participant.metrics.distanceM / 1000);
+			// 			break;
+			// 		}
+			// 		default: {
+			// 			continue;
+			// 		}
+			// 	}
+			// 	await this.addProgress(participant.userId, activity, goalToAdd);
+		}
+	}
 
 	public async addProgress(
 		userId: string,
