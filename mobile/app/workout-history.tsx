@@ -129,7 +129,8 @@ const WorkoutHistory = () => {
 			})
 
 			toast.success('Тренировка сохранена успешно')
-		} catch {
+		} catch (e) {
+			console.log(e)
 			toast.error('Не удалось сохранить тренировку')
 		}
 	}

@@ -6,8 +6,8 @@ import { deleteSingleWorkout, saveSingleWorkout } from '@/helpers/saveUnsavedTra
 type QueueItem = {
 	startedAt: number
 	userId?: string
-	resolve?: () => void
-	reject?: (e?: unknown) => void
+	resolve: () => void
+	reject: (e?: unknown) => void
 }
 
 export const useUnsavedWorkoutSync = () => {
@@ -19,6 +19,8 @@ export const useUnsavedWorkoutSync = () => {
 
 	const syncQueueRef = useRef<QueueItem[]>([])
 	const isProcessingRef = useRef(false)
+
+	const promisesRef = useRef<Map<number, Promise<void>>>(new Map())
 
 	const refresh = useCallback(() => {
 		setNotSavedWorkouts(getNotSavedWorkouts(user?.id))
@@ -41,11 +43,13 @@ export const useUnsavedWorkoutSync = () => {
 		try {
 			await saveSingleWorkout(nextWorkout.startedAt, nextWorkout.userId)
 			refresh()
-			nextWorkout.resolve?.()
+			nextWorkout.resolve()
 		} catch (e) {
-			nextWorkout.reject?.(e)
+			console.log(e)
+			nextWorkout.reject(e)
 		} finally {
 			setSyncingIds((ids) => ids.filter((id) => id !== nextWorkout.startedAt))
+			promisesRef.current.delete(nextWorkout.startedAt)
 
 			isProcessingRef.current = false
 
@@ -67,12 +71,12 @@ export const useUnsavedWorkoutSync = () => {
 	// }
 
 	const enqueueWorkoutSync = (startedAt: number) => {
-		return new Promise<void>((resolve, reject) => {
-			if (syncQueueRef.current.some((i) => i.startedAt === startedAt) || syncingIds.includes(startedAt)) {
-				resolve()
-				return
-			}
+		const existingPromise = promisesRef.current.get(startedAt)
+		if (existingPromise) {
+			return existingPromise
+		}
 
+		const promise = new Promise<void>((resolve, reject) => {
 			syncQueueRef.current.push({
 				startedAt,
 				userId: user?.id,
@@ -82,6 +86,9 @@ export const useUnsavedWorkoutSync = () => {
 
 			processQueue()
 		})
+		promisesRef.current.set(startedAt, promise)
+
+		return promise
 	}
 
 	// const saveAll = () => {
