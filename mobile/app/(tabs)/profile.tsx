@@ -23,6 +23,8 @@ import { useSafeNavigation } from '@/hooks/useSafeNavigation'
 import { useInfiniteQuery } from '@tanstack/react-query'
 import TrainingsEmpty from '@/components/ui/Post/TrainingsEmpty'
 import { getFieldsErrors } from '@/helpers/getFieldsErrors'
+// import WorkoutActivity, {WorkoutActivityProps} from "@/components/ui/LiveActivities/WorkoutActivity";
+// import {LiveActivity} from "expo-widgets";
 
 /**
  *
@@ -175,9 +177,44 @@ const Profile = () => {
 		return <TrainingsEmpty text="Постов еще не существует, опубликуйте пост после тренировки" />
 	}, [isPostsFetching])
 
+    // const liveActivityWorkoutInstanceRef = useRef<LiveActivity<WorkoutActivityProps>>(null)
+
+    // const startWorkoutActivity = () => {
+    //     // Start the Live Activity
+    //     const instance = WorkoutActivity.start({
+    //         distanceKm: 1,
+    //         durationSec: 355,
+    //         isPaused: false,
+    //         speedKmh: 10,
+    //         type: TrainingType.WALK
+    //     });
+    //     console.log('instance', instance)
+    //     liveActivityWorkoutInstanceRef.current = instance
+    //     // Store instance
+    // };
+    //
+    // const updateWorkoutActivity = () => {
+    //     if (!liveActivityWorkoutInstanceRef.current) return
+    //     liveActivityWorkoutInstanceRef.current.update(
+    //         {
+    //             distanceKm: 1,
+    //             durationSec: 355,
+    //             isPaused: true,
+    //             speedKmh: 10,
+    //             type: TrainingType.WALK
+    //         }
+    //     );
+    // }
+    //
+    //
+    // const endWorkoutActivity = () => {
+    //     if (!liveActivityWorkoutInstanceRef.current) return
+    //     liveActivityWorkoutInstanceRef.current.end('immediate')
+    // }
+
 	return (
 		<>
-			<SafeAreaProvider style={{ paddingTop: insets.top, paddingBottom: insets.bottom }}>
+			<SafeAreaProvider style={{ paddingTop: insets.top, paddingBottom: insets.bottom, backgroundColor: Colors['black-0d'] }}>
 				<LegendList
 					ref={legendListRef}
 					data={posts}
@@ -283,9 +320,18 @@ const Profile = () => {
 										hrefTo="/subscribers/my-subscriptions"
 									/>
 								</View>
-								<Button variant="white" onPress={() => push('/workout-history')}>
-									История тренировок
-								</Button>
+                                <Button variant="white" onPress={() => push('/workout-history')}>
+                                    История тренировок
+                                </Button>
+                                {/*<Button variant="white" onPress={startWorkoutActivity}>*/}
+                                {/*    Start workout activity*/}
+                                {/*</Button>*/}
+                                {/*<Button variant="white" onPress={updateWorkoutActivity}>*/}
+                                {/*    update workout activity*/}
+                                {/*</Button>*/}
+                                {/*<Button variant="white" onPress={endWorkoutActivity}>*/}
+                                {/*    stop workout activity*/}
+                                {/*</Button>*/}
 								<RedirectAchievementsInfo achievements={profileData?.achievements} isMyProfile />
 								<ActivityInfo label="Активности" activities={profileData?.activities || []} />
 							</View>
