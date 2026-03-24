@@ -82,7 +82,27 @@ export const saveSingleWorkout = async (startedAt: number, userId?: string): Pro
 
 		const [batch] = chunkArray(unsavedPoints)
 
-		const syncResult = await syncTraining(trainingId, prepareLocationsForSync(batch))
+		let syncResult: { success: boolean }
+		try {
+			const preparedLocations = prepareLocationsForSync(batch)
+			console.log('trainingId', trainingId)
+			console.log('preparedLocations', JSON.stringify(preparedLocations))
+			syncResult = await syncTraining(trainingId, preparedLocations)
+		} catch (e) {
+			console.log('SYNC TRAINING ERROR:', e)
+
+			if (e.name === 'HTTPError') {
+				try {
+					const data = await e.response.json()
+					console.log('RESPONSE (json):', JSON.stringify(data))
+				} catch {
+					const text = await e.response.text()
+					console.log('RESPONSE (text):', text)
+				}
+			}
+
+			throw e
+		}
 
 		if (!syncResult?.success) {
 			console.log('Ошибка при синхронизации с сервером')

@@ -53,6 +53,7 @@ import { VIEWWORKOUT_MODE } from '@/app/training/viewWorkout'
 import { Colors } from '@/constants/Colors'
 import { getFieldsErrors } from '@/helpers/getFieldsErrors'
 import { chunkArray } from '@/helpers/chunkArray'
+import { ERRORS } from '@shared/errors'
 // Debugging
 TaskManager.getRegisteredTasksAsync().then((tasks) => {
 	console.log(tasks)
@@ -296,28 +297,34 @@ export default function NewTraining() {
 
 		if (!afterReboot) {
 			let newTrainingId = null
-			try {
-				const newTraining = await startTraining({ type: workoutType, colorHex: randomHexColor() })
-				newTrainingId = newTraining.id
-			} catch (e: unknown) {
-				newTrainingId = null
-				console.log('(1) [start-workout-error]:', e)
-				return await getFieldsErrors(e)
-				// Если человек не закончил предыдущую тренировку, то следующую невозможно начать
-				// @TODO Восстановление/удаление тренировки
-				// if (typeof e === 'object' && e !== null && 'response' in e) {
-				// 	const response = (e as any).response
-				// 	const errors = await response.json()
-				// 	if (errors?.message === ERRORS.USER_IN_NOT_FINISHED_TRAINING) {
-				// 	}
-				// 	if (
-				// 		errors?.message === ERRORS.USER_IS_TRAINING_PARTICIPANT ||
-				// 		errors?.message === ERRORS.USER_IS_NOT_TRAINING_PARTICIPANT
-				// 	) {
-				// 		return
-				// 	}
-				// }
+
+			if (isInternetConnectedRef.current) {
+				try {
+					const newTraining = await startTraining({ type: workoutType, colorHex: randomHexColor() })
+					newTrainingId = newTraining.id
+				} catch (e: unknown) {
+					console.log('(1) [start-workout-error]:', e)
+					await getFieldsErrors(e)
+					// Если человек не закончил предыдущую тренировку, то следующую невозможно начать
+					// @TODO Восстановление/удаление тренировки
+					if (typeof e === 'object' && e !== null && 'response' in e) {
+						const response = (e as any).response
+						const errors = await response.json()
+						if (errors?.message === ERRORS.USER_IN_NOT_FINISHED_TRAINING) {
+							return
+						}
+						if (
+							errors?.message === ERRORS.USER_IS_TRAINING_PARTICIPANT ||
+							errors?.message === ERRORS.USER_IS_NOT_TRAINING_PARTICIPANT
+						) {
+							return
+						}
+					}
+				}
+			} else {
+				toast.info('Нет подключения к интернету, тренировка будет происходить в оффлайн режиме')
 			}
+
 			setIsWorkoutStarted(true)
 			startAndStoreNewActiveWorkout(workoutType, newTrainingId, user?.id)
 			acceptLivePointsRef.current = true // включаем live точки сразу после старта

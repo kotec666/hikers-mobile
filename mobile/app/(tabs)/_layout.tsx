@@ -52,8 +52,6 @@ export default function TabLayout() {
 		return <Redirect href="/auth" />
 	}
 
-    console.log(isIOS26OrHigher)
-
 	return (
 		<>
 			<Root isIOS26OrHigher={isIOS26OrHigher} isAuthenticated={isAuthenticated} />
