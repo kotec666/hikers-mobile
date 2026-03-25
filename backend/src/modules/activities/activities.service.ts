@@ -44,20 +44,20 @@ export class ActivitiesService {
 			.innerJoin(trainingMetrics, eq(trainingMetrics.participantId, trainingParticipants.id));
 
 		for (const participant of participants) {
-			const activities: UserActivity[] = [];
+			const activities = new Set<UserActivity>();
 			if (
 				participant.type === TrainingType.RUN ||
 				participant.type === TrainingType.TRACK ||
 				participant.type === TrainingType.WALK
 			) {
-				activities.push(UserActivity.STEPS);
+				activities.add(UserActivity.STEPS);
 			}
 
 			const activity = getActivityByTrainingType(participant.type);
 			if (!activity) continue;
-			activities.push(activity);
+			activities.add(activity);
 
-			for (const activity of activities) {
+			for (const activity of activities.values()) {
 				let goalToAdd = 0;
 				const unit = getDefaultMeasuringUnitByActivity(activity);
 
