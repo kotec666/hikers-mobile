@@ -31,7 +31,42 @@ export class NotificationsService {
 		timeMs: number,
 		dto: NotificationDto.RequestDebug,
 	): Promise<NotificationDto.Entity> {
-		const notif = await this.create(userId, dto);
+		const [existingNotif] = await this.db.db
+			.select({ action: notifications.action })
+			.from(notifications)
+			.where(
+				and(
+					eq(notifications.toUserId, userId),
+					eq(notifications.type, dto.type),
+					// Нас интересуют только НЕпрочитанные уведы, возможность дублирования прочинанных уведов оставляем
+					isNull(notifications.readedAt),
+					sql`action->>'relEntityId' = ${dto.relEntityId}`,
+				),
+			)
+			.limit(1);
+		if (existingNotif) {
+			throw new BadRequestException(ERRORS.ALREADY_EXISTS);
+		}
+
+		const [notif] = await this.db.db
+			.insert(notifications)
+			.values({
+				toUserId: userId,
+				type: dto.type,
+				action: {
+					iconFilename: dto.iconFilename ?? null,
+					text: dto.text,
+					relEntityId: dto.relEntityId ?? null,
+				},
+			})
+			.returning({
+				id: notifications.id,
+				type: notifications.type,
+				createdAt: notifications.createdAt,
+				readedAt: notifications.readedAt,
+				action: notifications.action,
+			})
+			.onConflictDoNothing();
 
 		setTimeout(() => {
 			this.push(userId, notif);

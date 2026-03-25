@@ -39,11 +39,11 @@ export namespace NotificationDto {
 
 	export class RequestDebug {
 		@IsString()
-		@IsOptional()
-		text?: string;
+		text: string;
 
 		@IsUUIDFilename()
-		iconFilename: string;
+		@IsOptional()
+		iconFilename?: string;
 
 		@IsUUID('4', { message: `_iconFilename:${ERRORS.MISMATCH}` })
 		@IsOptional()
