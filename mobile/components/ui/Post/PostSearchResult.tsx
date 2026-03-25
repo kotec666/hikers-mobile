@@ -23,16 +23,23 @@ const PostSearchResult = (props: IFoundPost) => {
 				params: { id: props.id }
 			}}
 		>
-			<View className="flex-row items-center w-full justify-between">
-				<View className="flex-row items-center gap-[15px]">
+			<View className="flex-row items-center w-full">
+				<View className="flex-row items-center gap-[15px] flex-1 min-w-0">
 					<View className="w-[50px] h-[50px] rounded-[15px] bg-white items-center justify-center">
 						{renderIcon(props.training.type)}
 					</View>
-					<Text className="text-base text-gray-ab" style={{ fontFamily: fontFamily.medium }}>
+
+					<Text
+						numberOfLines={1}
+						ellipsizeMode="tail"
+						className="text-base text-gray-ab flex-1"
+						style={{ fontFamily: fontFamily.medium }}
+					>
 						{props.title}
 					</Text>
 				</View>
-				<Text className="text-xs text-gray-ab" style={{ fontFamily: fontFamily.regular }}>
+
+				<Text className="text-xs text-gray-ab ml-8 shrink-0" style={{ fontFamily: fontFamily.regular }}>
 					{formatRelativeDate(props.createdAt)}
 				</Text>
 			</View>

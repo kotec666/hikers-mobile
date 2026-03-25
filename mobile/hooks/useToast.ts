@@ -11,8 +11,8 @@ export const useToast = () => {
 		success: (message: string) => {
 			showNotification(message, NotificationInAppType.SUCCESS)
 		},
-		info: (message: string) => {
-			showNotification(message, NotificationInAppType.INFO)
+		info: (message: string, onPress?: () => void) => {
+			showNotification(message, NotificationInAppType.INFO, onPress)
 		}
 	}
 

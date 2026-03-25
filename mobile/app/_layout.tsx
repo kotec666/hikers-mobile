@@ -6,6 +6,7 @@ import { useAuthStore } from '@/store/authStore'
 import { useEffect, useState } from 'react'
 import { ActivityIndicator, View } from 'react-native'
 import { NotificationProvider } from '@/components/providers/NotificationProvider'
+import InAppNotificationProvider from '@/components/providers/InAppNotificationProvider'
 import notifee, { EventType } from '@notifee/react-native'
 import { setActiveWorkoutPauseState } from '@/store/workoutStorage'
 import { getAuthData } from '@/services/tokenService'
@@ -13,8 +14,8 @@ import { GestureHandlerRootView } from 'react-native-gesture-handler'
 import PortalProvider from '@/components/Portal/PortalProvider'
 import { getItem } from '@/store/storage'
 import { Colors } from '@/constants/Colors'
-import './../global.css'
 
+import './../global.css'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 const queryClient = new QueryClient()
 
@@ -94,6 +95,7 @@ const Root = ({
 					</Stack>
 
 					<NotificationProvider />
+					<InAppNotificationProvider />
 				</PortalProvider>
 			</GestureHandlerRootView>
 		</QueryClientProvider>

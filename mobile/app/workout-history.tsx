@@ -83,7 +83,7 @@ const WorkoutHistory = () => {
 			const distance = Number(item?.distanceM)
 			return {
 				id: item.id,
-				title: `${title} ${Number.isFinite(distance) && distance >= 0 ? `, ${formatDistance(distance)}` : ''}`,
+				title: `${title}${Number.isFinite(distance) && distance >= 0 ? `, ${formatDistance(distance)}` : ''}`,
 				month,
 				icon: <IconComponent width={26} height={26} />,
 				startedAt: date.getTime(),

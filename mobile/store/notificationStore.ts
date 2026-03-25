@@ -5,11 +5,12 @@ interface Notification {
 	id: string
 	text: string
 	type: NotificationInAppType
+	onPress?: () => void
 }
 
 interface NotificationStore {
 	notifications: Notification[]
-	showNotification: (text: string, type: NotificationInAppType) => void
+	showNotification: (text: string, type: NotificationInAppType, onPress?: () => void) => void
 	hideNotification: (id: string) => void
 	clearAll: () => void
 }
@@ -17,7 +18,7 @@ interface NotificationStore {
 export const useNotificationStore = create<NotificationStore>((set, get) => ({
 	notifications: [],
 
-	showNotification: (text: string, type: NotificationInAppType) => {
+	showNotification: (text, type, onPress) => {
 		const id = Date.now().toString()
 
 		// set((state) => ({
@@ -40,7 +41,7 @@ export const useNotificationStore = create<NotificationStore>((set, get) => ({
 		// 	})
 
 		set(() => ({
-			notifications: [{ id, text, type }] // только одно за раз
+			notifications: [{ id, text, type, onPress }] // только одно за раз
 		}))
 
 		setTimeout(() => {

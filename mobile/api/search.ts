@@ -5,7 +5,6 @@ import { toQs } from '@/helpers/toQs'
 
 export interface IFoundUser {
 	id: string
-	email: string
 	name: null | string
 	username: null | string
 	avatarFilename: null | string

@@ -33,11 +33,16 @@ import { PATH_TO_IMAGE } from '@/constants/PATH_TO_FILES'
 import { useInfiniteQuery, useQueryClient } from '@tanstack/react-query'
 
 const isUser = (item: IFoundUser | IFoundPost): item is IFoundUser => {
-	return 'email' in item
+	return 'username' in item
 }
 
 const isPost = (item: IFoundUser | IFoundPost): item is IFoundPost => {
-	return 'training' in item
+	return 'title' in item
+}
+
+interface IInfinitePosts {
+	pages: IPost[][]
+	pageParams: number[]
 }
 
 const PostsPage = () => {
@@ -67,11 +72,8 @@ const PostsPage = () => {
 		isRefetching: isRefetchingSearch
 	} = useInfiniteQuery({
 		queryKey: ['search', debouncedSearchWord, state.searchMode],
+		enabled: debouncedSearchWord.trim().length >= 2,
 		queryFn: ({ pageParam = 1, signal }) => {
-			if (!debouncedSearchWord || debouncedSearchWord.trim().length < 2) {
-				return Promise.resolve([])
-			}
-
 			return searchByAllItems(
 				{
 					page: pageParam,
@@ -83,9 +85,7 @@ const PostsPage = () => {
 			)
 		},
 		initialPageParam: 1,
-		getNextPageParam: (lastPage, pages) => (lastPage.length === searchLimit ? pages.length + 1 : undefined),
-		enabled: debouncedSearchWord.trim().length >= 2
-		// select: (data) => data.pages.flat()
+		getNextPageParam: (lastPage, pages) => (lastPage.length === searchLimit ? pages.length + 1 : undefined)
 	})
 
 	const searchData = searchDataRaw?.pages.flat() ?? []
@@ -140,7 +140,7 @@ const PostsPage = () => {
 
 	const toggleSubscribeCallback = useCallback(
 		(isSubscribed: boolean, authorId?: string) => {
-			queryClient.setQueryData(['posts-feed'], (oldData: any) => {
+			queryClient.setQueryData<IInfinitePosts>(['posts-feed'], (oldData) => {
 				if (!oldData) return oldData
 
 				return {
@@ -328,11 +328,11 @@ const PostsPage = () => {
 											return <PostSearchResult {...item} />
 										}
 
-										return null
+										console.warn('Unknown item type', item)
+										return <Text className="text-red-500">Unknown item type</Text>
 									}}
 									keyExtractor={(item) => item.id}
 									onEndReached={() => {
-										console.log('onEndReached search')
 										if (hasNextSearchPage && !isFetchingNextSearchPage) {
 											fetchNextSearchPage()
 										}
