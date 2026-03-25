@@ -122,6 +122,16 @@ export class HttpExceptionFilter implements ExceptionFilter {
 					text: exceptionStatus === 500 ? message : undefined,
 				});
 			}
+		} else if (exception instanceof Error) {
+			if ('status' in exception) {
+				const exceptionStatus = exception.status as number;
+
+				return response.status(exceptionStatus).json({
+					statusCode: exceptionStatus,
+					message: statusCodeToError[exceptionStatus] ?? ERRORS.UNKNOWN_ERROR,
+					text: exceptionStatus === 500 ? exception.stack : undefined,
+				});
+			}
 		}
 
 		this.logger.error(`Unhandled exception: ${exception}. Stack ${exception.stack}`);
