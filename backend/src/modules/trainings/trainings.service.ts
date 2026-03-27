@@ -15,15 +15,20 @@ import { eq, and, isNull, isNotNull, inArray, sql } from 'drizzle-orm';
 import { ERRORS } from '@shared/errors';
 import { CommonDto } from '../../common/dto/common.dto';
 import { TrainingType } from '@shared/enums';
-import { round, clampToPg } from '@helpers';
+import { round, clampToPgInt } from '@helpers';
 import { calculateCalories, haversineDistance } from '@shared/helpers';
 import { desc } from '../database/extensions';
+import { EventEmitter2 } from '@nestjs/event-emitter';
+import { Event } from '@events/constants';
 
 const MAX_TIME_TO_SYNC_AFTER_FINISH_TRAINING = 60 * 1000; // 1 минута
 
 @Injectable()
 export class TrainingsService {
-	constructor(private readonly db: DatabaseService) {
+	constructor(
+		private readonly db: DatabaseService,
+		private readonly eventEmitter: EventEmitter2,
+	) {
 		// @TODO интервал на чистку пустых тренировок
 		// @TODO восстановление тренировок на паузе из бд
 	}
@@ -133,6 +138,8 @@ export class TrainingsService {
 					...this.calcMetrics(participant, activeTraining.type),
 				});
 			}
+
+			this.eventEmitter.emit(Event.TRAINING_FINISHED, activeTraining.id);
 
 			return { success: true };
 		});
@@ -679,12 +686,12 @@ export class TrainingsService {
 		const kkcal = calculateCalories(activeTimeMs, distanceM, type);
 
 		return {
-			timeSec: clampToPg(trainingMetrics.timeSec, timeSec),
-			avgSpeedMPerSec: clampToPg(trainingMetrics.avgSpeedMPerSec, avgSpeedMPerSec),
-			avgTempoSecondsPerKm: clampToPg(trainingMetrics.avgTempoSecondsPerKm, avgTempoSecondsPerKm),
-			distanceM: clampToPg(trainingMetrics.distanceM, distanceM),
-			altitudeGainM: clampToPg(trainingMetrics.altitudeGainM, altitudeGainM),
-			kkcal: clampToPg(trainingMetrics.kkcal, kkcal),
+			timeSec: clampToPgInt(trainingMetrics.timeSec, timeSec),
+			avgSpeedMPerSec: clampToPgInt(trainingMetrics.avgSpeedMPerSec, avgSpeedMPerSec),
+			avgTempoSecondsPerKm: clampToPgInt(trainingMetrics.avgTempoSecondsPerKm, avgTempoSecondsPerKm),
+			distanceM: clampToPgInt(trainingMetrics.distanceM, distanceM),
+			altitudeGainM: clampToPgInt(trainingMetrics.altitudeGainM, altitudeGainM),
+			kkcal: clampToPgInt(trainingMetrics.kkcal, kkcal),
 		};
 	}
 }

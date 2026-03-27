@@ -22,7 +22,12 @@ export class ProfileService {
 		private readonly files: StaticService,
 	) {}
 
-	public async getOtherProfile(currentUserId: string, otherUserId: string): Promise<ProfileDto.Entity> {
+	public async getOtherProfileByUsername(currentUserId: string, otherUsername: string): Promise<ProfileDto.Entity> {
+		const otherUser = await this.users.getUserByUsername(otherUsername);
+		return this.getOtherProfileById(currentUserId, otherUser.id);
+	}
+
+	public async getOtherProfileById(currentUserId: string, otherUserId: string): Promise<ProfileDto.Entity> {
 		const profile = await this.getProfile(otherUserId);
 
 		const isFriend = await this.friends.getFriendsStatus(currentUserId, otherUserId);

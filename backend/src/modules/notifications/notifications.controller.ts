@@ -43,14 +43,14 @@ export class NotificationsController {
 	/**
 	 * @tag Notifications
 	 * @security token
-	 * @summary Удалить уведы. Если боди не передано - удалятся все
+	 * @summary Удалить уведы. Если массив ids пустой - удалятся все
 	 */
 	@Delete('delete')
 	public delete(
 		@User() user: UserData,
-		@Body() dto?: NotificationDto.RequestRead,
+		@Body() dto: NotificationDto.RequestRead,
 	): Promise<CommonDto.BooleanResponse> {
-		return this.service.delete(user.id, dto ? dto.ids : undefined);
+		return this.service.delete(user.id, dto.ids.length > 0 ? dto.ids : undefined);
 	}
 
 	/**

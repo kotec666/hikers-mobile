@@ -14,8 +14,15 @@ export namespace NotificationDto {
 
 	export type Action = {
 		text: string;
-		iconFilename: string;
+		iconFilename: string | null;
 		relEntityId: string | null;
+	};
+
+	export type Create = {
+		text?: string;
+		type: NotificationType;
+		iconFilename?: string;
+		relEntityId?: string;
 	};
 
 	export class RequestPull {
@@ -35,7 +42,8 @@ export namespace NotificationDto {
 		text: string;
 
 		@IsUUIDFilename()
-		iconFilename: string;
+		@IsOptional()
+		iconFilename?: string;
 
 		@IsUUID('4', { message: `_iconFilename:${ERRORS.MISMATCH}` })
 		@IsOptional()

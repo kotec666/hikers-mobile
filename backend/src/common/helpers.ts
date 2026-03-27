@@ -6,17 +6,17 @@ export function round(value: number, precision: number = 0): number {
 	return Math.round(value * (10 * precision)) / (10 * precision);
 }
 
-export function clampToPg(column: PgColumn, value: number): number {
+export function clampToPgInt(column: PgColumn, value: number): number {
 	switch (column.columnType) {
 		case 'PgSmallInt': {
-			return Math.max(Math.min(value, MAX_SMALLINT_VALUE), MIN_SMALLINT_VALUE);
+			return Math.max(Math.min(Math.trunc(value), MAX_SMALLINT_VALUE), MIN_SMALLINT_VALUE);
 		}
 
 		case 'PgInteger': {
-			return Math.max(Math.min(value, MAX_INT_VALUE), MIN_INT_VALUE);
+			return Math.max(Math.min(Math.trunc(value), MAX_INT_VALUE), MIN_INT_VALUE);
 		}
 
 		default:
-			return value;
+			return Math.trunc(value);
 	}
 }

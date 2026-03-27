@@ -5,10 +5,15 @@ import { users } from '../database/schema';
 import { and, eq, ilike, ne, or } from 'drizzle-orm';
 import { comparePassword, hashPassword } from './user.helpers';
 import { ERRORS } from '@shared/errors';
+import { EventEmitter2 } from '@nestjs/event-emitter';
+import { Event } from '@events/constants';
 
 @Injectable()
 export class UserService {
-	constructor(private readonly db: DatabaseService) {}
+	constructor(
+		private readonly db: DatabaseService,
+		private readonly eventEmitter: EventEmitter2,
+	) {}
 
 	public async createUser(dto: UserDto.Registration): Promise<UserDto.Entity> {
 		const hashedPassword = await hashPassword(dto.password);
@@ -28,6 +33,8 @@ export class UserService {
 		if (!user) {
 			throw new NotFoundException(ERRORS.NOT_FOUND);
 		}
+
+		this.eventEmitter.emit(Event.USER_CREATED, user.id);
 
 		return user;
 	}
@@ -75,6 +82,25 @@ export class UserService {
 			username: user.username,
 			avatarFilename: user.avatarFilename,
 		};
+	}
+
+	public async getUserByUsername(username: string): Promise<UserDto.Entity> {
+		const [user] = await this.db.db
+			.select({
+				id: users.id,
+				name: users.name,
+				username: users.username,
+				email: users.email,
+				avatarFilename: users.avatarFilename,
+			})
+			.from(users)
+			.where(eq(users.username, username))
+			.limit(1);
+		if (!user) {
+			throw new NotFoundException(ERRORS.NOT_FOUND);
+		}
+
+		return user;
 	}
 
 	public async getUserByEmail(email: string): Promise<UserDto.Entity> {
