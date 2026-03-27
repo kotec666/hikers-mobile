@@ -11,9 +11,10 @@
 		"start": "nest start",
 		"start:dev": "nest start --watch",
 		"start:debug": "nest start --debug --watch",
-		"start:prod": "node dist/main",
+		"start:prod": "node dist/src/main",
 		"db:generate": "drizzle-kit generate",
 		"db:push": "drizzle-kit push",
+		"db:seed": "node dist/src/modules/database/seed.js",
 		"lint": "eslint --parser-options project:tsconfig.json \"src/**/*.ts\" --fix",
 		"prepare": "ts-patch install"
 	},
