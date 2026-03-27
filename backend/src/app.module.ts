@@ -24,12 +24,14 @@ import { SerachModule } from './modules/search/search.module';
 import { NotificationsModule } from './modules/notifications/notifications.module';
 import { WebsocketsModule } from './modules/websockets/websockets.module';
 import { EventEmitterModule } from '@nestjs/event-emitter';
+import { ScheduleModule } from '@nestjs/schedule';
 
 config({ quiet: true });
 
 @Module({
 	controllers: [AppController],
 	imports: [
+		ScheduleModule.forRoot({ cronJobs: true }),
 		EventEmitterModule.forRoot({ ignoreErrors: true }),
 		LoggerModule.forRoot({
 			assignResponse: true,
