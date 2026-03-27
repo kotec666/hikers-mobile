@@ -1,30 +1,35 @@
-import React, { useCallback, useEffect, useRef, useState } from 'react'
-import { SafeAreaProvider, useSafeAreaInsets } from 'react-native-safe-area-context'
-import { View, RefreshControl, ActivityIndicator, Text } from 'react-native'
+import React, {useCallback, useEffect, useRef, useState} from 'react'
+import {SafeAreaProvider, useSafeAreaInsets} from 'react-native-safe-area-context'
+import {ActivityIndicator, RefreshControl, Text, View} from 'react-native'
 import SettingsSvg from '@/components/svg/SettingsSvg'
 import MoreOptionsButton from '@/components/ui/MoreOptionsButton/MoreOptionsButton'
-import { fontFamily } from '@/constants/Fonts'
+import {fontFamily} from '@/constants/Fonts'
 import SocialStats from '@/components/ui/Profile/SocialStats'
-import { Button } from '@/components/ui/Button'
+import {Button} from '@/components/ui/Button'
 import ActivityInfo from '@/components/ui/Profile/ActivityInfo'
 import RedirectAchievementsInfo from '@/components/ui/Profile/RedirectAchievementsInfo'
 import PostListItem from '@/components/ui/Post/PostListItem'
-import { RelativePathString, useLocalSearchParams, useRouter, useFocusEffect } from 'expo-router'
-import { useAuthStore } from '@/store/authStore'
-import { getProfileData, IProfile } from '@/api/profile'
-import { PATH_TO_IMAGE } from '@/constants/PATH_TO_FILES'
-import { AnimatedProfilePicture } from '@/components/ui/Profile/AnimatedProfilePicture'
-import { LegendList, LegendListRef } from '@legendapp/list'
-import { getPostsMy, IPost } from '@/api/posts'
-import { Colors } from '@/constants/Colors'
+import {RelativePathString, useFocusEffect, useLocalSearchParams, useRouter} from 'expo-router'
+import {useAuthStore} from '@/store/authStore'
+import {getProfileData, IProfile} from '@/api/profile'
+import {PATH_TO_IMAGE} from '@/constants/PATH_TO_FILES'
+import {AnimatedProfilePicture} from '@/components/ui/Profile/AnimatedProfilePicture'
+import {LegendList, LegendListRef} from '@legendapp/list'
+import {getPostsMy, IPost} from '@/api/posts'
+import {Colors} from '@/constants/Colors'
 import MapComponent from '@/components/map/MapComponent'
-import { adaptLocations } from '@/helpers/adaptPointsToIWorkoutLocationStorageItem'
-import { useSafeNavigation } from '@/hooks/useSafeNavigation'
-import { useInfiniteQuery } from '@tanstack/react-query'
+import {adaptLocations} from '@/helpers/adaptPointsToIWorkoutLocationStorageItem'
+import {useSafeNavigation} from '@/hooks/useSafeNavigation'
+import {useInfiniteQuery} from '@tanstack/react-query'
 import TrainingsEmpty from '@/components/ui/Post/TrainingsEmpty'
-import { getFieldsErrors } from '@/helpers/getFieldsErrors'
-// import WorkoutActivity, {WorkoutActivityProps} from "@/components/ui/LiveActivities/WorkoutActivity";
-// import {LiveActivity} from "expo-widgets";
+import {getFieldsErrors} from '@/helpers/getFieldsErrors'
+import WorkoutActivity, {
+    getActivityTypeIcon,
+    WorkoutActivityProps
+} from "@/components/ui/LiveActivities/WorkoutActivity";
+import {LiveActivity} from "expo-widgets";
+import {TrainingType} from "@shared/enums";
+import {WorkoutTypesMap} from "@/constants/WorkoutTypes";
 
 /**
  *
@@ -177,40 +182,41 @@ const Profile = () => {
 		return <TrainingsEmpty text="Постов еще не существует, опубликуйте пост после тренировки" />
 	}, [isPostsFetching])
 
-	// const liveActivityWorkoutInstanceRef = useRef<LiveActivity<WorkoutActivityProps>>(null)
+	const liveActivityWorkoutInstanceRef = useRef<LiveActivity<WorkoutActivityProps>>(null)
 
-	// const startWorkoutActivity = () => {
-	//     // Start the Live Activity
-	//     const instance = WorkoutActivity.start({
-	//         distanceKm: 1,
-	//         durationSec: 355,
-	//         isPaused: false,
-	//         speedKmh: 10,
-	//         type: TrainingType.WALK
-	//     });
-	//     console.log('instance', instance)
-	//     liveActivityWorkoutInstanceRef.current = instance
-	//     // Store instance
-	// };
-	//
-	// const updateWorkoutActivity = () => {
-	//     if (!liveActivityWorkoutInstanceRef.current) return
-	//     liveActivityWorkoutInstanceRef.current.update(
-	//         {
-	//             distanceKm: 1,
-	//             durationSec: 355,
-	//             isPaused: true,
-	//             speedKmh: 10,
-	//             type: TrainingType.WALK
-	//         }
-	//     );
-	// }
-	//
-	//
-	// const endWorkoutActivity = () => {
-	//     if (!liveActivityWorkoutInstanceRef.current) return
-	//     liveActivityWorkoutInstanceRef.current.end('immediate')
-	// }
+	const startWorkoutActivity = () => {
+	    // Start the Live Activity
+	    const instance = WorkoutActivity.start({
+            formattedDistance: '1.07',
+	        formattedTime: '0:07',
+            formattedSpeed: '7.5',
+	        isPaused: false,
+            icon: getActivityTypeIcon(TrainingType.WALK),
+            typeLabel: WorkoutTypesMap?.[TrainingType.WALK]?.name ?? 'Тренировка'
+	    });
+	    liveActivityWorkoutInstanceRef.current = instance
+	    // Store instance
+	};
+
+	const updateWorkoutActivity = () => {
+	    if (!liveActivityWorkoutInstanceRef.current) return
+	    liveActivityWorkoutInstanceRef.current.update(
+	        {
+                formattedDistance: '1.07',
+                formattedTime: '0:07',
+                formattedSpeed: '7.5',
+	            isPaused: true,
+                icon: getActivityTypeIcon(TrainingType.WALK),
+                typeLabel: WorkoutTypesMap?.[TrainingType.WALK]?.name ?? 'Тренировка'
+	        }
+	    );
+	}
+
+
+	const endWorkoutActivity = () => {
+	    if (!liveActivityWorkoutInstanceRef.current) return
+	    liveActivityWorkoutInstanceRef.current.end('immediate')
+	}
 
 	return (
 		<>
@@ -232,13 +238,6 @@ const Profile = () => {
 					ItemSeparatorComponent={() => <View style={{ height: 16 }} />}
 					ListEmptyComponent={renderEmpty}
 					ListFooterComponent={renderFooter}
-					// refreshControl={
-					// 	<RefreshControl
-					// 		refreshing={refreshingProfile || refreshing}
-					// 		onRefresh={onRefreshAll}
-					// 		tintColor="#22CB5A"
-					// 	/>
-					// }
 					refreshControl={
 						<RefreshControl
 							refreshing={refreshingProfile || postsIsRefetching}
@@ -329,15 +328,15 @@ const Profile = () => {
 								<Button variant="white" onPress={() => push('/workout-history')}>
 									История тренировок
 								</Button>
-								{/*<Button variant="white" onPress={startWorkoutActivity}>*/}
-								{/*    Start workout activity*/}
-								{/*</Button>*/}
-								{/*<Button variant="white" onPress={updateWorkoutActivity}>*/}
-								{/*    update workout activity*/}
-								{/*</Button>*/}
-								{/*<Button variant="white" onPress={endWorkoutActivity}>*/}
-								{/*    stop workout activity*/}
-								{/*</Button>*/}
+								<Button variant="white" onPress={startWorkoutActivity}>
+								    Start workout activity
+								</Button>
+								<Button variant="white" onPress={updateWorkoutActivity}>
+								    update workout activity
+								</Button>
+								<Button variant="white" onPress={endWorkoutActivity}>
+								    stop workout activity
+								</Button>
 								<RedirectAchievementsInfo achievements={profileData?.achievements} isMyProfile />
 								<ActivityInfo label="Активности" activities={profileData?.activities || []} />
 							</View>
