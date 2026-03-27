@@ -5,16 +5,18 @@ import { INotification } from '@/api/notifications'
 import { useToast } from '@/hooks/useToast'
 import { handleRedirectOnPageWhenNotificationPressed } from '@/components/ui/Notifications/NotificationListItem'
 import { useSafeNavigation } from '@/hooks/useSafeNavigation'
+import { useAuthStore } from '@/store/authStore'
 
 const InAppNotificationProvider = () => {
 	const socketRef = useRef<Socket | null>(null)
 	const toast = useToast()
 	const { push } = useSafeNavigation()
+	const { accessToken } = useAuthStore()
 
 	useEffect(() => {
-		if (socketRef.current) socketRef.current.disconnect()
-		const s = createSocket()
-		if (!s) return // accessToken = null
+		if (!accessToken) return
+
+		const s = createSocket(accessToken)
 		socketRef.current = s
 
 		// const onConnect = () => {
@@ -46,9 +48,10 @@ const InAppNotificationProvider = () => {
 
 		return () => {
 			s.disconnect()
+			socketRef.current = null
 		}
 		// eslint-disable-next-line react-hooks/exhaustive-deps
-	}, [])
+	}, [accessToken])
 
 	return <></>
 }

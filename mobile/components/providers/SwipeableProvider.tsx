@@ -1,15 +1,15 @@
 import React, { PropsWithChildren, useState } from 'react'
-import { useWindowDimensions, LayoutChangeEvent } from 'react-native'
+import { useWindowDimensions, LayoutChangeEvent, View } from 'react-native'
 import Animated, { useAnimatedStyle, useSharedValue, withSpring, withTiming } from 'react-native-reanimated'
 import { Gesture, GestureDetector } from 'react-native-gesture-handler'
 import { scheduleOnRN } from 'react-native-worklets'
+import DeleteTrashSvg from '@/components/svg/DeleteTrashSvg'
 
 type SwipeableProps = PropsWithChildren<{
-	// backgroundColor?: string
 	onSwiped: () => void
 }>
 
-const SwipeableProvider: React.FC<SwipeableProps> = ({ children, onSwiped /*backgroundColor = '#EC255A'*/ }) => {
+const SwipeableProvider: React.FC<SwipeableProps> = ({ children, onSwiped }) => {
 	const { width: screenWidth } = useWindowDimensions()
 
 	const startX = useSharedValue(0)
@@ -66,9 +66,13 @@ const SwipeableProvider: React.FC<SwipeableProps> = ({ children, onSwiped /*back
 	return (
 		<GestureDetector gesture={gesture}>
 			<Animated.View
-				style={[loaded ? animatedHeight : { height: 'auto' } /*, { backgroundColor }*/]}
+				className="bg-[#FF453A]/80 overflow-hidden"
+				style={[loaded ? animatedHeight : { height: 'auto' }]}
 				onLayout={handleLayout}
 			>
+				<View className="absolute inset-0 justify-center items-end pr-5">
+					<DeleteTrashSvg />
+				</View>
 				<Animated.View style={animatedStyle}>{children}</Animated.View>
 			</Animated.View>
 		</GestureDetector>

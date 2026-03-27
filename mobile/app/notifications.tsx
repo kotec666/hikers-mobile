@@ -107,14 +107,15 @@ const NotificationsPage = () => {
 	return (
 		<SafeAreaProvider style={{ paddingTop: insets.top }}>
 			<View style={{ flex: 1 }}>
-				<Container className="gap-[20px] mt-[20px] flex-1">
+				<Container className="gap-[20px] mt-[20px]">
 					<HeaderBack>Уведомления</HeaderBack>
 					{!notificationsData.length || isFetching ? null : (
 						<Button variant="white" onPress={() => handleDeleteNotification()}>
 							Очистить все уведомления
 						</Button>
 					)}
-
+				</Container>
+				<View className="gap-[20px] mt-[20px] flex-1">
 					<LegendList
 						data={notificationsData}
 						ListEmptyComponent={renderEmpty}
@@ -155,7 +156,7 @@ const NotificationsPage = () => {
 						}
 						showsVerticalScrollIndicator={false}
 					/>
-				</Container>
+				</View>
 			</View>
 		</SafeAreaProvider>
 	)

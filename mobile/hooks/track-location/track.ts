@@ -7,6 +7,7 @@ import { TaskManagerError } from 'expo-task-manager'
 import { syncTraining } from '@/api/workout'
 import { prepareLocationsForSync } from '@/helpers/prepareLocationsForSync'
 import { getItem } from '@/store/storage'
+import { filterLocations } from '@/helpers/location/filterLocations'
 
 export const LOCATION_TASK_NAME = 'background-location-task'
 let innerAppMountedPromiseRef: Promise<void> | null = null // Variable to hold the promise resolver logic
@@ -63,8 +64,9 @@ TaskManager.defineTask(
 
 		const meta = getWorkoutMeta(user?.id)
 		if (!meta || !data?.locations?.length) return
+		const cleanedLocations = filterLocations(data.locations, { keepLast: true })
 
-		const savedLocations = setWorkoutItems(data.locations, user?.id)
+		const savedLocations = setWorkoutItems(cleanedLocations, user?.id)
 		locationEmitter.emit(savedLocations)
 
 		const preparedLocations = prepareLocationsForSync(savedLocations)

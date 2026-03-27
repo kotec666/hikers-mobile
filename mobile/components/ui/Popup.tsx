@@ -31,7 +31,7 @@ const Popup = ({ children, onClose }: PropsWithChildren<PopupProps>) => {
 
 const styles = StyleSheet.create({
 	overlay: {
-		...StyleSheet.absoluteFillObject
+		...StyleSheet.absoluteFill
 	},
 	container: {
 		position: 'absolute',

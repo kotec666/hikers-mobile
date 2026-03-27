@@ -30,12 +30,7 @@ const AppNavigator = (props: { isAuthenticated: boolean }) => {
 }
 
 const Root = ({ isIOS26OrHigher, isAuthenticated }: { isIOS26OrHigher: boolean; isAuthenticated: boolean }) => {
-	return (
-		<>
-			{/*<NotificationProvider />*/}
-			{isIOS26OrHigher ? <NativeTabsComponent /> : <AppNavigator isAuthenticated={isAuthenticated} />}
-		</>
-	)
+	return <>{isIOS26OrHigher ? <NativeTabsComponent /> : <AppNavigator isAuthenticated={isAuthenticated} />}</>
 }
 
 export default function TabLayout() {

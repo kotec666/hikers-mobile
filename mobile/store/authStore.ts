@@ -13,23 +13,25 @@ export interface IUser {
 }
 
 interface AuthStore {
-	isAuthenticated: boolean
 	accessToken: string | null
 	user: IUser | null
 	accessTokenExpiration: number | null
+	isAuthenticated: boolean
+	isAuthChecked: boolean
 
 	login: (token: string, user: IUser, accessTokenExpiration?: number | null) => void
 	logout: () => void
 	refreshAccessToken: () => Promise<boolean>
-	checkAuth: () => Promise<boolean>
+	checkAuth: () => Promise<void>
 	setUser: (user: IUser) => void
 }
 
 export const useAuthStore = create<AuthStore>((set, get) => ({
-	isAuthenticated: false,
 	accessToken: null,
 	user: null,
 	accessTokenExpiration: null,
+	isAuthenticated: false,
+	isAuthChecked: false,
 
 	login: (token, user, expire) => {
 		const data = {
@@ -87,16 +89,21 @@ export const useAuthStore = create<AuthStore>((set, get) => ({
 
 	checkAuth: async () => {
 		const data = getAuthData()
-		if (!data) return false
+		if (!data) {
+			set({ isAuthChecked: true })
+			return
+		}
 
 		const { accessToken, accessTokenExpiration } = data
 
 		if (accessToken && accessTokenExpiration && accessTokenExpiration > Date.now()) {
-			set(data)
-			return true
+			set({ ...data, isAuthChecked: true })
+			return
 		}
 
-		return await get().refreshAccessToken()
+		await get().refreshAccessToken()
+
+		set({ isAuthChecked: true })
 	}
 }))
 

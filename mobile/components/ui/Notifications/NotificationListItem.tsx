@@ -46,7 +46,7 @@ export function NotificationListItem(props: INotificationListItemProps) {
 	return (
 		<Pressable
 			onPress={() => (redirectLink ? push(redirectLink) : undefined)}
-			className={cn('flex-row gap-4 items-center', props.className)}
+			className={cn('flex-row gap-4 items-center bg-black-0d px-[16px]', props.className)}
 		>
 			<UserAvatar
 				avatar={

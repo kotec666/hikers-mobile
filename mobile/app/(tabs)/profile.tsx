@@ -271,6 +271,10 @@ const Profile = () => {
 													label: 'Политика обработки персональных данных',
 													action: () => handleClickRedirect(ALLOWED_ROUTES.DOCUMENT)
 												},
+												{
+													label: 'blur',
+													action: () => handleClickRedirect('/blur')
+												},
 												// {
 												// 	label: 'Tabs ui',
 												// 	action: () => handleClickRedirect('/(tabs-ui-kit)' as AllowedRoute)
