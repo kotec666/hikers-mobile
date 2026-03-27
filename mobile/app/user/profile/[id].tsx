@@ -14,7 +14,7 @@ import { getFieldsErrors } from '@/helpers/getFieldsErrors'
 import { subscribeToUser, unsubscribeFromUser } from '@/api/subscribers'
 import { useToast } from '@/hooks/useToast'
 import Modal from '@/components/ui/Modal/Modal'
-import { addAsFriend, deleteFriendById, revokeFriendInviteByUserId } from '@/api/friends'
+import { acceptFriendRequest, addAsFriend, deleteFriendById, revokeFriendInviteByUserId } from '@/api/friends'
 import { FriendStatus } from '@shared/enums'
 import { AnimatedProfilePicture } from '@/components/ui/Profile/AnimatedProfilePicture'
 import { LegendList, LegendListRef } from '@legendapp/list'
@@ -34,7 +34,8 @@ import { useInfiniteQuery, useQueryClient, InfiniteData } from '@tanstack/react-
 const friendStatusLabel = {
 	[FriendStatus.FALSE]: 'Добавить в друзья',
 	[FriendStatus.TRUE]: 'Удалить из друзей',
-	[FriendStatus.INVITED]: 'Заявка отправлена'
+	[FriendStatus.INVITED]: 'Заявка отправлена',
+	[FriendStatus.SENT]: 'Принять заявку'
 }
 
 const UserProfilePage = () => {
@@ -193,6 +194,13 @@ const UserProfilePage = () => {
 		[updatePostsSubscription] // setPosts
 	)
 
+	// Функция для инвалидации запросов на друзей
+	const invalidateFriendQueries = useCallback(async () => {
+		await queryClient.invalidateQueries({ queryKey: ['pendingInvites'] })
+		// Также можно инвалидировать другие связанные запросы
+		await queryClient.invalidateQueries({ queryKey: ['friendsList'] })
+	}, [queryClient])
+
 	const handleDeleteFromFriends = async () => {
 		if (isFriendLoading) return
 		friendActionLockRef.current = true
@@ -206,6 +214,8 @@ const UserProfilePage = () => {
 				isFriend: FriendStatus.FALSE,
 				friends: friendsCount
 			}))
+			// Инвалидируем запросы на друзей
+			await invalidateFriendQueries()
 			toast.success('Пользователь удалён из списка друзей')
 		} catch (e: unknown) {
 			toast.error('Произошла ошибка, повторите попытку позже')
@@ -234,6 +244,9 @@ const UserProfilePage = () => {
 			updateProfileData(() => ({
 				isFriend: FriendStatus.INVITED
 			}))
+
+			// Инвалидируем запросы на друзей
+			await invalidateFriendQueries()
 			toast.success('Заявка в друзья отправлена')
 		} catch (e: unknown) {
 			toast.error('Произошла ошибка, повторите попытку позже')
@@ -253,7 +266,30 @@ const UserProfilePage = () => {
 			updateProfileData(() => ({
 				isFriend: FriendStatus.FALSE
 			}))
+			// Инвалидируем запросы на друзей
+			await invalidateFriendQueries()
 			toast.success('Заявка в друзья отозвана')
+		} catch (e: unknown) {
+			toast.error('Произошла ошибка, повторите попытку позже')
+			await getFieldsErrors(e)
+		} finally {
+			friendActionLockRef.current = false
+			setIsFriendLoading(false)
+		}
+	}
+
+	const handleAcceptFriendRequest = async () => {
+		if (isFriendLoading) return
+		friendActionLockRef.current = true
+		setIsFriendLoading(true)
+		try {
+			await acceptFriendRequest(id)
+			updateProfileData(() => ({
+				isFriend: FriendStatus.TRUE
+			}))
+			// Инвалидируем запросы на друзей
+			await invalidateFriendQueries()
+			toast.success('Заявка в друзья принята')
 		} catch (e: unknown) {
 			toast.error('Произошла ошибка, повторите попытку позже')
 			await getFieldsErrors(e)
@@ -272,6 +308,8 @@ const UserProfilePage = () => {
 				return sendFriendRequest()
 			case FriendStatus.INVITED:
 				return revokeFriendRequest()
+			case FriendStatus.SENT:
+				return handleAcceptFriendRequest()
 		}
 	}
 
