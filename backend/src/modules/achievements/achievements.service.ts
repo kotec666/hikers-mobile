@@ -75,18 +75,17 @@ export class AchievementsService {
 		achievementId: string,
 		progress: number,
 	): Promise<CommonDto.BooleanResponse> {
-		const [achieve] = await this.db.db
+		const [userAchieve] = await this.db.db
 			.select({
 				progress: userAchievements.progress,
-				claimedAt: userAchievements.claimedAt,
 			})
 			.from(userAchievements)
 			.where(and(eq(userAchievements.userId, userId), eq(userAchievements.achievementId, achievementId)));
-		if (!achieve) {
-			throw new NotFoundException(ERRORS.NOT_FOUND);
+		if (!userAchieve) {
+			return this.setProgress(userId, achievementId, progress);
 		}
 
-		const newProgress = Math.min(100, achieve.progress + progress);
+		const newProgress = userAchieve.progress + progress;
 		return this.setProgress(userId, achievementId, newProgress);
 	}
 
@@ -95,23 +94,32 @@ export class AchievementsService {
 		achievementId: string,
 		newProgress: number,
 	): Promise<CommonDto.BooleanResponse> {
-		newProgress = Math.max(Math.min(newProgress, 100), 0);
-
-		if (newProgress >= 100) {
-			return this.giveAchievement(userId, achievementId);
+		const [achieve] = await this.db.db
+			.select({ targetProgress: achievements.targetProgress })
+			.from(achievements)
+			.where(eq(achievements.id, achievementId))
+			.limit(1);
+		if (!achieve) {
+			throw new NotFoundException(ERRORS.NOT_FOUND);
 		}
 
+		const isDone = achieve.targetProgress <= newProgress;
 		await this.db.db
 			.insert(userAchievements)
 			.values({
 				userId,
 				achievementId,
 				progress: newProgress,
+				claimedAt: isDone ? sql`NOW()` : null,
 			})
 			.onConflictDoUpdate({
 				target: [userAchievements.userId, userAchievements.achievementId],
-				set: { progress: newProgress },
+				set: { progress: newProgress, claimedAt: isDone ? sql`NOW()` : undefined },
 			});
+
+		if (isDone) {
+			this.notifyAchievementDone(userId, achievementId);
+		}
 
 		return { success: true };
 	}
@@ -121,19 +129,37 @@ export class AchievementsService {
 		achievementId: string,
 		progress?: number,
 	): Promise<CommonDto.BooleanResponse> {
+		const [achieve] = await this.db.db
+			.select({ targetProgress: achievements.targetProgress })
+			.from(achievements)
+			.where(eq(achievements.id, achievementId))
+			.limit(1);
+
+		if (!achieve) {
+			throw new NotFoundException(ERRORS.NOT_FOUND);
+		}
+
+		const targetProgress = progress ?? achieve.targetProgress;
+
 		await this.db.db
 			.insert(userAchievements)
 			.values({
 				userId,
 				achievementId,
 				claimedAt: sql`NOW()`,
-				progress: progress ?? 100,
+				progress: targetProgress,
 			})
 			.onConflictDoUpdate({
 				target: [userAchievements.userId, userAchievements.achievementId],
-				set: { progress: 100, claimedAt: sql`NOW()` },
+				set: { progress: targetProgress, claimedAt: sql`NOW()` },
 			});
 
+		this.notifyAchievementDone(userId, achievementId);
+
+		return { success: true };
+	}
+
+	private notifyAchievementDone(userId: string, achievementId: string) {
 		this.notifications
 			.create(userId, {
 				type: NotificationType.ACHIEVEMENT,
@@ -142,8 +168,6 @@ export class AchievementsService {
 			.catch((r) => {
 				console.log('New achievement notification creation failed', r);
 			});
-
-		return { success: true };
 	}
 
 	/** Обновление расстановки мест ачивок. Ближе к началу списка - выше в топе, остальные ачивки обнуляют место */
@@ -183,7 +207,8 @@ export class AchievementsService {
 				title: achievements.title,
 				description: achievements.description,
 				claimedPercent: achievements.claimedPercent,
-				progress: userAchievements.progress,
+				// clamp-им в [0, 100]
+				progress: sql<number>`GREATEST(0, LEAST(100, ${userAchievements.progress} / ${achievements.targetProgress}))`,
 				place: userAchievements.placeForShow,
 				claimedAt: userAchievements.claimedAt,
 			})
@@ -203,7 +228,8 @@ export class AchievementsService {
 				title: achievements.title,
 				description: achievements.description,
 				claimedPercent: achievements.claimedPercent,
-				progress: userAchievements.progress,
+				// clamp-им в [0, 100]
+				progress: sql<number>`GREATEST(0, LEAST(100, ${userAchievements.progress} / ${achievements.targetProgress}))`,
 				place: userAchievements.placeForShow,
 				claimedAt: userAchievements.claimedAt,
 			})
@@ -233,7 +259,8 @@ export class AchievementsService {
 				title: achievements.title,
 				description: achievements.description,
 				claimedPercent: achievements.claimedPercent,
-				progress: userAchievements.progress,
+				// clamp-им в [0, 100]
+				progress: sql<number>`GREATEST(0, LEAST(100, ${userAchievements.progress} / ${achievements.targetProgress}))`,
 				place: userAchievements.placeForShow,
 				claimedAt: userAchievements.claimedAt,
 			})
