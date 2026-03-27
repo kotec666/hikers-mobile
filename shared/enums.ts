@@ -28,7 +28,10 @@ export enum MeasuringUnit {
 export enum FriendStatus {
 	FALSE = 'false',
 	TRUE = 'true',
+	/** Когда мы отправили запрос целевому пользователю*/
 	INVITED = 'invited',
+	/** Когда целевой пользователь отправил запрос нам */
+	SENT = 'sent',
 }
 
 export enum SearchType {
