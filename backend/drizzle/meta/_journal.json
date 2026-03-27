@@ -204,6 +204,13 @@
       "when": 1774605534814,
       "tag": "0028_achievements_progress",
       "breakpoints": true
+    },
+    {
+      "idx": 29,
+      "version": "7",
+      "when": 1774606374309,
+      "tag": "0029_fix_achieve_progress_int",
+      "breakpoints": true
     }
   ]
 }
