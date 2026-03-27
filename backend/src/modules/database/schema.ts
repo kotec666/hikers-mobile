@@ -155,6 +155,12 @@ export const userFriendsInvites = pgTable(
 export const achievements = pgTable('achievements', {
 	id: uuid('id').primaryKey().defaultRandom(),
 	iconFilename: varchar('icon_filename', { length: 255 }).references(() => media.filename),
+
+	// Если ачивка на метрику трени, то у неё обязательно будут эти поля
+	type: userActivityEnum(), // Пока что так, но возможно в будущем эта связь сыграет злую шутку
+	measuringUnit: measuringUnitEnum('measuring_unit'),
+	targetProgress: smallint('progress').default(0).notNull(),
+
 	colorHex: varchar('color_hex', { length: 7 }),
 	title: varchar('title', { length: 255 }).notNull(),
 	description: text('description'),
