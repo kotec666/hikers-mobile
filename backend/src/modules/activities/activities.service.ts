@@ -186,26 +186,28 @@ export class ActivitiesService {
 	}
 
 	public async upsertAllActivities(userId: string): Promise<ActivitiyDto.Entity[]> {
-		// @TODO на транзу переписать и проверить
-		return Promise.all(
-			Object.values(UserActivity).map(async (name) => {
-				const [act] = await this.db.db
-					.insert(userActivities)
-					.values({
-						userId,
-						goal: 0,
-						name: name,
-						measuringUnit: getDefaultMeasuringUnitByActivity(name),
-					})
-					.onConflictDoNothing()
-					.returning({
-						place: userActivities.placeForShow,
-						goal: userActivities.goal,
-						name: userActivities.name,
-						measuringUnit: userActivities.measuringUnit,
-					});
-				return act;
-			}),
-		);
+		return this.db.db.transaction(async (tx) => {
+			return Promise.all(
+				Object.values(UserActivity).map(async (name) => {
+					const [act] = await tx
+						.insert(userActivities)
+						.values({
+							userId,
+							goal: 0,
+							name: name,
+							measuringUnit: getDefaultMeasuringUnitByActivity(name),
+						})
+						.onConflictDoNothing()
+						.returning({
+							place: userActivities.placeForShow,
+							goal: userActivities.goal,
+							name: userActivities.name,
+							measuringUnit: userActivities.measuringUnit,
+						});
+
+					return act;
+				}),
+			);
+		});
 	}
 }
