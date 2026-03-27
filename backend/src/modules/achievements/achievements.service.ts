@@ -1,8 +1,15 @@
 ﻿import { Injectable, NotFoundException } from '@nestjs/common';
 import { DatabaseService } from '../database/database.service';
 import { AchievementDto } from './achievements.dto';
-import { achievements, training, trainingMetrics, trainingParticipants, userAchievements } from '../database/schema';
-import { eq, sql, and, isNotNull, isNull } from 'drizzle-orm';
+import {
+	achievements,
+	training,
+	trainingMetrics,
+	trainingParticipants,
+	userAchievements,
+	users,
+} from '../database/schema';
+import { eq, sql, and, isNotNull, isNull, gte, count } from 'drizzle-orm';
 import { asc, desc } from '../database/extensions';
 import { NotificationsService } from '../notifications/notifications.service';
 import { CommonDto } from 'src/common/dto/common.dto';
@@ -11,6 +18,7 @@ import { MeasuringUnit, NotificationType, TrainingType, UserActivity } from '@sh
 import { OnEvent } from '@nestjs/event-emitter';
 import { Event } from '@events/constants';
 import { getActivityByTrainingType } from '../activities/helpers';
+import { Cron, CronExpression } from '@nestjs/schedule';
 
 @Injectable()
 export class AchievementsService {
@@ -18,6 +26,39 @@ export class AchievementsService {
 		private readonly db: DatabaseService,
 		private readonly notifications: NotificationsService,
 	) {}
+
+	@Cron(CronExpression.EVERY_DAY_AT_1AM)
+	private async updateClaimedPercents() {
+		const [allUsersCount] = await this.db.db.select({ count: count(users.id) }).from(users);
+
+		const achieves = await this.db.db
+			.select({ id: achievements.id, targetProgress: achievements.targetProgress })
+			.from(achievements);
+
+		for (const achieve of achieves) {
+			const [claimedUsersCount] = await this.db.db
+				.select({ count: count(userAchievements.userId) })
+				.from(userAchievements)
+				.where(
+					and(
+						eq(userAchievements.achievementId, achieve.id),
+						gte(userAchievements.progress, achieve.targetProgress),
+					),
+				);
+
+			const actualClaimedPercent = Math.min(
+				100,
+				Math.max(0, (100 * claimedUsersCount.count) / allUsersCount.count),
+			);
+
+			await this.db.db
+				.update(achievements)
+				.set({
+					claimedPercent: Number(actualClaimedPercent).toFixed(2),
+				})
+				.where(eq(achievements.id, achieve.id));
+		}
+	}
 
 	@OnEvent(Event.TRAINING_FINISHED)
 	private async handleTrainingFinished(id: string) {
