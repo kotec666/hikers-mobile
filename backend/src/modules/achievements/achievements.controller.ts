@@ -25,7 +25,7 @@ export class AchievementsContoller {
 
 	/**
 	 * @tag Achievements
-	 * @summary Получить полученные достижения
+	 * @summary Получить достижения в которых есть прогресс
 	 * @security token
 	 */
 	@Get('claimed')
@@ -35,7 +35,7 @@ export class AchievementsContoller {
 
 	/**
 	 * @tag Achievements
-	 * @summary Получить НЕполученные достижения
+	 * @summary Получить достижения в которых нет прогресса
 	 * @security token
 	 */
 	@Get('unclaimed')

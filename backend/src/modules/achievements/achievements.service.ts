@@ -2,14 +2,15 @@
 import { DatabaseService } from '../database/database.service';
 import { AchievementDto } from './achievements.dto';
 import { achievements, training, trainingMetrics, trainingParticipants, userAchievements } from '../database/schema';
-import { eq, notInArray, sql, and } from 'drizzle-orm';
+import { eq, sql, and, isNotNull, isNull } from 'drizzle-orm';
 import { asc, desc } from '../database/extensions';
 import { NotificationsService } from '../notifications/notifications.service';
 import { CommonDto } from 'src/common/dto/common.dto';
 import { ERRORS } from '@shared/errors';
-import { NotificationType } from '@shared/enums';
+import { MeasuringUnit, NotificationType, TrainingType, UserActivity } from '@shared/enums';
 import { OnEvent } from '@nestjs/event-emitter';
 import { Event } from '@events/constants';
+import { getActivityByTrainingType } from '../activities/helpers';
 
 @Injectable()
 export class AchievementsService {
@@ -39,34 +40,78 @@ export class AchievementsService {
 			// Inner, поскольку участники без метрик нас не интересуют
 			.innerJoin(trainingMetrics, eq(trainingMetrics.participantId, trainingParticipants.id));
 
-		// @TODO доделать после сидера
-		// eslint-disable-next-line @typescript-eslint/no-unused-vars
-		for (const participant of participants) {
-			// 	const activity = getActivityByTrainingType(participant.type);
-			// 	if (!activity) continue;
-			// 	let goalToAdd = 0;
-			// 	switch (activity) {
-			// 		case UserActivity.STEPS: {
-			// 			// Считать шаги пока не умеем, можно по жопной формуле от дистанции канешн
-			// 			continue;
-			// 		}
-			// 		case UserActivity.BICYCLE: {
-			// 			goalToAdd = Math.trunc(participant.metrics.distanceM / 1000);
-			// 			break;
-			// 		}
-			// 		case UserActivity.RUN: {
-			// 			goalToAdd = Math.trunc(participant.metrics.distanceM / 1000);
-			// 			break;
-			// 		}
-			// 		case UserActivity.TRACK: {
-			// 			goalToAdd = Math.trunc(participant.metrics.distanceM / 1000);
-			// 			break;
-			// 		}
-			// 		default: {
-			// 			continue;
-			// 		}
-			// 	}
-			// 	await this.addProgress(participant.userId, activity, goalToAdd);
+		if (participants.length === 0) {
+			return;
+		}
+
+		const trainingType = participants[0].type;
+		const activities = new Set<UserActivity>();
+		if (
+			trainingType === TrainingType.RUN ||
+			trainingType === TrainingType.TRACK ||
+			trainingType === TrainingType.WALK
+		) {
+			activities.add(UserActivity.STEPS);
+		}
+
+		const activity = getActivityByTrainingType(trainingType);
+		if (activity) {
+			activities.add(activity);
+		}
+
+		for (const activity of activities.values()) {
+			// Получаем все ачивки, у которых type как у активности из трени
+			const achivs = await this.db.db
+				.select()
+				.from(achievements)
+				.where(and(eq(achievements.type, activity), isNotNull(achievements.measuringUnit)));
+
+			for (const achieve of achivs) {
+				const unit = achieve.measuringUnit!;
+
+				// Для каждого из участников - накидываем прогресса по ачивке
+				Promise.all(
+					participants.map(async (participant) => {
+						let progressToAdd = 0;
+
+						switch (activity) {
+							case UserActivity.STEPS: {
+								if (unit === MeasuringUnit.COUNT) {
+									const AVERAGE_STRIDE_LENGTH = 0.75;
+
+									if (participant.metrics.distanceM) {
+										progressToAdd = Math.trunc(
+											participant.metrics.distanceM / AVERAGE_STRIDE_LENGTH,
+										);
+									}
+								}
+
+								break;
+							}
+
+							case UserActivity.RUN:
+							case UserActivity.TRACK:
+							case UserActivity.BICYCLE: {
+								if (unit === MeasuringUnit.KILOMETER) {
+									progressToAdd = Math.trunc(participant.metrics.distanceM / 1000);
+								} else if (unit === MeasuringUnit.METER) {
+									progressToAdd = Math.trunc(participant.metrics.distanceM);
+								}
+								break;
+							}
+
+							default: {
+								return participant;
+							}
+						}
+
+						await this.addProgress(participant.userId, achieve.id, progressToAdd);
+						return participant;
+					}),
+				).catch((reason) => {
+					console.error('Failed to add achievements progress. Reason:', reason);
+				});
+			}
 		}
 	}
 
@@ -81,11 +126,8 @@ export class AchievementsService {
 			})
 			.from(userAchievements)
 			.where(and(eq(userAchievements.userId, userId), eq(userAchievements.achievementId, achievementId)));
-		if (!userAchieve) {
-			return this.setProgress(userId, achievementId, progress);
-		}
 
-		const newProgress = userAchieve.progress + progress;
+		const newProgress = (userAchieve ? userAchieve.progress : 0) + progress;
 		return this.setProgress(userId, achievementId, newProgress);
 	}
 
@@ -207,8 +249,8 @@ export class AchievementsService {
 				title: achievements.title,
 				description: achievements.description,
 				claimedPercent: achievements.claimedPercent,
-				// clamp-им в [0, 100]
-				progress: sql<number>`GREATEST(0, LEAST(100, ${userAchievements.progress} / ${achievements.targetProgress}))`,
+				// clamp-им в [0, 100] %
+				progress: sql<number>`GREATEST(0, LEAST(100, 100 * COALESCE(${userAchievements.progress}, 0) / ${achievements.targetProgress}))`,
 				place: userAchievements.placeForShow,
 				claimedAt: userAchievements.claimedAt,
 			})
@@ -228,8 +270,8 @@ export class AchievementsService {
 				title: achievements.title,
 				description: achievements.description,
 				claimedPercent: achievements.claimedPercent,
-				// clamp-им в [0, 100]
-				progress: sql<number>`GREATEST(0, LEAST(100, ${userAchievements.progress} / ${achievements.targetProgress}))`,
+				// clamp-им в [0, 100] %
+				progress: sql<number>`GREATEST(0, LEAST(100, 100 * COALESCE(${userAchievements.progress}, 0) / ${achievements.targetProgress}))`,
 				place: userAchievements.placeForShow,
 				claimedAt: userAchievements.claimedAt,
 			})
@@ -249,8 +291,6 @@ export class AchievementsService {
 	}
 
 	public async getClaimed(userId: string, limit?: number): Promise<AchievementDto.Entity[]> {
-		// @TODO подвязать систему друзей. Аля: есть у Васи, Коли, Пети
-
 		const query = this.db.db
 			.select({
 				id: achievements.id,
@@ -259,8 +299,8 @@ export class AchievementsService {
 				title: achievements.title,
 				description: achievements.description,
 				claimedPercent: achievements.claimedPercent,
-				// clamp-им в [0, 100]
-				progress: sql<number>`GREATEST(0, LEAST(100, ${userAchievements.progress} / ${achievements.targetProgress}))`,
+				// clamp-им в [0, 100] %
+				progress: sql<number>`GREATEST(0, LEAST(100, 100 * COALESCE(${userAchievements.progress}, 0) / ${achievements.targetProgress}))`,
 				place: userAchievements.placeForShow,
 				claimedAt: userAchievements.claimedAt,
 			})
@@ -279,9 +319,6 @@ export class AchievementsService {
 	}
 
 	public async getUnclaimed(userId: string): Promise<AchievementDto.Entity[]> {
-		// @TODO подвязать систему друзей. Аля: есть у Васи, Коли, Пети
-		const claimedIds = (await this.getClaimed(userId)).map((achv) => achv.id);
-
 		return await this.db.db
 			.select({
 				id: achievements.id,
@@ -295,6 +332,10 @@ export class AchievementsService {
 				claimedAt: sql<null>`NULL`,
 			})
 			.from(achievements)
-			.where(notInArray(achievements.id, claimedIds));
+			.leftJoin(
+				userAchievements,
+				and(eq(userAchievements.achievementId, achievements.id), eq(userAchievements.userId, userId)),
+			)
+			.where(isNull(userAchievements));
 	}
 }
