@@ -93,7 +93,7 @@ export class FriendsService {
 		return friends.count;
 	}
 
-	public async getFriendsStatus(user1Id: string, user2Id: string): Promise<FriendStatus> {
+	public async getFriendsStatus(currentUserId: string, targetUserId: string): Promise<FriendStatus> {
 		const [existingFriend] = await this.db.db
 			.select({
 				userId: userFriends.userId,
@@ -101,8 +101,8 @@ export class FriendsService {
 			.from(userFriends)
 			.where(
 				or(
-					and(eq(userFriends.userId, user1Id), eq(userFriends.userFriendId, user2Id)),
-					and(eq(userFriends.userId, user2Id), eq(userFriends.userFriendId, user1Id)),
+					and(eq(userFriends.userId, currentUserId), eq(userFriends.userFriendId, targetUserId)),
+					and(eq(userFriends.userId, targetUserId), eq(userFriends.userFriendId, currentUserId)),
 				),
 			);
 		if (existingFriend) return FriendStatus.TRUE;
@@ -113,12 +113,19 @@ export class FriendsService {
 			})
 			.from(userFriendsInvites)
 			.where(
-				or(
-					and(eq(userFriendsInvites.userId, user1Id), eq(userFriendsInvites.invitedUserId, user2Id)),
-					and(eq(userFriendsInvites.userId, user2Id), eq(userFriendsInvites.invitedUserId, user1Id)),
-				),
+				and(eq(userFriendsInvites.userId, currentUserId), eq(userFriendsInvites.invitedUserId, targetUserId)),
 			);
 		if (invited) return FriendStatus.INVITED;
+
+		const [sent] = await this.db.db
+			.select({
+				userId: userFriendsInvites.userId,
+			})
+			.from(userFriendsInvites)
+			.where(
+				and(eq(userFriendsInvites.userId, targetUserId), eq(userFriendsInvites.invitedUserId, currentUserId)),
+			);
+		if (sent) return FriendStatus.SENT;
 
 		return FriendStatus.FALSE;
 	}
