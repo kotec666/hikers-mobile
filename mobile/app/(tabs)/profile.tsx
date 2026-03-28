@@ -23,7 +23,7 @@ import { useSafeNavigation } from '@/hooks/useSafeNavigation'
 import { useInfiniteQuery } from '@tanstack/react-query'
 import TrainingsEmpty from '@/components/ui/Post/TrainingsEmpty'
 import { getFieldsErrors } from '@/helpers/getFieldsErrors'
-import { cn } from '@/helpers/cn'
+// import { cn } from '@/helpers/cn'
 // import { WorkoutTypesMap } from '@/constants/WorkoutTypes'
 // import WorkoutActivity, {
 // 	getActivityTypeIcon,
@@ -184,7 +184,7 @@ const Profile = () => {
 	}, [isPostsFetching])
 
 	// const liveActivityWorkoutInstanceRef = useRef<LiveActivity<WorkoutActivityProps>>(null)
-	//
+    //
 	// const startWorkoutActivity = () => {
 	// 	// Start the Live Activity
 	// 	const instance = WorkoutActivity.start({
@@ -198,7 +198,7 @@ const Profile = () => {
 	// 	liveActivityWorkoutInstanceRef.current = instance
 	// 	// Store instance
 	// }
-	//
+    //
 	// const updateWorkoutActivity = () => {
 	// 	if (!liveActivityWorkoutInstanceRef.current) return
 	// 	liveActivityWorkoutInstanceRef.current.update({
@@ -210,13 +210,12 @@ const Profile = () => {
 	// 		typeLabel: WorkoutTypesMap?.[TrainingType.WALK]?.name ?? 'Тренировка'
 	// 	})
 	// }
-	//
+    //
 	// const endWorkoutActivity = () => {
 	// 	if (!liveActivityWorkoutInstanceRef.current) return
 	// 	liveActivityWorkoutInstanceRef.current.end('immediate')
 	// }
 
-	const isPausedMockActivity = false
 	return (
 		<>
 			<SafeAreaProvider
@@ -305,51 +304,6 @@ const Profile = () => {
 												@{user?.username}
 											</Text>
 										)}
-									</View>
-								</View>
-								<View className="flex-col">
-									<View
-										className={cn('flex-col items-center py-[8px]', {
-											'bg-[#FFD60A]': isPausedMockActivity
-										})}
-									>
-										<Text
-											className={cn('text-base', {
-												'text-[#8E8E93]': !isPausedMockActivity
-											})}
-											style={{ fontFamily: fontFamily.bold }}
-										>
-											{isPausedMockActivity ? 'Остановлено' : 'Ходьба'}
-										</Text>
-									</View>
-									<View className="flex-row w-full justify-between items-end px-[16px]">
-										<View className="flex-col items-center">
-											<Text
-												className="text-white text-[18px]"
-												style={{ fontFamily: fontFamily.bold }}
-											>
-												00:07
-											</Text>
-											<Text className="text-sm text-[#8E8E93]">Время</Text>
-										</View>
-										<View className="flex-col items-center">
-											<Text
-												className="text-white text-[32px]"
-												style={{ fontFamily: fontFamily.bold }}
-											>
-												15.7
-											</Text>
-											<Text className="text-sm text-[#8E8E93]">Дистанция (км)</Text>
-										</View>
-										<View className="flex-col items-center">
-											<Text
-												className="text-white text-[18px]"
-												style={{ fontFamily: fontFamily.bold }}
-											>
-												7.5
-											</Text>
-											<Text className="text-sm text-[#8E8E93]">Скорость (км/ч)</Text>
-										</View>
 									</View>
 								</View>
 								<View className="flex-row justify-between gap-[10px]">
