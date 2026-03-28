@@ -78,7 +78,6 @@ const NotificationsPage = () => {
 
 	const readNotificationsByIds = async (ids: string[]) => {
 		try {
-			console.log('ids to read', ids) // @TODO проверить с множеством уведомлнений
 			await markNotificationsAsReadById({
 				ids
 			})

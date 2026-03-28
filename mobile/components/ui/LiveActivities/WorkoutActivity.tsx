@@ -1,184 +1,233 @@
-import { Image, Text, VStack, HStack } from '@expo/ui/swift-ui';
-import {
-    font,
-    foregroundStyle,
-    padding,
-    background,
-    cornerRadius,
-    layoutPriority,
-} from '@expo/ui/swift-ui/modifiers';
-import { createLiveActivity } from 'expo-widgets';
-import { TrainingType } from '@shared/enums';
+import { Image, Text, VStack, HStack } from '@expo/ui/swift-ui'
+import { font, foregroundStyle, padding, background, cornerRadius, layoutPriority } from '@expo/ui/swift-ui/modifiers'
+import { createLiveActivity } from 'expo-widgets'
+import { TrainingType } from '@shared/enums'
 
 export type WorkoutActivityProps = {
-    icon: 'figure.walk' | 'figure.run' | 'bicycle';
-    typeLabel: string;
-    isPaused: boolean;
-    formattedDistance: string;   // уже содержит число + единицу (например, "1.07 миль")
-    formattedTime: string;
-    formattedSpeed: string;       // уже содержит число + единицу (например, "7.5 миль/ч")
-    unitDistance?: string;        // для подписи, например "мил."
-    unitSpeed?: string;           // для подписи, например "мил/ч"
-};
+	icon: 'figure.walk' | 'figure.run' | 'bicycle'
+	typeLabel: string
+	isPaused: boolean
+	formattedDistance: string // уже содержит число + единицу (например, "1.07 миль")
+	formattedTime: string
+	formattedSpeed: string // уже содержит число + единицу (например, "7.5 миль/ч")
+	unitDistance?: string // для подписи, например "мил."
+	unitSpeed?: string // для подписи, например "мил/ч"
+}
 
 export const getActivityTypeIcon = (type: TrainingType) => {
-    switch (type) {
-        case TrainingType.WALK:
-            return 'figure.walk';
-        case TrainingType.RUN:
-            return 'figure.run';
-        case TrainingType.BICYCLE:
-            return 'bicycle';
-        default:
-            return 'figure.walk';
-    }
-};
+	switch (type) {
+		case TrainingType.WALK:
+			return 'figure.walk'
+		case TrainingType.RUN:
+			return 'figure.run'
+		case TrainingType.BICYCLE:
+			return 'bicycle'
+		default:
+			return 'figure.walk'
+	}
+}
 
 const WorkoutActivity = (props: WorkoutActivityProps) => {
-    'widget';
-    return {
-        banner: (
-            <VStack spacing={8} modifiers={[padding({ all: 16 })]}>
-                <HStack spacing={6} modifiers={[background('#FFD60A')]}>
-                    {props.isPaused ? (
-                        <Text
-                            modifiers={[
-                                font({ size: 14, weight: 'bold' }),
-                                foregroundStyle('#000'),
-                            ]}
-                        >
-                            Остановлено
-                        </Text>
-                    ) : (
-                        <Text
-                            modifiers={[
-                                font({ size: 18, weight: 'bold' }),
-                                foregroundStyle('#8E8E93'),
-                            ]}
-                        >
-                            {props.typeLabel}
-                        </Text>
-                    )}
-                </HStack>
+	'widget'
+	return {
+		banner: (
+			<VStack spacing={8} modifiers={[padding({ all: 16 })]}>
+				<HStack spacing={6} modifiers={[background('#FFD60A')]}>
+					{props.isPaused ? (
+						<Text modifiers={[font({ size: 14, weight: 'bold' }), foregroundStyle('#000')]}>
+							Остановлено
+						</Text>
+					) : (
+						<Text modifiers={[font({ size: 18, weight: 'bold' }), foregroundStyle('#8E8E93')]}>
+							{props.typeLabel}
+						</Text>
+					)}
+				</HStack>
 
-                <VStack spacing={8}>
-                    <HStack
-                        spacing={10}
-                        modifiers={[
-                            padding({ vertical: 18, horizontal: 20 }),
-                        ]}
-                    >
-                        <VStack spacing={4} modifiers={[layoutPriority(1)]}>
-                            <Text
-                                modifiers={[
-                                    font({ size: 28, weight: 'bold' }),
-                                    foregroundStyle('#fff'),
-                                ]}
-                            >
-                                {props.formattedTime}
-                            </Text>
-                            <Text
-                                modifiers={[
-                                    font({ size: 12 }),
-                                    foregroundStyle('#8E8E93'),
-                                ]}
-                            >
-                                Время
-                            </Text>
-                        </VStack>
+				<VStack spacing={8}>
+					<HStack spacing={10} modifiers={[padding({ vertical: 18, horizontal: 20 })]}>
+						<VStack spacing={4} modifiers={[layoutPriority(1)]}>
+							<Text modifiers={[font({ size: 28, weight: 'bold' }), foregroundStyle('#fff')]}>
+								{props.formattedTime}
+							</Text>
+							<Text modifiers={[font({ size: 12 }), foregroundStyle('#8E8E93')]}>Время</Text>
+						</VStack>
 
-                        <VStack spacing={4} modifiers={[layoutPriority(1)]}>
-                            <Text
-                                modifiers={[
-                                    font({ size: 28, weight: 'bold' }),
-                                    foregroundStyle('#fff'),
-                                ]}
-                            >
-                                {props.formattedDistance.split(' ')[0]}
-                            </Text>
-                            <Text modifiers={[font({ size: 12 }), foregroundStyle('#8E8E93')]}>
-                                Дистанция (мил.)
-                            </Text>
-                        </VStack>
+						<VStack spacing={4} modifiers={[layoutPriority(1)]}>
+							<Text modifiers={[font({ size: 28, weight: 'bold' }), foregroundStyle('#fff')]}>
+								{props.formattedDistance.split(' ')[0]}
+							</Text>
+							<Text modifiers={[font({ size: 12 }), foregroundStyle('#8E8E93')]}>Дистанция (мил.)</Text>
+						</VStack>
 
-                        {/* SPEED */}
-                        <VStack spacing={4} modifiers={[layoutPriority(1)]}>
-                            <Text
-                                modifiers={[
-                                    font({ size: 28, weight: 'bold' }),
-                                    foregroundStyle('#fff'),
-                                ]}
-                            >
-                                {props.formattedSpeed.split(' ')[0]}
-                            </Text>
-                            <Text modifiers={[font({ size: 12 }), foregroundStyle('#8E8E93')]}>
-                                Скорость (мил/ч)
-                            </Text>
-                        </VStack>
-                    </HStack>
-                </VStack>
-            </VStack>
-        ),
+						{/* SPEED */}
+						<VStack spacing={4} modifiers={[layoutPriority(1)]}>
+							<Text modifiers={[font({ size: 28, weight: 'bold' }), foregroundStyle('#fff')]}>
+								{props.formattedSpeed.split(' ')[0]}
+							</Text>
+							<Text modifiers={[font({ size: 12 }), foregroundStyle('#8E8E93')]}>Скорость (мил/ч)</Text>
+						</VStack>
+					</HStack>
+				</VStack>
+			</VStack>
+		),
 
-        compactLeading: <Image systemName={props.icon} />,
+		compactLeading: <Image systemName={props.icon} />,
 
-        compactTrailing: (
-            <Text modifiers={[foregroundStyle('#fff')]}>
-                {props.formattedTime}
-            </Text>
-        ),
+		compactTrailing: <Text modifiers={[foregroundStyle('#fff')]}>{props.formattedTime}</Text>,
 
-        minimal: <Image systemName={props.icon} />,
+		minimal: <Image systemName={props.icon} />,
 
-        expandedLeading: (
-            <VStack spacing={2} modifiers={[padding({ all: 8 })]}>
-                <Image systemName={props.icon} />
-                <Text
-                    modifiers={[font({ size: 12 }), foregroundStyle('#aaa')]}
-                >
-                    {props.typeLabel}
-                </Text>
-            </VStack>
-        ),
+		expandedLeading: (
+			<VStack spacing={2} modifiers={[padding({ all: 8 })]}>
+				<Image systemName={props.icon} />
+				<Text modifiers={[font({ size: 12 }), foregroundStyle('#aaa')]}>{props.typeLabel}</Text>
+			</VStack>
+		),
 
-        expandedTrailing: (
-            <VStack spacing={4} modifiers={[padding({ all: 12 })]}>
-                <Text
-                    modifiers={[
-                        font({ size: 24, weight: 'bold' }),
-                        foregroundStyle('#fff'),
-                    ]}
-                >
-                    {props.formattedTime}
-                </Text>
+		expandedTrailing: (
+			<VStack spacing={4} modifiers={[padding({ all: 12 })]}>
+				<Text modifiers={[font({ size: 24, weight: 'bold' }), foregroundStyle('#fff')]}>
+					{props.formattedTime}
+				</Text>
 
-                {props.isPaused && (
-                    <Text modifiers={[foregroundStyle('#FFD60A')]}>
-                        Пауза
-                    </Text>
-                )}
-            </VStack>
-        ),
+				{props.isPaused && <Text modifiers={[foregroundStyle('#FFD60A')]}>Пауза</Text>}
+			</VStack>
+		),
 
-        expandedBottom: (
-            <HStack
-                spacing={24}
-                modifiers={[
-                    padding({ all: 12 }),
-                    background('#1C1C1E'),
-                    cornerRadius(16),
-                ]}
-            >
-                <Text modifiers={[foregroundStyle('#fff')]}>
-                    {props.formattedDistance}
-                </Text>
+		expandedBottom: (
+			<HStack spacing={24} modifiers={[padding({ all: 12 }), background('#1C1C1E'), cornerRadius(16)]}>
+				<Text modifiers={[foregroundStyle('#fff')]}>{props.formattedDistance}</Text>
 
-                <Text modifiers={[foregroundStyle('#fff')]}>
-                    {props.formattedSpeed}
-                </Text>
-            </HStack>
-        ),
-    };
-};
+				<Text modifiers={[foregroundStyle('#fff')]}>{props.formattedSpeed}</Text>
+			</HStack>
+		)
+	}
+}
 
-export default createLiveActivity('WorkoutActivity', WorkoutActivity);
+export default createLiveActivity('WorkoutActivity', WorkoutActivity)
+
+// @TODO
+// import {
+//   VStack,
+//   HStack,
+//   Text,
+// } from '@expo/ui/swift-ui';
+// import {
+//   font,
+//   foregroundStyle,
+//   padding,
+//   background,
+//   cornerRadius,
+//   layoutPriority,
+// } from '@expo/ui/swift-ui/modifiers';
+//
+// export function ActivityCard({ isPausedMockActivity, fontFamily }) {
+//   return (
+//     <VStack>
+//       {/* Header */}
+//       <VStack
+//         modifiers={[
+//           padding({ vertical: 8 }),
+//           isPausedMockActivity && background('#FFD60A'),
+//         ]}
+//         style={{ alignItems: 'center' }}
+//       >
+//         <Text
+//           modifiers={[
+//             font({
+//               size: 16,
+//               family: fontFamily.bold,
+//             }),
+//             !isPausedMockActivity && foregroundStyle('#8E8E93'),
+//           ]}
+//         >
+//           {isPausedMockActivity ? 'Остановлено' : 'Ходьба'}
+//         </Text>
+//       </VStack>
+//
+//       {/* Stats row */}
+//       <HStack
+//         modifiers={[padding({ horizontal: 16 })]}
+//         style={{
+//           width: '100%',
+//           justifyContent: 'space-between',
+//           alignItems: 'flex-end',
+//         }}
+//       >
+//         {/* Time */}
+//         <VStack style={{ alignItems: 'center' }}>
+//           <Text
+//             modifiers={[
+//               font({
+//                 size: 18,
+//                 family: fontFamily.bold,
+//               }),
+//               foregroundStyle('#FFFFFF'),
+//             ]}
+//           >
+//             00:07
+//           </Text>
+//
+//           <Text
+//             modifiers={[
+//               font({ size: 14 }),
+//               foregroundStyle('#8E8E93'),
+//             ]}
+//           >
+//             Время
+//           </Text>
+//         </VStack>
+//
+//         {/* Distance */}
+//         <VStack style={{ alignItems: 'center' }}>
+//           <Text
+//             modifiers={[
+//               font({
+//                 size: 32,
+//                 family: fontFamily.bold,
+//               }),
+//               foregroundStyle('#FFFFFF'),
+//               layoutPriority(1),
+//             ]}
+//           >
+//             15.7
+//           </Text>
+//
+//           <Text
+//             modifiers={[
+//               font({ size: 14 }),
+//               foregroundStyle('#8E8E93'),
+//             ]}
+//           >
+//             Дистанция (км)
+//           </Text>
+//         </VStack>
+//
+//         {/* Speed */}
+//         <VStack style={{ alignItems: 'center' }}>
+//           <Text
+//             modifiers={[
+//               font({
+//                 size: 18,
+//                 family: fontFamily.bold,
+//               }),
+//               foregroundStyle('#FFFFFF'),
+//             ]}
+//           >
+//             7.5
+//           </Text>
+//
+//           <Text
+//             modifiers={[
+//               font({ size: 14 }),
+//               foregroundStyle('#8E8E93'),
+//             ]}
+//           >
+//             Скорость (км/ч)
+//           </Text>
+//         </VStack>
+//       </HStack>
+//     </VStack>
+//   );
+// }

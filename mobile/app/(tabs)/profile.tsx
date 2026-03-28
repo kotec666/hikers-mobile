@@ -1,35 +1,36 @@
-import React, {useCallback, useEffect, useRef, useState} from 'react'
-import {SafeAreaProvider, useSafeAreaInsets} from 'react-native-safe-area-context'
-import {ActivityIndicator, RefreshControl, Text, View} from 'react-native'
+import React, { useCallback, useEffect, useRef, useState } from 'react'
+import { SafeAreaProvider, useSafeAreaInsets } from 'react-native-safe-area-context'
+import { ActivityIndicator, RefreshControl, Text, View } from 'react-native'
 import SettingsSvg from '@/components/svg/SettingsSvg'
 import MoreOptionsButton from '@/components/ui/MoreOptionsButton/MoreOptionsButton'
-import {fontFamily} from '@/constants/Fonts'
+import { fontFamily } from '@/constants/Fonts'
 import SocialStats from '@/components/ui/Profile/SocialStats'
-import {Button} from '@/components/ui/Button'
+import { Button } from '@/components/ui/Button'
 import ActivityInfo from '@/components/ui/Profile/ActivityInfo'
 import RedirectAchievementsInfo from '@/components/ui/Profile/RedirectAchievementsInfo'
 import PostListItem from '@/components/ui/Post/PostListItem'
-import {RelativePathString, useFocusEffect, useLocalSearchParams, useRouter} from 'expo-router'
-import {useAuthStore} from '@/store/authStore'
-import {getProfileData, IProfile} from '@/api/profile'
-import {PATH_TO_IMAGE} from '@/constants/PATH_TO_FILES'
-import {AnimatedProfilePicture} from '@/components/ui/Profile/AnimatedProfilePicture'
-import {LegendList, LegendListRef} from '@legendapp/list'
-import {getPostsMy, IPost} from '@/api/posts'
-import {Colors} from '@/constants/Colors'
+import { RelativePathString, useFocusEffect, useLocalSearchParams, useRouter } from 'expo-router'
+import { useAuthStore } from '@/store/authStore'
+import { getProfileData, IProfile } from '@/api/profile'
+import { PATH_TO_IMAGE } from '@/constants/PATH_TO_FILES'
+import { AnimatedProfilePicture } from '@/components/ui/Profile/AnimatedProfilePicture'
+import { LegendList, LegendListRef } from '@legendapp/list'
+import { getPostsMy, IPost } from '@/api/posts'
+import { Colors } from '@/constants/Colors'
 import MapComponent from '@/components/map/MapComponent'
-import {adaptLocations} from '@/helpers/adaptPointsToIWorkoutLocationStorageItem'
-import {useSafeNavigation} from '@/hooks/useSafeNavigation'
-import {useInfiniteQuery} from '@tanstack/react-query'
+import { adaptLocations } from '@/helpers/adaptPointsToIWorkoutLocationStorageItem'
+import { useSafeNavigation } from '@/hooks/useSafeNavigation'
+import { useInfiniteQuery } from '@tanstack/react-query'
 import TrainingsEmpty from '@/components/ui/Post/TrainingsEmpty'
-import {getFieldsErrors} from '@/helpers/getFieldsErrors'
-import WorkoutActivity, {
-    getActivityTypeIcon,
-    WorkoutActivityProps
-} from "@/components/ui/LiveActivities/WorkoutActivity";
-import {LiveActivity} from "expo-widgets";
-import {TrainingType} from "@shared/enums";
-import {WorkoutTypesMap} from "@/constants/WorkoutTypes";
+import { getFieldsErrors } from '@/helpers/getFieldsErrors'
+import { cn } from '@/helpers/cn'
+// import { WorkoutTypesMap } from '@/constants/WorkoutTypes'
+// import WorkoutActivity, {
+// 	getActivityTypeIcon,
+// 	WorkoutActivityProps
+// } from '@/components/ui/LiveActivities/WorkoutActivity'
+// import { LiveActivity } from 'expo-widgets'
+// import { TrainingType } from '@shared/enums'
 
 /**
  *
@@ -182,42 +183,40 @@ const Profile = () => {
 		return <TrainingsEmpty text="Постов еще не существует, опубликуйте пост после тренировки" />
 	}, [isPostsFetching])
 
-	const liveActivityWorkoutInstanceRef = useRef<LiveActivity<WorkoutActivityProps>>(null)
+	// const liveActivityWorkoutInstanceRef = useRef<LiveActivity<WorkoutActivityProps>>(null)
+	//
+	// const startWorkoutActivity = () => {
+	// 	// Start the Live Activity
+	// 	const instance = WorkoutActivity.start({
+	// 		formattedDistance: '1.07',
+	// 		formattedTime: '0:07',
+	// 		formattedSpeed: '7.5',
+	// 		isPaused: false,
+	// 		icon: getActivityTypeIcon(TrainingType.WALK),
+	// 		typeLabel: WorkoutTypesMap?.[TrainingType.WALK]?.name ?? 'Тренировка'
+	// 	})
+	// 	liveActivityWorkoutInstanceRef.current = instance
+	// 	// Store instance
+	// }
+	//
+	// const updateWorkoutActivity = () => {
+	// 	if (!liveActivityWorkoutInstanceRef.current) return
+	// 	liveActivityWorkoutInstanceRef.current.update({
+	// 		formattedDistance: '1.07',
+	// 		formattedTime: '0:07',
+	// 		formattedSpeed: '7.5',
+	// 		isPaused: true,
+	// 		icon: getActivityTypeIcon(TrainingType.WALK),
+	// 		typeLabel: WorkoutTypesMap?.[TrainingType.WALK]?.name ?? 'Тренировка'
+	// 	})
+	// }
+	//
+	// const endWorkoutActivity = () => {
+	// 	if (!liveActivityWorkoutInstanceRef.current) return
+	// 	liveActivityWorkoutInstanceRef.current.end('immediate')
+	// }
 
-	const startWorkoutActivity = () => {
-	    // Start the Live Activity
-	    const instance = WorkoutActivity.start({
-            formattedDistance: '1.07',
-	        formattedTime: '0:07',
-            formattedSpeed: '7.5',
-	        isPaused: false,
-            icon: getActivityTypeIcon(TrainingType.WALK),
-            typeLabel: WorkoutTypesMap?.[TrainingType.WALK]?.name ?? 'Тренировка'
-	    });
-	    liveActivityWorkoutInstanceRef.current = instance
-	    // Store instance
-	};
-
-	const updateWorkoutActivity = () => {
-	    if (!liveActivityWorkoutInstanceRef.current) return
-	    liveActivityWorkoutInstanceRef.current.update(
-	        {
-                formattedDistance: '1.07',
-                formattedTime: '0:07',
-                formattedSpeed: '7.5',
-	            isPaused: true,
-                icon: getActivityTypeIcon(TrainingType.WALK),
-                typeLabel: WorkoutTypesMap?.[TrainingType.WALK]?.name ?? 'Тренировка'
-	        }
-	    );
-	}
-
-
-	const endWorkoutActivity = () => {
-	    if (!liveActivityWorkoutInstanceRef.current) return
-	    liveActivityWorkoutInstanceRef.current.end('immediate')
-	}
-
+	const isPausedMockActivity = false
 	return (
 		<>
 			<SafeAreaProvider
@@ -308,6 +307,51 @@ const Profile = () => {
 										)}
 									</View>
 								</View>
+								<View className="flex-col">
+									<View
+										className={cn('flex-col items-center py-[8px]', {
+											'bg-[#FFD60A]': isPausedMockActivity
+										})}
+									>
+										<Text
+											className={cn('text-base', {
+												'text-[#8E8E93]': !isPausedMockActivity
+											})}
+											style={{ fontFamily: fontFamily.bold }}
+										>
+											{isPausedMockActivity ? 'Остановлено' : 'Ходьба'}
+										</Text>
+									</View>
+									<View className="flex-row w-full justify-between items-end px-[16px]">
+										<View className="flex-col items-center">
+											<Text
+												className="text-white text-[18px]"
+												style={{ fontFamily: fontFamily.bold }}
+											>
+												00:07
+											</Text>
+											<Text className="text-sm text-[#8E8E93]">Время</Text>
+										</View>
+										<View className="flex-col items-center">
+											<Text
+												className="text-white text-[32px]"
+												style={{ fontFamily: fontFamily.bold }}
+											>
+												15.7
+											</Text>
+											<Text className="text-sm text-[#8E8E93]">Дистанция (км)</Text>
+										</View>
+										<View className="flex-col items-center">
+											<Text
+												className="text-white text-[18px]"
+												style={{ fontFamily: fontFamily.bold }}
+											>
+												7.5
+											</Text>
+											<Text className="text-sm text-[#8E8E93]">Скорость (км/ч)</Text>
+										</View>
+									</View>
+								</View>
 								<View className="flex-row justify-between gap-[10px]">
 									<SocialStats
 										label="Подписчики"
@@ -328,15 +372,15 @@ const Profile = () => {
 								<Button variant="white" onPress={() => push('/workout-history')}>
 									История тренировок
 								</Button>
-								<Button variant="white" onPress={startWorkoutActivity}>
-								    Start workout activity
-								</Button>
-								<Button variant="white" onPress={updateWorkoutActivity}>
-								    update workout activity
-								</Button>
-								<Button variant="white" onPress={endWorkoutActivity}>
-								    stop workout activity
-								</Button>
+								{/*<Button variant="white" onPress={startWorkoutActivity}>*/}
+								{/*	Start workout activity*/}
+								{/*</Button>*/}
+								{/*<Button variant="white" onPress={updateWorkoutActivity}>*/}
+								{/*	update workout activity*/}
+								{/*</Button>*/}
+								{/*<Button variant="white" onPress={endWorkoutActivity}>*/}
+								{/*	stop workout activity*/}
+								{/*</Button>*/}
 								<RedirectAchievementsInfo achievements={profileData?.achievements} isMyProfile />
 								<ActivityInfo label="Активности" activities={profileData?.activities || []} />
 							</View>

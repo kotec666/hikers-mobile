@@ -7,11 +7,14 @@ export const formatTime = (ms: number) => {
 }
 
 /**
- * Компактный формат: "2 ч 15 мин"
+ * Компактный формат: "2 ч 15 мин" или "45 сек"
  */
-
 export const formatTimeFromSecondsCompact = (seconds: number | undefined): string => {
-	if (!seconds && seconds !== 0) return '-'
+	if (seconds === undefined || seconds === null) return '-'
+
+	if (seconds < 60) {
+		return `${seconds} сек`
+	}
 
 	const hours = Math.floor(seconds / 3600)
 	const minutes = Math.floor((seconds % 3600) / 60)
