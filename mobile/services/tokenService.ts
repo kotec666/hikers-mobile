@@ -1,23 +1,24 @@
-import { getItem, setItem, removeItem, IAuthStorage } from '@/store/storage'
+import { getItem, setItem, removeItem, IAuthStorage } from '@/store/authStorage'
 
-export function getToken() {
-	return getItem('authData')?.accessToken ?? null
+export async function getToken(): Promise<string | null | undefined> {
+	const authData = await getItem('authData')
+	return authData?.accessToken
 }
 
-export function getAuthData(): IAuthStorage | null {
-	return getItem('authData')
+export async function getAuthData(): Promise<IAuthStorage | null> {
+	return await getItem('authData')
 }
 
-export function setAuthData(partial: Partial<IAuthStorage>) {
-	const existing = getItem('authData') ?? {}
-	setItem('authData', { ...existing, ...partial })
+export async function setAuthData(partial: Partial<IAuthStorage>): Promise<void> {
+	const existing = (await getItem('authData')) ?? {}
+	await setItem('authData', { ...existing, ...partial })
 }
 
-export function setToken(token: string) {
-	const existing = getItem('authData') ?? {}
-	setItem('authData', { ...existing, accessToken: token })
+export async function setToken(token: string): Promise<void> {
+	const existing = (await getItem('authData')) ?? {}
+	await setItem('authData', { ...existing, accessToken: token })
 }
 
-export function removeAuthData() {
-	removeItem('authData')
+export async function removeAuthData(): Promise<void> {
+	await removeItem('authData')
 }

@@ -45,7 +45,7 @@ const Post = () => {
 				setPost(postData)
 			} catch {
 				toast.info('Ошибка при загрузке поста')
-				router.back()
+				handleClickBack()
 			} finally {
 				setIsPageLoading(false)
 			}

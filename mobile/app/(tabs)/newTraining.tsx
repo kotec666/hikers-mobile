@@ -94,7 +94,7 @@ export default function NewTraining() {
 
 	const onInitialDataLoaded = useCallback((restoredType?: TrainingType) => {
 		if (restoredType) {
-			// Ищем объект тренировки по типу (можно улучшить поиск по ID, если он сохраняется)
+			// Ищем объект тренировки по типу
 			const found = WorkoutTypesData.find((w) => w.type === restoredType)
 			if (found) {
 				setChosenWorkout(found)
@@ -347,8 +347,8 @@ export default function NewTraining() {
 		[chosenWorkout.type]
 	)
 
-	const handleChangeWorkout = useCallback((workoutId: number) => {
-		const foundedWorkout = WorkoutTypesData.find((workout) => workout.id === workoutId)
+	const handleChangeWorkout = useCallback((workoutType: TrainingType) => {
+		const foundedWorkout = WorkoutTypesData.find((workout) => workout.type === workoutType)
 		if (!foundedWorkout) return
 		setChosenWorkout(foundedWorkout)
 	}, [])

@@ -43,6 +43,26 @@ export function NotificationListItem(props: INotificationListItemProps) {
 		props.notification.type,
 		props.notification.action.relEntityId
 	)
+
+	const parseTextWithMentions = (text: string) => {
+		const regex = /(@[^\s]+)/g
+		const parts = text.split(regex)
+
+		return parts.map((part, index) => {
+			if (part.match(regex)) {
+				return {
+					type: 'mention',
+					value: part,
+					key: index
+				}
+			}
+			return {
+				type: 'text',
+				value: part,
+				key: index
+			}
+		})
+	}
 	return (
 		<Pressable
 			onPress={() => (redirectLink ? push(redirectLink) : undefined)}
@@ -61,7 +81,17 @@ export function NotificationListItem(props: INotificationListItemProps) {
 				ellipsizeMode="tail"
 				style={{ flexGrow: 1, flexShrink: 1, fontFamily: fontFamily.medium }}
 			>
-				{props.notification.action.text}
+				{parseTextWithMentions(props.notification.action.text).map((part) => {
+					if (part.type === 'mention') {
+						return (
+							<Text key={part.key} className="text-gray-d5" style={{ fontFamily: fontFamily.medium }}>
+								{part.value}
+							</Text>
+						)
+					}
+
+					return <Text key={part.key}>{part.value}</Text>
+				})}
 			</Text>
 			{props.notification.readedAt ? null : <View className="bg-white h-[9px] w-[9px] rounded-full ml-2" />}
 		</Pressable>

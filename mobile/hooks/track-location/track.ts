@@ -6,7 +6,7 @@ import { locationEmitter } from './locationEmitter'
 import { TaskManagerError } from 'expo-task-manager'
 import { syncTraining } from '@/api/workout'
 import { prepareLocationsForSync } from '@/helpers/prepareLocationsForSync'
-import { getItem } from '@/store/storage'
+import { getItem } from '@/store/authStorage'
 import { filterLocations } from '@/helpers/location/filterLocations'
 
 export const LOCATION_TASK_NAME = 'background-location-task'
@@ -54,7 +54,7 @@ export async function stopTracking() {
 TaskManager.defineTask(
 	LOCATION_TASK_NAME,
 	async ({ data, error }: { data: { locations: LocationObject[] }; error: TaskManagerError | null }) => {
-		const user = getItem('authData')?.user
+		const user = (await getItem('authData'))?.user
 		// Delay starting the task until the inner app is mounted
 		if (innerAppMountedPromiseRef) await innerAppMountedPromiseRef
 		if (error) {

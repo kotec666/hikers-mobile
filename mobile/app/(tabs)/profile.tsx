@@ -93,8 +93,8 @@ const Profile = () => {
 		push(page)
 	}
 
-	const handleClickExit = () => {
-		logout()
+	const handleClickExit = async () => {
+		await logout()
 		router.replace('/')
 	}
 
@@ -184,7 +184,7 @@ const Profile = () => {
 	}, [isPostsFetching])
 
 	// const liveActivityWorkoutInstanceRef = useRef<LiveActivity<WorkoutActivityProps>>(null)
-    //
+	//
 	// const startWorkoutActivity = () => {
 	// 	// Start the Live Activity
 	// 	const instance = WorkoutActivity.start({
@@ -198,7 +198,7 @@ const Profile = () => {
 	// 	liveActivityWorkoutInstanceRef.current = instance
 	// 	// Store instance
 	// }
-    //
+	//
 	// const updateWorkoutActivity = () => {
 	// 	if (!liveActivityWorkoutInstanceRef.current) return
 	// 	liveActivityWorkoutInstanceRef.current.update({
@@ -210,7 +210,7 @@ const Profile = () => {
 	// 		typeLabel: WorkoutTypesMap?.[TrainingType.WALK]?.name ?? 'Тренировка'
 	// 	})
 	// }
-    //
+	//
 	// const endWorkoutActivity = () => {
 	// 	if (!liveActivityWorkoutInstanceRef.current) return
 	// 	liveActivityWorkoutInstanceRef.current.end('immediate')

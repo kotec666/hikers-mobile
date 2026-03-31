@@ -75,7 +75,7 @@ const AuthPage = () => {
 				const loginData = await loginUser({ email: authFormState.email, password: authFormState.password })
 				const { token, ...restParameters } = loginData
 
-				login(loginData.token, restParameters)
+				await login(loginData.token, restParameters)
 			} catch (e: unknown) {
 				const formattedErrors = await getFieldsErrors(e)
 				setData((s) => ({ ...s, errors: formattedErrors }))
@@ -91,7 +91,7 @@ const AuthPage = () => {
 				const regData = await registrationUser({ email: authFormState.email, password: authFormState.password })
 				const { token, ...restParameters } = regData
 
-				login(regData.token, restParameters)
+				await login(regData.token, restParameters)
 			} catch (e: unknown) {
 				const formattedErrors = await getFieldsErrors(e)
 				setData((s) => ({ ...s, errors: formattedErrors }))

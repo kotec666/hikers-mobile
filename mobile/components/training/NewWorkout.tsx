@@ -27,7 +27,6 @@ import UnsavedTrainingsDetails from '@/components/BottomSheets/UnsavedTrainingsD
 import { useUnsavedWorkoutSync } from '@/hooks/useUnsavedWorkoutSync'
 
 export interface IWorkoutModeElement {
-	id: number
 	name: string
 	type: TrainingType
 	IconComponent: (props: { color?: string }) => React.JSX.Element
@@ -36,7 +35,7 @@ export interface IWorkoutModeElement {
 interface IProps {
 	initialMarkerLocation?: Point | null
 	chosenWorkout: IWorkoutModeElement | null
-	handleChangeWorkout: (workoutId: number) => void
+	handleChangeWorkout: (workoutType: TrainingType) => void
 	handleClickStart: (afterReboot: boolean) => void
 	allPermsGranted: () => void
 	WorkoutTypesData: IWorkoutModeElement[]
@@ -108,9 +107,9 @@ const NewWorkout = memo((props: IProps) => {
 		bottomSheetResizableRef?.current?.scrollTo?.(isSheetActive ? 0 : -200)
 	}, [])
 
-	const handleChangeWorkout = (workoutId: number) => {
+	const handleChangeWorkout = (workoutType: TrainingType) => {
 		toggleResizableSheet()
-		props.handleChangeWorkout(workoutId)
+		props.handleChangeWorkout(workoutType)
 	}
 
 	const renderIcon = (IconComponent: React.ComponentType<any>, color?: string) => {
@@ -231,13 +230,13 @@ const NewWorkout = memo((props: IProps) => {
 							data={props.WorkoutTypesData}
 							renderItem={({ item }) => (
 								<WorkoutType
-									id={item.id}
+									type={item.type}
 									handleChange={handleChangeWorkout}
 									icon={(color) => renderIcon(item.IconComponent, color)}
 									name={item.name}
 								/>
 							)}
-							keyExtractor={(_, idx) => idx.toString()}
+							keyExtractor={(item) => item.type}
 							ItemSeparatorComponent={() => <View style={{ height: 16 }} />}
 							ListFooterComponent={<View style={{ height: insets.bottom + insets.top + 72 }} />}
 							nestedScrollEnabled

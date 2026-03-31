@@ -2,7 +2,7 @@ import { create } from 'zustand'
 import { getAuthData, removeAuthData, setAuthData } from '@/services/tokenService'
 import { refreshTokenAPI } from '@/api/refresh'
 import { getTokenExpirationTime } from '@/helpers/getTokenExpirationTime'
-import { setIsAccountExist } from '@/store/storage'
+import { setIsAccountExist } from '@/store/authStorage'
 
 export interface IUser {
 	id: string
@@ -13,62 +13,67 @@ export interface IUser {
 }
 
 interface AuthStore {
-	accessToken: string | null
+	// accessToken: string | null
 	user: IUser | null
 	accessTokenExpiration: number | null
 	isAuthenticated: boolean
 	isAuthChecked: boolean
 
-	login: (token: string, user: IUser, accessTokenExpiration?: number | null) => void
-	logout: () => void
+	login: (token: string, user: IUser, accessTokenExpiration?: number | null) => Promise<void>
+	logout: () => Promise<void>
 	refreshAccessToken: () => Promise<boolean>
 	checkAuth: () => Promise<void>
 	setUser: (user: IUser) => void
 }
 
 export const useAuthStore = create<AuthStore>((set, get) => ({
-	accessToken: null,
+	// accessToken: null,
 	user: null,
 	accessTokenExpiration: null,
 	isAuthenticated: false,
 	isAuthChecked: false,
 
-	login: (token, user, expire) => {
-		const data = {
+	login: async (token, user, expire) => {
+		const tokenExpiration = expire ?? getTokenExpirationTime()
+		await setAuthData({
 			accessToken: token,
 			user,
 			isAuthenticated: true,
-			accessTokenExpiration: expire ?? getTokenExpirationTime()
-		}
-
-		setAuthData(data)
-		setIsAccountExist({ accountExist: true })
-		set(data)
+			accessTokenExpiration: tokenExpiration
+		})
+		await setIsAccountExist({ accountExist: true })
+		set({
+			user,
+			isAuthenticated: true,
+			accessTokenExpiration: tokenExpiration
+		})
 	},
 
 	setUser: (user: IUser) => {
 		set({ user })
 	},
 
-	logout: () => {
-		removeAuthData()
+	logout: async () => {
+		await removeAuthData()
 		set({
 			isAuthenticated: false,
-			accessToken: null,
+			// accessToken: null,
 			user: null,
 			accessTokenExpiration: null
 		})
 	},
 
 	refreshAccessToken: async () => {
-		const { accessToken, user } = get()
+		const { user } = get()
+		const authData = await getAuthData()
+		const accessToken = authData?.accessToken
 		if (!accessToken) return false
 
 		try {
 			const newToken = await refreshTokenAPI(accessToken)
 			const expiration = getTokenExpirationTime()
 
-			setAuthData({
+			await setAuthData({
 				accessToken: newToken.token,
 				accessTokenExpiration: expiration,
 				isAuthenticated: true,
@@ -76,19 +81,19 @@ export const useAuthStore = create<AuthStore>((set, get) => ({
 			})
 
 			set({
-				accessToken: newToken.token,
+				// accessToken: newToken.token,
 				accessTokenExpiration: expiration
 			})
 
 			return true
-		} catch (err) {
-			get().logout()
+		} catch {
+			await get().logout()
 			return false
 		}
 	},
 
 	checkAuth: async () => {
-		const data = getAuthData()
+		const data = await getAuthData()
 		if (!data) {
 			set({ isAuthChecked: true })
 			return

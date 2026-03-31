@@ -6,54 +6,76 @@ import { useToast } from '@/hooks/useToast'
 import { handleRedirectOnPageWhenNotificationPressed } from '@/components/ui/Notifications/NotificationListItem'
 import { useSafeNavigation } from '@/hooks/useSafeNavigation'
 import { useAuthStore } from '@/store/authStore'
+import { useQueryClient } from '@tanstack/react-query'
+import { getAuthData } from '@/services/tokenService'
 
 const InAppNotificationProvider = () => {
 	const socketRef = useRef<Socket | null>(null)
 	const toast = useToast()
 	const { push } = useSafeNavigation()
-	const { accessToken } = useAuthStore()
+	const { accessTokenExpiration } = useAuthStore()
+	const queryClient = useQueryClient()
 
 	useEffect(() => {
-		if (!accessToken) return
+		const setupSocket = async () => {
+			const authData = await getAuthData()
+			const accessToken = authData?.accessToken
+			if (!accessToken) return
 
-		const s = createSocket(accessToken)
-		socketRef.current = s
-
-		// const onConnect = () => {
-		// 	console.log('socket io connected')
-		// }
-
-		const onNotification = (socketData: INotification) => {
-			const redirectLink = handleRedirectOnPageWhenNotificationPressed(
-				socketData.type,
-				socketData.action.relEntityId
-			)
-
-			const onPressNotification = () => {
-				if (redirectLink) {
-					return push(redirectLink)
-				}
-				return
+			if (socketRef.current) {
+				socketRef.current.disconnect()
+				socketRef.current = null
 			}
 
-			toast.info(socketData.action.text, onPressNotification)
+			const s = createSocket(accessToken)
+			socketRef.current = s
+
+			// const onConnect = () => {
+			// 	console.log('socket io connected')
+			// }
+
+			const onNotification = async (socketData: INotification) => {
+				// инвалидируем кэш
+				await Promise.all([
+					queryClient.invalidateQueries({ queryKey: ['unread-exists'] }),
+					queryClient.invalidateQueries({ queryKey: ['notifications-page'] })
+				])
+
+				const redirectLink = handleRedirectOnPageWhenNotificationPressed(
+					socketData.type,
+					socketData.action.relEntityId
+				)
+
+				const onPressNotification = () => {
+					if (redirectLink) {
+						return push(redirectLink)
+					}
+					return
+				}
+
+				toast.info(socketData.action.text, onPressNotification)
+			}
+
+			// s.on('connect', onConnect)
+			s.on(SOCKET_NOTIFICATIONS_EVENTS.NOTIFICATION, onNotification)
+			s.on('connect_error', (err) => {
+				console.log('connect_error:', err)
+				console.log('message:', err.message)
+			})
 		}
 
-		// s.on('connect', onConnect)
-		s.on(SOCKET_NOTIFICATIONS_EVENTS.NOTIFICATION, onNotification)
-		s.on('connect_error', (err) => {
-			console.log('connect_error:', err)
-			console.log('message:', err.message)
-		})
+		setupSocket()
 
 		return () => {
-			s.disconnect()
-			socketRef.current = null
+			if (socketRef.current) {
+				socketRef.current.disconnect()
+				socketRef.current = null
+			}
 		}
 		// eslint-disable-next-line react-hooks/exhaustive-deps
-	}, [accessToken])
+	}, [accessTokenExpiration])
 
-	return <></>
+	return null
 }
 
 export default InAppNotificationProvider

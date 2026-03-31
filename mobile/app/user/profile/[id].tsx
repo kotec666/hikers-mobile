@@ -7,7 +7,7 @@ import RedirectAchievementsInfo from '@/components/ui/Profile/RedirectAchievemen
 import ActivityInfo from '@/components/ui/Profile/ActivityInfo'
 import PostListItem from '@/components/ui/Post/PostListItem'
 import { SafeAreaProvider, useSafeAreaInsets } from 'react-native-safe-area-context'
-import { useLocalSearchParams } from 'expo-router'
+import { useLocalSearchParams, useRouter } from 'expo-router'
 import { PATH_TO_IMAGE } from '@/constants/PATH_TO_FILES'
 import { getUserProfileData, INotMyProfile } from '@/api/profile'
 import { getFieldsErrors } from '@/helpers/getFieldsErrors'
@@ -41,6 +41,7 @@ const friendStatusLabel = {
 const UserProfilePage = () => {
 	const insets = useSafeAreaInsets()
 	const toast = useToast()
+	const router = useRouter()
 	const queryClient = useQueryClient()
 	const { id } = useLocalSearchParams<{ id: string }>()
 	const friendActionLockRef = useRef(false)
@@ -99,6 +100,11 @@ const UserProfilePage = () => {
 			setProfileData(profile)
 		} catch (e: unknown) {
 			await getFieldsErrors(e)
+			if (router.canGoBack()) {
+				router.back()
+			} else {
+				router.push('/(tabs)/profile')
+			}
 		} finally {
 			setRefreshingProfile(false)
 		}
@@ -197,7 +203,7 @@ const UserProfilePage = () => {
 	// Функция для инвалидации запросов на друзей
 	const invalidateFriendQueries = useCallback(async () => {
 		await queryClient.invalidateQueries({ queryKey: ['pendingInvites'] })
-		// Также можно инвалидировать другие связанные запросы
+		// Инвалидирование других связанных запросов
 		await queryClient.invalidateQueries({ queryKey: ['friendsList'] })
 	}, [queryClient])
 

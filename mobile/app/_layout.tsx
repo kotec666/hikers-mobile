@@ -10,7 +10,7 @@ import notifee, { EventType } from '@notifee/react-native'
 import { setActiveWorkoutPauseState } from '@/store/workoutStorage'
 import { GestureHandlerRootView } from 'react-native-gesture-handler'
 import PortalProvider from '@/components/Portal/PortalProvider'
-import { getItem } from '@/store/storage'
+import { getItem } from '@/store/authStorage'
 import { Colors } from '@/constants/Colors'
 import './../global.css'
 
@@ -30,7 +30,7 @@ YamapInstance.init(process.env.EXPO_PUBLIC_YAMAP_KEY || '')
 notifee.onBackgroundEvent(async ({ type, detail }) => {
 	if (type === EventType.ACTION_PRESS) {
 		const actionId = detail.pressAction?.id
-		const user = getItem('authData')?.user
+		const user = (await getItem('authData'))?.user
 
 		switch (actionId) {
 			case 'pause':

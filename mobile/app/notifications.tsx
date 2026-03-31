@@ -81,6 +81,8 @@ const NotificationsPage = () => {
 			await markNotificationsAsReadById({
 				ids
 			})
+			// синхронизация с колокольчиком
+			await queryClient.invalidateQueries({ queryKey: ['unread-exists'] })
 		} catch (e) {
 			await getFieldsErrors(e)
 		}

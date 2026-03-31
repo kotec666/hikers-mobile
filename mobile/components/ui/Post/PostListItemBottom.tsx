@@ -86,12 +86,13 @@ const PostListItemBottom = (props: IProps) => {
 				<View className="flex-row items-center gap-[15px]">
 					<View className="flex-row">
 						{Boolean(props?.participants?.length)
-							? props.participants?.slice(0, 3)?.map((p, index) => (
+							? props.participants?.slice(-3)?.map((p, index) => (
 									<View
 										key={p.id}
 										style={{
 											marginLeft: index === 0 ? 0 : -10,
-											zIndex: props?.participants?.length || 1 - index,
+											//zIndex: props?.participants?.length || 1 - index,
+											zIndex: 3 - index,
 											shadowColor: Colors['green-main'],
 											shadowOffset: {
 												width: 0,

@@ -63,7 +63,7 @@
    sdk.dir=C:\\Users\\alexk\\AppData\\Local\\Android\\Sdk
    ```
 
-4. В сгенерированном `AndroidManifest.xml` добавьте foreground‑сервис Notifee внутри тега `<application>`:
+4. ~~В сгенерированном `AndroidManifest.xml` добавьте foreground‑сервис Notifee внутри тега `<application>`~~:
    ```xml
    <service
      android:name="app.notifee.core.ForegroundService"
@@ -80,11 +80,6 @@
    ```
    + ENV['USE_YANDEX_MAPS_LITE'] = "1"
    ...
-   ```
-
-2. Проверить наличие строки в файле `Podfile.properties.json`:
-   ```
-   "newArchEnabled": "true",
    ```
 
 
