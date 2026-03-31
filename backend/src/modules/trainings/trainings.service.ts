@@ -1,4 +1,4 @@
-﻿import { BadRequestException, ConflictException, GoneException, Injectable, NotFoundException } from '@nestjs/common';
+﻿import { BadRequestException, ConflictException, Injectable, NotFoundException } from '@nestjs/common';
 import { DatabaseService } from '../database/database.service';
 import {
 	DebugTrainingRouteNode,
@@ -10,7 +10,7 @@ import {
 	users,
 	userSubscribers,
 } from '../database/schema';
-import { TrainingDto, TrainingMetricsDto, TrainingParticipantDto } from './trainings.dto';
+import { DebugTrainingRouteNodeClient, TrainingDto, TrainingMetricsDto, TrainingParticipantDto } from './trainings.dto';
 import { eq, and, isNull, isNotNull, inArray, sql } from 'drizzle-orm';
 import { ERRORS } from '@shared/errors';
 import { CommonDto } from '../../common/dto/common.dto';
@@ -20,8 +20,6 @@ import { calculateCalories, haversineDistance } from '@shared/helpers';
 import { desc } from '../database/extensions';
 import { EventEmitter2 } from '@nestjs/event-emitter';
 import { Event } from '@events/constants';
-
-const MAX_TIME_TO_SYNC_AFTER_FINISH_TRAINING = 60 * 1000; // 1 минута
 
 @Injectable()
 export class TrainingsService {
@@ -105,6 +103,49 @@ export class TrainingsService {
 		});
 	}
 
+	public async addOffline(userId: string, dto: TrainingDto.Offline): Promise<TrainingDto.Entity> {
+		return this.db.db.transaction(async (tx) => {
+			const [train] = await tx
+				.insert(training)
+				.values({
+					type: dto.type,
+					userCreatorId: userId,
+					startedAt: new Date(dto.startedAt),
+					finishedAt: new Date(dto.finishedAt),
+					createdAt: new Date(),
+				})
+				.returning({
+					id: training.id,
+					type: training.type,
+					createdAt: training.createdAt,
+					startedAt: training.startedAt,
+					finishedAt: training.finishedAt,
+				});
+
+			const [participant] = await tx
+				.insert(trainingParticipants)
+				.values({
+					trainingId: train.id,
+					colorHex: dto.colorHex,
+					userId,
+				})
+				.returning({
+					id: trainingParticipants.id,
+				});
+
+			await tx.insert(trainingRoutes).values({
+				participantId: participant.id,
+				points: [],
+
+				createdAt: new Date(),
+				startedAt: new Date(dto.startedAt),
+				finishedAt: new Date(dto.finishedAt),
+			});
+
+			return train;
+		});
+	}
+
 	public async finish(userId: string, ts?: number): Promise<CommonDto.BooleanResponse> {
 		// Создатель может завершить только активную треню - находим её
 		const [activeTraining] = await this.getActive(userId, true);
@@ -146,24 +187,28 @@ export class TrainingsService {
 	}
 
 	public async sync(userId: string, trainingId: string, dto: TrainingDto.Sync): Promise<CommonDto.BooleanResponse> {
-		// @TODO в будущем проверить проблему - если синхра с фронта придет быстрее, чем в обработается предыдущяя
-		const training = await this.getByIdAndParticipant(trainingId, userId);
-
-		if (!training.startedAt) {
-			// Нельзя досылать метрики в неначавщуюся тренировку
+		// @TODO в будущем отдавать на фронт айди участника, чтобы тут не искать треню а сразу участника прокидывать далее
+		const [participant] = await this.db.db
+			.select({ id: trainingParticipants.id })
+			.from(trainingParticipants)
+			.where(and(eq(trainingParticipants.trainingId, trainingId), eq(trainingParticipants.userId, userId)))
+			.limit(1);
+		if (!participant) {
 			throw new NotFoundException(ERRORS.NOT_FOUND);
-		} else if (training.finishedAt) {
-			const dateDiff = new Date().getTime() - training.finishedAt.getTime();
-
-			// Если метрики досылаются после завершения трени - проверям временное окно
-			if (dateDiff > MAX_TIME_TO_SYNC_AFTER_FINISH_TRAINING) {
-				throw new GoneException(ERRORS.TIMEOUT_EXPIRED);
-			}
 		}
 
+		const points = this.convertMetrics(dto.metrics);
+
+		await this.upsertRoute(participant.id, points);
+
+		return { success: true };
+	}
+
+	/** Обработка клиентских метрик. Расчет дистанции */
+	private convertMetrics(metrics: DebugTrainingRouteNodeClient[]): DebugTrainingRouteNode[] {
 		const points: DebugTrainingRouteNode[] = [];
-		if (dto.metrics.length > 1) {
-			dto.metrics.reduce((prev, curr) => {
+		if (metrics.length > 1) {
+			metrics.reduce((prev, curr) => {
 				points.push({
 					rel_ts: curr.relTs,
 					distance: haversineDistance(curr.lat, curr.lng, prev.lat, prev.lng),
@@ -178,38 +223,55 @@ export class TrainingsService {
 
 				return curr;
 			});
-		} else if (dto.metrics.length === 1) {
+		} else if (metrics.length === 1) {
 			points.push({
-				rel_ts: dto.metrics[0].relTs,
+				rel_ts: metrics[0].relTs,
 				distance: 0,
-				speed_kmh: dto.metrics[0].speed_kmh,
-				alt: dto.metrics[0].alt,
+				speed_kmh: metrics[0].speed_kmh,
+				alt: metrics[0].alt,
 
-				paused: dto.metrics[0].paused,
-				lat: dto.metrics[0].lat,
-				lng: dto.metrics[0].lng,
+				paused: metrics[0].paused,
+				lat: metrics[0].lat,
+				lng: metrics[0].lng,
 
-				locationObject: dto.metrics[0].locationObject,
+				locationObject: metrics[0].locationObject,
 			});
 		}
 
-		await this.upsertRoute(training.participant, points);
-
-		return { success: true };
+		return points;
 	}
 
-	private async upsertRoute(
-		participant: TrainingParticipantDto.Entity,
-		metrics: DebugTrainingRouteNode[],
-	): Promise<void> {
+	private async upsertRoute(participantId: string, metrics: DebugTrainingRouteNode[]): Promise<void> {
 		const [trainingRoute] = await this.db.db
 			.select({
 				id: trainingRoutes.id,
 				points: trainingRoutes.points,
+				createdAt: trainingRoutes.createdAt,
+				finishedAt: trainingRoutes.finishedAt,
 			})
 			.from(trainingRoutes)
-			.where(eq(trainingRoutes.participantId, participant.id))
+			.where(eq(trainingRoutes.participantId, participantId))
 			.limit(1);
+
+		// Добавляем только точки, которые получены позже, чем последняя сохранённая и попадают во временное окно маршрута
+		if (trainingRoute) {
+			const lastSavedRelTs = trainingRoute.points ? trainingRoute.points[trainingRoute.points.length].rel_ts : 0;
+
+			const matchesRouteTimings = (relTs: number): boolean => {
+				if (relTs < lastSavedRelTs) {
+					return false;
+				}
+				if (relTs < trainingRoute.createdAt.getTime()) {
+					return false;
+				}
+				if (trainingRoute.finishedAt && relTs > trainingRoute.finishedAt.getTime()) {
+					return false;
+				}
+
+				return true;
+			};
+			metrics = metrics.filter((m) => matchesRouteTimings(m.rel_ts));
+		}
 
 		const updatedPoints = (trainingRoute?.points ?? []).concat(metrics);
 		// Сортируем в порядке возрастания rel_ts
@@ -232,7 +294,7 @@ export class TrainingsService {
 				.where(eq(trainingRoutes.id, trainingRoute.id));
 		} else {
 			await this.db.db.insert(trainingRoutes).values({
-				participantId: participant.id,
+				participantId: participantId,
 				points: updatedPoints,
 
 				createdAt: new Date(),

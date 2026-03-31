@@ -106,6 +106,19 @@ export class TrainingsController {
 
 	/**
 	 * @tag Trainings
+	 * @summary Добавить инфу по оффлайн трене (метрики через /sync как обычно)
+	 * @security token
+	 */
+	@Post('offline')
+	public async addOffline(
+		@User() user: TokenDto.Payload,
+		@Body() dto: TrainingDto.Offline,
+	): Promise<TrainingDto.Entity> {
+		return this.service.addOffline(user.id, dto);
+	}
+
+	/**
+	 * @tag Trainings
 	 * @summary Удалить незавершенные тренировки (не будут отображены в истории тренировок)
 	 * @security token
 	 */
