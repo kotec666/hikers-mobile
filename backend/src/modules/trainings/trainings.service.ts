@@ -240,7 +240,41 @@ export class TrainingsService {
 		}
 	}
 
-	// eslint-disable-next-line @typescript-eslint/no-unused-vars
+	public async deleteNotFinishedById(userId: string, trainingId: string): Promise<CommonDto.BooleanResponse> {
+		const [train] = await this.db.db
+			.select({ id: training.id })
+			.from(training)
+			.innerJoin(
+				trainingParticipants,
+				and(eq(trainingParticipants.trainingId, trainingId), eq(trainingParticipants.userId, userId)),
+			)
+			.where(eq(training.id, trainingId))
+			.limit(1);
+		if (!train) {
+			throw new NotFoundException(ERRORS.NOT_FOUND);
+		}
+
+		return await this.db.db.transaction(async (tx) => {
+			const participants = await tx
+				.select()
+				.from(trainingParticipants)
+				.where(eq(trainingParticipants.trainingId, trainingId));
+
+			for (const participant of participants) {
+				await tx.delete(trainingMetrics).where(eq(trainingMetrics.participantId, participant.id));
+				await tx.delete(trainingRoutes).where(eq(trainingRoutes.participantId, participant.id));
+			}
+
+			await tx.delete(trainingParticipants).where(eq(trainingParticipants.trainingId, trainingId));
+			await tx.delete(trainingInvites).where(eq(trainingInvites.trainingId, trainingId));
+
+			await tx.delete(training).where(eq(training.id, trainingId));
+			// Посты не чистим, тк у незавершенных тренировок не может быть постов
+
+			return { success: true };
+		});
+	}
+
 	public async deleteAllNotFinished(userId: string): Promise<CommonDto.BooleanResponse> {
 		const createdTrainingsIds = (await this.getByStatus(userId, true, 'created')).map((t) => t.id);
 		const activeTrainingsIds = (await this.getByStatus(userId, true, 'started')).map((t) => t.id);

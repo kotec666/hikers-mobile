@@ -116,6 +116,19 @@ export class TrainingsController {
 
 	/**
 	 * @tag Trainings
+	 * @summary Удалить незавершенную тренировку по id
+	 * @security token
+	 */
+	@Delete('delete-not-finished/:id')
+	public async deleteNotFinishedById(
+		@User() user: TokenDto.Payload,
+		@Param('id') id: string,
+	): Promise<CommonDto.BooleanResponse> {
+		return this.service.deleteNotFinishedById(user.id, id);
+	}
+
+	/**
+	 * @tag Trainings
 	 * @summary Получить участников тренировки по id тренировки с пагинацией
 	 * @security token
 	 */
