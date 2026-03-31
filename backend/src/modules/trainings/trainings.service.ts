@@ -1,4 +1,10 @@
-﻿import { BadRequestException, ConflictException, Injectable, NotFoundException } from '@nestjs/common';
+﻿import {
+	BadRequestException,
+	ConflictException,
+	ForbiddenException,
+	Injectable,
+	NotFoundException,
+} from '@nestjs/common';
 import { DatabaseService } from '../database/database.service';
 import {
 	DebugTrainingRouteNode,
@@ -104,6 +110,10 @@ export class TrainingsService {
 	}
 
 	public async addOffline(userId: string, dto: TrainingDto.Offline): Promise<TrainingDto.Entity> {
+		if (dto.startedAt > dto.finishedAt) {
+			throw new BadRequestException(`_startedAt:${ERRORS.DATE_IN_THE_FUTURE}`);
+		}
+
 		return this.db.db.transaction(async (tx) => {
 			const [train] = await tx
 				.insert(training)
@@ -170,17 +180,67 @@ export class TrainingsService {
 			// Удаляем неактуальные инвайты
 			await tx.delete(trainingInvites).where(eq(trainingInvites.trainingId, activeTraining.id));
 
-			// Всем участникам просчитываем метрики
-			const participants = await this.getExtendedParticipants(activeTraining.id);
-
-			for (const participant of participants) {
-				await tx.insert(trainingMetrics).values({
-					participantId: participant.id,
-					...this.calcMetrics(participant, activeTraining.type),
+			return this.upsertMetrics(activeTraining.id, activeTraining.type)
+				.then(() => {
+					this.eventEmitter.emit(Event.TRAINING_FINISHED, activeTraining.id);
+					return { success: true };
+				})
+				.catch((reason) => {
+					console.log('Failed to upsert metrics for training', activeTraining.id, reason);
+					return { success: false };
 				});
-			}
+		});
+	}
 
-			this.eventEmitter.emit(Event.TRAINING_FINISHED, activeTraining.id);
+	public async requestCalcMetrics(userId: string, trainingId: string): Promise<CommonDto.BooleanResponse> {
+		const [train] = await this.db.db
+			.select({
+				id: training.id,
+				finishedAt: training.finishedAt,
+				userCreatorId: training.userCreatorId,
+				type: training.type,
+			})
+			.from(training)
+			.innerJoin(
+				trainingParticipants,
+				and(eq(trainingParticipants.trainingId, trainingId), eq(trainingParticipants.userId, userId)),
+			)
+			.where(eq(training.id, trainingId))
+			.limit(1);
+		if (!train) {
+			throw new NotFoundException(ERRORS.NOT_FOUND);
+		}
+		if (!train.finishedAt) {
+			throw new ForbiddenException(ERRORS.USER_IN_NOT_FINISHED_TRAINING);
+		}
+		if (train.userCreatorId !== userId) {
+			throw new ForbiddenException(ERRORS.FORBIDDEN);
+		}
+
+		return this.upsertMetrics(train.id, train.type)
+			.then(() => {
+				this.eventEmitter.emit(Event.TRAINING_FINISHED, train.id);
+				return { success: true };
+			})
+			.catch((reason) => {
+				console.log('Failed to upsert metrics for training', train.id, reason);
+				return { success: false };
+			});
+	}
+
+	public async upsertMetrics(trainingId: string, trainingType: TrainingType): Promise<CommonDto.BooleanResponse> {
+		// Всем участникам просчитываем метрики
+		const participants = await this.getExtendedParticipants(trainingId);
+
+		return this.db.db.transaction(async (tx) => {
+			await Promise.all(
+				participants.map(async (participant) => {
+					await tx.insert(trainingMetrics).values({
+						participantId: participant.id,
+						...this.calcMetrics(participant, trainingType),
+					});
+				}),
+			);
 
 			return { success: true };
 		});
@@ -189,12 +249,16 @@ export class TrainingsService {
 	public async sync(userId: string, trainingId: string, dto: TrainingDto.Sync): Promise<CommonDto.BooleanResponse> {
 		// @TODO в будущем отдавать на фронт айди участника, чтобы тут не искать треню а сразу участника прокидывать далее
 		const [participant] = await this.db.db
-			.select({ id: trainingParticipants.id })
+			.select({ id: trainingParticipants.id, metricsId: trainingMetrics.id })
 			.from(trainingParticipants)
+			.leftJoin(trainingMetrics, eq(trainingMetrics.participantId, trainingParticipants.id))
 			.where(and(eq(trainingParticipants.trainingId, trainingId), eq(trainingParticipants.userId, userId)))
 			.limit(1);
 		if (!participant) {
 			throw new NotFoundException(ERRORS.NOT_FOUND);
+		}
+		if (participant.metricsId) {
+			throw new ConflictException(ERRORS.TRAINING_ALREADY_FINISHED);
 		}
 
 		const points = this.convertMetrics(dto.metrics);
@@ -255,7 +319,9 @@ export class TrainingsService {
 
 		// Добавляем только точки, которые получены позже, чем последняя сохранённая и попадают во временное окно маршрута
 		if (trainingRoute) {
-			const lastSavedRelTs = trainingRoute.points ? trainingRoute.points[trainingRoute.points.length].rel_ts : 0;
+			const lastSavedRelTs = trainingRoute.points?.length
+				? trainingRoute.points[trainingRoute.points.length - 1].rel_ts
+				: 0;
 
 			const matchesRouteTimings = (relTs: number): boolean => {
 				if (relTs < lastSavedRelTs) {

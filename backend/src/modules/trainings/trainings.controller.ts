@@ -119,6 +119,19 @@ export class TrainingsController {
 
 	/**
 	 * @tag Trainings
+	 * @summary Посчитать финальные метрики по тренировке
+	 * @security token
+	 */
+	@Patch('calc-metrics/:id')
+	public async calcMetrics(
+		@User() user: TokenDto.Payload,
+		@IsUUID('id') @Param('id') id: string,
+	): Promise<CommonDto.BooleanResponse> {
+		return this.service.requestCalcMetrics(user.id, id);
+	}
+
+	/**
+	 * @tag Trainings
 	 * @summary Удалить незавершенные тренировки (не будут отображены в истории тренировок)
 	 * @security token
 	 */
