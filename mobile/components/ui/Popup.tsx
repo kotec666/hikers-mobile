@@ -3,6 +3,7 @@ import { View, StyleSheet, Platform, Pressable } from 'react-native'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
 import { BlurView } from 'expo-blur'
 import Portal from '@/components/Portal/Portal'
+import { useBlurContext } from '@/components/providers/BlurProvider'
 
 interface PopupProps {
 	onClose: () => void
@@ -10,18 +11,28 @@ interface PopupProps {
 
 const Popup = ({ children, onClose }: PropsWithChildren<PopupProps>) => {
 	const insets = useSafeAreaInsets()
+	const blurTargetRef = useBlurContext()
 	return (
 		<Portal>
 			<Pressable style={styles.overlay} onPress={onClose}>
-				<Pressable style={[styles.container, { top: insets.top + 35 }]} onPress={(e) => e.stopPropagation()}>
+				<Pressable
+					style={[styles.container, { top: insets.top + 35, right: 16 }]}
+					onPress={(e) => e.stopPropagation()}
+				>
 					{Platform.OS === 'ios' ? (
 						<BlurView style={styles.blurView} tint="dark" intensity={15}>
 							<View style={styles.content}>{children}</View>
 						</BlurView>
 					) : (
-						<View style={styles.content} className="bg-black">
-							{children}
-						</View>
+						<BlurView
+							style={styles.blurView}
+							blurTarget={blurTargetRef}
+							intensity={25}
+							tint="dark"
+							blurMethod="dimezisBlurView"
+						>
+							<View style={styles.content}>{children}</View>
+						</BlurView>
 					)}
 				</Pressable>
 			</Pressable>

@@ -2,16 +2,13 @@ import React, { forwardRef, useCallback, useEffect, useImperativeHandle, useRef,
 import { BottomSheetHandle } from '@/components/ui/BottomSheet/types'
 import AllowGeolocation from '@/components/BottomSheets/AllowGeolocation'
 import BottomSheet from '@/components/ui/BottomSheet/BottomSheet'
-import { Alert, AppState, Dimensions, Linking, PermissionsAndroid, Platform } from 'react-native'
+import { Alert, AppState, Dimensions, Linking, Platform } from 'react-native'
 import EnableGPS from '@/components/BottomSheets/EnableGPS'
 import AllowBackgroundGeolocation from '@/components/BottomSheets/AllowBackgroundGeolocation'
 import AllowDeniedGeolocation from '@/components/BottomSheets/AllowDeniedGeolocation'
 import * as Location from 'expo-location'
-import * as Notification from 'expo-notifications'
 import * as Application from 'expo-application'
-import AllowTrackPhysicalActivity from '@/components/BottomSheets/AllowTrackPhysicalActivity'
-import AllowNotifications from '@/components/BottomSheets/AllowNotifications'
-import AllowDeniedNotifications from '@/components/BottomSheets/AllowDeniedNotifications'
+
 const { height: screenHeight } = Dimensions.get('screen')
 
 interface IProps {
@@ -26,8 +23,8 @@ interface IProps {
  * 2. запрос background (обязательно)
  * 2.5 запрос AllowDeniedGeolocation (если canAskAgain: false)
  * 3. запрос GPS (только андроид)
- * 4. запрос Push notifications (если откажется, то и foreground сервис физ. активности не регистрируется)
- * 5. запрос Physical activity tracking
+ * 4. запрос Push notifications DEPRECATED notifee
+ * 5. запрос Physical activity tracking DEPRECATED notifee
  *
  */
 
@@ -74,12 +71,6 @@ const AllGeolocationPermissions = forwardRef<AllGeolocationPermissionsHandle, IP
 
 		return () => subscription.remove()
 	}, []) // appState
-
-	// const openGpsSetting = async () => {
-	// 	await Linking.sendIntent('android.settings.APP_NOTIFICATION_SETTINGS', [
-	// 		{ key: 'android.provider.extra.APP_PACKAGE', value: appId || '' }
-	// 	])
-	// }
 
 	const openAppSettings = async (isNotificationSetting = false) => {
 		closeBottomSheet()
@@ -173,7 +164,8 @@ const AllGeolocationPermissions = forwardRef<AllGeolocationPermissionsHandle, IP
 				<EnableGPS allow={Platform.OS === 'ios' ? openAppSettings : allowGPS} close={closeBottomSheet} />
 			)
 		} else {
-			return checkNotificationPermission()
+			// return checkNotificationPermission() DEPRECATED notifee
+			return props.allPermissionsGrantedCallback?.()
 		}
 	}
 
@@ -183,7 +175,8 @@ const AllGeolocationPermissions = forwardRef<AllGeolocationPermissionsHandle, IP
 			await Location.enableNetworkProviderAsync() // android only
 			const servicesEnabled = await Location.hasServicesEnabledAsync()
 			if (servicesEnabled) {
-				await checkNotificationPermission()
+				// await checkNotificationPermission() DEPRECATED notifee
+				return props.allPermissionsGrantedCallback?.()
 			}
 		} catch (e) {
 			console.log('User denied enabling GPS services', e)
@@ -191,76 +184,76 @@ const AllGeolocationPermissions = forwardRef<AllGeolocationPermissionsHandle, IP
 	}
 
 	// ==========================================
-	// 4. Notifications (Android only)
+	// 4. Notifications (Android only) DEPRECATED notifee
 	// ==========================================
-	const checkNotificationPermission = async () => {
-		/** Шаг 4, проверка включены ли уведомления (имеет смысл только на android, т.к. для ios не используется foreground сервис уведомлений) */
-		if (Platform.OS === 'android') {
-			const { granted, canAskAgain } = await Notification.getPermissionsAsync()
+	// const checkNotificationPermission = async () => {
+	// 	/** Шаг 4, проверка включены ли уведомления (имеет смысл только на android, т.к. для ios не используется foreground сервис уведомлений) */
+	// 	if (Platform.OS === 'android') {
+	// 		const { granted, canAskAgain } = await Notification.getPermissionsAsync()
+	//
+	// 		if (granted) {
+	// 			return checkPhysicalActivityTrackPermission()
+	// 		} else if (!granted && canAskAgain) {
+	// 			return openBottomSheet(
+	// 				<AllowNotifications allow={allowNotificationPermission} close={closeBottomSheet} />
+	// 			)
+	// 		} else if (!granted && !canAskAgain) {
+	// 			return openBottomSheet(
+	// 				<AllowDeniedNotifications allow={() => openAppSettings(true)} close={closeBottomSheet} />
+	// 			)
+	// 		}
+	// 	} else {
+	// 		// for ios
+	// 		return checkPhysicalActivityTrackPermission()
+	// 	}
+	// }
 
-			if (granted) {
-				return checkPhysicalActivityTrackPermission()
-			} else if (!granted && canAskAgain) {
-				return openBottomSheet(
-					<AllowNotifications allow={allowNotificationPermission} close={closeBottomSheet} />
-				)
-			} else if (!granted && !canAskAgain) {
-				return openBottomSheet(
-					<AllowDeniedNotifications allow={() => openAppSettings(true)} close={closeBottomSheet} />
-				)
-			}
-		} else {
-			// for ios
-			return checkPhysicalActivityTrackPermission()
-		}
-	}
-
-	const allowNotificationPermission = async () => {
-		const { status } = await Notification.requestPermissionsAsync()
-		closeBottomSheet()
-		if (status === 'granted') {
-			return checkPhysicalActivityTrackPermission()
-		} else {
-			return
-		}
-	}
+	// const allowNotificationPermission = async () => {
+	// 	const { status } = await Notification.requestPermissionsAsync()
+	// 	closeBottomSheet()
+	// 	if (status === 'granted') {
+	// 		return checkPhysicalActivityTrackPermission()
+	// 	} else {
+	// 		return
+	// 	}
+	// }
 
 	// ==========================================
-	// 5. Physical Activity (Android only)
+	// 5. Physical Activity (Android only) DEPRECATED notifee
 	// ==========================================
-	const checkPhysicalActivityTrackPermission = async () => {
-		/** Шаг 5, проверка включен ли трек физ. активности (имеет смысл только на android) */
-		if (Platform.OS === 'android') {
-			const isGranted = await PermissionsAndroid.check(PermissionsAndroid.PERMISSIONS.ACTIVITY_RECOGNITION) // 2
+	// const checkPhysicalActivityTrackPermission = async () => {
+	// 	/** Шаг 5, проверка включен ли трек физ. активности (имеет смысл только на android) */
+	// 	if (Platform.OS === 'android') {
+	// 		const isGranted = await PermissionsAndroid.check(PermissionsAndroid.PERMISSIONS.ACTIVITY_RECOGNITION) // 2
+	//
+	// 		if (isGranted) {
+	// 			return props.allPermissionsGrantedCallback?.()
+	// 		} else {
+	// 			return openBottomSheet(
+	// 				<AllowTrackPhysicalActivity allow={allowPhysicalActivityPermission} close={closeBottomSheet} />
+	// 			)
+	// 		}
+	// 	} else {
+	// 		return props.allPermissionsGrantedCallback?.()
+	// 	}
+	// }
 
-			if (isGranted) {
-				return props.allPermissionsGrantedCallback?.()
-			} else {
-				return openBottomSheet(
-					<AllowTrackPhysicalActivity allow={allowPhysicalActivityPermission} close={closeBottomSheet} />
-				)
-			}
-		} else {
-			return props.allPermissionsGrantedCallback?.()
-		}
-	}
-
-	const allowPhysicalActivityPermission = async () => {
-		closeBottomSheet()
-
-		try {
-			const result = await PermissionsAndroid.request(PermissionsAndroid.PERMISSIONS.ACTIVITY_RECOGNITION)
-			if (result === PermissionsAndroid.RESULTS.GRANTED) {
-				return props.allPermissionsGrantedCallback?.()
-			} else if (result === PermissionsAndroid.RESULTS.NEVER_ASK_AGAIN) {
-				return openAppSettings()
-			} else if (result === PermissionsAndroid.RESULTS.DENIED) {
-				return
-			}
-		} catch (e) {
-			console.warn(e)
-		}
-	}
+	// const allowPhysicalActivityPermission = async () => {
+	// 	closeBottomSheet()
+	//
+	// 	try {
+	// 		const result = await PermissionsAndroid.request(PermissionsAndroid.PERMISSIONS.ACTIVITY_RECOGNITION)
+	// 		if (result === PermissionsAndroid.RESULTS.GRANTED) {
+	// 			return props.allPermissionsGrantedCallback?.()
+	// 		} else if (result === PermissionsAndroid.RESULTS.NEVER_ASK_AGAIN) {
+	// 			return openAppSettings()
+	// 		} else if (result === PermissionsAndroid.RESULTS.DENIED) {
+	// 			return
+	// 		}
+	// 	} catch (e) {
+	// 		console.warn(e)
+	// 	}
+	// }
 
 	useImperativeHandle(ref, () => ({
 		checkPermissions: checkForegroundPermission

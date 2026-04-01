@@ -4,13 +4,10 @@ import { fontFamily } from '@/constants/Fonts'
 import { YamapInstance } from 'react-native-yamap-plus'
 import { useAuthStore } from '@/store/authStore'
 import { useEffect } from 'react'
-import { NotificationProvider } from '@/components/providers/NotificationProvider'
 import InAppNotificationProvider from '@/components/providers/InAppNotificationProvider'
-import notifee, { EventType } from '@notifee/react-native'
-import { setActiveWorkoutPauseState } from '@/store/workoutStorage'
+import { NotificationProvider } from '@/components/providers/NotificationProvider'
 import { GestureHandlerRootView } from 'react-native-gesture-handler'
 import PortalProvider from '@/components/Portal/PortalProvider'
-import { getItem } from '@/store/authStorage'
 import { Colors } from '@/constants/Colors'
 import './../global.css'
 
@@ -27,25 +24,24 @@ YamapInstance.init(process.env.EXPO_PUBLIC_YAMAP_KEY || '')
 	.catch(console.warn)
 
 // Глобальный обработчик фоновых событий (нужно для кнопок уведомлений)
-notifee.onBackgroundEvent(async ({ type, detail }) => {
-	if (type === EventType.ACTION_PRESS) {
-		const actionId = detail.pressAction?.id
-		const user = (await getItem('authData'))?.user
-
-		switch (actionId) {
-			case 'pause':
-				setActiveWorkoutPauseState(true, user?.id)
-				break
-			case 'resume':
-				setActiveWorkoutPauseState(false, user?.id)
-				break
-		}
-	}
-})
-
-notifee.registerForegroundService(() => {
-	return new Promise(() => {})
-})
+// notifee.onBackgroundEvent(async ({ type, detail }) => {
+// 	if (type === EventType.ACTION_PRESS) {
+// 		const actionId = detail.pressAction?.id
+// 		const user = (await getItem('authData'))?.user
+//
+// 		switch (actionId) {
+// 			case 'pause':
+// 				setActiveWorkoutPauseState(true, user?.id)
+// 				break
+// 			case 'resume':
+// 				setActiveWorkoutPauseState(false, user?.id)
+// 				break
+// 		}
+// 	}
+// })
+// notifee.registerForegroundService(() => {
+// 	return new Promise(() => {})
+// })
 
 const Root = ({ isAuthenticated }: { isAuthenticated: boolean }) => {
 	return (

@@ -1,10 +1,9 @@
-import { AppState, PermissionsAndroid, Platform, StyleSheet, View } from 'react-native'
+import { AppState, StyleSheet, View } from 'react-native'
 import { SafeAreaProvider, useSafeAreaInsets } from 'react-native-safe-area-context'
 import React, { useCallback, useEffect, useRef, useState } from 'react'
 import { useToast } from '@/hooks/useToast'
 import WorkoutStarted from '@/components/training/WorkoutStarted'
 import NewWorkout, { IWorkoutModeElement } from '@/components/training/NewWorkout'
-import * as Notification from 'expo-notifications'
 import * as Location from 'expo-location'
 import * as TaskManager from 'expo-task-manager'
 import {
@@ -30,7 +29,6 @@ import { initializeNotifications } from '@/helpers/notifications'
 import { AllGeolocationPermissionsHandle } from '@/components/AllGeolocationPermissions'
 import { debounce } from '@/helpers/debounce'
 import { throttle } from '@/helpers/throttle'
-// import { useWorkoutNotification } from '@/hooks/useWorkoutNotification' @TODO
 import { initializeBackgroundLocationTask, isTrackingLocation, startTracking } from '@/hooks/track-location/track'
 import { useLocationData, useLocationTracking } from '@/hooks/track-location'
 import { updateMapSettings } from '@/store/mapStorage'
@@ -214,23 +212,24 @@ export default function NewTraining() {
 		const foregroundStatus = await Location.getForegroundPermissionsAsync()
 		const backgroundStatus = await Location.getBackgroundPermissionsAsync()
 		const isGPSEnabled = await Location.hasServicesEnabledAsync()
-		let isPhysicalActivityPermissionGranted = false
-		let isNotificationsGranted = false
+		// let isPhysicalActivityPermissionGranted = false // DEPRECATED notifee
+		// let isNotificationsGranted = false
 
-		if (Platform.OS === 'android') {
-			const { granted: notificationsGranted } = await Notification.getPermissionsAsync() // Пока что уведомления нужны только для android
-			isNotificationsGranted = notificationsGranted
-			isPhysicalActivityPermissionGranted = await PermissionsAndroid.check(
-				PermissionsAndroid.PERMISSIONS.ACTIVITY_RECOGNITION
-			)
-		}
+		// DEPRECATED notifee
+		// if (Platform.OS === 'android') {
+		// 	const { granted: notificationsGranted } = await Notification.getPermissionsAsync() // Пока что уведомления нужны только для android
+		// 	isNotificationsGranted = notificationsGranted
+		// 	isPhysicalActivityPermissionGranted = await PermissionsAndroid.check(
+		// 		PermissionsAndroid.PERMISSIONS.ACTIVITY_RECOGNITION
+		// 	)
+		// }
 
 		return {
 			foregroundStatus,
 			backgroundStatus,
-			isGPSEnabled,
-			isPhysicalActivityPermissionGranted,
-			isNotificationsGranted
+			isGPSEnabled
+			// isPhysicalActivityPermissionGranted,
+			// isNotificationsGranted
 		}
 	}
 
@@ -272,19 +271,19 @@ export default function NewTraining() {
 		const {
 			foregroundStatus,
 			backgroundStatus,
-			isGPSEnabled,
-			isPhysicalActivityPermissionGranted,
-			isNotificationsGranted
+			isGPSEnabled
+			// isPhysicalActivityPermissionGranted, // DEPRECATED notifee
+			// isNotificationsGranted
 		} = await checkPermissions()
 
 		const hasLocationPermissions = foregroundStatus?.granted && backgroundStatus?.granted && isGPSEnabled
 
-		const hasAndroidExtras =
-			Platform.OS === 'android' ? isNotificationsGranted && isPhysicalActivityPermissionGranted : true // на iOS просто true
+		// DEPRECATED notifee
+		// const hasAndroidExtras = Platform.OS === 'android' ? isNotificationsGranted && isPhysicalActivityPermissionGranted : true // на iOS просто true
 
 		// Если мы восстанавливаемся после ребута, мы предполагаем, что права уже есть.
 		// Если их нет, мы не можем молча упасть, лучше показать ошибку, но можно сделать проверку мягче.
-		if (!hasLocationPermissions || !hasAndroidExtras) {
+		if (!hasLocationPermissions /* || !hasAndroidExtras*/) {
 			if (!afterReboot) {
 				// Устанавливаем флаг, что мы пытались начать тренировку
 				isPendingStartRef.current = true
@@ -332,11 +331,6 @@ export default function NewTraining() {
 
 		stopActiveTracking()
 		await startHeadingTracking()
-		// @TODO
-		// if (isNotificationsGranted && isPhysicalActivityPermissionGranted) {
-		// 	await startNotificationTimer(user?.id) // опционально, если уведомления разрешены
-		// }
-
 		return startTrackingLocation()
 	}
 
@@ -423,11 +417,6 @@ export default function NewTraining() {
 			console.log('handleClickPause error:', e)
 		}
 	}, [])
-
-	// @TODO
-	// const { startNotificationTimer, stopNotificationTimer } = useWorkoutNotification({
-	// 	handleClickPause
-	// })
 
 	const pauseDebounced = useCallback(debounce(handleClickPause, PAUSE_DEBOUNCE_MS), [])
 

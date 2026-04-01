@@ -23,6 +23,7 @@ import { useSafeNavigation } from '@/hooks/useSafeNavigation'
 import { useInfiniteQuery } from '@tanstack/react-query'
 import TrainingsEmpty from '@/components/ui/Post/TrainingsEmpty'
 import { getFieldsErrors } from '@/helpers/getFieldsErrors'
+import BlurProvider from '@/components/providers/BlurProvider'
 // import { cn } from '@/helpers/cn'
 // import { WorkoutTypesMap } from '@/constants/WorkoutTypes'
 // import WorkoutActivity, {
@@ -221,133 +222,135 @@ const Profile = () => {
 			<SafeAreaProvider
 				style={{ paddingTop: insets.top, paddingBottom: insets.bottom, backgroundColor: Colors['black-0d'] }}
 			>
-				<LegendList
-					ref={legendListRef}
-					data={posts}
-					renderItem={renderPostItem}
-					keyExtractor={(item) => item.id}
-					// onEndReached={loadMore}
-					onEndReached={() => {
-						if (hasNextPostsPage && !isFetchingPostsNextPage) {
-							fetchNextPostsPage()
+				<BlurProvider>
+					<LegendList
+						ref={legendListRef}
+						data={posts}
+						renderItem={renderPostItem}
+						keyExtractor={(item) => item.id}
+						// onEndReached={loadMore}
+						onEndReached={() => {
+							if (hasNextPostsPage && !isFetchingPostsNextPage) {
+								fetchNextPostsPage()
+							}
+						}}
+						onEndReachedThreshold={0.4}
+						ItemSeparatorComponent={() => <View style={{ height: 16 }} />}
+						ListEmptyComponent={renderEmpty}
+						ListFooterComponent={renderFooter}
+						refreshControl={
+							<RefreshControl
+								refreshing={refreshingProfile || postsIsRefetching}
+								onRefresh={onRefreshAll}
+								tintColor={Colors['green-main']}
+							/>
 						}
-					}}
-					onEndReachedThreshold={0.4}
-					ItemSeparatorComponent={() => <View style={{ height: 16 }} />}
-					ListEmptyComponent={renderEmpty}
-					ListFooterComponent={renderFooter}
-					refreshControl={
-						<RefreshControl
-							refreshing={refreshingProfile || postsIsRefetching}
-							onRefresh={onRefreshAll}
-							tintColor={Colors['green-main']}
-						/>
-					}
-					ListHeaderComponent={
-						<View className="gap-[20px] mb-[16px]">
-							<View className="gap-[20px]">
-								<View className="gap-[16px]">
-									<View className="flex-row justify-between w-full">
-										<AnimatedProfilePicture
-											size={117}
-											bordered
-											imageUrl={`${PATH_TO_IMAGE}${user?.avatarFilename}`}
+						ListHeaderComponent={
+							<View className="gap-[20px] mb-[16px]">
+								<View className="gap-[20px]">
+									<View className="gap-[16px]">
+										<View className="flex-row justify-between w-full">
+											<AnimatedProfilePicture
+												size={117}
+												bordered
+												imageUrl={`${PATH_TO_IMAGE}${user?.avatarFilename}`}
+											/>
+											<MoreOptionsButton
+												icon={<SettingsSvg />}
+												params={[
+													{
+														label: 'Редактировать профиль',
+														action: () => handleClickRedirect(ALLOWED_ROUTES.EDIT_PROFILE)
+													},
+													{
+														label: 'Политика конфиденциальности',
+														action: () => handleClickRedirect(ALLOWED_ROUTES.DOCUMENT)
+													},
+													{
+														label: 'Политика обработки персональных данных',
+														action: () => handleClickRedirect(ALLOWED_ROUTES.DOCUMENT)
+													},
+													{
+														label: 'blur',
+														action: () => handleClickRedirect('/blur')
+													},
+													// {
+													// 	label: 'Tabs ui',
+													// 	action: () => handleClickRedirect('/(tabs-ui-kit)' as AllowedRoute)
+													// },
+													// {
+													// 	label: 'To view workout',
+													// 	action: () =>
+													// 		handleClickRedirect(
+													// 			`/training/viewWorkout?mode=${VIEWWORKOUT_MODE.VIEW}` as AllowedRoute
+													// 		)
+													// },
+													{ label: 'Выход', action: handleClickExit }
+												]}
+											/>
+										</View>
+										<View>
+											{user?.name && (
+												<Text
+													className="text-[19px] text-white"
+													style={{ fontFamily: fontFamily.bold }}
+												>
+													{user?.name}
+												</Text>
+											)}
+											{user?.username && (
+												<Text
+													className="text-base text-gray-ab"
+													style={{ fontFamily: fontFamily.medium }}
+												>
+													@{user?.username}
+												</Text>
+											)}
+										</View>
+									</View>
+									<View className="flex-row justify-between gap-[10px]">
+										<SocialStats
+											label="Подписчики"
+											content={profileData?.subscribers}
+											hrefTo="/subscribers/my-subscribers"
 										/>
-										<MoreOptionsButton
-											icon={<SettingsSvg />}
-											params={[
-												{
-													label: 'Редактировать профиль',
-													action: () => handleClickRedirect(ALLOWED_ROUTES.EDIT_PROFILE)
-												},
-												{
-													label: 'Политика конфиденциальности',
-													action: () => handleClickRedirect(ALLOWED_ROUTES.DOCUMENT)
-												},
-												{
-													label: 'Политика обработки персональных данных',
-													action: () => handleClickRedirect(ALLOWED_ROUTES.DOCUMENT)
-												},
-												{
-													label: 'blur',
-													action: () => handleClickRedirect('/blur')
-												},
-												// {
-												// 	label: 'Tabs ui',
-												// 	action: () => handleClickRedirect('/(tabs-ui-kit)' as AllowedRoute)
-												// },
-												// {
-												// 	label: 'To view workout',
-												// 	action: () =>
-												// 		handleClickRedirect(
-												// 			`/training/viewWorkout?mode=${VIEWWORKOUT_MODE.VIEW}` as AllowedRoute
-												// 		)
-												// },
-												{ label: 'Выход', action: handleClickExit }
-											]}
+										<SocialStats
+											label="Друзья"
+											content={profileData?.friends}
+											hrefTo="/friends/my-friends"
+										/>
+										<SocialStats
+											label="Подписки"
+											content={profileData?.subscriptions}
+											hrefTo="/subscribers/my-subscriptions"
 										/>
 									</View>
-									<View>
-										{user?.name && (
-											<Text
-												className="text-[19px] text-white"
-												style={{ fontFamily: fontFamily.bold }}
-											>
-												{user?.name}
-											</Text>
-										)}
-										{user?.username && (
-											<Text
-												className="text-base text-gray-ab"
-												style={{ fontFamily: fontFamily.medium }}
-											>
-												@{user?.username}
-											</Text>
-										)}
-									</View>
+									<Button variant="white" onPress={() => push('/workout-history')}>
+										История тренировок
+									</Button>
+									{/*<Button variant="white" onPress={startWorkoutActivity}>*/}
+									{/*	Start workout activity*/}
+									{/*</Button>*/}
+									{/*<Button variant="white" onPress={updateWorkoutActivity}>*/}
+									{/*	update workout activity*/}
+									{/*</Button>*/}
+									{/*<Button variant="white" onPress={endWorkoutActivity}>*/}
+									{/*	stop workout activity*/}
+									{/*</Button>*/}
+									<RedirectAchievementsInfo achievements={profileData?.achievements} isMyProfile />
+									<ActivityInfo label="Активности" activities={profileData?.activities || []} />
 								</View>
-								<View className="flex-row justify-between gap-[10px]">
-									<SocialStats
-										label="Подписчики"
-										content={profileData?.subscribers}
-										hrefTo="/subscribers/my-subscribers"
-									/>
-									<SocialStats
-										label="Друзья"
-										content={profileData?.friends}
-										hrefTo="/friends/my-friends"
-									/>
-									<SocialStats
-										label="Подписки"
-										content={profileData?.subscriptions}
-										hrefTo="/subscribers/my-subscriptions"
-									/>
-								</View>
-								<Button variant="white" onPress={() => push('/workout-history')}>
-									История тренировок
-								</Button>
-								{/*<Button variant="white" onPress={startWorkoutActivity}>*/}
-								{/*	Start workout activity*/}
-								{/*</Button>*/}
-								{/*<Button variant="white" onPress={updateWorkoutActivity}>*/}
-								{/*	update workout activity*/}
-								{/*</Button>*/}
-								{/*<Button variant="white" onPress={endWorkoutActivity}>*/}
-								{/*	stop workout activity*/}
-								{/*</Button>*/}
-								<RedirectAchievementsInfo achievements={profileData?.achievements} isMyProfile />
-								<ActivityInfo label="Активности" activities={profileData?.activities || []} />
+								<Text
+									className="text-base text-white border-b-[1px] border-b-black-44 py-[20px]"
+									style={{ fontFamily: fontFamily.bold }}
+								>
+									Лента
+								</Text>
 							</View>
-							<Text
-								className="text-base text-white border-b-[1px] border-b-black-44 py-[20px]"
-								style={{ fontFamily: fontFamily.bold }}
-							>
-								Лента
-							</Text>
-						</View>
-					}
-					contentContainerStyle={{ flexGrow: 1, paddingBottom: 100, paddingHorizontal: 16 }}
-				/>
+						}
+						contentContainerStyle={{ flexGrow: 1, paddingBottom: 100, paddingHorizontal: 16 }}
+					/>
+				</BlurProvider>
 			</SafeAreaProvider>
 		</>
 	)
