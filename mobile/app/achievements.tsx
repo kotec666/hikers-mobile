@@ -10,6 +10,7 @@ import { getFieldsErrors } from '@/helpers/getFieldsErrors'
 import BottomSheet from '@/components/ui/BottomSheet/BottomSheet'
 import { BottomSheetHandle } from '@/components/ui/BottomSheet/types'
 import AchievementDetailed from '@/components/BottomSheets/AchievementDetailed'
+import BlurProvider from '@/components/providers/BlurProvider'
 
 const { height: screenHeight } = Dimensions.get('screen')
 
@@ -59,12 +60,16 @@ const AchievementsPage = () => {
 	}
 
 	return (
-		// <GestureHandlerRootView style={{ flex: 1 }}>
-		<SafeAreaProvider style={{ paddingTop: insets.top, paddingBottom: insets.bottom + 20 }}>
-			<View style={{ flex: 1 }}>
+		<SafeAreaProvider style={{ paddingTop: insets.top }}>
+			<BlurProvider>
 				<Container className="gap-[20px] mt-[20px] flex-1">
 					<HeaderBack>Мои достижения</HeaderBack>
-					<ScrollView style={{ flex: 1, width: '100%' }}>
+					<ScrollView
+						style={{ flex: 1, width: '100%' }}
+						contentContainerStyle={{
+							paddingBottom: insets.bottom + 20
+						}}
+					>
 						<View className="gap-[10px]">
 							{state.claimedAchievements.length > 0 ? (
 								<Text className="text-base text-white" style={{ fontFamily: fontFamily.bold }}>
@@ -104,9 +109,8 @@ const AchievementsPage = () => {
 				<BottomSheet ref={bottomSheetRef} activeHeight={screenHeight * 0.5}>
 					{bottomSheetContent}
 				</BottomSheet>
-			</View>
+			</BlurProvider>
 		</SafeAreaProvider>
-		// </GestureHandlerRootView>
 	)
 }
 

@@ -11,6 +11,7 @@ import BottomSheet from '@/components/ui/BottomSheet/BottomSheet'
 import { BottomSheetHandle } from '@/components/ui/BottomSheet/types'
 import AchievementDetailed from '@/components/BottomSheets/AchievementDetailed'
 import { useLocalSearchParams } from 'expo-router'
+import BlurProvider from '@/components/providers/BlurProvider'
 
 const { height: screenHeight } = Dimensions.get('screen')
 
@@ -53,9 +54,8 @@ const UserAchievementsPage = () => {
 	}
 
 	return (
-		// <GestureHandlerRootView style={{ flex: 1 }}>
 		<SafeAreaProvider style={{ paddingTop: insets.top, paddingBottom: insets.bottom + 20 }}>
-			<View style={{ flex: 1 }}>
+			<BlurProvider>
 				<Container className="gap-[20px] mt-[20px] flex-1">
 					<HeaderBack>Достижения</HeaderBack>
 					<ScrollView style={{ flex: 1, width: '100%' }}>
@@ -82,9 +82,8 @@ const UserAchievementsPage = () => {
 				<BottomSheet ref={bottomSheetRef} activeHeight={screenHeight * 0.5}>
 					{bottomSheetContent}
 				</BottomSheet>
-			</View>
+			</BlurProvider>
 		</SafeAreaProvider>
-		// </GestureHandlerRootView>
 	)
 }
 

@@ -51,6 +51,7 @@ import { useAuthStore } from '@/store/authStore'
 import { formatTimeFromSecondsCompact } from '@/helpers/formatTime'
 import { mpsToKmph } from '@/helpers/mpsToKmph'
 import { formatBackendPace } from '@/helpers/formatBackendPace'
+import BlurProvider from '@/components/providers/BlurProvider'
 
 type Param = {
 	label: string
@@ -431,7 +432,7 @@ export default function ViewWorkout() {
 				: 'создать'
 
 	return (
-		<>
+		<BlurProvider>
 			<Modal
 				isOpen={isPhotoModalOpen}
 				handleClose={() => setIsPhotoModalOpen(false)}
@@ -744,6 +745,6 @@ export default function ViewWorkout() {
 					</ScrollView>
 				</TouchableWithoutFeedback>
 			</KeyboardAvoidingView>
-		</>
+		</BlurProvider>
 	)
 }

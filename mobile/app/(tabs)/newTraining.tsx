@@ -52,6 +52,7 @@ import { Colors } from '@/constants/Colors'
 import { getFieldsErrors } from '@/helpers/getFieldsErrors'
 import { chunkArray } from '@/helpers/chunkArray'
 import { ERRORS } from '@shared/errors'
+import BlurProvider from '@/components/providers/BlurProvider'
 // Debugging
 TaskManager.getRegisteredTasksAsync().then((tasks) => {
 	console.log(tasks)
@@ -622,7 +623,7 @@ export default function NewTraining() {
 
 	return (
 		<SafeAreaProvider style={{ paddingTop: insets.top, backgroundColor: Colors['black-0d'] }}>
-			<View style={styles.container}>
+			<BlurProvider>
 				{isWorkoutStarted ? (
 					<WorkoutStarted
 						handleClickPause={pauseDebounced}
@@ -655,14 +656,7 @@ export default function NewTraining() {
 						mapComponentRef={mapComponentRef}
 					/>
 				)}
-			</View>
+			</BlurProvider>
 		</SafeAreaProvider>
 	)
 }
-
-const styles = StyleSheet.create({
-	container: {
-		flex: 1,
-		position: 'relative'
-	}
-})

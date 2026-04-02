@@ -22,6 +22,7 @@ import { IActivity } from '@/api/activities'
 import { useAuthStore } from '@/store/authStore'
 import { useEditActivitiesStore } from '@/store/editActivitiesStore'
 import { useSafeNavigation } from '@/hooks/useSafeNavigation'
+import BlurProvider from '@/components/providers/BlurProvider'
 
 interface IEditProfileFormState {
 	name: string
@@ -176,133 +177,144 @@ const ProfileEdit = () => {
 
 	return (
 		<SafeAreaProvider style={{ paddingTop: insets.top, paddingBottom: insets.bottom }}>
-			<Modal isOpen={data.avatarModal} handleClose={handleCloseAvatarModal} label="Фото профиля" labelSize={16}>
-				<EditAvatarModalContent
-					handleCloseModal={handleCloseAvatarModal}
-					handleClickDeleteAvatar={handleDeleteAvatar}
-					setNewAvatar={(image: string) => setImage(image)}
-				/>
-			</Modal>
-			<Modal
-				isOpen={data.notSavedModal}
-				handleClose={handleCloseNotSavedModal}
-				label="Выйти без сохранения данных?"
-				labelSize={16}
-			>
-				<View className="gap-[20px]">
-					<View className="flex-row gap-[10px]">
-						<Button onPress={exitWithoutSave} variant="white" buttonContainerClassName="flex-1">
-							Да
-						</Button>
-						<Button onPress={handleCloseNotSavedModal} variant="white" buttonContainerClassName="flex-1">
-							Нет
-						</Button>
-					</View>
-				</View>
-			</Modal>
-			<Container className="gap-[20px]">
-				<HeaderBack returnCallback={handleClickReturnToProfile}>Редактирование профиля</HeaderBack>
-				<TouchableWithoutFeedback onPress={Keyboard.dismiss}>
+			<BlurProvider>
+				<Modal
+					isOpen={data.avatarModal}
+					handleClose={handleCloseAvatarModal}
+					label="Фото профиля"
+					labelSize={16}
+				>
+					<EditAvatarModalContent
+						handleCloseModal={handleCloseAvatarModal}
+						handleClickDeleteAvatar={handleDeleteAvatar}
+						setNewAvatar={(image: string) => setImage(image)}
+					/>
+				</Modal>
+				<Modal
+					isOpen={data.notSavedModal}
+					handleClose={handleCloseNotSavedModal}
+					label="Выйти без сохранения данных?"
+					labelSize={16}
+				>
 					<View className="gap-[20px]">
-						<View className="gap-[16px]">
-							<View className="flex-row justify-between w-full">
-								<TouchableOpacity onPress={handleShowAvatarModal}>
-									<UserAvatar
-										isEditMode
-										className="w-[117px] h-[117px]"
-										iconSize={{ width: 60, height: 60 }}
-										avatar={avatar}
-									/>
-								</TouchableOpacity>
-							</View>
-							<View className="gap-[10px]">
-								<Controller
-									name="name"
-									control={control}
-									rules={{
-										required: {
-											value: false,
-											message: ErrorMessages.required
-										},
-										pattern: {
-											value: /^\D*$/,
-											message: ErrorMessages.notNumber
-										},
-										minLength: {
-											value: lengths.user.name.min,
-											message: ErrorMessages.optionalMin(lengths.user.name.min)
-										},
-										maxLength: {
-											value: lengths.user.name.max,
-											message: ErrorMessages.optionalMax(lengths.user.name.max)
-										}
-									}}
-									render={({ field: { onChange, onBlur, value }, fieldState: { error } }) => (
-										<Input
-											textContentType="name"
-											keyboardType="name-phone-pad"
-											placeholder="Введите имя"
-											error={error?.message || data.errors?.name}
-											autoCapitalize="words"
-											onChangeText={onChange}
-											value={value}
-											onBlur={onBlur}
-										/>
-									)}
-								/>
-								<Controller
-									name="username"
-									control={control}
-									rules={{
-										required: {
-											value: true,
-											message: ErrorMessages.required
-										},
-										pattern: {
-											value: /^[A-Za-z0-9_]+$/,
-											message: ErrorMessages.customMessage(
-												'Никнейм содержит недопустимые символы'
-											)
-										},
-										minLength: {
-											value: lengths.user.username.min,
-											message: ErrorMessages.optionalMin(lengths.user.username.min)
-										},
-										maxLength: {
-											value: lengths.user.username.max,
-											message: ErrorMessages.optionalMax(lengths.user.username.max)
-										}
-									}}
-									render={({ field: { onChange, onBlur, value }, fieldState: { error } }) => (
-										<Input
-											textContentType="nickname"
-											keyboardType="default"
-											placeholder="examplenickname194"
-											error={error?.message || data.errors?.username}
-											autoCapitalize="none"
-											onChangeText={onChange}
-											value={value}
-											onBlur={onBlur}
-										/>
-									)}
-								/>
-							</View>
-						</View>
-						<TouchableOpacity onPress={() => push('/profile/editActivity')}>
-							<ActivityInfo
-								activities={activitiesToRender}
-								isEditMode
-								label="Топ 3 активности на показ"
-							/>
-						</TouchableOpacity>
-						<View className="my-[30px]">
-							<Button onPress={handleSubmit(onSubmit)} variant="white" isLoading={data.isLoading}>
-								Сохранить
+						<View className="flex-row gap-[10px]">
+							<Button onPress={exitWithoutSave} variant="white" buttonContainerClassName="flex-1">
+								Да
+							</Button>
+							<Button
+								onPress={handleCloseNotSavedModal}
+								variant="white"
+								buttonContainerClassName="flex-1"
+							>
+								Нет
 							</Button>
 						</View>
 					</View>
-				</TouchableWithoutFeedback>
-			</Container>
+				</Modal>
+				<Container className="gap-[20px]">
+					<HeaderBack returnCallback={handleClickReturnToProfile}>Редактирование профиля</HeaderBack>
+					<TouchableWithoutFeedback onPress={Keyboard.dismiss}>
+						<View className="gap-[20px]">
+							<View className="gap-[16px]">
+								<View className="flex-row justify-between w-full">
+									<TouchableOpacity onPress={handleShowAvatarModal}>
+										<UserAvatar
+											isEditMode
+											className="w-[117px] h-[117px]"
+											iconSize={{ width: 60, height: 60 }}
+											avatar={avatar}
+										/>
+									</TouchableOpacity>
+								</View>
+								<View className="gap-[10px]">
+									<Controller
+										name="name"
+										control={control}
+										rules={{
+											required: {
+												value: false,
+												message: ErrorMessages.required
+											},
+											pattern: {
+												value: /^\D*$/,
+												message: ErrorMessages.notNumber
+											},
+											minLength: {
+												value: lengths.user.name.min,
+												message: ErrorMessages.optionalMin(lengths.user.name.min)
+											},
+											maxLength: {
+												value: lengths.user.name.max,
+												message: ErrorMessages.optionalMax(lengths.user.name.max)
+											}
+										}}
+										render={({ field: { onChange, onBlur, value }, fieldState: { error } }) => (
+											<Input
+												textContentType="name"
+												keyboardType="name-phone-pad"
+												placeholder="Введите имя"
+												error={error?.message || data.errors?.name}
+												autoCapitalize="words"
+												onChangeText={onChange}
+												value={value}
+												onBlur={onBlur}
+											/>
+										)}
+									/>
+									<Controller
+										name="username"
+										control={control}
+										rules={{
+											required: {
+												value: true,
+												message: ErrorMessages.required
+											},
+											pattern: {
+												value: /^[A-Za-z0-9_]+$/,
+												message: ErrorMessages.customMessage(
+													'Никнейм содержит недопустимые символы'
+												)
+											},
+											minLength: {
+												value: lengths.user.username.min,
+												message: ErrorMessages.optionalMin(lengths.user.username.min)
+											},
+											maxLength: {
+												value: lengths.user.username.max,
+												message: ErrorMessages.optionalMax(lengths.user.username.max)
+											}
+										}}
+										render={({ field: { onChange, onBlur, value }, fieldState: { error } }) => (
+											<Input
+												textContentType="nickname"
+												keyboardType="default"
+												placeholder="examplenickname194"
+												error={error?.message || data.errors?.username}
+												autoCapitalize="none"
+												onChangeText={onChange}
+												value={value}
+												onBlur={onBlur}
+											/>
+										)}
+									/>
+								</View>
+							</View>
+							<TouchableOpacity onPress={() => push('/profile/editActivity')}>
+								<ActivityInfo
+									activities={activitiesToRender}
+									isEditMode
+									label="Топ 3 активности на показ"
+								/>
+							</TouchableOpacity>
+							<View className="my-[30px]">
+								<Button onPress={handleSubmit(onSubmit)} variant="white" isLoading={data.isLoading}>
+									Сохранить
+								</Button>
+							</View>
+						</View>
+					</TouchableWithoutFeedback>
+				</Container>
+			</BlurProvider>
 		</SafeAreaProvider>
 	)
 }

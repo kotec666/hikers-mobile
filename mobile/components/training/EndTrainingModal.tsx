@@ -7,6 +7,7 @@ import { debounce } from '@/helpers/debounce'
 
 interface IProps {
 	open: boolean
+	blurDisabled: boolean
 	handleClose: () => void
 	handleClickEnd: () => void
 }
@@ -17,6 +18,7 @@ const EndTrainingModal = memo((props: IProps) => {
 	return (
 		<Modal
 			isOpen={props.open}
+			blurDisabled={props.blurDisabled}
 			handleClose={props.handleClose}
 			label="Вы действительно хотите завершить тренировку?"
 		>

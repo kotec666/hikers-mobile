@@ -1,7 +1,7 @@
 import React, { RefObject, useCallback, useMemo, useState } from 'react'
 import EndTrainingModal from '@/components/training/EndTrainingModal'
 import { Container } from '@/components/ui/Container'
-import { Dimensions, Text, View } from 'react-native'
+import { Dimensions, Platform, Text, View } from 'react-native'
 import { fontFamily } from '@/constants/Fonts'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
 import { IWorkoutLocationStorageItem } from '@/store/workoutStorage'
@@ -78,6 +78,7 @@ const WorkoutStarted = (props: IProps) => {
 	return (
 		<>
 			<EndTrainingModal
+				blurDisabled={Platform.OS === 'android'}
 				open={isEndTrainingModalOpen}
 				handleClose={handleCloseEndModal}
 				handleClickEnd={handleClickEnd}

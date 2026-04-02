@@ -1,7 +1,7 @@
 import React, { memo, RefObject, useCallback, useEffect, useRef, useState } from 'react'
 import { Container } from '@/components/ui/Container'
 import HeaderBack from '@/components/ui/HeaderBack'
-import { Dimensions, FlatList, View } from 'react-native'
+import { Dimensions, FlatList, Platform, View } from 'react-native'
 import MapActionButton from '@/components/map/MapActionButton'
 import StartButton from '@/components/map/StartButton'
 import PeopleAddSvg from '@/components/svg/PeopleAddSvg'
@@ -213,7 +213,11 @@ const NewWorkout = memo((props: IProps) => {
 				ref={props.permissionsRef}
 				allPermissionsGrantedCallback={props.allPermsGranted}
 			/>
-			<BottomSheet ref={bottomSheetRef} activeHeight={SCREEN_HEIGHT * 0.5}>
+			<BottomSheet
+				blurDisabled={Platform.OS === 'android'}
+				ref={bottomSheetRef}
+				activeHeight={SCREEN_HEIGHT * 0.5}
+			>
 				<UnsavedTrainings
 					unsavedTrainingsCount={notSavedWorkoutsCount}
 					isSaving={Boolean(syncingIds.length)}
@@ -223,7 +227,7 @@ const NewWorkout = memo((props: IProps) => {
 					handleClickClose={closeBottomSheet}
 				/>
 			</BottomSheet>
-			<BottomSheetResizable ref={bottomSheetResizableRef}>
+			<BottomSheetResizable ref={bottomSheetResizableRef} blurDisabled={Platform.OS === 'android'}>
 				{sheetContent === 'workouts' && (
 					<Container className="flex-1">
 						<FlatList

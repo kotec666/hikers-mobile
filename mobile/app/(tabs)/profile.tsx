@@ -219,16 +219,13 @@ const Profile = () => {
 
 	return (
 		<>
-			<SafeAreaProvider
-				style={{ paddingTop: insets.top, paddingBottom: insets.bottom, backgroundColor: Colors['black-0d'] }}
-			>
+			<SafeAreaProvider style={{ paddingTop: insets.top, backgroundColor: Colors['black-0d'] }}>
 				<BlurProvider>
 					<LegendList
 						ref={legendListRef}
 						data={posts}
 						renderItem={renderPostItem}
 						keyExtractor={(item) => item.id}
-						// onEndReached={loadMore}
 						onEndReached={() => {
 							if (hasNextPostsPage && !isFetchingPostsNextPage) {
 								fetchNextPostsPage()
@@ -270,21 +267,6 @@ const Profile = () => {
 														label: 'Политика обработки персональных данных',
 														action: () => handleClickRedirect(ALLOWED_ROUTES.DOCUMENT)
 													},
-													{
-														label: 'blur',
-														action: () => handleClickRedirect('/blur')
-													},
-													// {
-													// 	label: 'Tabs ui',
-													// 	action: () => handleClickRedirect('/(tabs-ui-kit)' as AllowedRoute)
-													// },
-													// {
-													// 	label: 'To view workout',
-													// 	action: () =>
-													// 		handleClickRedirect(
-													// 			`/training/viewWorkout?mode=${VIEWWORKOUT_MODE.VIEW}` as AllowedRoute
-													// 		)
-													// },
 													{ label: 'Выход', action: handleClickExit }
 												]}
 											/>
@@ -348,7 +330,11 @@ const Profile = () => {
 								</Text>
 							</View>
 						}
-						contentContainerStyle={{ flexGrow: 1, paddingBottom: 100, paddingHorizontal: 16 }}
+						contentContainerStyle={{
+							flexGrow: 1,
+							paddingBottom: insets.bottom + 100,
+							paddingHorizontal: 16
+						}}
 					/>
 				</BlurProvider>
 			</SafeAreaProvider>

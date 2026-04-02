@@ -242,7 +242,6 @@ const WorkoutHistory = () => {
 					)}
 					ItemSeparatorComponent={() => <View style={{ height: 16 }} />}
 					keyExtractor={(item) => item.id}
-					// onEndReached={loadMore}
 					onEndReached={() => {
 						if (hasNextPage && !isFetchingNextPage) {
 							fetchNextPage()

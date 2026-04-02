@@ -1,6 +1,16 @@
 import { BlurView } from 'expo-blur'
 import React, { useCallback, useEffect, useState } from 'react'
-import { Dimensions, Image, Text, TouchableOpacity, View, StyleSheet, StyleProp, ViewStyle } from 'react-native'
+import {
+	Dimensions,
+	Image,
+	Text,
+	TouchableOpacity,
+	View,
+	StyleSheet,
+	StyleProp,
+	ViewStyle,
+	Platform
+} from 'react-native'
 import { Gesture, GestureDetector } from 'react-native-gesture-handler'
 import Animated, {
 	Extrapolation,
@@ -15,6 +25,7 @@ import Portal from '@/components/Portal/Portal'
 import { scheduleOnRN } from 'react-native-worklets'
 import PeopleSvg from '@/components/svg/PeopleSvg'
 import { cn } from '@/helpers/cn'
+import { useBlurContext } from '@/components/providers/BlurProvider'
 
 const SPRING_CONFIG = { damping: 15, mass: 1, stiffness: 200 }
 const OPEN_HORIZONTAL_PADDING = 24
@@ -50,6 +61,7 @@ const DummyAvatar = ({
 }
 
 export const AnimatedProfilePicture = ({ size = 40, imageUrl, bordered }: Props) => {
+	const blurTargetRef = useBlurContext()
 	const [imageError, setImageError] = useState(false)
 
 	useEffect(() => {
@@ -199,14 +211,13 @@ export const AnimatedProfilePicture = ({ size = 40, imageUrl, bordered }: Props)
 				<Portal>
 					<GestureDetector gesture={backdropTapGesture}>
 						<Animated.View style={backdropStyle}>
-							<BlurView intensity={30} tint="dark" style={{ flex: 1 }}>
-								<View
-									style={{
-										flex: 1,
-										backgroundColor: 'rgba(50,50,50,0.1)'
-									}}
-								/>
-							</BlurView>
+							<BlurView
+								tint="dark"
+								style={{ flex: 1 }}
+								blurTarget={blurTargetRef}
+								intensity={Platform.OS === 'ios' ? 10 : 30}
+								blurMethod={Platform.OS === 'ios' ? undefined : 'dimezisBlurView'}
+							/>
 						</Animated.View>
 					</GestureDetector>
 
@@ -291,9 +302,9 @@ const styles = StyleSheet.create({
 		zIndex: 1000
 	},
 	closeButtonTouchable: {
-		width: 30,
-		height: 30,
-		borderRadius: 15,
+		width: 40,
+		height: 40,
+		borderRadius: 40 / 2,
 		backgroundColor: 'rgba(0,0,0,0.6)',
 		justifyContent: 'center',
 		alignItems: 'center'

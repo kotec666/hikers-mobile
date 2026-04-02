@@ -24,6 +24,7 @@ import MapComponent from '@/components/map/MapComponent'
 import { adaptLocations } from '@/helpers/adaptPointsToIWorkoutLocationStorageItem'
 import { useOptimisticToggle } from '@/hooks/useOptimisticToggle'
 import { useInfiniteQuery, useQueryClient, InfiniteData } from '@tanstack/react-query'
+import BlurProvider from '@/components/providers/BlurProvider'
 
 /**
  *
@@ -376,160 +377,165 @@ const UserProfilePage = () => {
 	return (
 		<>
 			<SafeAreaProvider style={{ paddingTop: insets.top, paddingBottom: insets.bottom }}>
-				<LegendList
-					ref={legendListRef}
-					data={posts}
-					renderItem={renderPostItem}
-					keyExtractor={(item) => item.id}
-					// onEndReached={loadMore}
-					onEndReached={() => {
-						if (hasNextPostsPage && !isFetchingPostsNextPage) {
-							fetchNextPostsPage()
+				<BlurProvider>
+					<LegendList
+						ref={legendListRef}
+						data={posts}
+						renderItem={renderPostItem}
+						keyExtractor={(item) => item.id}
+						// onEndReached={loadMore}
+						onEndReached={() => {
+							if (hasNextPostsPage && !isFetchingPostsNextPage) {
+								fetchNextPostsPage()
+							}
+						}}
+						onEndReachedThreshold={0.5}
+						ItemSeparatorComponent={() => <View style={{ height: 16 }} />}
+						ListFooterComponent={renderFooter}
+						// refreshControl={
+						// 	<RefreshControl refreshing={refreshingProfile || refreshingPosts} onRefresh={onRefreshAll} />
+						// }
+						refreshControl={
+							<RefreshControl
+								refreshing={refreshingProfile || postsIsRefetching}
+								onRefresh={onRefreshAll}
+								tintColor={Colors['green-main']}
+							/>
 						}
-					}}
-					onEndReachedThreshold={0.5}
-					ItemSeparatorComponent={() => <View style={{ height: 16 }} />}
-					ListFooterComponent={renderFooter}
-					// refreshControl={
-					// 	<RefreshControl refreshing={refreshingProfile || refreshingPosts} onRefresh={onRefreshAll} />
-					// }
-					refreshControl={
-						<RefreshControl
-							refreshing={refreshingProfile || postsIsRefetching}
-							onRefresh={onRefreshAll}
-							tintColor={Colors['green-main']}
-						/>
-					}
-					ListHeaderComponent={
-						<>
-							<Modal
-								isOpen={isDeleteModalOpened}
-								handleClose={handleCloseDeleteModal}
-								label="Вы действительно хотите удалить пользователя из друзей?"
-							>
-								<View className="gap-[20px]">
-									<Text className="text-white text-sm" style={{ fontFamily: fontFamily.bold }}>
-										Это действие нельзя отменить
-									</Text>
-									<View className="flex-row gap-[10px]">
-										<Button
-											onPress={handleDeleteFromFriends}
-											variant="white"
-											buttonContainerClassName="flex-1"
-										>
-											Да
-										</Button>
-										<Button
-											onPress={handleCloseDeleteModal}
-											variant="white"
-											buttonContainerClassName="flex-1"
-										>
-											Нет
-										</Button>
-									</View>
-								</View>
-							</Modal>
-							<View className="gap-[20px] mb-[16px]">
-								<View className="gap-[20px]">
+						ListHeaderComponent={
+							<>
+								<Modal
+									isOpen={isDeleteModalOpened}
+									handleClose={handleCloseDeleteModal}
+									label="Вы действительно хотите удалить пользователя из друзей?"
+								>
 									<View className="gap-[20px]">
-										<View className="gap-[16px]">
-											<View className="flex-row justify-between w-full">
-												<AnimatedProfilePicture
-													size={117}
-													bordered
-													imageUrl={`${PATH_TO_IMAGE}${profileData?.user?.avatarFilename}`}
-												/>
-												{/*<MoreOptionsButton*/}
-												{/*	icon={<MoreOptionsSvg />}*/}
-												{/*	params={[*/}
-												{/*		{ label: 'Редактировать профиль', action: () => {} },*/}
-												{/*		{ label: 'Политика конфиденциальности', action: () => {} },*/}
-												{/*		{ label: 'Политика обработки персональных данных', action: () => {} },*/}
-												{/*		{ label: 'Выход', action: () => {} }*/}
-												{/*	]}*/}
-												{/*/>*/}
-											</View>
-											<View>
-												{profileData?.user?.name && (
-													<Text
-														className="text-[19px] text-white"
-														style={{ fontFamily: fontFamily.bold }}
-													>
-														{profileData?.user?.name}
-													</Text>
-												)}
-												{profileData?.user?.username && (
-													<Text
-														className="text-base text-gray-ab"
-														style={{ fontFamily: fontFamily.medium }}
-													>
-														@{profileData?.user?.username}
-													</Text>
-												)}
-											</View>
-										</View>
-										<View className="flex-row justify-between gap-[20px]">
-											<SocialStats
-												label="Подписчики"
-												content={profileData?.subscribers}
-												// hrefTo="/subscribers/my-subscribers"
-											/>
-											<SocialStats
-												label="Друзья"
-												content={profileData?.friends}
-												// hrefTo="/friends/my-friends"
-											/>
-											<SocialStats
-												label="Подписки"
-												content={profileData?.subscriptions}
-												// hrefTo="/subscribers/my-subscriptions"
-											/>
-										</View>
+										<Text className="text-white text-sm" style={{ fontFamily: fontFamily.bold }}>
+											Это действие нельзя отменить
+										</Text>
 										<View className="flex-row gap-[10px]">
 											<Button
-												variant={isSubscribed ? 'black' : 'white'}
+												onPress={handleDeleteFromFriends}
+												variant="white"
 												buttonContainerClassName="flex-1"
-												onPress={toggleSubscribe}
-												disabled={isSubscribeLoading}
 											>
-												{isSubscribed ? 'Отписаться' : 'Подписаться'}
+												Да
 											</Button>
 											<Button
-												variant={
-													profileData?.isFriend === FriendStatus.TRUE ||
-													profileData?.isFriend === FriendStatus.INVITED
-														? 'black'
-														: 'white'
-												}
+												onPress={handleCloseDeleteModal}
+												variant="white"
 												buttonContainerClassName="flex-1"
-												onPress={handleClickDeleteAddFriend}
-												disabled={isFriendLoading}
 											>
-												{isFriendLoading ? (
-													<ActivityIndicator size="small" color={Colors['green-main']} />
-												) : (
-													profileData && friendStatusLabel[profileData?.isFriend]
-												)}
+												Нет
 											</Button>
 										</View>
-										<RedirectAchievementsInfo
-											achievements={profileData?.achievements}
-											userId={id}
-										/>
-										<ActivityInfo label="Активности" activities={profileData?.activities || []} />
 									</View>
+								</Modal>
+								<View className="gap-[20px] mb-[16px]">
+									<View className="gap-[20px]">
+										<View className="gap-[20px]">
+											<View className="gap-[16px]">
+												<View className="flex-row justify-between w-full">
+													<AnimatedProfilePicture
+														size={117}
+														bordered
+														imageUrl={`${PATH_TO_IMAGE}${profileData?.user?.avatarFilename}`}
+													/>
+													{/*<MoreOptionsButton*/}
+													{/*	icon={<MoreOptionsSvg />}*/}
+													{/*	params={[*/}
+													{/*		{ label: 'Редактировать профиль', action: () => {} },*/}
+													{/*		{ label: 'Политика конфиденциальности', action: () => {} },*/}
+													{/*		{ label: 'Политика обработки персональных данных', action: () => {} },*/}
+													{/*		{ label: 'Выход', action: () => {} }*/}
+													{/*	]}*/}
+													{/*/>*/}
+												</View>
+												<View>
+													{profileData?.user?.name && (
+														<Text
+															className="text-[19px] text-white"
+															style={{ fontFamily: fontFamily.bold }}
+														>
+															{profileData?.user?.name}
+														</Text>
+													)}
+													{profileData?.user?.username && (
+														<Text
+															className="text-base text-gray-ab"
+															style={{ fontFamily: fontFamily.medium }}
+														>
+															@{profileData?.user?.username}
+														</Text>
+													)}
+												</View>
+											</View>
+											<View className="flex-row justify-between gap-[20px]">
+												<SocialStats
+													label="Подписчики"
+													content={profileData?.subscribers}
+													// hrefTo="/subscribers/my-subscribers"
+												/>
+												<SocialStats
+													label="Друзья"
+													content={profileData?.friends}
+													// hrefTo="/friends/my-friends"
+												/>
+												<SocialStats
+													label="Подписки"
+													content={profileData?.subscriptions}
+													// hrefTo="/subscribers/my-subscriptions"
+												/>
+											</View>
+											<View className="flex-row gap-[10px]">
+												<Button
+													variant={isSubscribed ? 'black' : 'white'}
+													buttonContainerClassName="flex-1"
+													onPress={toggleSubscribe}
+													disabled={isSubscribeLoading}
+												>
+													{isSubscribed ? 'Отписаться' : 'Подписаться'}
+												</Button>
+												<Button
+													variant={
+														profileData?.isFriend === FriendStatus.TRUE ||
+														profileData?.isFriend === FriendStatus.INVITED
+															? 'black'
+															: 'white'
+													}
+													buttonContainerClassName="flex-1"
+													onPress={handleClickDeleteAddFriend}
+													disabled={isFriendLoading}
+												>
+													{isFriendLoading ? (
+														<ActivityIndicator size="small" color={Colors['green-main']} />
+													) : (
+														profileData && friendStatusLabel[profileData?.isFriend]
+													)}
+												</Button>
+											</View>
+											<RedirectAchievementsInfo
+												achievements={profileData?.achievements}
+												userId={id}
+											/>
+											<ActivityInfo
+												label="Активности"
+												activities={profileData?.activities || []}
+											/>
+										</View>
+									</View>
+									<Text
+										className="text-base text-white border-b-[1px] border-b-black-44 py-[20px]"
+										style={{ fontFamily: fontFamily.bold }}
+									>
+										Лента
+									</Text>
 								</View>
-								<Text
-									className="text-base text-white border-b-[1px] border-b-black-44 py-[20px]"
-									style={{ fontFamily: fontFamily.bold }}
-								>
-									Лента
-								</Text>
-							</View>
-						</>
-					}
-					contentContainerStyle={{ paddingBottom: 100, paddingHorizontal: 16 }}
-				/>
+							</>
+						}
+						contentContainerStyle={{ paddingBottom: 100, paddingHorizontal: 16 }}
+					/>
+				</BlurProvider>
 			</SafeAreaProvider>
 		</>
 	)

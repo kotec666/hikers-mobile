@@ -260,7 +260,7 @@ const AllGeolocationPermissions = forwardRef<AllGeolocationPermissionsHandle, IP
 	}))
 
 	return (
-		<BottomSheet ref={bottomSheetRef} activeHeight={screenHeight * 0.5}>
+		<BottomSheet blurDisabled={Platform.OS === 'android'} ref={bottomSheetRef} activeHeight={screenHeight * 0.5}>
 			{bottomSheetContent}
 		</BottomSheet>
 	)

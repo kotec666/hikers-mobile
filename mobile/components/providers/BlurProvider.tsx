@@ -20,7 +20,7 @@ const BlurProvider = ({ children }: PropsWithChildren) => {
 
 	return (
 		<BlurContext.Provider value={blurTargetRef}>
-			<BlurTargetView ref={blurTargetRef} style={{ flex: 1 }}>
+			<BlurTargetView ref={blurTargetRef} style={{ flex: 1, position: 'relative' }}>
 				{children}
 			</BlurTargetView>
 		</BlurContext.Provider>
