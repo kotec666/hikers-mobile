@@ -41,7 +41,8 @@ import BlurProvider from '@/components/providers/BlurProvider'
 
 const ALLOWED_ROUTES = {
 	EDIT_PROFILE: '/profile/edit' as RelativePathString,
-	DOCUMENT: '/document' as RelativePathString
+	ABOUT: '/about' as RelativePathString,
+	SETTINGS: '/settings' as RelativePathString
 } as const satisfies Record<string, RelativePathString>
 
 type AllowedRoute = (typeof ALLOWED_ROUTES)[keyof typeof ALLOWED_ROUTES]
@@ -260,12 +261,12 @@ const Profile = () => {
 														action: () => handleClickRedirect(ALLOWED_ROUTES.EDIT_PROFILE)
 													},
 													{
-														label: 'Политика конфиденциальности',
-														action: () => handleClickRedirect(ALLOWED_ROUTES.DOCUMENT)
+														label: 'О приложении',
+														action: () => handleClickRedirect(ALLOWED_ROUTES.ABOUT)
 													},
 													{
-														label: 'Политика обработки персональных данных',
-														action: () => handleClickRedirect(ALLOWED_ROUTES.DOCUMENT)
+														label: 'Настройки',
+														action: () => handleClickRedirect(ALLOWED_ROUTES.SETTINGS)
 													},
 													{ label: 'Выход', action: handleClickExit }
 												]}

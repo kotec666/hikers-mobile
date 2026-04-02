@@ -1,9 +1,10 @@
 import { Tabs, Stack, Redirect } from 'expo-router'
 import { useAuthStore } from '@/store/authStore'
-import { Platform } from 'react-native'
+import { AccessibilityInfo, Platform } from 'react-native'
 import NativeTabsComponent from '@/components/ui/Navbar/NativeTabsComponent'
 import NavBar from '@/components/ui/Navbar/NavBar'
 import { Colors } from '@/constants/Colors'
+import { isLiquidGlassAvailable } from 'expo-glass-effect'
 
 const AppNavigator = (props: { isAuthenticated: boolean }) => {
 	return (
@@ -29,27 +30,28 @@ const AppNavigator = (props: { isAuthenticated: boolean }) => {
 	)
 }
 
-const Root = ({ isIOS26OrHigher, isAuthenticated }: { isIOS26OrHigher: boolean; isAuthenticated: boolean }) => {
-	return <>{isIOS26OrHigher ? <NativeTabsComponent /> : <AppNavigator isAuthenticated={isAuthenticated} />}</>
+const Root = ({
+	isLiquidGlassAvailable,
+	isAuthenticated
+}: {
+	isLiquidGlassAvailable: boolean
+	isAuthenticated: boolean
+}) => {
+	return <>{isLiquidGlassAvailable ? <NativeTabsComponent /> : <AppNavigator isAuthenticated={isAuthenticated} />}</>
 }
 
 export default function TabLayout() {
 	const { isAuthenticated } = useAuthStore()
 
-	const LiquidGlassIosVersionFrom = 26
-	const isIOS = Platform.OS === 'ios'
-	const versionString = String(Platform.Version)
-	const majorVersion = parseInt(versionString.split('.')[0], 10)
-
-	const isIOS26OrHigher = isIOS && majorVersion >= LiquidGlassIosVersionFrom
-
 	if (!isAuthenticated) {
 		return <Redirect href="/auth" />
 	}
 
+	const isGlassAvailable =
+		Platform.OS === 'ios' && isLiquidGlassAvailable() && !AccessibilityInfo.isReduceTransparencyEnabled()
 	return (
 		<>
-			<Root isIOS26OrHigher={isIOS26OrHigher} isAuthenticated={isAuthenticated} />
+			<Root isLiquidGlassAvailable={isGlassAvailable} isAuthenticated={isAuthenticated} />
 		</>
 	)
 }
