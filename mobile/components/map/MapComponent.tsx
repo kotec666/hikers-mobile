@@ -27,6 +27,10 @@ interface IProps {
 		horizontal?: 'left' | 'center' | 'right'
 		vertical?: 'top' | 'bottom'
 	}
+    logoPadding?: {
+        horizontal?: number
+        vertical?: number
+    }
 	initialMarkerLocation?: Point | null
 	userLocationMarkerRef?: React.RefObject<UserLocationMarkerHandle | null>
 	initialLocations?: React.RefObject<IWorkoutLocationStorageItem[]>
@@ -324,6 +328,7 @@ const MapComponent = forwardRef<MapComponentHandle, IProps>((props, ref) => {
 				initialRegion={mapInitialRegionSettingsRef}
 				style={{ flex: 1, maxHeight: props.maxMapHeight, minHeight: props.minMapHeight }}
 				logoPosition={props.logoPosition || { horizontal: 'right', vertical: 'top' }}
+                logoPadding={props.logoPadding}
 				showUserPosition={false}
 				interactiveDisabled={props.interactiveDisabled}
 				tiltGesturesDisabled={true}

@@ -1,4 +1,4 @@
-import { AppState, StyleSheet, View } from 'react-native'
+import { AppState } from 'react-native'
 import { SafeAreaProvider, useSafeAreaInsets } from 'react-native-safe-area-context'
 import React, { useCallback, useEffect, useRef, useState } from 'react'
 import { useToast } from '@/hooks/useToast'
@@ -25,7 +25,6 @@ import {
 	assignIdToActiveWorkout
 } from '@/store/workoutStorage'
 import { useRouter } from 'expo-router'
-import { initializeNotifications } from '@/helpers/notifications'
 import { AllGeolocationPermissionsHandle } from '@/components/AllGeolocationPermissions'
 import { debounce } from '@/helpers/debounce'
 import { throttle } from '@/helpers/throttle'
@@ -67,7 +66,7 @@ const promise = new Promise<void>((resolve) => {
 })
 
 // Pass the promise to the background task, it will wait until the promise resolves
-initializeNotifications(promise)
+// initializeNotifications(promise)
 initializeBackgroundLocationTask(promise)
 
 const HEADING_THROTTLE_MS = 750

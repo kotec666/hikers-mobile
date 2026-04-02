@@ -40,7 +40,7 @@ export function NotificationsButton() {
 	return (
 		<Motion.Pressable onPress={toNotificationsPage}>
 			<Motion.View
-				className="border-2 relative rounded-full h-[50px] w-[50px] border-black-44 justify-center items-center"
+				className="border relative rounded-full h-[50px] w-[50px] border-black-44 justify-center items-center"
 				whileTap={{ scale: 0.8 }}
 				transition={{
 					type: 'spring',

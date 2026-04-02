@@ -332,7 +332,7 @@ const Profile = () => {
 						}
 						contentContainerStyle={{
 							flexGrow: 1,
-							paddingBottom: insets.bottom + 100,
+							paddingBottom: insets.bottom,
 							paddingHorizontal: 16
 						}}
 					/>

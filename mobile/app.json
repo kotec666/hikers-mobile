@@ -85,8 +85,8 @@
 			[
 				"expo-widgets",
 				{
-					"bundleIdentifier": "com.hikers.mobile.widgets",
-					"enablePushNotifications": true
+					"bundleIdentifier": "run.hikers.app.widgets",
+					"enablePushNotifications": false
 				}
 			],
 			"expo-image",

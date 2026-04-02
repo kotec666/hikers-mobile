@@ -102,7 +102,7 @@ export function Select(props: SelectProps) {
 			<Animated.View
 				className="absolute border-[1px] border-white/20 rounded-[25px] left-0 gap-[15px] w-full overflow-hidden"
 				style={[
-					{ top: 60, zIndex: 2, backgroundColor: Platform.OS === 'ios' ? 'none' : 'black' },
+					{ top: 60, zIndex: 2, backgroundColor: Platform.OS === 'ios' ? 'transparent' : 'black' },
 					animatedStyle
 				]}
 			>
@@ -111,7 +111,7 @@ export function Select(props: SelectProps) {
 						<BlurView
 							tint="dark"
 							intensity={10}
-							style={{ overflow: 'hidden', backgroundColor: 'transparent' }}
+							style={{ overflow: 'hidden', backgroundColor: 'transparent', flex: 1 }}
 						>
 							<SelectContainer
 								options={options}
