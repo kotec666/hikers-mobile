@@ -62,6 +62,7 @@ const DummyAvatar = ({
 
 export const AnimatedProfilePicture = ({ size = 40, imageUrl, bordered }: Props) => {
 	const blurTargetRef = useBlurContext()
+
 	const [imageError, setImageError] = useState(false)
 
 	useEffect(() => {
@@ -205,19 +206,29 @@ export const AnimatedProfilePicture = ({ size = 40, imageUrl, bordered }: Props)
 		zIndex: 1001
 	}))
 
+    const renderBackdrop = () => {
+        if (Platform.OS === 'ios') {
+            return <BlurView style={{ flex: 1 }} tint="dark" intensity={10} />
+        }
+
+        return (
+            <BlurView
+                style={{ flex: 1 }}
+                tint="dark"
+                intensity={30}
+                blurTarget={blurTargetRef}
+                blurMethod="dimezisBlurView"
+            />
+        )
+    }
+
 	return (
 		<View ref={containerRef} style={{ width: size, height: size }}>
 			{isPortalVisible ? (
 				<Portal>
 					<GestureDetector gesture={backdropTapGesture}>
 						<Animated.View style={backdropStyle}>
-							<BlurView
-								tint="dark"
-								style={{ flex: 1 }}
-								blurTarget={blurTargetRef}
-								intensity={Platform.OS === 'ios' ? 10 : 30}
-								blurMethod={Platform.OS === 'ios' ? undefined : 'dimezisBlurView'}
-							/>
+                            {renderBackdrop()}
 						</Animated.View>
 					</GestureDetector>
 

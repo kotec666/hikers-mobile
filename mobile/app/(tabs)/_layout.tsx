@@ -47,8 +47,7 @@ export default function TabLayout() {
 		return <Redirect href="/auth" />
 	}
 
-	const isGlassAvailable =
-		Platform.OS === 'ios' && isLiquidGlassAvailable() && !AccessibilityInfo.isReduceTransparencyEnabled()
+	const isGlassAvailable = Platform.OS === 'ios' && isLiquidGlassAvailable()
 	return (
 		<>
 			<Root isLiquidGlassAvailable={isGlassAvailable} isAuthenticated={isAuthenticated} />

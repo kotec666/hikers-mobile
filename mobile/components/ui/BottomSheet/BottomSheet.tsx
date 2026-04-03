@@ -2,13 +2,13 @@ import React, { forwardRef, useCallback, useImperativeHandle } from 'react'
 import { View, StyleSheet, TouchableWithoutFeedback, Dimensions, Pressable, Platform } from 'react-native'
 import { BottomSheetHandle, BottomSheetProps } from '@/components/ui/BottomSheet/types'
 import Animated, { interpolate, useAnimatedStyle, useSharedValue, withSpring } from 'react-native-reanimated'
-import { useSafeAreaInsets } from 'react-native-safe-area-context'
 import { Gesture, GestureDetector } from 'react-native-gesture-handler'
 import { Colors } from '@/constants/Colors'
 import { BlurView } from 'expo-blur'
 import { scheduleOnRN } from 'react-native-worklets'
 import Portal from '@/components/Portal/Portal'
 import { useBlurContext } from '@/components/providers/BlurProvider'
+import { GlassView, isLiquidGlassAvailable } from 'expo-glass-effect'
 
 const BottomSheet = forwardRef<BottomSheetHandle, BottomSheetProps>(
 	(
@@ -21,9 +21,11 @@ const BottomSheet = forwardRef<BottomSheetHandle, BottomSheetProps>(
 		},
 		ref
 	) => {
-		const safeAreaInsets = useSafeAreaInsets()
+		// const safeAreaInsets = useSafeAreaInsets()
 		const blurTargetRef = useBlurContext()
 		const { height: screenHeight } = Dimensions.get('screen')
+        const isGlassAvailable = Platform.OS === 'ios' && isLiquidGlassAvailable()
+
 		const closedPositionY = screenHeight
 		const openPositionY = screenHeight - activeHeight
 
@@ -107,12 +109,48 @@ const BottomSheet = forwardRef<BottomSheetHandle, BottomSheetProps>(
 			sheetStyle,
 			{
 				height: activeHeight,
-				paddingBottom: safeAreaInsets.bottom,
+				//paddingBottom: safeAreaInsets.bottom,
 				...(blurDisabled && {
 					backgroundColor
 				})
 			}
 		]
+
+
+        const renderBackground = () => {
+            if (blurDisabled) return null
+
+            if (isGlassAvailable) {
+                return (
+                    <GlassView
+                        style={[
+                            StyleSheet.absoluteFill,
+                            { borderTopLeftRadius: 50, borderTopRightRadius: 50 }
+                        ]}
+                    />
+                )
+            }
+
+            if (Platform.OS === 'ios') {
+                return (
+                    <BlurView
+                        tint="dark"
+                        style={StyleSheet.absoluteFill}
+                        intensity={10}
+                    />
+                )
+            }
+
+            return (
+                <BlurView
+                    tint="dark"
+                    style={StyleSheet.absoluteFill}
+                    intensity={23}
+                    blurTarget={blurTargetRef}
+                    blurMethod="dimezisBlurView"
+                />
+            )
+        }
 
 		return (
 			<Portal>
@@ -121,22 +159,15 @@ const BottomSheet = forwardRef<BottomSheetHandle, BottomSheetProps>(
 				</TouchableWithoutFeedback>
 				<GestureDetector gesture={panGestureHandler}>
 					<Animated.View style={platformStyles}>
-						{!blurDisabled && (
-							<BlurView
-								tint="dark"
-								style={[
-									StyleSheet.absoluteFill,
-									{ overflow: 'hidden', backgroundColor: 'transparent' }
-								]}
-								blurTarget={blurTargetRef}
-								intensity={Platform.OS === 'ios' ? 10 : 23}
-								blurMethod={Platform.OS === 'ios' ? undefined : 'dimezisBlurView'}
-							/>
-						)}
-						<Pressable style={styles.lineContainer}>
-							<View style={styles.line} />
-						</Pressable>
-						<View style={styles.contentContainer}>{children}</View>
+                        <View style={{
+                            flex: 1,
+                        }}>
+                            {renderBackground()}
+                            <Pressable style={styles.lineContainer}>
+                                <View style={styles.line} />
+                            </Pressable>
+                            <View style={styles.contentContainer}>{children}</View>
+                        </View>
 					</Animated.View>
 				</GestureDetector>
 			</Portal>
@@ -157,10 +188,10 @@ const styles = StyleSheet.create({
 		bottom: 0,
 		zIndex: 2,
 		elevation: 2,
-		overflow: 'hidden'
+		overflow: 'hidden',
 	},
 	contentContainer: {
-		flex: 1
+		flex: 1,
 	},
 	lineContainer: {
 		height: 20,

@@ -15,6 +15,7 @@ import { BlurView } from 'expo-blur'
 import { useBlurContext } from '@/components/providers/BlurProvider'
 import Portal from '@/components/Portal/Portal'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
+import { GlassView, isLiquidGlassAvailable } from 'expo-glass-effect'
 
 const { height: SCREEN_HEIGHT } = Dimensions.get('window')
 
@@ -34,6 +35,8 @@ const BottomSheetResizable = forwardRef<BottomSheetResizableRef, BottomSheetResi
 	({ children, blurDisabled }, ref) => {
 		const insets = useSafeAreaInsets()
 		const blurTargetRef = useBlurContext()
+        const isGlassAvailable = Platform.OS === 'ios' && isLiquidGlassAvailable()
+
 		const translateY = useSharedValue(0)
 		const isSheetActive = useSharedValue(false)
 		const gestureContext = useSharedValue({ y: 0 })
@@ -154,6 +157,41 @@ const BottomSheetResizable = forwardRef<BottomSheetResizableRef, BottomSheetResi
 			blurDisabled && { backgroundColor: 'rgba(0,0,0,0.9)' }
 		]
 
+        const renderBackground = () => {
+            if (blurDisabled) return null
+
+            if (isGlassAvailable) {
+                return (
+                    <GlassView
+                        style={[
+                            StyleSheet.absoluteFill,
+                            { borderRadius: 25 }
+                        ]}
+                    />
+                )
+            }
+
+            if (Platform.OS === 'ios') {
+                return (
+                    <BlurView
+                        tint="dark"
+                        style={StyleSheet.absoluteFill}
+                        intensity={10}
+                    />
+                )
+            }
+
+            return (
+                <BlurView
+                    tint="dark"
+                    style={StyleSheet.absoluteFill}
+                    intensity={23}
+                    blurTarget={blurTargetRef}
+                    blurMethod="dimezisBlurView"
+                />
+            )
+        }
+
 		return (
 			<Portal>
 				<Animated.View
@@ -163,31 +201,15 @@ const BottomSheetResizable = forwardRef<BottomSheetResizableRef, BottomSheetResi
 				/>
 
 				<Animated.View style={platformStyles}>
-					{!blurDisabled ? (
-						<BlurView
-							tint="dark"
-							style={{ overflow: 'hidden', backgroundColor: 'transparent' }}
-							blurTarget={blurTargetRef}
-							intensity={Platform.OS === 'ios' ? 10 : 23}
-							blurMethod={Platform.OS === 'ios' ? undefined : 'dimezisBlurView'}
-						>
-							<BottomSheetResizableContent
-								animatedContentStyle={animatedContentStyle}
-								animatedHandleStyle={animatedHandleStyle}
-								handleGesture={handleGesture}
-							>
-								{children}
-							</BottomSheetResizableContent>
-						</BlurView>
-					) : (
-						<BottomSheetResizableContent
+                    {renderBackground()}
+                    <BottomSheetResizableContent
 							animatedContentStyle={animatedContentStyle}
 							animatedHandleStyle={animatedHandleStyle}
 							handleGesture={handleGesture}
 						>
 							{children}
 						</BottomSheetResizableContent>
-					)}
+
 				</Animated.View>
 			</Portal>
 		)

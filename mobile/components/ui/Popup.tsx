@@ -13,19 +13,12 @@ interface PopupProps {
 const Popup = ({ children, onClose }: PropsWithChildren<PopupProps>) => {
 	const insets = useSafeAreaInsets()
 	const blurTargetRef = useBlurContext()
+	const isGlassAvailable = Platform.OS === 'ios' && isLiquidGlassAvailable()
 
-	const isGlassAvailable =
-		Platform.OS === 'ios' && isLiquidGlassAvailable() && !AccessibilityInfo.isReduceTransparencyEnabled()
-
-	const renderContent = () => {
+	const renderContent =  () => {
 		if (isGlassAvailable) {
 			return (
 				<GlassView
-					glassEffectStyle={{
-						animate: true,
-						animationDuration: 0.5,
-						style: 'clear'
-					}}
 					style={styles.glassView}
 				>
 					<View style={styles.content}>{children}</View>
@@ -58,7 +51,7 @@ const Popup = ({ children, onClose }: PropsWithChildren<PopupProps>) => {
 		<Portal>
 			<Pressable style={styles.overlay} onPress={onClose}>
 				<Pressable
-					style={[styles.container, { top: insets.top + 35, right: 16 }]}
+					style={[styles.container, { top: insets.top + 35, right: 16 }, !isGlassAvailable && { borderWidth: 1 }]}
 					onPress={(e) => e.stopPropagation()}
 				>
 					{renderContent()}
@@ -77,7 +70,7 @@ const styles = StyleSheet.create({
 		right: 0,
 		zIndex: 5,
 		borderRadius: 25,
-		borderWidth: 1,
+		//borderWidth: 1,
 		borderColor: 'rgba(255, 255, 255, 0.2)',
 		overflow: 'hidden',
 		minWidth: 150
