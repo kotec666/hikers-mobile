@@ -24,7 +24,6 @@ import { useInfiniteQuery } from '@tanstack/react-query'
 import TrainingsEmpty from '@/components/ui/Post/TrainingsEmpty'
 import { getFieldsErrors } from '@/helpers/getFieldsErrors'
 import BlurProvider from '@/components/providers/BlurProvider'
-import Toggle from '@/components/ui/Toggle/Toggle'
 // import { cn } from '@/helpers/cn'
 // import { WorkoutTypesMap } from '@/constants/WorkoutTypes'
 // import WorkoutActivity, {
@@ -219,16 +218,9 @@ const Profile = () => {
 	// 	liveActivityWorkoutInstanceRef.current.end('immediate')
 	// }
 
-    const [isOn, setIsOn] = useState(false)
-
 	return (
 		<>
 			<SafeAreaProvider style={{ paddingTop: insets.top, backgroundColor: Colors['black-0d'] }}>
-                <Toggle
-                    value={isOn}
-                    onChange={setIsOn}
-                    label="Enable Feature"
-                />
 				<BlurProvider>
 					<LegendList
 						ref={legendListRef}

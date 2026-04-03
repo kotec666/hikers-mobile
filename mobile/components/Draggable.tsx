@@ -60,6 +60,7 @@ const Draggable = ({ children, positions, id, onDragEnd }: IProps) => {
 
 			if (onDragEnd) {
 				runOnJS(onDragEnd)({ id, oldOrder, newOrder })
+				// @TODO попробовать так: scheduleOnRN(onDragEnd, { id, oldOrder, newOrder })
 			}
 
 			const destination = getPosition(positions.value[id])
