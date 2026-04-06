@@ -332,3 +332,12 @@ export const notifications = pgTable(
 	},
 	(table) => [index('ntf_usr_idx').on(table.toUserId)],
 );
+
+// Notifications Settings
+export const notificationsSettings = pgTable('notifications_settings', {
+	userId: uuid('user_id')
+		.primaryKey()
+		.notNull()
+		.references(() => users.id),
+	settings: jsonb('settings').default({}).notNull().$type<NotificationDto.Settings>(),
+});
