@@ -45,5 +45,5 @@ export enum NotificationType {
 	/** @deprecated Пока что не используется */
 	NEW_SUBSCRIBER = 'new_subscriber',
 	TAGGED_IN_POST = 'tagged_in_post',
-	ACHIEVEMENT = 'ACHIEVEMENT',
+	ACHIEVEMENT = 'new_achievement',
 }
