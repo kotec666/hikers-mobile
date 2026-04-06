@@ -125,7 +125,10 @@ const NotificationsPage = () => {
 							itemVisiblePercentThreshold: 50
 						}}
 						renderItem={({ item }) => (
-							<SwipeableProvider onSwiped={() => handleDeleteNotification(item.id)}>
+							<SwipeableProvider
+								onSwiped={() => handleDeleteNotification(item.id)}
+								cardBackgroundColor={Colors['black-0d']}
+							>
 								<NotificationListItem notification={item} className="pb-[15px]" />
 							</SwipeableProvider>
 						)}
@@ -145,8 +148,7 @@ const NotificationsPage = () => {
 						keyExtractor={(item) => item.id}
 						contentContainerStyle={{
 							flexGrow: 1,
-							paddingBottom: insets.bottom + 20,
-							paddingTop: 10
+							paddingBottom: insets.bottom + 20
 						}}
 						ListFooterComponent={
 							isFetchingNextPage ? (

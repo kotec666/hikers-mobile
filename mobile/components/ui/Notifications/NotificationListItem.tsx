@@ -27,7 +27,7 @@ export const handleRedirectOnPageWhenNotificationPressed = (
 			redirectLink = `/posts/${relEntityId}`
 			break
 		case NotificationType.ACHIEVEMENT:
-			redirectLink = '/achievements'
+			redirectLink = `/achievements?id=${relEntityId}`
 			break
 		case NotificationType.TRAINING_INVITE:
 			redirectLink = `/(tabs)/newTraining?invited=1234567890` // @TODO
@@ -84,7 +84,7 @@ export function NotificationListItem(props: INotificationListItemProps) {
 				{parseTextWithMentions(props.notification.action.text).map((part) => {
 					if (part.type === 'mention') {
 						return (
-							<Text key={part.key} className="text-gray-d5" style={{ fontFamily: fontFamily.medium }}>
+							<Text key={part.key} className="text-gray-d5" style={{ fontFamily: fontFamily.bold }}>
 								{part.value}
 							</Text>
 						)

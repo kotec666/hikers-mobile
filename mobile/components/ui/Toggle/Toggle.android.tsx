@@ -1,4 +1,4 @@
-import React from 'react'
+import React, { useEffect } from 'react'
 import { StyleSheet, Pressable } from 'react-native'
 import { Gesture, GestureDetector } from 'react-native-gesture-handler'
 import Animated, { useSharedValue, useAnimatedStyle, withTiming, interpolateColor } from 'react-native-reanimated'
@@ -53,6 +53,16 @@ const ToggleAndroid = ({ value, onChange }: ToggleProps) => {
 		})
 		onChange(newValue)
 	}
+
+	// Синхронизация анимации с внешним состоянием
+	useEffect(() => {
+		const toValue = value ? 1 : 0
+
+		progress.value = withTiming(toValue, { duration: DURATION })
+		thumbX.value = withTiming(value ? WIDTH - THUMB - HORIZONTAL_PADDING : HORIZONTAL_PADDING, {
+			duration: DURATION
+		})
+	}, [value])
 
 	return (
 		<GestureDetector gesture={pan}>

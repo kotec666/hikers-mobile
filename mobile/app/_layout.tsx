@@ -74,7 +74,9 @@ const Root = ({ isAuthenticated }: { isAuthenticated: boolean }) => {
 							<Stack.Screen name="achievements" />
 							<Stack.Screen name="user/profile/[id]" />
 							<Stack.Screen name="training/viewWorkout" />
-							<Stack.Screen name="document" />
+							<Stack.Screen name="about" />
+							<Stack.Screen name="(settings)/index" />
+							<Stack.Screen name="(settings)/in-app-notifications" />
 							{/*<Stack.Screen name="friends/search" /> не используется*/}
 							{/*<Stack.Screen name="find-people" /> не используется*/}
 						</Stack.Protected>
@@ -82,7 +84,6 @@ const Root = ({ isAuthenticated }: { isAuthenticated: boolean }) => {
 						<Stack.Protected guard={!isAuthenticated}>
 							<Stack.Screen name="index" />
 							<Stack.Screen name="auth" />
-							<Stack.Screen name="document" />
 						</Stack.Protected>
 					</Stack>
 

@@ -7,22 +7,17 @@ import NewWorkout, { IWorkoutModeElement } from '@/components/training/NewWorkou
 import * as Location from 'expo-location'
 import * as TaskManager from 'expo-task-manager'
 import {
-	IWorkoutMeta,
 	clearActiveWorkoutData,
-	deleteUnsavedTrainingByStartedAt,
-	getActiveWorkoutPoints,
 	getShortWorkouts,
-	getUnsavedWorkoutByStartedAt,
 	getUnsavedWorkoutsThatHaveId,
 	getWorkoutMeta,
-	markUnsavedWorkoutPointsAsSaved,
+	IWorkoutMeta,
 	moveActiveWorkoutToNotSaved,
 	moveActiveWorkoutToShortWorkouts,
 	removeAllShortWorkouts,
 	setActiveWorkoutPauseState,
 	setWorkoutItems,
-	startAndStoreNewActiveWorkout,
-	assignIdToActiveWorkout
+	startAndStoreNewActiveWorkout
 } from '@/store/workoutStorage'
 import { useRouter } from 'expo-router'
 import { AllGeolocationPermissionsHandle } from '@/components/AllGeolocationPermissions'
@@ -31,10 +26,8 @@ import { throttle } from '@/helpers/throttle'
 import { initializeBackgroundLocationTask, isTrackingLocation, startTracking } from '@/hooks/track-location/track'
 import { useLocationData, useLocationTracking } from '@/hooks/track-location'
 import { updateMapSettings } from '@/store/mapStorage'
-import { deleteNotFinishedTraining, finishTraining, startTraining, syncTraining } from '@/api/workout'
+import { deleteNotFinishedTraining, deleteNotFinishedTrainingById, startTraining } from '@/api/workout'
 import { randomHexColor } from '@/helpers/randomHexColor'
-import { prepareLocationsForSync } from '@/helpers/prepareLocationsForSync'
-import { deserializeGetterType } from '@/helpers/binarySerializer'
 import { isWorkoutTooShort } from '@/helpers/isWorkoutTooShort'
 import { useInternetConnectionRef } from '@/hooks/useInternetConnectionRef'
 import { formatTime } from '@/helpers/formatTime'
@@ -49,9 +42,9 @@ import { useAuthStore } from '@/store/authStore'
 import { VIEWWORKOUT_MODE } from '@/app/training/viewWorkout'
 import { Colors } from '@/constants/Colors'
 import { getFieldsErrors } from '@/helpers/getFieldsErrors'
-import { chunkArray } from '@/helpers/chunkArray'
 import { ERRORS } from '@shared/errors'
 import BlurProvider from '@/components/providers/BlurProvider'
+import { saveSingleWorkout, WorkoutSource } from '@/helpers/saveUnsavedTraining'
 // Debugging
 TaskManager.getRegisteredTasksAsync().then((tasks) => {
 	console.log(tasks)
@@ -466,61 +459,12 @@ export default function NewTraining() {
 	// Догрузка незавершенных тренировок на бэк
 	const saveUnsavedWorkoutsBeforeFinish = async () => {
 		const createdWorkouts = getUnsavedWorkoutsThatHaveId(user?.id)
-		if (createdWorkouts.length) {
-			for (const createdWorkout of createdWorkouts) {
-				while (true) {
-					const workout = getUnsavedWorkoutByStartedAt(createdWorkout.startedAt, user?.id)
 
-					if (!workout) break
-
-					const unsavedPoints = workout.locations.filter((point) => !point.isSavedToServer)
-
-					// 1. Все точки уже синхронизированы → завершаем тренировку
-					if (unsavedPoints.length === 0) {
-						try {
-							const result = await finishTraining({
-								ts: workout.locations[workout.locations.length - 1].relTs + workout.startedAt || 1
-							})
-
-							if (result.success) {
-								deleteUnsavedTrainingByStartedAt(createdWorkout.startedAt, user?.id)
-							}
-						} catch (e) {
-							console.error('[sync] finishTraining failed', e)
-						}
-
-						break
-					}
-
-					// 2. Берём актуальный батч
-					const [batch] = chunkArray(unsavedPoints)
-
-					const syncResult = await syncTraining(workout.id, prepareLocationsForSync(batch))
-
-					if (!syncResult?.success) {
-						console.warn('[sync] Training partially synced, will retry later:', createdWorkout.id)
-						break
-					}
-
-					const prevCount = unsavedPoints.length
-
-					// 3. Маркируем точки как сохранённые
-					markUnsavedWorkoutPointsAsSaved(
-						workout.startedAt,
-						batch.map((p) => p.pointId),
-						user?.id
-					)
-
-					const updated = getUnsavedWorkoutByStartedAt(workout.startedAt, user?.id)
-
-					const nextCount = updated?.locations.filter((p) => !p.isSavedToServer).length ?? 0
-
-					// защита от зависания
-					if (nextCount >= prevCount) {
-						console.error('[sync] No progress, abort loop')
-						break
-					}
-				}
+		for (const w of createdWorkouts) {
+			try {
+				await saveSingleWorkout(WorkoutSource.UNSAVED, w.startedAt, user?.id)
+			} catch (e) {
+				console.error('[sync-before-finish] failed:', e)
 			}
 		}
 	}
@@ -533,8 +477,6 @@ export default function NewTraining() {
 				headingSubscriptionRef.current.remove()
 				headingSubscriptionRef.current = null
 			}
-			// @TODO
-			// await stopNotificationTimer()
 
 			const meta = getWorkoutMeta(user?.id)
 			calculateMetricsWhenFinished(meta)
@@ -544,7 +486,7 @@ export default function NewTraining() {
 				toast.info('Тренировка завершена слишком рано')
 				if (isInternetConnectedRef.current && meta?.id) {
 					// тренировка существует на бэкенде
-					const result = await deleteNotFinishedTraining()
+					const result = await deleteNotFinishedTrainingById(meta.id)
 					if (result.success) {
 						// удаление сразу
 						clearActiveWorkoutData(user?.id)
@@ -563,62 +505,23 @@ export default function NewTraining() {
 				}
 			}
 
-			if (isInternetConnectedRef.current) {
-				// Догрузка уже созданных на бэкенде тренировок
+			if (isInternetConnectedRef.current && meta) {
+				// 1. сначала догружаем старые
 				await saveUnsavedWorkoutsBeforeFinish()
-
-				// Догрузка несохраненных точек в активной тренировке
-				const unsavedPoints = getActiveWorkoutPoints(deserializeGetterType.NOT_SAVED, user?.id)
-
-				if (meta?.id) {
-					// Тренировка существует на бэкенде
-					if (unsavedPoints.length) {
-						const preparedLocations = prepareLocationsForSync(unsavedPoints)
-						await syncTraining(meta.id, preparedLocations)
-					}
-				} else {
-					// Тренировка не существует на бэкенде
-					const newTraining = await startTraining({
-						type: chosenWorkout.type,
-						colorHex: randomHexColor(),
-						ts: meta?.startedAt
-					})
-					assignIdToActiveWorkout(newTraining.id, user?.id) // Присвоение id тренировке
-					if (unsavedPoints.length) {
-						const preparedLocations = prepareLocationsForSync(unsavedPoints)
-						await syncTraining(newTraining.id, preparedLocations)
-					}
-				}
-
-				try {
-					const result = await finishTraining()
-					if (result.success) {
-						clearActiveWorkoutData(user?.id)
-					}
-				} catch {}
+				// 2. затем текущую активную
+				await saveSingleWorkout(WorkoutSource.ACTIVE, meta.startedAt, user?.id)
 			} else {
 				toast.info('Нет доступа к интернету, тренировку можно будет сохранить позже')
 				moveActiveWorkoutToNotSaved(user?.id)
 			}
 			// Полный сброс состояния карты и переменных
 			resetWorkoutState()
-			router.push(
-				`/training/viewWorkout?mode=${VIEWWORKOUT_MODE.VIEW}&connection=${!isInternetConnectedRef.current && 'offline'}`
-			) // - offline - просмотр тренировки до определенного момента, без сохранения
+			router.push(`/training/viewWorkout?mode=${VIEWWORKOUT_MODE.VIEW}&unsavedStartedAt=${meta?.startedAt}`)
 		} catch (e: unknown) {
 			console.error('handleClickEndWorkout error: ', e)
 			await getFieldsErrors(e)
 		}
-	}, [
-		chosenWorkout.type,
-		user?.id,
-		isInternetConnectedRef,
-		resetWorkoutState,
-		router,
-		// stopNotificationTimer, @TODO
-		toast,
-		tracking
-	])
+	}, [chosenWorkout.type, user?.id, isInternetConnectedRef, resetWorkoutState, router, toast, tracking])
 
 	return (
 		<SafeAreaProvider style={{ paddingTop: insets.top, backgroundColor: Colors['black-0d'] }}>

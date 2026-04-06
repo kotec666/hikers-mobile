@@ -21,6 +21,7 @@
 
 ## Подготовка Android-проекта
 
+[//]: # (В app.json добавить "android.permission.FOREGROUND_SERVICE_HEALTH" в разделе android.permissions)
 [//]: # (В app.json в expo-build-properties.android добавьте:)
 [//]: # (```json)
 [//]: # ("extraMavenRepos": [)

@@ -1,7 +1,7 @@
-import { useRef, useState, useCallback } from 'react'
+import { useCallback, useRef, useState } from 'react'
 import { useAuthStore } from '@/store/authStore'
 import { getNotSavedWorkouts } from '@/store/workoutStorage'
-import { deleteSingleWorkout, saveSingleWorkout } from '@/helpers/saveUnsavedTraining'
+import { deleteSingleWorkout, saveSingleWorkout, WorkoutSource } from '@/helpers/saveUnsavedTraining'
 
 type QueueItem = {
 	startedAt: number
@@ -41,7 +41,7 @@ export const useUnsavedWorkoutSync = () => {
 		setSyncingIds((ids) => [...ids, nextWorkout.startedAt])
 
 		try {
-			await saveSingleWorkout(nextWorkout.startedAt, nextWorkout.userId)
+			await saveSingleWorkout(WorkoutSource.UNSAVED, nextWorkout.startedAt, nextWorkout.userId)
 			refresh()
 			nextWorkout.resolve()
 		} catch (e) {

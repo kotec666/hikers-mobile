@@ -11,6 +11,11 @@ export interface IAchievement {
 	claimedAt: null | string
 }
 
+export interface IAchievementsResponse {
+	claimed: IAchievement[]
+	unclaimed: IAchievement[]
+}
+
 export const getClaimedAchievements = async (): Promise<IAchievement[]> => {
 	return (await fetcher.get(`achievements/claimed`)).json()
 }
@@ -21,4 +26,13 @@ export const getClaimedAchievementsByUserId = async (userId: string): Promise<IA
 
 export const getUnclaimedAchievements = async (): Promise<IAchievement[]> => {
 	return (await fetcher.get(`achievements/unclaimed`)).json()
+}
+
+export const getAchievements = async (): Promise<IAchievementsResponse> => {
+	const [unclaimed, claimed] = await Promise.all([getUnclaimedAchievements(), getClaimedAchievements()])
+
+	return {
+		unclaimed,
+		claimed
+	}
 }

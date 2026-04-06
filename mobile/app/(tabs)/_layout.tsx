@@ -1,6 +1,6 @@
 import { Tabs, Stack, Redirect } from 'expo-router'
 import { useAuthStore } from '@/store/authStore'
-import { AccessibilityInfo, Platform } from 'react-native'
+import { Platform } from 'react-native'
 import NativeTabsComponent from '@/components/ui/Navbar/NativeTabsComponent'
 import NavBar from '@/components/ui/Navbar/NavBar'
 import { Colors } from '@/constants/Colors'

@@ -93,6 +93,25 @@ export const startTraining = async (data: {
 	).json()
 }
 
+// Создать оффлайн тренировку (для загрузки имеющихся данных о тренировке) (только для тех, у которых ещё нет id)
+export const createOfflineTraining = async (data: {
+	type: TrainingType
+	colorHex: string
+	startedAt: number
+	finishedAt: number
+}): Promise<ITraining> => {
+	return (
+		await fetcher.post(`trainings/offline`, {
+			json: data
+		})
+	).json()
+}
+
+// При завершении загрузки оффлайн тренировки
+export const finishOfflineTraining = async (trainingId: string): Promise<{ success: boolean }> => {
+	return (await fetcher.patch(`trainings/calc-metrics/${trainingId}`)).json()
+}
+
 // Завершить тренировку
 export const finishTraining = async (data?: { ts?: number }): Promise<{ success: boolean }> => {
 	return (
@@ -128,6 +147,11 @@ export const syncTraining = async (
 // Удалить незавершенную тренировку (не будет отображена в истории тренировок)
 export const deleteNotFinishedTraining = async (): Promise<{ success: boolean }> => {
 	return (await fetcher.delete(`trainings/delete-not-finished`)).json()
+}
+
+// Удалить незавершенную тренировку по её id (не будет отображена в истории тренировок)
+export const deleteNotFinishedTrainingById = async (trainingId: string): Promise<{ success: boolean }> => {
+	return (await fetcher.delete(`trainings/delete-not-finished/${trainingId}`)).json()
 }
 
 export interface ITrainingHistoryItem {

@@ -42,7 +42,7 @@ import BlurProvider from '@/components/providers/BlurProvider'
 const ALLOWED_ROUTES = {
 	EDIT_PROFILE: '/profile/edit' as RelativePathString,
 	ABOUT: '/about' as RelativePathString,
-	SETTINGS: '/settings' as RelativePathString
+	SETTINGS: '/(settings)' as RelativePathString
 } as const satisfies Record<string, RelativePathString>
 
 type AllowedRoute = (typeof ALLOWED_ROUTES)[keyof typeof ALLOWED_ROUTES]

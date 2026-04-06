@@ -128,7 +128,7 @@ const Post = async ({ params }: PostProps) => {
 							},
 							author: {
 								'@type': 'Person',
-								'@id': `${env.web_url}/#user`,
+								//'@id': `${env.web_url}/#user`,
 								name: 'Пользователь Hikers'
 							},
 							publisher: {

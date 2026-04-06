@@ -1,13 +1,13 @@
 import {
-	Pressable,
 	Image,
-	View,
-	Text,
-	ScrollView,
+	Keyboard,
 	KeyboardAvoidingView,
 	Platform,
-	Keyboard,
-	TouchableWithoutFeedback
+	Pressable,
+	ScrollView,
+	Text,
+	TouchableWithoutFeedback,
+	View
 } from 'react-native'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
 import { Container } from '@/components/ui/Container'
@@ -52,6 +52,8 @@ import { formatTimeFromSecondsCompact } from '@/helpers/formatTime'
 import { mpsToKmph } from '@/helpers/mpsToKmph'
 import { formatBackendPace } from '@/helpers/formatBackendPace'
 import BlurProvider from '@/components/providers/BlurProvider'
+import { useInternetConnection } from '@/hooks/useInternetConnection'
+import { saveSingleWorkout, WorkoutSource } from '@/helpers/saveUnsavedTraining'
 
 type Param = {
 	label: string
@@ -146,11 +148,12 @@ export default function ViewWorkout() {
 	const router = useRouter()
 	const insets = useSafeAreaInsets()
 	const toast = useToast()
-	const { mode, editPostId, connection, historyTrainingId } = useLocalSearchParams<{
+	const { isConnected } = useInternetConnection()
+	const { mode, editPostId, historyTrainingId, unsavedStartedAt } = useLocalSearchParams<{
 		mode: VIEWWORKOUT_MODE
 		editPostId?: string
-		connection?: 'offline'
 		historyTrainingId?: string
+		unsavedStartedAt?: string
 	}>()
 	const isView = mode === VIEWWORKOUT_MODE.VIEW
 	const isEdit = mode === VIEWWORKOUT_MODE.EDIT
@@ -165,6 +168,7 @@ export default function ViewWorkout() {
 	const results = useWorkoutResultsAfterFinishStore((state) => state)
 	const pointsRef = useRef(results.points || [])
 	const [isPhotoModalOpen, setIsPhotoModalOpen] = useState(false)
+	const [isExitWithoutCreatePostModal, setIsExitWithoutCreatePostModal] = useState(false)
 	const [deletedImages, setDeletedImages] = useState<string[]>([]) // только для редактирования
 	const [existingImages, setExistingImages] = useState<string[]>([]) // только для редактирования
 	const [postImages, setPostImages] = useState<string[]>([])
@@ -261,6 +265,16 @@ export default function ViewWorkout() {
 		}
 	}
 
+	const saveWorkoutBeforeSubmit = async (): Promise<string | null> => {
+		// Если появился интернет
+		try {
+			return await saveSingleWorkout(WorkoutSource.UNSAVED, Number(unsavedStartedAt), user?.id)
+		} catch {
+			toast.error('Ошибка при сохранении тренировки')
+			return null
+		}
+	}
+
 	const onSubmit = async (postFormState: IPostFormState) => {
 		setState((s) => ({ ...s, isLoading: true, errors: undefined }))
 
@@ -268,6 +282,12 @@ export default function ViewWorkout() {
 			const formData = new FormData()
 			if (isView && results.trainingId) {
 				formData.append('trainingId', results.trainingId)
+			}
+			if (isView && !results.trainingId && unsavedStartedAt) {
+				const newTrainingId = await saveWorkoutBeforeSubmit()
+				if (newTrainingId) {
+					formData.append('trainingId', newTrainingId)
+				}
 			}
 			if (isFromHistory && historyTrainingId && !existPost) {
 				formData.append('trainingId', historyTrainingId)
@@ -423,6 +443,23 @@ export default function ViewWorkout() {
 		if (isFromHistory && isTrainingAuthor && !existPost) return 'Публикация'
 	}
 
+	const handlePressGoBack = () => {
+		if (isView) {
+			setIsExitWithoutCreatePostModal(true)
+		} else {
+			router.back()
+		}
+	}
+
+	const confirmExitWithoutCreatingPost = () => {
+		router.replace({
+			pathname: '/workout-history',
+			params: {
+				from: 'viewWorkout'
+			}
+		})
+	}
+
 	const offlineActionText = isView
 		? 'создать'
 		: isEdit
@@ -452,6 +489,34 @@ export default function ViewWorkout() {
 					/>
 				</View>
 			</Modal>
+			<Modal
+				isOpen={isExitWithoutCreatePostModal}
+				handleClose={() => setIsExitWithoutCreatePostModal(false)}
+				label="Выйти без создания публикации?"
+				labelSize={16}
+			>
+				<View className="gap-[20px]">
+					<Text className="text-white text-sm" style={{ fontFamily: fontFamily.bold }}>
+						Тренировка сохранена в истории, а пост создать можно будет позже.
+					</Text>
+					<View className="flex-row gap-[10px]">
+						<Button
+							onPress={confirmExitWithoutCreatingPost}
+							variant="white"
+							buttonContainerClassName="flex-1"
+						>
+							Да
+						</Button>
+						<Button
+							onPress={() => setIsExitWithoutCreatePostModal(false)}
+							variant="white"
+							buttonContainerClassName="flex-1"
+						>
+							Нет
+						</Button>
+					</View>
+				</View>
+			</Modal>
 			<KeyboardAvoidingView style={{ flex: 1 }} behavior={Platform.OS === 'ios' ? 'padding' : 'height'}>
 				<TouchableWithoutFeedback onPress={Keyboard.dismiss} accessible={false}>
 					<ScrollView
@@ -469,20 +534,7 @@ export default function ViewWorkout() {
 								className="absolute w-full h-full inset-0 justify-between pb-4"
 								style={{ paddingTop: insets.top + 40 }}
 							>
-								<Pressable
-									onPress={() => {
-										if (isView) {
-											router.replace({
-												pathname: '/workout-history',
-												params: {
-													from: 'viewWorkout'
-												}
-											})
-										} else {
-											router.back()
-										}
-									}}
-								>
+								<Pressable onPress={handlePressGoBack}>
 									<ArrowBackSvg />
 								</Pressable>
 								<View className="flex-row w-full justify-between items-center">
@@ -565,7 +617,7 @@ export default function ViewWorkout() {
 									</View>
 								)}
 							</View>
-							{connection !== 'offline' ? (
+							{isConnected ? (
 								<>
 									<View className="mt-[20px] gap-[15px]">
 										<Text className="text-white text-base" style={{ fontFamily: fontFamily.bold }}>

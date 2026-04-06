@@ -3,7 +3,7 @@ import { Text, StyleSheet, Dimensions, Animated, PanResponder, View, Platform, P
 import { fontFamily } from '@/constants/Fonts'
 import { cn } from '@/helpers/cn'
 import { BlurView } from 'expo-blur'
-import {GlassView, isLiquidGlassAvailable} from "expo-glass-effect";
+import { GlassView, isLiquidGlassAvailable } from 'expo-glass-effect'
 
 export enum NotificationInAppType {
 	ERROR = 'error',
@@ -56,7 +56,7 @@ export function Notification({ text, type, onPress, clearErrorCallback }: IProps
 	const pan = useRef(new Animated.ValueXY()).current
 	const direction = useRef<'x' | 'y' | null>(null)
 
-    const isGlassAvailable = Platform.OS === 'ios' && isLiquidGlassAvailable()
+	const isGlassAvailable = Platform.OS === 'ios' && isLiquidGlassAvailable()
 
 	const onEnter = () => {
 		isDismissingRef.current = false
@@ -167,20 +167,20 @@ export function Notification({ text, type, onPress, clearErrorCallback }: IProps
 				}}
 			>
 				<View style={styles.blurContainer}>
-                    {Platform.OS === 'ios' ? (
-                        isGlassAvailable ? (
-                            <GlassView pointerEvents="none" style={styles.blurView}>
-                                <NotificationContainer type={type} text={text} />
-                            </GlassView>
-                        ) : (
-                            <BlurView tint="dark" intensity={10} style={styles.blurView}>
-                                <NotificationContainer type={type} text={text} />
-                            </BlurView>
-                        )
-                    ) : (
-                        <NotificationContainer type={type} text={text} />
-                    )}
-                </View>
+					{Platform.OS === 'ios' ? (
+						isGlassAvailable ? (
+							<GlassView pointerEvents="none" style={styles.blurView}>
+								<NotificationContainer type={type} text={text} />
+							</GlassView>
+						) : (
+							<BlurView tint="dark" intensity={10} style={styles.blurView}>
+								<NotificationContainer type={type} text={text} />
+							</BlurView>
+						)
+					) : (
+						<NotificationContainer type={type} text={text} />
+					)}
+				</View>
 			</Pressable>
 		</Animated.View>
 	)
