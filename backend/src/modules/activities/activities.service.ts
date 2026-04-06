@@ -8,7 +8,7 @@ import { asc } from '../database/extensions';
 import { OnEvent } from '@nestjs/event-emitter';
 import { Event } from '@events/constants';
 import { ERRORS } from '@shared/errors';
-import { CommonDto } from 'src/common/dto/common.dto';
+import { CommonDto } from '../../common/dto/common.dto';
 import { getActivityByTrainingType, getDefaultMeasuringUnitByActivity } from './helpers';
 
 @Injectable()
