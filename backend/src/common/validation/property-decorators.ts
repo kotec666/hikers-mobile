@@ -1,8 +1,38 @@
 ﻿import { registerDecorator, ValidationOptions } from 'class-validator';
-import { UserActivity } from '@shared/enums';
+import { NotificationType, UserActivity } from '@shared/enums';
 import { ERRORS } from '@shared/errors';
 import { validate } from 'uuid';
 import { FinishedTrainingParticipantValidator, UniqueEmailValidator } from './validators';
+
+export function IsValidNotificationSettings(validationOptions?: ValidationOptions) {
+	return function (object: object, propertyName: string) {
+		registerDecorator({
+			name: 'isValidNotificationSettings',
+			target: object.constructor,
+			propertyName: propertyName,
+			options: validationOptions,
+			validator: {
+				validate(value: any) {
+					if (typeof value !== 'object' || value === null) return false;
+
+					const validKeys = Object.values(NotificationType);
+
+					for (const [key, val] of Object.entries(value)) {
+						// Проверяем, что ключ - валидный NotificationType
+						if (!validKeys.includes(key as NotificationType)) return false;
+						// Проверяем, что значение - boolean
+						if (typeof val !== 'boolean') return false;
+					}
+
+					return true;
+				},
+				defaultMessage() {
+					return `${propertyName}:${ERRORS.MISMATCH}`;
+				},
+			},
+		});
+	};
+}
 
 export function NotNegative(validationOptions?: ValidationOptions) {
 	return function (object: object, propertyName: string) {
@@ -190,10 +220,6 @@ export function isUserActivityEnumValue(item: any): boolean {
 
 export function isUUID(item: any): boolean {
 	return validate(item);
-}
-
-export function isFile(item: any): boolean {
-	return item satisfies Express.Multer.File;
 }
 
 export function isUUIDFilename(item: any): boolean {
