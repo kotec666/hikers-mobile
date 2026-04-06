@@ -9,7 +9,6 @@
 		"target": "ES2022",
 		"sourceMap": true,
 		"outDir": "./dist",
-		"baseUrl": "./",
 		"paths": {
 			"@validation/*": ["./src/common/validation/*"],
 			"@transformers/*": ["./src/common/transformers/*"],
