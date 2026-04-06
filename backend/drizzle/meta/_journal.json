@@ -211,6 +211,13 @@
       "when": 1774606374309,
       "tag": "0029_fix_achieve_progress_int",
       "breakpoints": true
+    },
+    {
+      "idx": 30,
+      "version": "7",
+      "when": 1775456694954,
+      "tag": "0030_notif_settings_table",
+      "breakpoints": true
     }
   ]
 }

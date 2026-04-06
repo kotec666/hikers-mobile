@@ -12,7 +12,7 @@ import {
 import { eq, sql, and, isNotNull, isNull, gte, count } from 'drizzle-orm';
 import { asc, desc } from '../database/extensions';
 import { NotificationsService } from '../notifications/notifications.service';
-import { CommonDto } from 'src/common/dto/common.dto';
+import { CommonDto } from '../../common/dto/common.dto';
 import { ERRORS } from '@shared/errors';
 import { MeasuringUnit, NotificationType, TrainingType, UserActivity } from '@shared/enums';
 import { OnEvent } from '@nestjs/event-emitter';
