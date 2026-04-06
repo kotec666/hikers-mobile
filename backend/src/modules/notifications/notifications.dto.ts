@@ -1,6 +1,6 @@
 ﻿import { NotificationType } from '@shared/enums';
 import { ERRORS } from '@shared/errors';
-import { isUUID, IsUUIDFilename, TypedArray } from '@validation/property-decorators';
+import { isUUID, IsUUIDFilename, TypedArray, IsValidNotificationSettings } from '@validation/property-decorators';
 import { IsEnum, IsOptional, IsPositive, IsString, IsUUID } from 'class-validator';
 
 export namespace NotificationDto {
@@ -35,6 +35,13 @@ export namespace NotificationDto {
 	export class RequestRead {
 		@TypedArray(isUUID)
 		ids: string[];
+	}
+
+	export type Settings = Partial<Record<NotificationType, boolean>>;
+
+	export class RequestSettings {
+		@IsValidNotificationSettings()
+		settings: Settings;
 	}
 
 	export class RequestDebug {

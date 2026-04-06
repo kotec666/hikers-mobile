@@ -11,18 +11,41 @@ import {
 	userSubscribers,
 } from '../database/schema';
 import { and, eq, inArray, isNotNull, isNull, sql } from 'drizzle-orm';
-import { CommonDto } from 'src/common/dto/common.dto';
+import { CommonDto } from '../../common/dto/common.dto';
 import { WebsocketsGateway } from '../websockets/websockets.gateway';
 import { NotificationType } from '@shared/enums';
 import { ERRORS } from '@shared/errors';
 import { desc } from '../database/extensions';
+import { NotificationsSettingsService } from './notifications-settings.service';
 
 @Injectable()
 export class NotificationsService {
-	constructor(private readonly db: DatabaseService) {}
+	private readonly settings: NotificationsSettingsService;
 
-	public push(userId: string, notif: NotificationDto.Entity): boolean {
-		return WebsocketsGateway.emitToUser(userId, 'notification', notif);
+	constructor(private readonly db: DatabaseService) {
+		this.settings = new NotificationsSettingsService(db);
+	}
+
+	public async push(userId: string, notif: NotificationDto.Entity, skipAllowedCheck = false): Promise<boolean> {
+		if (skipAllowedCheck) {
+			return WebsocketsGateway.emitToUser(userId, 'notification', notif);
+		}
+
+		return this.settings.isTypeAllowedBySettings(userId, notif.type).then((allowed) => {
+			if (!allowed) {
+				return false;
+			}
+
+			return WebsocketsGateway.emitToUser(userId, 'notification', notif);
+		});
+	}
+
+	public async getSettings(userId: string): Promise<Required<NotificationDto.Settings>> {
+		return this.settings.getSettings(userId);
+	}
+
+	public async setSettings(userId: string, settings: NotificationDto.Settings): Promise<CommonDto.BooleanResponse> {
+		return this.settings.setSettings(userId, settings);
 	}
 
 	// @TODO убрать после тестов
@@ -31,6 +54,10 @@ export class NotificationsService {
 		timeMs: number,
 		dto: NotificationDto.RequestDebug,
 	): Promise<NotificationDto.Entity> {
+		if (!(await this.settings.isTypeAllowedBySettings(userId, dto.type))) {
+			throw new BadRequestException(ERRORS.FORBIDDEN);
+		}
+
 		const [existingNotif] = await this.db.db
 			.select({ action: notifications.action })
 			.from(notifications)
@@ -69,7 +96,9 @@ export class NotificationsService {
 			.onConflictDoNothing();
 
 		setTimeout(() => {
-			this.push(userId, notif);
+			this.push(userId, notif, true).catch((reason) => {
+				console.error('Failed to push notif', notif.id, 'for user', userId, '. Reason:', reason);
+			});
 		}, timeMs);
 		return notif;
 	}
@@ -119,9 +148,13 @@ export class NotificationsService {
 		return { exists: !!query };
 	}
 
-	public async create(userId: string, dto: NotificationDto.Create): Promise<NotificationDto.Entity> {
+	public async create(userId: string, dto: NotificationDto.Create, push = true): Promise<NotificationDto.Entity> {
 		if (!dto.relEntityId && !dto.text) {
 			throw new BadRequestException(ERRORS.BAD_REQUEST);
+		}
+
+		if (!(await this.settings.isTypeAllowedBySettings(userId, dto.type))) {
+			throw new BadRequestException(ERRORS.FORBIDDEN);
 		}
 
 		const [existingNotif] = await this.db.db
@@ -172,6 +205,12 @@ export class NotificationsService {
 				action: notifications.action,
 			})
 			.onConflictDoNothing();
+
+		if (push) {
+			this.push(userId, notif, true).catch((reason) => {
+				console.error('Failed to push notif', notif.id, 'for user', userId, '. Reason:', reason);
+			});
+		}
 
 		return notif;
 	}
