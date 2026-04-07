@@ -17,7 +17,6 @@ import PostListItem from '@/components/ui/Post/PostListItem'
 import { fontFamily } from '@/constants/Fonts'
 import PeopleListItem from '@/components/find-people/PeopleListItem'
 import { Button } from '@/components/ui/Button'
-import ArrowBackSvg from '@/components/svg/ArrowBackSvg'
 import PostSearchResult from '@/components/ui/Post/PostSearchResult'
 import { LegendList, LegendListRef } from '@legendapp/list'
 import { getPostsFeed, IPost } from '@/api/posts'
@@ -25,12 +24,12 @@ import { Colors } from '@/constants/Colors'
 import { useLocalSearchParams } from 'expo-router'
 import MapComponent from '@/components/map/MapComponent'
 import { adaptLocations } from '@/helpers/adaptPointsToIWorkoutLocationStorageItem'
-import { Motion } from '@legendapp/motion'
 import TrainingsEmpty from '@/components/ui/Post/TrainingsEmpty'
 import { SearchType } from '@/shared/enums'
 import { IFoundPost, IFoundUser, searchByAllItems } from '@/api/search'
 import { PATH_TO_IMAGE } from '@/constants/PATH_TO_FILES'
 import { useInfiniteQuery, useQueryClient } from '@tanstack/react-query'
+import { BackButton } from '@/components/ui/HeaderBack'
 
 const isUser = (item: IFoundUser | IFoundPost): item is IFoundUser => {
 	return 'username' in item
@@ -227,24 +226,12 @@ const PostsPage = () => {
 				<View style={{ flex: 1 }}>
 					<Container className="gap-[20px] flex-1">
 						<View className="flex-row justify-center items-center gap-[10px] w-full">
-							<Motion.Pressable
+							<BackButton
 								onPress={() => {
 									Keyboard.dismiss()
 									setState((s) => ({ ...s, isSearchActive: false }))
 								}}
-							>
-								<Motion.View
-									className="border-2 relative rounded-full h-[50px] w-[50px] border-black-44 justify-center items-center"
-									whileTap={{ scale: 0.8 }}
-									transition={{
-										type: 'spring',
-										damping: 20,
-										stiffness: 400
-									}}
-								>
-									<ArrowBackSvg height={19} width={19} />
-								</Motion.View>
-							</Motion.Pressable>
+							/>
 							<Input
 								isFind
 								containerClassName="flex-1"

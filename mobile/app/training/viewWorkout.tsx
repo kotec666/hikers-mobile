@@ -3,7 +3,6 @@ import {
 	Keyboard,
 	KeyboardAvoidingView,
 	Platform,
-	Pressable,
 	ScrollView,
 	Text,
 	TouchableWithoutFeedback,
@@ -12,7 +11,6 @@ import {
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
 import { Container } from '@/components/ui/Container'
 import { useLocalSearchParams, useRouter } from 'expo-router'
-import ArrowBackSvg from '@/components/svg/ArrowBackSvg'
 import React, { useEffect, useRef, useState } from 'react'
 import { fontFamily } from '@/constants/Fonts'
 import Parameter from '@/components/training/Parameter'
@@ -54,6 +52,7 @@ import { formatBackendPace } from '@/helpers/formatBackendPace'
 import BlurProvider from '@/components/providers/BlurProvider'
 import { useInternetConnection } from '@/hooks/useInternetConnection'
 import { saveSingleWorkout, WorkoutSource } from '@/helpers/saveUnsavedTraining'
+import { BackButton } from '@/components/ui/HeaderBack'
 
 type Param = {
 	label: string
@@ -534,9 +533,7 @@ export default function ViewWorkout() {
 								className="absolute w-full h-full inset-0 justify-between pb-4"
 								style={{ paddingTop: insets.top + 40 }}
 							>
-								<Pressable onPress={handlePressGoBack}>
-									<ArrowBackSvg />
-								</Pressable>
+								<BackButton onPress={handlePressGoBack} />
 								<View className="flex-row w-full justify-between items-center">
 									<View className="flex-row items-center gap-[10px]">
 										<View className="bg-white rounded-xl items-center justify-center w-[40px] h-[40px]">

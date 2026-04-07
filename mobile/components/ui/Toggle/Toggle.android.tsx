@@ -5,6 +5,7 @@ import Animated, { useSharedValue, useAnimatedStyle, withTiming, interpolateColo
 import { ToggleProps } from '@/components/ui/Toggle/Toggle.types'
 import { scheduleOnRN } from 'react-native-worklets'
 import { Colors } from '@/constants/Colors'
+import { cn } from '@/helpers/cn'
 
 const WIDTH = 40
 const HEIGHT = 24
@@ -14,12 +15,13 @@ const TRACK_OFF = Colors['gray-ab']
 const DURATION = 200
 const HORIZONTAL_PADDING = 2
 
-const ToggleAndroid = ({ value, onChange }: ToggleProps) => {
+const ToggleAndroid = ({ value, onChange, disabled }: ToggleProps) => {
 	const progress = useSharedValue(value ? 1 : 0)
 	const thumbX = useSharedValue(value ? WIDTH - THUMB - HORIZONTAL_PADDING : HORIZONTAL_PADDING)
 
 	const pan = Gesture.Pan()
 		.onChange((e) => {
+			if (disabled) return
 			const newX = Math.min(
 				Math.max(thumbX.value + e.changeX, HORIZONTAL_PADDING),
 				WIDTH - THUMB - HORIZONTAL_PADDING
@@ -66,7 +68,7 @@ const ToggleAndroid = ({ value, onChange }: ToggleProps) => {
 
 	return (
 		<GestureDetector gesture={pan}>
-			<Pressable onPress={handlePress}>
+			<Pressable className={cn('', { 'opacity-50': disabled })} disabled={disabled} onPress={handlePress}>
 				<Animated.View style={[styles.track, trackStyle]}>
 					<Animated.View style={[styles.thumb, thumbStyle]} />
 				</Animated.View>
