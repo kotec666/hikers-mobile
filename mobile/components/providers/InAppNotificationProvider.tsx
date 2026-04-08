@@ -8,6 +8,7 @@ import { useSafeNavigation } from '@/hooks/useSafeNavigation'
 import { useAuthStore } from '@/store/authStore'
 import { useQueryClient } from '@tanstack/react-query'
 import { getAuthData } from '@/services/tokenService'
+import { NotificationType } from '@shared/enums'
 
 const InAppNotificationProvider = () => {
 	const socketRef = useRef<Socket | null>(null)
@@ -15,6 +16,25 @@ const InAppNotificationProvider = () => {
 	const { push } = useSafeNavigation()
 	const { accessTokenExpiration } = useAuthStore()
 	const queryClient = useQueryClient()
+
+	const invalidateByNotificationType = async (notificationType: NotificationType) => {
+		let queryKey: null | string = null
+
+		switch (notificationType) {
+			case NotificationType.FRIEND_INVITE:
+				queryKey = 'friendsList'
+				break
+			case NotificationType.TAGGED_IN_POST:
+				break
+			case NotificationType.ACHIEVEMENT:
+				queryKey = 'my-achievements'
+				break
+			case NotificationType.TRAINING_INVITE:
+				break
+		}
+		if (!queryKey) return null
+		return await queryClient.invalidateQueries({ queryKey: [queryKey] })
+	}
 
 	useEffect(() => {
 		const setupSocket = async () => {
@@ -40,6 +60,7 @@ const InAppNotificationProvider = () => {
 					queryClient.invalidateQueries({ queryKey: ['unread-exists'] }),
 					queryClient.invalidateQueries({ queryKey: ['notifications-page'] })
 				])
+				await invalidateByNotificationType(socketData.type)
 
 				const redirectLink = handleRedirectOnPageWhenNotificationPressed(
 					socketData.type,

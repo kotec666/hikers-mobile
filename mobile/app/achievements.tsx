@@ -2,17 +2,10 @@ import { SafeAreaProvider, useSafeAreaInsets } from 'react-native-safe-area-cont
 import { Dimensions, ScrollView, Text, View } from 'react-native'
 import { Container } from '@/components/ui/Container'
 import HeaderBack from '@/components/ui/HeaderBack'
-import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react'
+import React, { useCallback, useEffect, useRef, useState } from 'react'
 import AchievementsListItem from '@/components/ui/Achievements/AchievementsListItem'
 import { fontFamily } from '@/constants/Fonts'
-import {
-	getAchievements,
-	getClaimedAchievements,
-	getUnclaimedAchievements,
-	IAchievement,
-	IAchievementsResponse
-} from '@/api/achievements'
-import { getFieldsErrors } from '@/helpers/getFieldsErrors'
+import { getAchievements, IAchievement, IAchievementsResponse } from '@/api/achievements'
 import BottomSheet from '@/components/ui/BottomSheet/BottomSheet'
 import { BottomSheetHandle } from '@/components/ui/BottomSheet/types'
 import AchievementDetailed from '@/components/BottomSheets/AchievementDetailed'
