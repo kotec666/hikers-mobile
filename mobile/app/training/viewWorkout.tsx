@@ -269,7 +269,7 @@ export default function ViewWorkout() {
 		try {
 			return await saveSingleWorkout(WorkoutSource.UNSAVED, Number(unsavedStartedAt), user?.id)
 		} catch {
-			toast.error('Ошибка при сохранении тренировки')
+			toast.error('Ошибка при сохранении тренировки, её можно будет сохранить позже')
 			return null
 		}
 	}
@@ -360,7 +360,6 @@ export default function ViewWorkout() {
 			}
 
 			if (result.canceled || !result.assets?.length) return
-
 			const pickedUri = result.assets[0].uri
 
 			if (!pickedUri) {
@@ -368,7 +367,7 @@ export default function ViewWorkout() {
 				return
 			}
 
-			const { isValid, errorMessage } = await validateFile(pickedUri, postImages.length + existingImages.length)
+			const { isValid, errorMessage } = validateFile(pickedUri, postImages.length + existingImages.length)
 
 			if (!isValid) {
 				toast.error(errorMessage || 'Файл не прошёл проверку')
