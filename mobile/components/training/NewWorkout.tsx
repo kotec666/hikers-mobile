@@ -103,8 +103,13 @@ const NewWorkout = memo((props: IProps) => {
 	const bottomSheetResizableRef = useRef<BottomSheetResizableRef>(null)
 
 	const toggleResizableSheet = useCallback(() => {
-		const isSheetActive = bottomSheetResizableRef.current?.isActive?.()
-		bottomSheetResizableRef?.current?.scrollTo?.(isSheetActive ? 0 : -200)
+        const isSheetActive = bottomSheetResizableRef.current?.isActive?.()
+        if (isSheetActive) {
+            return bottomSheetResizableRef.current?.close()
+        } else {
+            return bottomSheetResizableRef.current?.open()
+        }
+		// bottomSheetResizableRef?.current?.scrollTo?.(isSheetActive ? 0 : -200)
 	}, [])
 
 	const handleChangeWorkout = (workoutType: TrainingType) => {

@@ -15,7 +15,7 @@ const TRACK_OFF = Colors['gray-ab']
 const DURATION = 200
 const HORIZONTAL_PADDING = 2
 
-const ToggleAndroid = ({ value, onChange, disabled }: ToggleProps) => {
+const Toggle = ({ value, onChange, disabled }: ToggleProps) => {
 	const progress = useSharedValue(value ? 1 : 0)
 	const thumbX = useSharedValue(value ? WIDTH - THUMB - HORIZONTAL_PADDING : HORIZONTAL_PADDING)
 
@@ -95,4 +95,4 @@ const styles = StyleSheet.create({
 	}
 })
 
-export default ToggleAndroid
+export default Toggle

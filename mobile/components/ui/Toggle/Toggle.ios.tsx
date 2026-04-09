@@ -3,7 +3,7 @@ import { Host, Toggle as SwiftToggle } from '@expo/ui/swift-ui'
 import { ToggleProps } from './Toggle.types'
 import { opacity } from '@expo/ui/swift-ui/modifiers'
 
-const ToggleIOS: React.FC<ToggleProps> = ({ value, onChange, label, disabled }) => {
+const Toggle: React.FC<ToggleProps> = ({ value, onChange, label, disabled }) => {
 	return (
 		<Host matchContents>
 			<SwiftToggle
@@ -16,4 +16,4 @@ const ToggleIOS: React.FC<ToggleProps> = ({ value, onChange, label, disabled }) 
 	)
 }
 
-export default ToggleIOS
+export default Toggle

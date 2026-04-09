@@ -44,6 +44,7 @@ const BottomSheetResizable = forwardRef<BottomSheetResizableRef, BottomSheetResi
 
 		const TOP_OFFSET = insets.top
 		const MAX_SHEET_TRANSLATION = -SCREEN_HEIGHT + TOP_OFFSET
+        const SNAP_POINTS = [-SCREEN_HEIGHT * 0.5, MAX_SHEET_TRANSLATION] // Snap points: 50%, 100%
 
 		const scrollTo = useCallback((destination: number) => {
 			'worklet'
@@ -75,9 +76,6 @@ const BottomSheetResizable = forwardRef<BottomSheetResizableRef, BottomSheetResi
 			}),
 			[scrollTo, isActive, close, open]
 		)
-
-		// Snap points: 25%, 50%, 100%
-		const SNAP_POINTS = [-SCREEN_HEIGHT * 0.25, -SCREEN_HEIGHT * 0.5, MAX_SHEET_TRANSLATION]
 
 		const handleGesture = Gesture.Pan()
 			.onStart(() => {

@@ -5,7 +5,7 @@ import { ScrollView, View, Text, Pressable, AppState } from 'react-native'
 import { StatusBar } from 'expo-status-bar'
 import { fontFamily } from '@/constants/Fonts'
 import { cn } from '@/helpers/cn'
-import Toggle from '@/components/ui/Toggle'
+import Toggle from '@/components/ui/Toggle/Toggle'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { getNotificationSettings, changeNotificationSettings, NotificationSettings } from '@/api/settings'
 import { NotificationType } from '@shared/enums'
@@ -26,7 +26,7 @@ const InAppNotificationSetting = ({
 	disabled?: boolean
 }) => {
 	return (
-		<View className="flex-row justify-between items-center">
+		<View className="flex-row justify-between items-center pr-[2px]">
 			<Pressable
 				disabled={disabled}
 				onPress={() => onToggle(!enabled)}
