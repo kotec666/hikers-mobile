@@ -12,7 +12,6 @@ import { editProfileData, getProfileData } from '@/api/profile'
 import { getFieldsErrors } from '@/helpers/getFieldsErrors'
 import { Controller, useForm } from 'react-hook-form'
 import { useErrorMessage } from '@/hooks/useErrorMessage'
-import { lengths } from '../../../shared/lengths'
 import * as Haptics from 'expo-haptics'
 import { useToast } from '@/hooks/useToast'
 import Modal from '@/components/ui/Modal/Modal'
@@ -23,6 +22,8 @@ import { useAuthStore } from '@/store/authStore'
 import { useEditActivitiesStore } from '@/store/editActivitiesStore'
 import { useSafeNavigation } from '@/hooks/useSafeNavigation'
 import BlurProvider from '@/components/providers/BlurProvider'
+import { useQueryClient } from '@tanstack/react-query'
+import { lengths } from '@shared/lengths'
 
 interface IEditProfileFormState {
 	name: string
@@ -35,6 +36,7 @@ const FormData = global.FormData
 const ProfileEdit = () => {
 	const insets = useSafeAreaInsets()
 	const router = useRouter()
+	const queryClient = useQueryClient()
 	const { push } = useSafeNavigation()
 	const {
 		handleSubmit,
@@ -119,6 +121,9 @@ const ProfileEdit = () => {
 		try {
 			const editResponse = await editProfileData(formData)
 			setUser(editResponse.user)
+			await queryClient.invalidateQueries({ queryKey: ['my-profile'] })
+			await queryClient.invalidateQueries({ queryKey: ['posts-my-profile'] })
+
 			Keyboard.dismiss()
 			setData((s) => ({ ...s, isSaved: true }))
 			toast.success('Данные успешно сохранены')

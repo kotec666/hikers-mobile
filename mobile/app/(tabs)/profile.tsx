@@ -9,7 +9,7 @@ import { Button } from '@/components/ui/Button'
 import ActivityInfo from '@/components/ui/Profile/ActivityInfo'
 import RedirectAchievementsInfo from '@/components/ui/Profile/RedirectAchievementsInfo'
 import PostListItem from '@/components/ui/Post/PostListItem'
-import { RelativePathString, useFocusEffect, useLocalSearchParams, useRouter } from 'expo-router'
+import { RelativePathString, useLocalSearchParams, useRouter } from 'expo-router'
 import { useAuthStore } from '@/store/authStore'
 import { getProfileData, IProfile } from '@/api/profile'
 import { PATH_TO_IMAGE } from '@/constants/PATH_TO_FILES'
@@ -20,8 +20,9 @@ import { Colors } from '@/constants/Colors'
 import MapComponent from '@/components/map/MapComponent'
 import { adaptLocations } from '@/helpers/adaptPointsToIWorkoutLocationStorageItem'
 import { useSafeNavigation } from '@/hooks/useSafeNavigation'
-import { useInfiniteQuery } from '@tanstack/react-query'
+import { useInfiniteQuery, useQuery } from '@tanstack/react-query'
 import TrainingsEmpty from '@/components/ui/Post/TrainingsEmpty'
+
 import { getFieldsErrors } from '@/helpers/getFieldsErrors'
 import BlurProvider from '@/components/providers/BlurProvider'
 // import { cn } from '@/helpers/cn'
@@ -51,12 +52,27 @@ const Profile = () => {
 	const insets = useSafeAreaInsets()
 	const { push } = useSafeNavigation()
 	const router = useRouter()
-	const { user, setUser, logout } = useAuthStore()
+	const { user, logout } = useAuthStore()
 	const params = useLocalSearchParams()
 	const legendListRef = useRef<LegendListRef>(null)
 
-	const [profileData, setProfileData] = useState<IProfile | undefined>(undefined)
-	const [refreshingProfile, setRefreshingProfile] = useState(false)
+	const {
+		data: profileData,
+		isFetching: isProfileFetching,
+		refetch: refetchProfile
+	} = useQuery<IProfile>({
+		queryKey: ['my-profile'],
+		queryFn: async () => {
+			try {
+				return await getProfileData()
+				// setUser(profile.user) // ⚠️ сайд-эффект допустим, но лучше через onSuccess
+				// return profile
+			} catch (e) {
+				await getFieldsErrors(e)
+				throw e
+			}
+		}
+	})
 
 	const postsLimit = 5
 	const {
@@ -69,7 +85,6 @@ const Profile = () => {
 		isFetching: isPostsFetching
 	} = useInfiniteQuery<IPost[], Error, IPost[], ['posts-my-profile'], number>({
 		queryKey: ['posts-my-profile'],
-
 		queryFn: ({ pageParam }) =>
 			getPostsMy({
 				page: pageParam,
@@ -80,7 +95,6 @@ const Profile = () => {
 			if (lastPage.length < postsLimit) return undefined
 			return pages.length + 1
 		},
-
 		select: (data) => data.pages.flat()
 	})
 
@@ -100,34 +114,9 @@ const Profile = () => {
 		router.replace('/')
 	}
 
-	const loadProfile = useCallback(async () => {
-		setRefreshingProfile(true)
-		try {
-			const profile = await getProfileData()
-			setProfileData(profile)
-			setUser(profile.user)
-		} catch (e: unknown) {
-			await getFieldsErrors(e)
-		} finally {
-			setRefreshingProfile(false)
-		}
-	}, [setUser])
-
 	const onRefreshAll = useCallback(async () => {
-		setRefreshingProfile(true)
-		await Promise.all([loadProfile(), postsRefetch()]) // , refresh()
-		setRefreshingProfile(false)
-	}, [loadProfile, postsRefetch]) // , refresh
-
-	// Первоначальная загрузка данных (при фокусе на странице)
-	useFocusEffect(
-		useCallback(() => {
-			const init = async () => {
-				await Promise.all([loadProfile()]) // , refresh()
-			}
-			init()
-		}, [loadProfile])
-	)
+		await Promise.all([refetchProfile(), postsRefetch()]) // , refresh()
+	}, [refetchProfile, postsRefetch]) // , refresh
 
 	// Функция рендеринга элемента поста
 	const renderPostItem = useCallback(
@@ -238,7 +227,7 @@ const Profile = () => {
 						ListFooterComponent={renderFooter}
 						refreshControl={
 							<RefreshControl
-								refreshing={refreshingProfile || postsIsRefetching}
+								refreshing={isProfileFetching || postsIsRefetching}
 								onRefresh={onRefreshAll}
 								tintColor={Colors['green-main']}
 							/>
@@ -273,20 +262,20 @@ const Profile = () => {
 											/>
 										</View>
 										<View>
-											{user?.name && (
+											{profileData?.user?.name && (
 												<Text
 													className="text-[19px] text-white"
 													style={{ fontFamily: fontFamily.bold }}
 												>
-													{user?.name}
+													{profileData?.user?.name}
 												</Text>
 											)}
-											{user?.username && (
+											{profileData?.user?.username && (
 												<Text
 													className="text-base text-gray-ab"
 													style={{ fontFamily: fontFamily.medium }}
 												>
-													@{user?.username}
+													@{profileData?.user?.username}
 												</Text>
 											)}
 										</View>

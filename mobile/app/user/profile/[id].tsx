@@ -23,7 +23,7 @@ import { Colors } from '@/constants/Colors'
 import MapComponent from '@/components/map/MapComponent'
 import { adaptLocations } from '@/helpers/adaptPointsToIWorkoutLocationStorageItem'
 import { useOptimisticToggle } from '@/hooks/useOptimisticToggle'
-import { useInfiniteQuery, useQueryClient, InfiniteData } from '@tanstack/react-query'
+import { useInfiniteQuery, useQueryClient, InfiniteData, useQuery } from '@tanstack/react-query'
 import BlurProvider from '@/components/providers/BlurProvider'
 
 /**
@@ -48,8 +48,6 @@ const UserProfilePage = () => {
 	const friendActionLockRef = useRef(false)
 	const legendListRef = useRef<LegendListRef>(null)
 
-	const [profileData, setProfileData] = useState<INotMyProfile | null>(null)
-	const [refreshingProfile, setRefreshingProfile] = useState(false)
 	const [isDeleteModalOpened, setIsDeleteModalOpened] = useState<boolean>(false)
 	const [isFriendLoading, setIsFriendLoading] = useState(false)
 
@@ -94,35 +92,37 @@ const UserProfilePage = () => {
 		[id, queryClient]
 	)
 
-	const loadProfile = useCallback(async () => {
-		setRefreshingProfile(true)
-		try {
-			const profile = await getUserProfileData(id)
-			setProfileData(profile)
-		} catch (e: unknown) {
-			await getFieldsErrors(e)
+	const {
+		data: profileData,
+		error,
+		isError,
+		isFetching: isProfileFetching,
+		refetch: refetchProfile
+	} = useQuery<INotMyProfile>({
+		queryKey: ['user-profile', id],
+		queryFn: () => getUserProfileData(id),
+		enabled: !!id
+	})
+
+	useEffect(() => {
+		if (!isError || !error) return
+
+		const handleError = async () => {
+			await getFieldsErrors(error)
+
 			if (router.canGoBack()) {
 				router.back()
 			} else {
 				router.push('/(tabs)/profile')
 			}
-		} finally {
-			setRefreshingProfile(false)
 		}
-	}, [id])
+
+		handleError()
+	}, [isError, error, router])
 
 	const onRefreshAll = useCallback(async () => {
-		setRefreshingProfile(true)
-		await Promise.all([loadProfile(), postsRefetch()]) // , refreshPosts()
-		setRefreshingProfile(false)
-	}, [loadProfile, postsRefetch]) // refreshPosts
-
-	useEffect(() => {
-		const init = async () => {
-			await Promise.all([loadProfile()]) // refreshPosts()
-		}
-		init()
-	}, [id, loadProfile])
+		await Promise.all([refetchProfile(), postsRefetch()])
+	}, [refetchProfile, postsRefetch])
 
 	const {
 		value: isSubscribed,
@@ -133,27 +133,17 @@ const UserProfilePage = () => {
 		onEnable: async () => {
 			if (!profileData?.user?.id) throw new Error('Пользователь не выбран')
 			await subscribeToUser(profileData.user.id)
+			await queryClient.invalidateQueries({ queryKey: ['my-profile'] })
 		},
 		onDisable: async () => {
 			if (!profileData?.user?.id) throw new Error('Пользователь не выбран')
 			await unsubscribeFromUser(profileData.user.id)
+			await queryClient.invalidateQueries({ queryKey: ['my-profile'] })
 		},
 		onError: (e) => {
 			console.log(e)
 			toast.error('Ошибка при подписке/отписке')
 		},
-		// onSuccess: (val) => {
-		// 	// синхронизируем profileData и ленту
-		// 	updateProfileData((prev) => ({
-		// 		isSubscribed: val,
-		// 		subscribers: (prev.subscribers ?? 0) + (val ? 1 : -1)
-		// 	}))
-		// 	// setPosts((prev) =>
-		// 	// 	prev.map((post) =>
-		// 	// 		post.userCreator.id === profileData?.user?.id ? { ...post, isSubscribed: val } : post
-		// 	// 	)
-		// 	// )
-		// }
 		onSuccess: (val) => {
 			updateProfileData((prev) => ({
 				isSubscribed: val,
@@ -167,12 +157,12 @@ const UserProfilePage = () => {
 	})
 
 	const updateProfileData = (updater: (prev: INotMyProfile) => Partial<INotMyProfile>) => {
-		setProfileData((prev) => {
-			if (!prev) return prev
+		queryClient.setQueryData<INotMyProfile>(['user-profile', id], (old) => {
+			if (!old) return old
 
 			return {
-				...prev,
-				...updater(prev)
+				...old,
+				...updater(old)
 			}
 		})
 	}
@@ -194,11 +184,8 @@ const UserProfilePage = () => {
 			if (authorId) {
 				updatePostsSubscription(authorId, isSubscribed)
 			}
-			// setPosts((prev) =>
-			// 	prev.map((post) => (post.userCreator.id === authorId ? { ...post, isSubscribed: isSubscribed } : post))
-			// )
 		},
-		[updatePostsSubscription] // setPosts
+		[updatePostsSubscription]
 	)
 
 	// Функция для инвалидации запросов на друзей
@@ -223,6 +210,7 @@ const UserProfilePage = () => {
 			}))
 			// Инвалидируем запросы на друзей
 			await invalidateFriendQueries()
+			await queryClient.invalidateQueries({ queryKey: ['my-profile'] })
 			toast.success('Пользователь удалён из списка друзей')
 		} catch (e: unknown) {
 			toast.error('Произошла ошибка, повторите попытку позже')
@@ -296,6 +284,7 @@ const UserProfilePage = () => {
 			}))
 			// Инвалидируем запросы на друзей
 			await invalidateFriendQueries()
+			await queryClient.invalidateQueries({ queryKey: ['my-profile'] })
 			toast.success('Заявка в друзья принята')
 		} catch (e: unknown) {
 			toast.error('Произошла ошибка, повторите попытку позже')
@@ -372,7 +361,7 @@ const UserProfilePage = () => {
 				<ActivityIndicator size="small" color={Colors['green-main']} />
 			</View>
 		)
-	}, [isFetchingPostsNextPage]) // loadingPosts
+	}, [isFetchingPostsNextPage])
 
 	return (
 		<>
@@ -392,12 +381,9 @@ const UserProfilePage = () => {
 						onEndReachedThreshold={0.5}
 						ItemSeparatorComponent={() => <View style={{ height: 16 }} />}
 						ListFooterComponent={renderFooter}
-						// refreshControl={
-						// 	<RefreshControl refreshing={refreshingProfile || refreshingPosts} onRefresh={onRefreshAll} />
-						// }
 						refreshControl={
 							<RefreshControl
-								refreshing={refreshingProfile || postsIsRefetching}
+								refreshing={isProfileFetching || postsIsRefetching}
 								onRefresh={onRefreshAll}
 								tintColor={Colors['green-main']}
 							/>

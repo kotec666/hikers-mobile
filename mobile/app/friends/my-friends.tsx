@@ -15,12 +15,13 @@ import { PATH_TO_IMAGE } from '@/constants/PATH_TO_FILES'
 import { LegendList } from '@legendapp/list'
 import { Colors } from '@/constants/Colors'
 import { useSafeNavigation } from '@/hooks/useSafeNavigation'
-import { useInfiniteQuery } from '@tanstack/react-query'
+import { useInfiniteQuery, useQueryClient } from '@tanstack/react-query'
 import BlurProvider from '@/components/providers/BlurProvider'
 
 const MyFriendsPage = () => {
 	const insets = useSafeAreaInsets()
 	const { push } = useSafeNavigation()
+	const queryClient = useQueryClient()
 	const toast = useToast()
 
 	const [deleteUser, setDeleteUser] = useState<IUser | null>(null)
@@ -53,14 +54,9 @@ const MyFriendsPage = () => {
 		},
 
 		select: (data) => data.pages.flat()
-		// select: (data) => ({
-		//         ...data,
-		//         pages: data.pages.flat()
-		//       }),
 	})
 
 	const renderFooter = () => {
-		// if (!loading || refreshing) return null
 		if (!isFetchingNextPage) return null
 
 		return (
@@ -98,6 +94,7 @@ const MyFriendsPage = () => {
 			}
 
 			await deleteFriendById(deleteUser.id)
+			await queryClient.invalidateQueries({ queryKey: ['my-profile'] })
 
 			// setItems((prev) => prev.filter((friend) => friend.user.id !== deleteUser.id))
 			await refetch()

@@ -11,7 +11,7 @@ import { useToast } from '@/hooks/useToast'
 import { PATH_TO_IMAGE } from '@/constants/PATH_TO_FILES'
 import { LegendList } from '@legendapp/list'
 import { Colors } from '@/constants/Colors'
-import { useInfiniteQuery } from '@tanstack/react-query'
+import { useInfiniteQuery, useQueryClient } from '@tanstack/react-query'
 
 /**
  * Мои подписки, на кого подписан я
@@ -19,6 +19,7 @@ import { useInfiniteQuery } from '@tanstack/react-query'
 const MySubscriptionsPage = () => {
 	const insets = useSafeAreaInsets()
 	const toast = useToast()
+	const queryClient = useQueryClient()
 	const limit = 15
 
 	const {
@@ -31,25 +32,17 @@ const MySubscriptionsPage = () => {
 		isFetching
 	} = useInfiniteQuery<ISubscribe[], Error, ISubscribe[], ['subscriptionsList'], number>({
 		queryKey: ['subscriptionsList'],
-
 		queryFn: ({ pageParam }) =>
 			getSubscriptionsList({
 				page: pageParam,
 				limit
 			}),
-
 		initialPageParam: 1,
-
 		getNextPageParam: (lastPage, pages) => {
 			if (lastPage.length < limit) return undefined
 			return pages.length + 1
 		},
-
 		select: (data) => data.pages.flat()
-		// select: (data) => ({
-		//         ...data,
-		//         pages: data.pages.flat()
-		//       }),
 	})
 
 	const handleUnsubscribe = useCallback(
@@ -57,6 +50,7 @@ const MySubscriptionsPage = () => {
 			try {
 				await unsubscribeFromUser(unsubUserId)
 				await refetch()
+				await queryClient.invalidateQueries({ queryKey: ['my-profile'] })
 				// setSubscriptions((prev) => prev.filter((subscription) => subscription.user.id !== unsubUserId))
 			} catch {
 				toast.error('Произошла ошибка, повторите попытку позже')
