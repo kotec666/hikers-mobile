@@ -13,10 +13,18 @@ import Modal from '@/components/ui/Modal/Modal'
 import React from 'react'
 import BlurProvider from '@/components/providers/BlurProvider'
 import { Button } from '@/components/ui/Button'
+import { removeUserWorkoutStorage } from '@/store/workoutStorage'
+import { useAuthStore } from '@/store/authStore'
+import { useToast } from '@/hooks/useToast'
+import { useRouter } from 'expo-router'
 
 const SettingsPage = () => {
 	const { push } = useSafeNavigation()
 	const insets = useSafeAreaInsets()
+	const { user, logout } = useAuthStore()
+	const toast = useToast()
+	const router = useRouter()
+
 	const [isDeleteAccountModalOpen, setIsDeleteAccountModalOpen] = React.useState(false)
 
 	const closeDeleteAccountModal = () => {
@@ -26,6 +34,14 @@ const SettingsPage = () => {
 	const openDeleteAccountModal = () => {
 		setIsDeleteAccountModalOpen(true)
 	}
+
+	const handleDeleteAccount = async () => {
+		removeUserWorkoutStorage(user?.id)
+		await logout()
+		toast.success('Аккаунт успешно удален')
+		router.replace('/')
+	}
+
 	return (
 		<SafeAreaProvider style={{ paddingTop: insets.top, paddingBottom: insets.bottom }}>
 			<BlurProvider>
@@ -44,7 +60,7 @@ const SettingsPage = () => {
 							<Button onPress={closeDeleteAccountModal} variant="white" buttonContainerClassName="flex-1">
 								Отмена
 							</Button>
-							<Button onPress={closeDeleteAccountModal} variant="white" buttonContainerClassName="flex-1">
+							<Button onPress={handleDeleteAccount} variant="white" buttonContainerClassName="flex-1">
 								Удалить
 							</Button>
 						</View>

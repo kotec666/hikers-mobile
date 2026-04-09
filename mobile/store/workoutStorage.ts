@@ -54,6 +54,31 @@ export interface IWorkoutLocationStorageItem {
 	isSavedToServer: boolean
 }
 
+// --- CLEANUP ---
+export const removeUserWorkoutStorage = (userId?: string): void => {
+	if (!userId) {
+		console.error('removeUserWorkoutStorage [error]: no userId provided')
+		return
+	}
+
+	try {
+		const keys = workoutStorage.getAllKeys()
+
+		// Префиксы, которые относятся к пользователю
+		const prefixes = [`NOT_SAVED_${userId}`, `SHORT_WORKOUTS_${userId}`, `ACTIVE_META_${userId}`, `BIN_${userId}_`]
+
+		for (const key of keys) {
+			const shouldDelete = prefixes.some((prefix) => key.startsWith(prefix))
+
+			if (shouldDelete) {
+				workoutStorage.remove(key)
+			}
+		}
+	} catch (e) {
+		console.error('[removeUserWorkoutStorage] error:', e)
+	}
+}
+
 // --- META ---
 
 export const getWorkoutMeta = (userId?: string): IWorkoutMeta | null | void => {

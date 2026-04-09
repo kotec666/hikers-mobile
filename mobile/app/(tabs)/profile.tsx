@@ -62,16 +62,7 @@ const Profile = () => {
 		refetch: refetchProfile
 	} = useQuery<IProfile>({
 		queryKey: ['my-profile'],
-		queryFn: async () => {
-			try {
-				return await getProfileData()
-				// setUser(profile.user) // ⚠️ сайд-эффект допустим, но лучше через onSuccess
-				// return profile
-			} catch (e) {
-				await getFieldsErrors(e)
-				throw e
-			}
-		}
+		queryFn: () => getProfileData()
 	})
 
 	const postsLimit = 5
