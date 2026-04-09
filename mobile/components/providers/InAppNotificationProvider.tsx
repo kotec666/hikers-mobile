@@ -22,7 +22,7 @@ const InAppNotificationProvider = () => {
 
 		switch (notificationType) {
 			case NotificationType.FRIEND_INVITE:
-				queryKey = 'friendsList'
+				queryKey = 'pendingInvites'
 				break
 			case NotificationType.TAGGED_IN_POST:
 				break

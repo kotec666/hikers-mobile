@@ -1,4 +1,4 @@
-import {Tabs, Stack, Redirect, usePathname} from 'expo-router'
+import { Tabs, Stack, Redirect, usePathname } from 'expo-router'
 import { useAuthStore } from '@/store/authStore'
 import { Platform } from 'react-native'
 import NativeTabsComponent from '@/components/ui/Navbar/NativeTabsComponent'
@@ -42,14 +42,13 @@ const Root = ({
 
 export default function TabLayout() {
 	const { isAuthenticated } = useAuthStore()
+	const pathname = usePathname()
 
 	if (!isAuthenticated) {
 		return <Redirect href="/auth" />
 	}
 
-    const pathname = usePathname()
-    const shouldHide = pathname.startsWith('/newTraining') // Костыль, потому что на странице новой тренировки из-за NativeTabs нельзя перетаскивать BottomSheetResizable
-
+	const shouldHide = pathname.startsWith('/newTraining') // Костыль, потому что на странице новой тренировки из-за NativeTabs нельзя перетаскивать BottomSheetResizable
 	const isGlassAvailable = Platform.OS === 'ios' && isLiquidGlassAvailable()
 	return (
 		<>
