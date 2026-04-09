@@ -52,7 +52,8 @@
 			[
 				"expo-location",
 				{
-					"locationAlwaysAndWhenInUsePermission": "Включите определение вашего местоположения для хайкерс",
+					"locationAlwaysAndWhenInUsePermission": "Включите определение вашего местоположения для хайкерс в фоновом режиме",
+                    "locationWhenInUsePermission": "Включите определение вашего местоположения для хайкерс в активном режиме",
 					"isAndroidForegroundServiceEnabled": true,
 					"isAndroidBackgroundLocationEnabled": true,
 					"isIosBackgroundLocationEnabled": true
@@ -76,7 +77,7 @@
 			[
 				"expo-image-picker",
 				{
-					"photosPermission": "Приложению требуется доступ к вашей галереи для выбора изображения",
+					"photosPermission": "Приложению требуется доступ к вашей галерее для выбора изображения",
 					"cameraPermission": "Приложению требуется доступ к вашей камере для добавления изображения"
 				}
 			],

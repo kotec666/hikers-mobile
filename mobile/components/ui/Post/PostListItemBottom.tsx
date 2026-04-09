@@ -1,6 +1,6 @@
 import { fontFamily } from '@/constants/Fonts'
 import React, { useRef, useState } from 'react'
-import { View, Text, TouchableOpacity, Share, findNodeHandle } from 'react-native'
+import { View, Text, TouchableOpacity, Share, Platform, findNodeHandle } from 'react-native'
 import { UserAvatar } from '@/components/ui/UserAvatar'
 import LikeSvg from '@/components/svg/LikeSvg'
 import ShareSvg from '@/components/svg/ShareSvg'
@@ -56,8 +56,7 @@ const PostListItemBottom = (props: IProps) => {
 		try {
 			await Share.share(
 				{
-					message: url,
-					url: url
+					...(Platform.OS === 'android' ? { message: url } : { url }),
 				},
 				{
 					dialogTitle: 'Поделиться',
