@@ -327,13 +327,6 @@ export class TrainingsService {
 				if (relTs < lastSavedRelTs) {
 					return false;
 				}
-				if (relTs < trainingRoute.createdAt.getTime()) {
-					return false;
-				}
-				if (trainingRoute.finishedAt && relTs > trainingRoute.finishedAt.getTime()) {
-					return false;
-				}
-
 				return true;
 			};
 			metrics = metrics.filter((m) => matchesRouteTimings(m.rel_ts));
