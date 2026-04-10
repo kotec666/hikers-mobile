@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useRef, useState } from 'react'
+import React, { useCallback, useEffect, useRef } from 'react'
 import { SafeAreaProvider, useSafeAreaInsets } from 'react-native-safe-area-context'
 import { ActivityIndicator, RefreshControl, Text, View } from 'react-native'
 import SettingsSvg from '@/components/svg/SettingsSvg'
@@ -22,17 +22,7 @@ import { adaptLocations } from '@/helpers/adaptPointsToIWorkoutLocationStorageIt
 import { useSafeNavigation } from '@/hooks/useSafeNavigation'
 import { useInfiniteQuery, useQuery } from '@tanstack/react-query'
 import TrainingsEmpty from '@/components/ui/Post/TrainingsEmpty'
-
-import { getFieldsErrors } from '@/helpers/getFieldsErrors'
 import BlurProvider from '@/components/providers/BlurProvider'
-// import { cn } from '@/helpers/cn'
-// import { WorkoutTypesMap } from '@/constants/WorkoutTypes'
-// import WorkoutActivity, {
-// 	getActivityTypeIcon,
-// 	WorkoutActivityProps
-// } from '@/components/ui/LiveActivities/WorkoutActivity'
-// import { LiveActivity } from 'expo-widgets'
-// import { TrainingType } from '@shared/enums'
 
 /**
  *
@@ -165,39 +155,6 @@ const Profile = () => {
 		return <TrainingsEmpty text="Постов еще не существует, опубликуйте пост после тренировки" />
 	}, [isPostsFetching])
 
-	// const liveActivityWorkoutInstanceRef = useRef<LiveActivity<WorkoutActivityProps>>(null)
-	//
-	// const startWorkoutActivity = () => {
-	// 	// Start the Live Activity
-	// 	const instance = WorkoutActivity.start({
-	// 		formattedDistance: '1.07',
-	// 		formattedTime: '0:07',
-	// 		formattedSpeed: '7.5',
-	// 		isPaused: false,
-	// 		icon: getActivityTypeIcon(TrainingType.WALK),
-	// 		typeLabel: WorkoutTypesMap?.[TrainingType.WALK]?.name ?? 'Тренировка'
-	// 	})
-	// 	liveActivityWorkoutInstanceRef.current = instance
-	// 	// Store instance
-	// }
-	//
-	// const updateWorkoutActivity = () => {
-	// 	if (!liveActivityWorkoutInstanceRef.current) return
-	// 	liveActivityWorkoutInstanceRef.current.update({
-	// 		formattedDistance: '1.07',
-	// 		formattedTime: '0:07',
-	// 		formattedSpeed: '7.5',
-	// 		isPaused: true,
-	// 		icon: getActivityTypeIcon(TrainingType.WALK),
-	// 		typeLabel: WorkoutTypesMap?.[TrainingType.WALK]?.name ?? 'Тренировка'
-	// 	})
-	// }
-	//
-	// const endWorkoutActivity = () => {
-	// 	if (!liveActivityWorkoutInstanceRef.current) return
-	// 	liveActivityWorkoutInstanceRef.current.end('immediate')
-	// }
-
 	return (
 		<>
 			<SafeAreaProvider style={{ paddingTop: insets.top, backgroundColor: Colors['black-0d'] }}>
@@ -292,15 +249,6 @@ const Profile = () => {
 									<Button variant="white" onPress={() => push('/workout-history')}>
 										История тренировок
 									</Button>
-									{/*<Button variant="white" onPress={startWorkoutActivity}>*/}
-									{/*	Start workout activity*/}
-									{/*</Button>*/}
-									{/*<Button variant="white" onPress={updateWorkoutActivity}>*/}
-									{/*	update workout activity*/}
-									{/*</Button>*/}
-									{/*<Button variant="white" onPress={endWorkoutActivity}>*/}
-									{/*	stop workout activity*/}
-									{/*</Button>*/}
 									<RedirectAchievementsInfo achievements={profileData?.achievements} isMyProfile />
 									<ActivityInfo label="Активности" activities={profileData?.activities || []} />
 								</View>

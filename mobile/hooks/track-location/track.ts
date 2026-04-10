@@ -8,15 +8,92 @@ import { syncTraining } from '@/api/workout'
 import { prepareLocationsForSync } from '@/helpers/prepareLocationsForSync'
 import { getItem } from '@/store/authStorage'
 import { filterLocations } from '@/helpers/location/filterLocations'
+import { LiveActivity } from 'expo-widgets'
+import WorkoutActivity, {
+	getActivityTypeIcon,
+	WorkoutActivityProps
+} from '@/components/ui/LiveActivities/WorkoutActivity'
+import { Platform } from 'react-native'
+import { TrainingType } from '@shared/enums'
+import { WorkoutTypesMap } from '@/constants/WorkoutTypes'
 
 export const LOCATION_TASK_NAME = 'background-location-task'
 let innerAppMountedPromiseRef: Promise<void> | null = null // Variable to hold the promise resolver logic
+let liveActivityWorkoutInstance: LiveActivity<WorkoutActivityProps> | null = null
+
+const startWorkoutActivity = () => {
+	if (Platform.OS !== 'ios') return
+	// Start the Live Activity
+	const instance = WorkoutActivity.start({
+		formattedDistance: '1.07',
+		formattedTime: '0',
+		formattedSpeed: '7.5',
+		isPaused: false,
+		icon: getActivityTypeIcon(TrainingType.WALK),
+		typeLabel: WorkoutTypesMap?.[TrainingType.WALK]?.name ?? 'Тренировка'
+	})
+	// Store instance
+	liveActivityWorkoutInstance = instance
+}
+
+const updateWorkoutActivity = (newTimestamp?: number) => {
+	if (Platform.OS !== 'ios') return
+	if (!liveActivityWorkoutInstance) return
+	liveActivityWorkoutInstance.update({
+		formattedDistance: '1.07',
+		formattedTime: `${newTimestamp}`, //'0:07',
+		formattedSpeed: '7.5',
+		isPaused: true,
+		icon: getActivityTypeIcon(TrainingType.WALK),
+		typeLabel: WorkoutTypesMap?.[TrainingType.WALK]?.name ?? 'Тренировка'
+	})
+}
+
+const endWorkoutActivity = () => {
+	if (Platform.OS !== 'ios') return
+	if (!liveActivityWorkoutInstance) return
+	liveActivityWorkoutInstance.end('immediate')
+}
+
+// const liveActivityWorkoutInstanceRef = useRef<LiveActivity<WorkoutActivityProps>>(null)
+//
+// const startWorkoutActivity = () => {
+// 	// Start the Live Activity
+// 	const instance = WorkoutActivity.start({
+// 		formattedDistance: '1.07',
+// 		formattedTime: '0:07',
+// 		formattedSpeed: '7.5',
+// 		isPaused: false,
+// 		icon: getActivityTypeIcon(TrainingType.WALK),
+// 		typeLabel: WorkoutTypesMap?.[TrainingType.WALK]?.name ?? 'Тренировка'
+// 	})
+// 	liveActivityWorkoutInstanceRef.current = instance
+// 	// Store instance
+// }
+//
+// const updateWorkoutActivity = () => {
+// 	if (!liveActivityWorkoutInstanceRef.current) return
+// 	liveActivityWorkoutInstanceRef.current.update({
+// 		formattedDistance: '1.07',
+// 		formattedTime: '0:07',
+// 		formattedSpeed: '7.5',
+// 		isPaused: true,
+// 		icon: getActivityTypeIcon(TrainingType.WALK),
+// 		typeLabel: WorkoutTypesMap?.[TrainingType.WALK]?.name ?? 'Тренировка'
+// 	})
+// }
+//
+// const endWorkoutActivity = () => {
+// 	if (!liveActivityWorkoutInstanceRef.current) return
+// 	liveActivityWorkoutInstanceRef.current.end('immediate')
+// }
 
 export async function isTrackingLocation(): Promise<boolean> {
 	return await Location.hasStartedLocationUpdatesAsync(LOCATION_TASK_NAME)
 }
 
 export async function startTracking() {
+	startWorkoutActivity()
 	if (!(await isTrackingLocation())) {
 		await Location.startLocationUpdatesAsync(LOCATION_TASK_NAME, {
 			accuracy: Location.Accuracy.BestForNavigation,
@@ -45,6 +122,7 @@ export async function startTracking() {
 }
 
 export async function stopTracking() {
+	endWorkoutActivity()
 	if (await isTrackingLocation()) {
 		await Location.stopLocationUpdatesAsync(LOCATION_TASK_NAME)
 		console.log('[tracking]', 'stopped background location task')
@@ -65,7 +143,7 @@ TaskManager.defineTask(
 		const meta = getWorkoutMeta(user?.id)
 		if (!meta || !data?.locations?.length) return
 		const cleanedLocations = filterLocations(data.locations, { keepLast: true })
-
+		updateWorkoutActivity(cleanedLocations.at(-1)?.timestamp) // @TODO проверка liveActivity ios в бэкграунде
 		const savedLocations = setWorkoutItems(cleanedLocations, user?.id)
 		locationEmitter.emit(savedLocations)
 
