@@ -1245,10 +1245,10 @@
   dependencies:
     sf-symbols-typescript "^2.1.0"
 
-"@expo/ui@~55.0.6":
-  version "55.0.8"
-  resolved "https://registry.yarnpkg.com/@expo/ui/-/ui-55.0.8.tgz#6de201fea30e1c732611aa671764e63325c2dcad"
-  integrity sha512-YGKjr0sF9SwRK0sPu8AlBIbAnxM+yhoml39WnJ/+Xk2tm2Fe4uYuHgBmPhA9Zq/CR684hfz4eTJT63GafpM1aw==
+"@expo/ui@~55.0.11":
+  version "55.0.11"
+  resolved "https://registry.yarnpkg.com/@expo/ui/-/ui-55.0.11.tgz#c7cc3557a2dd4ba42fab99c4992b6e440c9680ee"
+  integrity sha512-f2SaLzKjHdhDyT8qMm6d+MCXt+my8qWX3Q71ZRxy5/HQfE/NnBxkoJwscs2P9rJP8nkQr0evMZF3K28uv3UR8Q==
   dependencies:
     sf-symbols-typescript "^2.1.0"
 
@@ -4413,13 +4413,13 @@ expo-updates-interface@~55.1.5:
   resolved "https://registry.yarnpkg.com/expo-updates-interface/-/expo-updates-interface-55.1.5.tgz#72f0d595628b86afc83eca057723e24fc8d8b625"
   integrity sha512-YOk9vhplWi0djoeqxMlEQgcDFeOGhnj4dWU0v1QvF5RqpqwLGdx780E0k3zL85xw6LXljVN78d6g8z51qIZu5g==
 
-expo-widgets@^55.0.8:
-  version "55.0.8"
-  resolved "https://registry.yarnpkg.com/expo-widgets/-/expo-widgets-55.0.8.tgz#edfb254622aff2d3d18ba49c9de6c7051af4ae4f"
-  integrity sha512-gF7BlLLoqX5MicwOVE8CsDbQDDe+L/QEOIM5EuUttnjRN+kqMQoTSiSjUBjqkb6t8WUGjQRyo0IeuJ/J8PBsaA==
+expo-widgets@^55.0.13:
+  version "55.0.13"
+  resolved "https://registry.yarnpkg.com/expo-widgets/-/expo-widgets-55.0.13.tgz#5695d78b41a49a526a2ea4d442ae85918970a996"
+  integrity sha512-/VwNxtTy5nX4pY59iNYIZg88n5kctPgirKUWhpLxPtngw2GmtN9ONJI9tSNwSp4DjQASjH1nGP2xiWuBCW06BA==
   dependencies:
     "@expo/plist" "^0.5.2"
-    "@expo/ui" "~55.0.6"
+    "@expo/ui" "~55.0.11"
 
 expo@~55.0.12:
   version "55.0.12"

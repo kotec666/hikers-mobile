@@ -76,7 +76,7 @@
 
 1. Для использования lite версии yandex maps в файле `Podfile` добавьте в начало строку:
    ```
-   + ENV['USE_YANDEX_MAPS_LITE'] = "1"
+   + ENV['USE_YANDEX_MAPS_LITE'] = '1'
    ...
    ```
 

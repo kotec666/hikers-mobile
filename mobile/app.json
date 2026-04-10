@@ -86,6 +86,7 @@
 				"expo-widgets",
 				{
 					"bundleIdentifier": "run.hikers.app.widgets",
+                    "groupIdentifier": "group.run.hikers.app",
 					"enablePushNotifications": false
 				}
 			],

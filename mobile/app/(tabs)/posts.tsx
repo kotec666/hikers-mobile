@@ -358,7 +358,7 @@ const PostsPage = () => {
 	// Основная лента постов
 	return (
 		<SafeAreaProvider
-			style={{ paddingTop: insets.top, paddingBottom: insets.bottom, backgroundColor: Colors['black-0d'] }}
+			style={{ paddingTop: insets.top, backgroundColor: Colors['black-0d'] }}
 		>
 			<View style={{ flex: 1 }}>
 				<Container className="gap-[20px] flex-1">
@@ -396,7 +396,7 @@ const PostsPage = () => {
 								/>
 							}
 							contentContainerStyle={{
-								paddingBottom: 100,
+								paddingBottom: insets.bottom + 100,
 								flexGrow: 1
 							}}
 							showsVerticalScrollIndicator={false}
