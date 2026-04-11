@@ -4,7 +4,7 @@ import { UserInterceptor } from '@interceptors/user.interceptor';
 import { User, UserData } from '@decorators/user.decorator';
 import { NotNegative } from '@validation/query-decorators';
 import { NotificationDto } from './notifications.dto';
-import { CommonDto } from 'src/common/dto/common.dto';
+import { CommonDto } from '../../common/dto/common.dto';
 
 @UseInterceptors(UserInterceptor)
 @Controller('notifications')
@@ -71,5 +71,28 @@ export class NotificationsController {
 	@Get('have-unread')
 	public haveUnread(@User() user: UserData): Promise<CommonDto.ExistsResponse> {
 		return this.service.haveUnread(user.id);
+	}
+
+	/**
+	 * @tag Notifications
+	 * @security token
+	 * @summary Получить настройки уведов
+	 */
+	@Get('settings')
+	public getSettings(@User() user: UserData): Promise<Required<NotificationDto.Settings>> {
+		return this.service.getSettings(user.id);
+	}
+
+	/**
+	 * @tag Notifications
+	 * @security token
+	 * @summary Настроить получаемые уведы
+	 */
+	@Patch('settings')
+	public setSettings(
+		@User() user: UserData,
+		@Body() dto: NotificationDto.RequestSettings,
+	): Promise<CommonDto.BooleanResponse> {
+		return this.service.setSettings(user.id, dto.settings);
 	}
 }

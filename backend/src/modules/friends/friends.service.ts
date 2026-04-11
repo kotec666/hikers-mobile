@@ -104,7 +104,8 @@ export class FriendsService {
 					and(eq(userFriends.userId, currentUserId), eq(userFriends.userFriendId, targetUserId)),
 					and(eq(userFriends.userId, targetUserId), eq(userFriends.userFriendId, currentUserId)),
 				),
-			);
+			)
+			.limit(1);
 		if (existingFriend) return FriendStatus.TRUE;
 
 		const [invited] = await this.db.db
@@ -114,7 +115,8 @@ export class FriendsService {
 			.from(userFriendsInvites)
 			.where(
 				and(eq(userFriendsInvites.userId, currentUserId), eq(userFriendsInvites.invitedUserId, targetUserId)),
-			);
+			)
+			.limit(1);
 		if (invited) return FriendStatus.INVITED;
 
 		const [sent] = await this.db.db
@@ -124,7 +126,8 @@ export class FriendsService {
 			.from(userFriendsInvites)
 			.where(
 				and(eq(userFriendsInvites.userId, targetUserId), eq(userFriendsInvites.invitedUserId, currentUserId)),
-			);
+			)
+			.limit(1);
 		if (sent) return FriendStatus.SENT;
 
 		return FriendStatus.FALSE;

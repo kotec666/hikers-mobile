@@ -106,12 +106,51 @@ export class TrainingsController {
 
 	/**
 	 * @tag Trainings
+	 * @summary Добавить инфу по оффлайн трене (метрики через /sync как обычно)
+	 * @security token
+	 */
+	@Post('offline')
+	public async addOffline(
+		@User() user: TokenDto.Payload,
+		@Body() dto: TrainingDto.Offline,
+	): Promise<TrainingDto.Entity> {
+		return this.service.addOffline(user.id, dto);
+	}
+
+	/**
+	 * @tag Trainings
+	 * @summary Посчитать финальные метрики по тренировке
+	 * @security token
+	 */
+	@Patch('calc-metrics/:id')
+	public async calcMetrics(
+		@User() user: TokenDto.Payload,
+		@IsUUID('id') @Param('id') id: string,
+	): Promise<CommonDto.BooleanResponse> {
+		return this.service.requestCalcMetrics(user.id, id);
+	}
+
+	/**
+	 * @tag Trainings
 	 * @summary Удалить незавершенные тренировки (не будут отображены в истории тренировок)
 	 * @security token
 	 */
 	@Delete('delete-not-finished')
 	public async deleteAllNotFinished(@User() user: TokenDto.Payload): Promise<CommonDto.BooleanResponse> {
 		return this.service.deleteAllNotFinished(user.id);
+	}
+
+	/**
+	 * @tag Trainings
+	 * @summary Удалить незавершенную тренировку по id
+	 * @security token
+	 */
+	@Delete('delete-not-finished/:id')
+	public async deleteNotFinishedById(
+		@User() user: TokenDto.Payload,
+		@Param('id') id: string,
+	): Promise<CommonDto.BooleanResponse> {
+		return this.service.deleteNotFinishedById(user.id, id);
 	}
 
 	/**

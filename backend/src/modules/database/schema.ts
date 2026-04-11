@@ -155,6 +155,12 @@ export const userFriendsInvites = pgTable(
 export const achievements = pgTable('achievements', {
 	id: uuid('id').primaryKey().defaultRandom(),
 	iconFilename: varchar('icon_filename', { length: 255 }).references(() => media.filename),
+
+	// Если ачивка на метрику трени, то у неё обязательно будут эти поля
+	type: userActivityEnum(), // Пока что так, но возможно в будущем эта связь сыграет злую шутку
+	measuringUnit: measuringUnitEnum('measuring_unit'),
+	targetProgress: integer('progress').default(0).notNull(),
+
 	colorHex: varchar('color_hex', { length: 7 }),
 	title: varchar('title', { length: 255 }).notNull(),
 	description: text('description'),
@@ -172,7 +178,7 @@ export const userAchievements = pgTable(
 			.notNull()
 			.references(() => achievements.id),
 		placeForShow: smallint('place_for_show'), // 1, 2, 3
-		progress: smallint('progress').default(0).notNull(),
+		progress: integer('progress').default(0).notNull(),
 		claimedAt: timestamp('claimed_at'),
 	},
 	(table) => [primaryKey({ columns: [table.userId, table.achievementId] })],
@@ -326,3 +332,12 @@ export const notifications = pgTable(
 	},
 	(table) => [index('ntf_usr_idx').on(table.toUserId)],
 );
+
+// Notifications Settings
+export const notificationsSettings = pgTable('notifications_settings', {
+	userId: uuid('user_id')
+		.primaryKey()
+		.notNull()
+		.references(() => users.id),
+	settings: jsonb('settings').default({}).notNull().$type<NotificationDto.Settings>(),
+});

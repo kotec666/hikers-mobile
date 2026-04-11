@@ -119,14 +119,14 @@ export namespace TrainingDto {
 		@IsHexColor()
 		colorHex: string;
 
-		/** Время старта. Для оффлайн тренировок */
+		/** Время старта. Для частично-оффлайн тренировок */
 		@IsOptional()
 		@IsInt({ message: `_ts:${ERRORS.BAD_REQUEST}` })
 		ts?: number;
 	}
 
 	export class Finish {
-		/** Время финиша. Для оффлайн тренировок */
+		/** Время финиша. Для частично-оффлайн тренировок */
 		@IsOptional()
 		@IsInt({ message: `_ts:${ERRORS.BAD_REQUEST}` })
 		ts?: number;
@@ -136,6 +136,19 @@ export namespace TrainingDto {
 		@ValidateNested({ each: true })
 		@Type(() => DebugTrainingRouteNodeClient)
 		metrics: DebugTrainingRouteNodeClient[];
+	}
+
+	export class Offline {
+		@IsEnum(TrainingType, { message: `_type:${ERRORS.MISMATCH}` })
+		type: TrainingType;
+
+		@IsHexColor()
+		colorHex: string;
+
+		@IsInt({ message: `_startedAt:${ERRORS.BAD_REQUEST}` })
+		startedAt: number;
+		@IsInt({ message: `_finishedAt:${ERRORS.BAD_REQUEST}` })
+		finishedAt: number;
 	}
 }
 
