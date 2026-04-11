@@ -56,7 +56,7 @@ const PostListItemBottom = (props: IProps) => {
 		try {
 			await Share.share(
 				{
-					...(Platform.OS === 'android' ? { message: url } : { url }),
+					...(Platform.OS === 'android' ? { message: url } : { url })
 				},
 				{
 					dialogTitle: 'Поделиться',
