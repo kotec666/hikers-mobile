@@ -188,7 +188,7 @@ const Profile = () => {
 											<AnimatedProfilePicture
 												size={117}
 												bordered
-												imageUrl={`${PATH_TO_IMAGE}${user?.avatarFilename}`}
+												imageUrl={`${PATH_TO_IMAGE}${profileData?.user?.avatarFilename}`}
 											/>
 											<MoreOptionsButton
 												icon={<SettingsSvg />}

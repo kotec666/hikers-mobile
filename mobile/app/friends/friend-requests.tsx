@@ -70,6 +70,7 @@ const FriendRequestsPage = () => {
 					pages: oldData.pages.map((page: IInvite[]) => page.filter((req) => req.user.id !== newFriendId))
 				}
 			})
+			await queryClient.invalidateQueries({ queryKey: ['friendsList'] })
 			await queryClient.invalidateQueries({ queryKey: ['my-profile'] })
 			toast.success('Пользователь добавлен в друзья')
 		} catch {

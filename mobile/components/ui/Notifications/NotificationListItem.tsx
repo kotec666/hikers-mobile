@@ -68,13 +68,17 @@ export function NotificationListItem(props: INotificationListItemProps) {
 			onPress={() => (redirectLink ? push(redirectLink) : undefined)}
 			className={cn('flex-row gap-4 items-center bg-black-0d px-[16px]', props.className)}
 		>
-			<UserAvatar
-				avatar={
-					props.notification.action.iconFilename
-						? `${PATH_TO_IMAGE}${props.notification.action.iconFilename}`
-						: null
-				}
-			/>
+			{props.notification.type !== NotificationType.ACHIEVEMENT ? (
+				<UserAvatar
+					avatar={
+						props.notification.action.iconFilename
+							? `${PATH_TO_IMAGE}${props.notification.action.iconFilename}`
+							: null
+					}
+				/>
+			) : (
+				<View className="h-[50px] w-[50px]" />
+			)}
 			<Text
 				className="text-gray-ab text-base"
 				numberOfLines={3}

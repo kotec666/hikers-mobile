@@ -134,11 +134,13 @@ const UserProfilePage = () => {
 			if (!profileData?.user?.id) throw new Error('Пользователь не выбран')
 			await subscribeToUser(profileData.user.id)
 			await queryClient.invalidateQueries({ queryKey: ['my-profile'] })
+			await queryClient.invalidateQueries({ queryKey: ['subscriptionsList'] })
 		},
 		onDisable: async () => {
 			if (!profileData?.user?.id) throw new Error('Пользователь не выбран')
 			await unsubscribeFromUser(profileData.user.id)
 			await queryClient.invalidateQueries({ queryKey: ['my-profile'] })
+			await queryClient.invalidateQueries({ queryKey: ['subscriptionsList'] })
 		},
 		onError: (e) => {
 			console.log(e)
