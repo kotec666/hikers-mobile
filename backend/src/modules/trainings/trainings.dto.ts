@@ -76,7 +76,7 @@ export namespace TrainingDto {
 	export type Entity = {
 		id: string;
 		type: TrainingType;
-		creatorId?: string;
+		creatorId?: string | null;
 
 		createdAt: Date;
 
@@ -104,7 +104,7 @@ export namespace TrainingDto {
 	};
 
 	export type ExtendedEntity = Required<TrainingDto.Entity> & {
-		creator: UserDto.Entity;
+		creator: UserDto.Entity | null;
 		participants: TrainingParticipantDto.ExtendedEntity[];
 	};
 
