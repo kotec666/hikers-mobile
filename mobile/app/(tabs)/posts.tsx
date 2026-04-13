@@ -186,14 +186,14 @@ const PostsPage = () => {
 						likesCount: item.likesCount
 					}}
 					onToggleSubscribeCallback={toggleSubscribeCallback}
-					mapComponent={
-						<MapComponent
-							rounded={25}
-							needFinishMarker
-							interactiveDisabled
-							initialLocations={{ current: adaptLocations(item.training.participants[0].route.points) }}
-						/>
-					}
+					// mapComponent={
+					// 	<MapComponent
+					// 		rounded={25}
+					// 		needFinishMarker
+					// 		interactiveDisabled
+					// 		initialLocations={{ current: adaptLocations(item.training.participants[0].route.points) }}
+					// 	/>
+					// }
 				/>
 			)
 		},
@@ -357,9 +357,7 @@ const PostsPage = () => {
 
 	// Основная лента постов
 	return (
-		<SafeAreaProvider
-			style={{ paddingTop: insets.top, backgroundColor: Colors['black-0d'] }}
-		>
+		<SafeAreaProvider style={{ paddingTop: insets.top, backgroundColor: Colors['black-0d'] }}>
 			<View style={{ flex: 1 }}>
 				<Container className="gap-[20px] flex-1">
 					<View className="flex-row justify-center items-center gap-[10px] w-full">

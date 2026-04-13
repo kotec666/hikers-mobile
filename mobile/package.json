@@ -19,6 +19,7 @@
 		"format": "prettier --write \"{app,components,constants,helpers,hooks,scripts}/**/*.{js,jsx,ts,tsx}\""
 	},
 	"dependencies": {
+		"@bacons/apple-targets": "^4.0.6",
 		"@expo/ui": "~55.0.10",
 		"@legendapp/list": "^2.0.16",
 		"@legendapp/motion": "^2.5.3",
@@ -49,7 +50,6 @@
 		"expo-splash-screen": "~55.0.16",
 		"expo-status-bar": "~55.0.5",
 		"expo-task-manager": "~55.0.13",
-		"expo-widgets": "^55.0.13",
 		"ky": "^1.11.0",
 		"nativewind": "^4.1.23",
 		"react": "19.2.0",
@@ -86,5 +86,10 @@
 		"typescript": "~5.9.2",
 		"typescript-eslint": "^8.40.0"
 	},
-	"private": true
+	"private": true,
+    "expo": {
+      "autolinking": {
+        "nativeModulesDir": "modules"
+      }
+    }
 }

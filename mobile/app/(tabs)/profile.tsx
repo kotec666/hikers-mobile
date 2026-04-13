@@ -33,7 +33,8 @@ import BlurProvider from '@/components/providers/BlurProvider'
 const ALLOWED_ROUTES = {
 	EDIT_PROFILE: '/profile/edit' as RelativePathString,
 	ABOUT: '/about' as RelativePathString,
-	SETTINGS: '/(settings)' as RelativePathString
+	SETTINGS: '/(settings)' as RelativePathString,
+	LIVEACTIVITY: '/liveactivity' as RelativePathString
 } as const satisfies Record<string, RelativePathString>
 
 type AllowedRoute = (typeof ALLOWED_ROUTES)[keyof typeof ALLOWED_ROUTES]
@@ -124,14 +125,14 @@ const Profile = () => {
 						postId: item.id
 					}}
 					participants={item.training.participants}
-					mapComponent={
-						<MapComponent
-							rounded={25}
-							interactiveDisabled
-							needFinishMarker
-							initialLocations={{ current: adaptLocations(item.training.participants[0].route.points) }}
-						/>
-					}
+					// mapComponent={
+					// 	<MapComponent
+					// 		rounded={25}
+					// 		interactiveDisabled
+					// 		needFinishMarker
+					// 		initialLocations={{ current: adaptLocations(item.training.participants[0].route.points) }}
+					// 	/>
+					// }
 				/>
 			)
 		},
@@ -205,7 +206,11 @@ const Profile = () => {
 														label: 'Настройки',
 														action: () => handleClickRedirect(ALLOWED_ROUTES.SETTINGS)
 													},
-													{ label: 'Выход', action: handleClickExit }
+													{ label: 'Выход', action: handleClickExit },
+													{
+														label: 'LIVEACTIVITY',
+														action: () => handleClickRedirect(ALLOWED_ROUTES.LIVEACTIVITY)
+													}
 												]}
 											/>
 										</View>

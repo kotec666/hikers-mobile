@@ -103,12 +103,12 @@ const NewWorkout = memo((props: IProps) => {
 	const bottomSheetResizableRef = useRef<BottomSheetResizableRef>(null)
 
 	const toggleResizableSheet = useCallback(() => {
-        const isSheetActive = bottomSheetResizableRef.current?.isActive?.()
-        if (isSheetActive) {
-            return bottomSheetResizableRef.current?.close()
-        } else {
-            return bottomSheetResizableRef.current?.open()
-        }
+		const isSheetActive = bottomSheetResizableRef.current?.isActive?.()
+		if (isSheetActive) {
+			return bottomSheetResizableRef.current?.close()
+		} else {
+			return bottomSheetResizableRef.current?.open()
+		}
 		// bottomSheetResizableRef?.current?.scrollTo?.(isSheetActive ? 0 : -200)
 	}, [])
 
@@ -188,14 +188,14 @@ const NewWorkout = memo((props: IProps) => {
 			<Container>
 				<HeaderBack className="my-[20px]">Новая тренировка</HeaderBack>
 			</Container>
-			<MapComponentSegments
-				ref={props.mapComponentRef}
-				userLocationMarkerRef={props.userLocationMarkerRef}
-				latestUserMarkerLocationRef={props.latestUserMarkerLocationRef}
-				initialMarkerLocation={props.initialMarkerLocation}
-				maxMapHeight={WINDOW_HEIGHT}
-				maxContainerHeight={WINDOW_HEIGHT}
-			/>
+			{/*<MapComponentSegments*/}
+			{/*	ref={props.mapComponentRef}*/}
+			{/*	userLocationMarkerRef={props.userLocationMarkerRef}*/}
+			{/*	latestUserMarkerLocationRef={props.latestUserMarkerLocationRef}*/}
+			{/*	initialMarkerLocation={props.initialMarkerLocation}*/}
+			{/*	maxMapHeight={WINDOW_HEIGHT}*/}
+			{/*	maxContainerHeight={WINDOW_HEIGHT}*/}
+			{/*/>*/}
 			<View
 				style={{
 					bottom: insets.bottom + 35,
