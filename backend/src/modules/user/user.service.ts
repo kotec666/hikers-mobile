@@ -1,12 +1,28 @@
 import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common';
 import { DatabaseService } from '../database/database.service';
 import { UserDto } from './user.dto';
-import { users } from '../database/schema';
+import {
+	notifications,
+	notificationsSettings,
+	postLikes,
+	tokens,
+	trainingInvites,
+	trainingMetrics,
+	trainingParticipants,
+	trainingRoutes,
+	userAchievements,
+	userActivities,
+	userFriends,
+	userFriendsInvites,
+	users,
+	userSubscribers,
+} from '../database/schema';
 import { and, eq, ilike, ne, or } from 'drizzle-orm';
 import { comparePassword, hashPassword } from './user.helpers';
 import { ERRORS } from '@shared/errors';
 import { EventEmitter2 } from '@nestjs/event-emitter';
 import { Event } from '@events/constants';
+import { CommonDto } from '../../common/dto/common.dto';
 
 @Injectable()
 export class UserService {
@@ -119,6 +135,80 @@ export class UserService {
 		}
 
 		return user;
+	}
+
+	public async deleteUser(userId: string): Promise<CommonDto.BooleanResponse> {
+		const [user] = await this.db.db
+			.select({
+				id: users.id,
+				name: users.name,
+				username: users.username,
+				avatarFilename: users.avatarFilename,
+			})
+			.from(users)
+			.where(eq(users.id, userId))
+			.limit(1);
+		if (!user) {
+			throw new NotFoundException(ERRORS.NOT_FOUND);
+		}
+
+		// Токен можно и без транзы удалить, ничего страшного если релогин потребуется
+		await this.db.db.delete(tokens).where(eq(tokens.userId, userId));
+
+		await Promise.all([
+			// Удаляем часть, которая отвечает за профиль юзера
+			this.db.db.transaction(async (tx) => {
+				await tx
+					.delete(userSubscribers)
+					.where(or(eq(userSubscribers.userId, userId), eq(userSubscribers.userSubscriberId, userId)));
+
+				await tx
+					.delete(userFriendsInvites)
+					.where(or(eq(userFriendsInvites.userId, userId), eq(userFriendsInvites.invitedUserId, userId)));
+				await tx
+					.delete(userFriends)
+					.where(or(eq(userFriends.userId, userId), eq(userFriends.userFriendId, userId)));
+
+				await tx.delete(userActivities).where(eq(userActivities.userId, userId));
+				await tx.delete(userAchievements).where(eq(userAchievements.userId, userId));
+			}),
+
+			// Удаляем часть, которая отвечает за тренировки
+			this.db.db.transaction(async (tx) => {
+				const participantIds = await tx
+					.select({ id: trainingParticipants.id })
+					.from(trainingParticipants)
+					.where(eq(trainingParticipants.userId, userId));
+
+				await Promise.all(
+					participantIds.map(async (p) => {
+						await tx.delete(trainingMetrics).where(eq(trainingMetrics.participantId, p.id));
+						await tx.delete(trainingRoutes).where(eq(trainingRoutes.participantId, p.id));
+					}),
+				);
+
+				await tx.delete(trainingParticipants).where(eq(trainingParticipants.userId, userId));
+
+				await tx
+					.delete(trainingInvites)
+					.where(or(eq(trainingInvites.userId, userId), eq(trainingInvites.invitedUserId, userId)));
+			}),
+
+			// Удаляем часть, которая отвечает за посты
+			this.db.db.transaction(async (tx) => {
+				await tx.delete(postLikes).where(eq(postLikes.userId, userId));
+
+				// @TODO сделать автора поста опциональным, удаление постов (занулляем автора)
+			}),
+
+			// Удаляем часть, которая отвечает за уведы
+			this.db.db.transaction(async (tx) => {
+				await tx.delete(notifications).where(eq(notifications.toUserId, userId));
+				await tx.delete(notificationsSettings).where(eq(notificationsSettings.userId, userId));
+			}),
+		]);
+
+		return { success: true };
 	}
 
 	public async getUser(id: string): Promise<UserDto.Entity> {
