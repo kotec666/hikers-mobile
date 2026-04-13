@@ -814,6 +814,9 @@ export class TrainingsService {
 					let prevPoint = point;
 					if (i > 0) {
 						prevPoint = participant.route.points[i - 1];
+						if (!prevPoint.paused) {
+							distanceM += point.distance;
+						}
 					}
 
 					pausedTimeMs += point.rel_ts - prevPoint.rel_ts;

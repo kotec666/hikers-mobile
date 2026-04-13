@@ -14,7 +14,7 @@ export namespace PostDto {
 		/** Подписан ли на автора поста */
 		isSubscribed: boolean;
 
-		userCreator: UserDto.Entity;
+		userCreator: UserDto.Entity | null;
 		training: TrainingDto.ExtendedEntity;
 
 		title: string;
