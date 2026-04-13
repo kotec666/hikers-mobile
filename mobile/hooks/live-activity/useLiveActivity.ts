@@ -4,6 +4,7 @@ import type {
 	ActivityInfo,
 	LiveActivityEndEvent,
 	LiveActivityUpdateEvent,
+	PendingWidgetAction,
 	TimerState,
 	WidgetCompleteEvent
 } from '@/modules/expo-live-activity'
@@ -21,6 +22,7 @@ export type {
 	ActivityInfo,
 	LiveActivityEndEvent,
 	LiveActivityUpdateEvent,
+	PendingWidgetAction,
 	WidgetCompleteEvent
 } from '@/modules/expo-live-activity'
 export type LiveActivityEventName = 'onLiveActivityUpdate' | 'onLiveActivityEnd' | 'onWidgetCompleteActivity'
@@ -43,9 +45,10 @@ interface UseLiveActivityReturn {
 	startActivity: (options: { activityName: string; activityIcon: ActivityIconType }) => Promise<string | null>
 	pauseActivity: () => Promise<boolean>
 	resumeActivity: () => Promise<boolean>
-	endActivity: () => Promise<boolean>
+	endActivity: (activityId?: string) => Promise<boolean>
 
 	updateStatus: () => Promise<TimerStatus>
+	consumePendingWidgetAction: () => PendingWidgetAction | null
 	addListener: (
 		eventName: LiveActivityEventName,
 		callback: (event: LiveActivityUpdateEvent | LiveActivityEndEvent | WidgetCompleteEvent) => void
@@ -134,6 +137,14 @@ export function useLiveActivity(): UseLiveActivityReturn {
 		}
 	}, [liveActivityState])
 
+	const consumePendingWidgetAction = useCallback((): PendingWidgetAction | null => {
+		if (!isIOS || liveActivityState !== 'supported') {
+			return null
+		}
+
+		return liveActivities.consumePendingWidgetAction()
+	}, [liveActivityState])
+
 	const startActivity = useCallback(
 		async (options: { activityName: string; activityIcon: ActivityIconType }): Promise<string | null> => {
 			if (!isIOS || liveActivityState !== 'supported') {
@@ -207,13 +218,15 @@ export function useLiveActivity(): UseLiveActivityReturn {
 		}
 	}, [liveActivityState, liveActivityId])
 
-	const endActivity = useCallback(async (): Promise<boolean> => {
-		if (!isIOS || liveActivityState !== 'supported' || !liveActivityId) {
+	const endActivity = useCallback(async (activityId?: string): Promise<boolean> => {
+		const targetActivityId = activityId || liveActivityId
+
+		if (!isIOS || liveActivityState !== 'supported' || !targetActivityId) {
 			return false
 		}
 
 		try {
-			const success = await liveActivities.endLiveActivity(liveActivityId)
+			const success = await liveActivities.endLiveActivity(targetActivityId)
 
 			if (success) {
 				setTimerStatus({
@@ -284,6 +297,7 @@ export function useLiveActivity(): UseLiveActivityReturn {
 		resumeActivity,
 		endActivity,
 		updateStatus,
+		consumePendingWidgetAction,
 		addListener,
 		getElapsedTime,
 		isRunning,

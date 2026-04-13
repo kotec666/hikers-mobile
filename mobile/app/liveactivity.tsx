@@ -1,6 +1,6 @@
 import { LinearGradient } from 'expo-linear-gradient'
 import { StatusBar } from 'expo-status-bar'
-import React, { useEffect, useState } from 'react'
+import React, { useEffect, useRef, useState } from 'react'
 import {
 	Alert,
 	Dimensions,
@@ -19,6 +19,10 @@ import { LiveActivityUpdateEvent } from '@/modules/expo-live-activity'
 
 const { width } = Dimensions.get('window')
 
+//@TODO сейчас в приложении в tsx части необходимо нажимать кнопки по два раза чтобы поставить на паузу / продолжить / завершить, надо это пофиксить
+//@TODO в FIGMA придумать и совместить дизайн с кнопками паузы, таймером и метриками
+//@TODO переверстать на swift вариант с кнопками взаимодействия и метриками, проверить все варианты (виды) отображения live activity
+
 export default function Liveactivity() {
 	const [activityName, setActivityName] = useState('')
 	const [selectedIcon, setSelectedIcon] = useState<ActivityIconType>('WALKING')
@@ -32,26 +36,86 @@ export default function Liveactivity() {
 
 	const liveActivity = useLiveActivity()
 	const isLiveActivityAvailable = liveActivity.isLiveActivityAvailable
+	const isCompleteAlertVisibleRef = useRef(false)
+
+	const confirmCompleteActivity = (activityId?: string) => {
+		if (isCompleteAlertVisibleRef.current) {
+			return
+		}
+
+		isCompleteAlertVisibleRef.current = true
+
+		Alert.alert(
+			'Would you like to complete your activity?',
+			'This will end your activity and update your timer.',
+			[
+				{
+					text: 'Yes',
+					onPress: async () => {
+						const success = await liveActivity.endActivity(activityId)
+						if (!success) {
+							console.warn('Failed to end Live Activity')
+						}
+						timer.reset()
+						isCompleteAlertVisibleRef.current = false
+					}
+				},
+				{
+					text: 'No',
+					onPress: () => {
+						isCompleteAlertVisibleRef.current = false
+					},
+					style: 'cancel'
+				}
+			],
+			{
+				onDismiss: () => {
+					isCompleteAlertVisibleRef.current = false
+				}
+			}
+		)
+	}
+
+	const consumePendingWidgetAction = () => {
+		const pendingWidgetAction = liveActivity.consumePendingWidgetAction()
+
+		if (pendingWidgetAction?.action === 'complete') {
+			confirmCompleteActivity(pendingWidgetAction.activityId || undefined)
+		}
+	}
 
 	const syncTimerWithLiveActivity = async () => {
-		if (
-			currentAppState !== 'active' ||
-			Platform.OS !== 'ios' ||
-			!liveActivity.isLiveActivityAvailable ||
-			!liveActivity.liveActivityId
-		) {
+		if (currentAppState !== 'active' || Platform.OS !== 'ios' || !liveActivity.isLiveActivityAvailable) {
 			return
 		}
 
 		try {
+			consumePendingWidgetAction()
+
+			if (!liveActivity.liveActivityId) {
+				return
+			}
+
 			const status = await liveActivity.updateStatus()
 
 			if (status.state === 'active' || status.state === 'paused') {
+				if (status.state === 'active' && timer.state !== 'active') {
+					timer.resume()
+				}
+
+				if (status.state === 'paused' && timer.state !== 'paused') {
+					timer.pause()
+				}
+
 				const timeDiff = Math.abs(status.elapsedTime - timer.elapsedTime)
 				if (timeDiff >= 1) {
 					console.log(`Syncing timer - difference of ${timeDiff}s detected`)
 					timer.syncWithExternalTimer(status.elapsedTime)
 				}
+			}
+
+			if (status.state === 'finished' && timer.state !== 'idle') {
+				timer.reset()
 			}
 		} catch (error) {
 			console.error('Error syncing timer:', error)
@@ -65,7 +129,13 @@ export default function Liveactivity() {
 	}, [currentAppState, previousAppState])
 
 	useEffect(() => {
-		liveActivity.addListener('onLiveActivityUpdate', (event) => {
+		if (currentAppState === 'active' && liveActivity.isLiveActivityAvailable) {
+			consumePendingWidgetAction()
+		}
+	}, [currentAppState, liveActivity.isLiveActivityAvailable])
+
+	useEffect(() => {
+		const liveActivityUpdateSubscription = liveActivity.addListener('onLiveActivityUpdate', (event) => {
 			const updateEvent = event as LiveActivityUpdateEvent
 
 			if (updateEvent.state === 'paused') {
@@ -77,25 +147,19 @@ export default function Liveactivity() {
 			}
 		})
 
-		liveActivity.addListener('onLiveActivityEnd', (_event) => {
+		const liveActivityEndSubscription = liveActivity.addListener('onLiveActivityEnd', (_event) => {
 			timer.reset()
 		})
 
-		liveActivity.addListener('onWidgetCompleteActivity', (_event) => {
-			Alert.alert(
-				'Would you like to complete your activity?',
-				'This will end your activity and update your timer.',
-				[
-					{
-						text: 'Yes',
-						onPress: () => {
-							timer.reset()
-						}
-					},
-					{ text: 'No' }
-				]
-			)
+		const widgetCompleteSubscription = liveActivity.addListener('onWidgetCompleteActivity', (_event) => {
+			confirmCompleteActivity()
 		})
+
+		return () => {
+			liveActivityUpdateSubscription.remove()
+			liveActivityEndSubscription.remove()
+			widgetCompleteSubscription.remove()
+		}
 	}, [isLiveActivityAvailable])
 
 	const handleStart = async () => {

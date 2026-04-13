@@ -2,12 +2,7 @@ import ActivityKit
 import WidgetKit
 import SwiftUI
 import Foundation
-
-enum TimerState: String, Codable, Hashable {
-    case active
-    case paused
-    case finished
-}
+internal import ExpoLiveActivity
 
 func mapJSIconToSFSymbol(_ jsIcon: String) -> String {
     switch jsIcon.uppercased() {
@@ -22,47 +17,6 @@ func mapJSIconToSFSymbol(_ jsIcon: String) -> String {
     default:
         return "timer"
     }
-}
-
-struct LiveActivityAttributes: ActivityAttributes {
-    public struct ContentState: Codable, Hashable {
-        var startedAt: Date
-        var pausedAt: Date?
-
-        func getElapsedTimeInSeconds() -> TimeInterval {
-            if let pausedAt = pausedAt {
-                return pausedAt.timeIntervalSince(startedAt)
-            } else {
-                return Date().timeIntervalSince(startedAt)
-            }
-        }
-
-        func isRunning() -> Bool {
-            return pausedAt == nil
-        }
-
-        func getFormattedElapsedTime() -> String {
-            let elapsed = getElapsedTimeInSeconds()
-            let totalSeconds = Int(elapsed)
-            let hours = totalSeconds / 3600
-            let minutes = (totalSeconds % 3600) / 60
-            let seconds = totalSeconds % 60
-
-            if hours > 0 {
-                return String(format: "%d:%02d:%02d", hours, minutes, seconds)
-            } else {
-                return String(format: "%d:%02d", minutes, seconds)
-            }
-        }
-
-        func getFutureDate() -> Date {
-            return Date().addingTimeInterval(365 * 24 * 60 * 60)
-        }
-
-    }
-
-    var activityName: String
-    var activityIcon: String
 }
 
 // Helper to create color from hex
@@ -139,7 +93,7 @@ struct LiveActivityWidget: Widget {
             Spacer() // Push content to bottom
 
             if context.state.isRunning() {
-              Button(intent: PauseIntent()) {
+              Button(intent: PauseIntent(activityId: context.activityID)) {
                 ZStack {
                   Circle()
                     .fill(Color(hex: "#007bff"))
@@ -153,7 +107,7 @@ struct LiveActivityWidget: Widget {
               .padding(.horizontal, 8)
             } else {
               HStack(spacing: 8) {
-                Button(intent: CompleteIntent()) {
+                Button(intent: CompleteIntent(activityId: context.activityID)) {
                   ZStack {
                     Circle()
                       .fill(Color(hex: "#28a745"))
@@ -165,7 +119,7 @@ struct LiveActivityWidget: Widget {
                 }
                 .buttonStyle(PlainButtonStyle())
 
-                Button(intent: ResumeIntent()) {
+                Button(intent: ResumeIntent(activityId: context.activityID)) {
                   ZStack {
                     Circle()
                       .fill(Color(hex: "#007bff"))
@@ -267,7 +221,7 @@ struct LockScreenLiveActivityView: View {
           Spacer()
 
           if context.state.isRunning() {
-            Button(intent: PauseIntent()) {
+            Button(intent: PauseIntent(activityId: context.activityID)) {
               ZStack {
                 Circle()
                   .fill(Color(hex: "#007bff"))
@@ -280,7 +234,7 @@ struct LockScreenLiveActivityView: View {
             .buttonStyle(PlainButtonStyle())
           } else {
             HStack(spacing: 8) {
-              Button(intent: CompleteIntent()) {
+              Button(intent: CompleteIntent(activityId: context.activityID)) {
                 ZStack {
                   Circle()
                     .fill(Color(hex: "#28a745"))
@@ -292,7 +246,7 @@ struct LockScreenLiveActivityView: View {
               }
               .buttonStyle(PlainButtonStyle())
 
-              Button(intent: ResumeIntent()) {
+              Button(intent: ResumeIntent(activityId: context.activityID)) {
                 ZStack {
                   Circle()
                     .fill(Color(hex: "#007bff"))
@@ -352,7 +306,7 @@ struct ExpandedLiveActivityView: View {
         }
 
         if context.state.isRunning() {
-          Button(intent: PauseIntent()) {
+          Button(intent: PauseIntent(activityId: context.activityID)) {
             ZStack {
               Circle()
                 .fill(Color(hex: "#007bff"))
@@ -365,7 +319,7 @@ struct ExpandedLiveActivityView: View {
           .buttonStyle(PlainButtonStyle())
         } else {
           HStack(spacing: 16) {
-            Button(intent: CompleteIntent()) {
+            Button(intent: CompleteIntent(activityId: context.activityID)) {
               ZStack {
                 Circle()
                   .fill(Color(hex: "#28a745"))
@@ -377,7 +331,7 @@ struct ExpandedLiveActivityView: View {
             }
             .buttonStyle(PlainButtonStyle())
 
-            Button(intent: ResumeIntent()) {
+            Button(intent: ResumeIntent(activityId: context.activityID)) {
               ZStack {
                 Circle()
                   .fill(Color(hex: "#007bff"))
@@ -509,4 +463,3 @@ extension Notification.Name {
   static let resumeFromWidget = Notification.Name("resumeFromWidget")
   static let completeFromWidget = Notification.Name("completeFromWidget")
 }
-

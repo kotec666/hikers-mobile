@@ -13,7 +13,10 @@
 			"icon": "./assets/images/icon-ios.icon",
             "infoPlist": {
               "NSSupportsLiveActivities": true
-            }
+            },
+			"entitlements": {
+				"com.apple.security.application-groups": ["group.run.hikers.app"]
+			}
 		},
 		"android": {
 			"adaptiveIcon": {
@@ -87,7 +90,8 @@
 			"expo-font",
 			"expo-image",
 			"expo-secure-store",
-            "@bacons/apple-targets"
+            "@bacons/apple-targets",
+			"./plugins/with-live-activity-widget-embed-fix"
 		],
 		"experiments": {
 			"typedRoutes": true

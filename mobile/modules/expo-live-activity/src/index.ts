@@ -1,4 +1,4 @@
-import { requireNativeModule, NativeModule } from 'expo-modules-core'
+import { requireOptionalNativeModule } from 'expo-modules-core'
 import { Platform } from 'react-native'
 
 type ExpoLiveActivityModule = {
@@ -9,14 +9,14 @@ type ExpoLiveActivityModule = {
 	endActivity: (activityId?: string) => Promise<boolean>
 	getTimerStatus: () => Promise<TimerStatus>
 	getActiveActivities: () => ActivityInfo[]
+	consumePendingWidgetAction: () => PendingWidgetAction | null
 	addListener: (eventType: string, listener: (event: any) => void) => Subscription
 }
 
 let ExpoLiveActivity: ExpoLiveActivityModule | null = null
 
 if (Platform.OS === 'ios') {
-	console.log(NativeModule)
-	ExpoLiveActivity = requireNativeModule('ExpoLiveActivityModule')
+	ExpoLiveActivity = requireOptionalNativeModule<ExpoLiveActivityModule>('ExpoLiveActivityModule')
 }
 
 export type TimerState = 'active' | 'paused' | 'finished'
@@ -46,6 +46,13 @@ export interface TimerStatus {
 export interface ActivityInfo {
 	id: string
 	activityName: string
+}
+
+export interface PendingWidgetAction {
+	action: 'complete'
+	activityId: string
+	elapsedTime: number
+	createdAt: number
 }
 
 interface Subscription {
@@ -150,6 +157,25 @@ export function getActiveActivities(): ActivityInfo[] {
 	}
 }
 
+export function consumePendingWidgetAction(): PendingWidgetAction | null {
+	if (!ExpoLiveActivity) return null
+
+	try {
+		const pendingAction = ExpoLiveActivity.consumePendingWidgetAction()
+		if (!pendingAction) return null
+
+		if (pendingAction.action !== 'complete') {
+			console.warn(`[LiveActivities] Received unexpected widget action: ${pendingAction.action}`)
+			return null
+		}
+
+		return pendingAction
+	} catch (error) {
+		console.error('[LiveActivities] Error consuming pending widget action:', error)
+		return null
+	}
+}
+
 export function addListener(
 	eventType: 'onLiveActivityUpdate' | 'onLiveActivityEnd' | 'onWidgetCompleteActivity',
 	listener: (event: LiveActivityUpdateEvent | LiveActivityEndEvent | WidgetCompleteEvent) => void
@@ -171,5 +197,6 @@ export default {
 	endLiveActivity,
 	getTimerStatus,
 	getActiveActivities,
+	consumePendingWidgetAction,
 	addListener
 }
