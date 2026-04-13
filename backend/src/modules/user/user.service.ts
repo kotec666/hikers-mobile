@@ -5,7 +5,9 @@ import {
 	notifications,
 	notificationsSettings,
 	postLikes,
+	posts,
 	tokens,
+	training,
 	trainingInvites,
 	trainingMetrics,
 	trainingParticipants,
@@ -192,13 +194,25 @@ export class UserService {
 				await tx
 					.delete(trainingInvites)
 					.where(or(eq(trainingInvites.userId, userId), eq(trainingInvites.invitedUserId, userId)));
+
+				await tx
+					.update(training)
+					.set({
+						userCreatorId: null,
+					})
+					.where(eq(training.userCreatorId, userId));
 			}),
 
 			// Удаляем часть, которая отвечает за посты
 			this.db.db.transaction(async (tx) => {
 				await tx.delete(postLikes).where(eq(postLikes.userId, userId));
 
-				// @TODO сделать автора поста опциональным, удаление постов (занулляем автора)
+				await tx
+					.update(posts)
+					.set({
+						userCreatorId: null,
+					})
+					.where(eq(posts.userCreatorId, userId));
 			}),
 
 			// Удаляем часть, которая отвечает за уведы
@@ -207,6 +221,9 @@ export class UserService {
 				await tx.delete(notificationsSettings).where(eq(notificationsSettings.userId, userId));
 			}),
 		]);
+
+		// Ну и если промис выше завершился без ошибок, то чикаем юзера
+		await this.db.db.delete(users).where(eq(users.id, userId));
 
 		return { success: true };
 	}
