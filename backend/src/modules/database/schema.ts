@@ -202,9 +202,7 @@ export const userActivities = pgTable(
 // Training
 export const training = pgTable('training', {
 	id: uuid('id').primaryKey().defaultRandom(),
-	userCreatorId: uuid('user_creator_id')
-		.notNull()
-		.references(() => users.id),
+	userCreatorId: uuid('user_creator_id').references(() => users.id),
 	type: trainingTypeEnum().notNull(),
 	createdAt: timestamp('created_at').defaultNow().notNull(),
 	startedAt: timestamp('started_at'),
@@ -277,9 +275,7 @@ export const posts = pgTable(
 	{
 		id: uuid('id').primaryKey().defaultRandom(),
 		trainingId: uuid('training_id').references(() => training.id),
-		userCreatorId: uuid('user_creator_id')
-			.notNull()
-			.references(() => users.id),
+		userCreatorId: uuid('user_creator_id').references(() => users.id),
 		title: varchar('title', { length: 255 }).notNull(),
 		description: text('description'),
 		createdAt: timestamp('created_at').defaultNow().notNull(),
