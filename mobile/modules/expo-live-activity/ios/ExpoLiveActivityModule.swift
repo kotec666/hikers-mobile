@@ -5,11 +5,22 @@ import Foundation
 private let onLiveActivityUpdate = "onLiveActivityUpdate"
 private let onLiveActivityEnd = "onLiveActivityEnd"
 private let onWidgetCompleteActivity = "onWidgetCompleteActivity"
+private let onWidgetAction = "onWidgetAction"
 private let appGroupIdentifier = "group.run.hikers.app"
 private let pendingWidgetActionKey = "pendingWidgetAction"
 private let pendingWidgetActivityIdKey = "pendingWidgetActivityId"
 private let pendingWidgetElapsedTimeKey = "pendingWidgetElapsedTime"
 private let pendingWidgetActionCreatedAtKey = "pendingWidgetActionCreatedAt"
+private let widgetActionDarwinNotificationName = "run.hikers.app.liveActivityWidgetAction"
+
+private let widgetActionNotificationCallback: CFNotificationCallback = { _, observer, _, _, _ in
+  guard let observer else {
+    return
+  }
+
+  let module = Unmanaged<ExpoLiveActivityModule>.fromOpaque(observer).takeUnretainedValue()
+  module.handleWidgetActionNotification()
+}
 
 @available(iOS 16.2, *)
 private enum LiveActivityTimer {
@@ -133,10 +144,20 @@ private enum LiveActivityTimer {
 }
 
 public class ExpoLiveActivityModule: Module {
+  private var isObservingWidgetActions = false
+
   public func definition() -> ModuleDefinition {
     Name("ExpoLiveActivityModule")
 
-    Events(onLiveActivityUpdate, onLiveActivityEnd, onWidgetCompleteActivity)
+    Events(onLiveActivityUpdate, onLiveActivityEnd, onWidgetCompleteActivity, onWidgetAction)
+
+    OnCreate {
+      startObservingWidgetActions()
+    }
+
+    OnDestroy {
+      stopObservingWidgetActions()
+    }
 
     Function("isLiveActivityAvailable") { () -> Bool in
       if #available(iOS 16.2, *) {
@@ -242,24 +263,76 @@ public class ExpoLiveActivityModule: Module {
     }
 
     Function("consumePendingWidgetAction") { () -> [String: Any]? in
-      guard let defaults = UserDefaults(suiteName: appGroupIdentifier),
-            let action = defaults.string(forKey: pendingWidgetActionKey) else {
-        return nil
+      return consumePendingWidgetActionPayload()
+    }
+  }
+
+  private func startObservingWidgetActions() {
+    guard !isObservingWidgetActions else {
+      return
+    }
+
+    CFNotificationCenterAddObserver(
+      CFNotificationCenterGetDarwinNotifyCenter(),
+      Unmanaged.passUnretained(self).toOpaque(),
+      widgetActionNotificationCallback,
+      widgetActionDarwinNotificationName as CFString,
+      nil,
+      .deliverImmediately
+    )
+    isObservingWidgetActions = true
+  }
+
+  private func stopObservingWidgetActions() {
+    guard isObservingWidgetActions else {
+      return
+    }
+
+    CFNotificationCenterRemoveObserver(
+      CFNotificationCenterGetDarwinNotifyCenter(),
+      Unmanaged.passUnretained(self).toOpaque(),
+      CFNotificationName(widgetActionDarwinNotificationName as CFString),
+      nil
+    )
+    isObservingWidgetActions = false
+  }
+
+  fileprivate func handleWidgetActionNotification() {
+    DispatchQueue.main.async { [weak self] in
+      guard let self, let payload = self.consumePendingWidgetActionPayload() else {
+        return
       }
 
-      let payload: [String: Any] = [
-        "action": action,
-        "activityId": defaults.string(forKey: pendingWidgetActivityIdKey) ?? "",
-        "elapsedTime": defaults.integer(forKey: pendingWidgetElapsedTimeKey),
-        "createdAt": defaults.double(forKey: pendingWidgetActionCreatedAtKey)
-      ]
+      self.sendEvent(onWidgetAction, payload)
 
-      defaults.removeObject(forKey: pendingWidgetActionKey)
-      defaults.removeObject(forKey: pendingWidgetActivityIdKey)
-      defaults.removeObject(forKey: pendingWidgetElapsedTimeKey)
-      defaults.removeObject(forKey: pendingWidgetActionCreatedAtKey)
-
-      return payload
+      if let action = payload["action"] as? String, action == "pause" || action == "resume" {
+        self.sendEvent(onLiveActivityUpdate, [
+          "state": action == "pause" ? "paused" : "active",
+          "activityId": payload["activityId"] as? String ?? "",
+          "elapsedTime": payload["elapsedTime"] as? Int ?? 0
+        ])
+      }
     }
+  }
+
+  private func consumePendingWidgetActionPayload() -> [String: Any]? {
+    guard let defaults = UserDefaults(suiteName: appGroupIdentifier),
+          let action = defaults.string(forKey: pendingWidgetActionKey) else {
+      return nil
+    }
+
+    let payload: [String: Any] = [
+      "action": action,
+      "activityId": defaults.string(forKey: pendingWidgetActivityIdKey) ?? "",
+      "elapsedTime": defaults.integer(forKey: pendingWidgetElapsedTimeKey),
+      "createdAt": defaults.double(forKey: pendingWidgetActionCreatedAtKey)
+    ]
+
+    defaults.removeObject(forKey: pendingWidgetActionKey)
+    defaults.removeObject(forKey: pendingWidgetActivityIdKey)
+    defaults.removeObject(forKey: pendingWidgetElapsedTimeKey)
+    defaults.removeObject(forKey: pendingWidgetActionCreatedAtKey)
+
+    return payload
   }
 }

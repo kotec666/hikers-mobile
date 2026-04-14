@@ -49,7 +49,7 @@ export interface ActivityInfo {
 }
 
 export interface PendingWidgetAction {
-	action: 'complete'
+	action: 'pause' | 'resume' | 'complete'
 	activityId: string
 	elapsedTime: number
 	createdAt: number
@@ -164,7 +164,7 @@ export function consumePendingWidgetAction(): PendingWidgetAction | null {
 		const pendingAction = ExpoLiveActivity.consumePendingWidgetAction()
 		if (!pendingAction) return null
 
-		if (pendingAction.action !== 'complete') {
+		if (!['pause', 'resume', 'complete'].includes(pendingAction.action)) {
 			console.warn(`[LiveActivities] Received unexpected widget action: ${pendingAction.action}`)
 			return null
 		}
@@ -177,8 +177,10 @@ export function consumePendingWidgetAction(): PendingWidgetAction | null {
 }
 
 export function addListener(
-	eventType: 'onLiveActivityUpdate' | 'onLiveActivityEnd' | 'onWidgetCompleteActivity',
-	listener: (event: LiveActivityUpdateEvent | LiveActivityEndEvent | WidgetCompleteEvent) => void
+	eventType: 'onLiveActivityUpdate' | 'onLiveActivityEnd' | 'onWidgetCompleteActivity' | 'onWidgetAction',
+	listener: (
+		event: LiveActivityUpdateEvent | LiveActivityEndEvent | WidgetCompleteEvent | PendingWidgetAction
+	) => void
 ): Subscription {
 	if (!ExpoLiveActivity) {
 		return {

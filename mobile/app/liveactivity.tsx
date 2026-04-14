@@ -15,7 +15,7 @@ import {
 import { useAppState } from '@/hooks/live-activity/useAppState'
 import { useTimer } from '@/hooks/live-activity/useTimer'
 import { ActivityIcons, ActivityIconType, useLiveActivity } from '@/hooks/live-activity/useLiveActivity'
-import { LiveActivityUpdateEvent } from '@/modules/expo-live-activity'
+import { LiveActivityUpdateEvent, PendingWidgetAction } from '@/modules/expo-live-activity'
 
 const { width } = Dimensions.get('window')
 
@@ -25,9 +25,11 @@ const { width } = Dimensions.get('window')
 export default function Liveactivity() {
 	const [activityName, setActivityName] = useState('')
 	const [selectedIcon, setSelectedIcon] = useState<ActivityIconType>('WALKING')
+	const [lastWidgetAction, setLastWidgetAction] = useState<'pause' | 'resume' | null>(null)
 
 	const { currentAppState, previousAppState } = useAppState()
 	const timer = useTimer({
+		// @TODO утечка памяти, выключать при выходе в свернутый / неактивный режим
 		onUpdate: (elapsedTime) => {
 			console.log('Timer updated:', elapsedTime)
 		}
@@ -77,8 +79,25 @@ export default function Liveactivity() {
 
 	const consumePendingWidgetAction = () => {
 		const pendingWidgetAction = liveActivity.consumePendingWidgetAction()
+		if (!pendingWidgetAction) {
+			return
+		}
 
-		if (pendingWidgetAction?.action === 'complete') {
+		if (pendingWidgetAction.action === 'pause') {
+			console.log('[LiveActivity] Widget pause action received in JS', pendingWidgetAction)
+			setLastWidgetAction('pause')
+			timer.pause()
+			return
+		}
+
+		if (pendingWidgetAction.action === 'resume') {
+			console.log('[LiveActivity] Widget resume action received in JS', pendingWidgetAction)
+			setLastWidgetAction('resume')
+			timer.resume()
+			return
+		}
+
+		if (pendingWidgetAction.action === 'complete') {
 			confirmCompleteActivity(pendingWidgetAction.activityId || undefined)
 		}
 	}
@@ -134,6 +153,20 @@ export default function Liveactivity() {
 	}, [currentAppState, liveActivity.isLiveActivityAvailable])
 
 	useEffect(() => {
+		if (currentAppState !== 'active' || !liveActivity.isLiveActivityAvailable) {
+			return
+		}
+
+		const intervalId = setInterval(() => {
+			consumePendingWidgetAction()
+		}, 1000)
+
+		return () => {
+			clearInterval(intervalId)
+		}
+	}, [currentAppState, liveActivity.isLiveActivityAvailable])
+
+	useEffect(() => {
 		const liveActivityUpdateSubscription = liveActivity.addListener('onLiveActivityUpdate', (event) => {
 			const updateEvent = event as LiveActivityUpdateEvent
 
@@ -154,10 +187,33 @@ export default function Liveactivity() {
 			confirmCompleteActivity()
 		})
 
+		const widgetActionSubscription = liveActivity.addListener('onWidgetAction', (event) => {
+			const widgetAction = event as PendingWidgetAction
+
+			if (widgetAction.action === 'pause') {
+				console.log('[LiveActivity] Widget pause action event received in JS', widgetAction)
+				console.log('onLiveActivityUpdate paused!')
+				setLastWidgetAction('pause')
+				// Training screen integration point:
+				// setActiveWorkoutPauseState(true, user?.id)
+				timer.pause()
+			}
+
+			if (widgetAction.action === 'resume') {
+				console.log('[LiveActivity] Widget resume action event received in JS', widgetAction)
+				console.log('onLiveActivityUpdate resumed!')
+				setLastWidgetAction('resume')
+				// Training screen integration point:
+				// setActiveWorkoutPauseState(false, user?.id)
+				timer.resume()
+			}
+		})
+
 		return () => {
 			liveActivityUpdateSubscription.remove()
 			liveActivityEndSubscription.remove()
 			widgetCompleteSubscription.remove()
+			widgetActionSubscription.remove()
 		}
 	}, [isLiveActivityAvailable])
 
@@ -233,6 +289,11 @@ export default function Liveactivity() {
 									Live Activity:{' '}
 									{liveActivity.isLiveActivityAvailable ? 'Available' : 'Not Available'}
 								</Text>
+								{lastWidgetAction && (
+									<Text style={styles.statusText}>
+										Last widget action: {lastWidgetAction === 'pause' ? 'Pause' : 'Resume'}
+									</Text>
+								)}
 							</View>
 						)}
 					</View>

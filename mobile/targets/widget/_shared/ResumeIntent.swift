@@ -4,6 +4,8 @@ import Foundation
 import WidgetKit
 internal import ExpoLiveActivity
 
+private let widgetActionDarwinNotificationName = "run.hikers.app.liveActivityWidgetAction"
+
 @available(iOS 16.2, *)
 struct ResumeIntent: AppIntent, LiveActivityIntent {
     static var title: LocalizedStringResource = "Resume Timer"
@@ -31,13 +33,28 @@ struct ResumeIntent: AppIntent, LiveActivityIntent {
         }
 
         let elapsedTime = pausedAt.timeIntervalSince(currentState.startedAt)
+        let resumedState = LiveActivityAttributes.ContentState(
+            startedAt: Date().addingTimeInterval(-elapsedTime),
+            pausedAt: nil
+        )
+
         await activity.update(ActivityContent(
-            state: LiveActivityAttributes.ContentState(
-                startedAt: Date().addingTimeInterval(-elapsedTime),
-                pausedAt: nil
-            ),
+            state: resumedState,
             staleDate: nil
         ))
+
+        let defaults = UserDefaults(suiteName: "group.run.hikers.app")
+        defaults?.set("resume", forKey: "pendingWidgetAction")
+        defaults?.set(activity.id, forKey: "pendingWidgetActivityId")
+        defaults?.set(Int(resumedState.elapsedTime()), forKey: "pendingWidgetElapsedTime")
+        defaults?.set(Date().timeIntervalSince1970, forKey: "pendingWidgetActionCreatedAt")
+        CFNotificationCenterPostNotification(
+            CFNotificationCenterGetDarwinNotifyCenter(),
+            CFNotificationName(widgetActionDarwinNotificationName as CFString),
+            nil,
+            nil,
+            true
+        )
 
         return .result()
     }

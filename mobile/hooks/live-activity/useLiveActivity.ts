@@ -25,7 +25,11 @@ export type {
 	PendingWidgetAction,
 	WidgetCompleteEvent
 } from '@/modules/expo-live-activity'
-export type LiveActivityEventName = 'onLiveActivityUpdate' | 'onLiveActivityEnd' | 'onWidgetCompleteActivity'
+export type LiveActivityEventName =
+	| 'onLiveActivityUpdate'
+	| 'onLiveActivityEnd'
+	| 'onWidgetCompleteActivity'
+	| 'onWidgetAction'
 
 export const ActivityIcons = {
 	WALKING: '🚶',
@@ -51,7 +55,7 @@ interface UseLiveActivityReturn {
 	consumePendingWidgetAction: () => PendingWidgetAction | null
 	addListener: (
 		eventName: LiveActivityEventName,
-		callback: (event: LiveActivityUpdateEvent | LiveActivityEndEvent | WidgetCompleteEvent) => void
+		callback: (event: LiveActivityUpdateEvent | LiveActivityEndEvent | WidgetCompleteEvent | PendingWidgetAction) => void
 	) => { remove: () => void }
 
 	getElapsedTime: () => number
@@ -247,7 +251,7 @@ export function useLiveActivity(): UseLiveActivityReturn {
 	const addListener = useCallback(
 		(
 			eventName: LiveActivityEventName,
-			callback: (event: LiveActivityUpdateEvent | LiveActivityEndEvent | WidgetCompleteEvent) => void
+			callback: (event: LiveActivityUpdateEvent | LiveActivityEndEvent | WidgetCompleteEvent | PendingWidgetAction) => void
 		) => {
 			if (!isIOS || !liveActivities.addListener) {
 				return { remove: () => {} }

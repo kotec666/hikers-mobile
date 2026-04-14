@@ -4,6 +4,8 @@ import Foundation
 import WidgetKit
 internal import ExpoLiveActivity
 
+private let widgetActionDarwinNotificationName = "run.hikers.app.liveActivityWidgetAction"
+
 @available(iOS 16.2, *)
 struct PauseIntent: AppIntent, LiveActivityIntent {
     static var title: LocalizedStringResource = "Pause Timer"
@@ -30,13 +32,28 @@ struct PauseIntent: AppIntent, LiveActivityIntent {
             return .result()
         }
 
+        let pausedState = LiveActivityAttributes.ContentState(
+            startedAt: currentState.startedAt,
+            pausedAt: Date()
+        )
+
         await activity.update(ActivityContent(
-            state: LiveActivityAttributes.ContentState(
-                startedAt: currentState.startedAt,
-                pausedAt: Date()
-            ),
+            state: pausedState,
             staleDate: nil
         ))
+
+        let defaults = UserDefaults(suiteName: "group.run.hikers.app")
+        defaults?.set("pause", forKey: "pendingWidgetAction")
+        defaults?.set(activity.id, forKey: "pendingWidgetActivityId")
+        defaults?.set(Int(pausedState.elapsedTime()), forKey: "pendingWidgetElapsedTime")
+        defaults?.set(Date().timeIntervalSince1970, forKey: "pendingWidgetActionCreatedAt")
+        CFNotificationCenterPostNotification(
+            CFNotificationCenterGetDarwinNotifyCenter(),
+            CFNotificationName(widgetActionDarwinNotificationName as CFString),
+            nil,
+            nil,
+            true
+        )
 
         return .result()
     }
