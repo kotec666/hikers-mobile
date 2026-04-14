@@ -122,7 +122,7 @@ export default function Liveactivity() {
 	}
 
 	useEffect(() => {
-		if (previousAppState === 'background' && currentAppState === 'active') {
+		if (previousAppState !== 'active' && currentAppState === 'active') {
 			syncTimerWithLiveActivity()
 		}
 	}, [currentAppState, previousAppState])
