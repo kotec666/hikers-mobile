@@ -1,6 +1,6 @@
 import { LinearGradient } from 'expo-linear-gradient'
 import { StatusBar } from 'expo-status-bar'
-import React, { useEffect, useRef, useState } from 'react'
+import React, { useEffect, useState } from 'react'
 import {
 	Alert,
 	Dimensions,
@@ -15,7 +15,10 @@ import {
 import { useAppState } from '@/hooks/live-activity/useAppState'
 import { useTimer } from '@/hooks/live-activity/useTimer'
 import { ActivityIcons, ActivityIconType, useLiveActivity } from '@/hooks/live-activity/useLiveActivity'
-import { LiveActivityUpdateEvent, PendingWidgetAction } from '@/modules/expo-live-activity'
+import {
+	// LiveActivityUpdateEvent,
+	PendingWidgetAction
+} from '@/modules/expo-live-activity'
 
 const { width } = Dimensions.get('window')
 
@@ -128,29 +131,32 @@ export default function Liveactivity() {
 	}, [currentAppState, previousAppState])
 
 	useEffect(() => {
-		const liveActivityUpdateSubscription = liveActivity.addListener('onLiveActivityUpdate', (event) => {
-			const updateEvent = event as LiveActivityUpdateEvent
+		// в этом слушателе нет смысла, т.к. теперь событие прилетит через onWidgetAction
+		// const liveActivityUpdateSubscription = liveActivity.addListener('onLiveActivityUpdate', (event) => {
+		// 	const updateEvent = event as LiveActivityUpdateEvent
+		//
+		// 	if (updateEvent.state === 'paused') {
+		// 		timer.pause()
+		// 	}
+		//
+		// 	if (updateEvent.state === 'active') {
+		// 		timer.resume()
+		// 	}
+		// })
 
-			if (updateEvent.state === 'paused') {
-				timer.pause()
-			}
-
-			if (updateEvent.state === 'active') {
-				timer.resume()
-			}
-		})
-
-		const liveActivityEndSubscription = liveActivity.addListener('onLiveActivityEnd', (_event) => {
-			timer.reset()
-		})
+		// const liveActivityEndSubscription = liveActivity.addListener('onLiveActivityEnd', (_event) => {
+		// 	console.log('[LiveActivity] LiveActivityEnd:', _event)
+		// 	// происходит когда завершаем уже после модалки, в этом слушателе нет смысла
+		// 	timer.reset()
+		// })
 
 		const widgetActionSubscription = liveActivity.addListener('onWidgetAction', (event) => {
 			handleWidgetAction(event as PendingWidgetAction)
 		})
 
 		return () => {
-			liveActivityUpdateSubscription.remove()
-			liveActivityEndSubscription.remove()
+			// liveActivityUpdateSubscription.remove()
+			// liveActivityEndSubscription.remove()
 			widgetActionSubscription.remove()
 		}
 	}, [isLiveActivityAvailable])
