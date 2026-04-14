@@ -25,7 +25,6 @@ const { width } = Dimensions.get('window')
 export default function Liveactivity() {
 	const [activityName, setActivityName] = useState('')
 	const [selectedIcon, setSelectedIcon] = useState<ActivityIconType>('WALKING')
-	const [lastWidgetAction, setLastWidgetAction] = useState<'pause' | 'resume' | null>(null)
 
 	const { currentAppState, previousAppState } = useAppState()
 	const timer = useTimer({
@@ -37,15 +36,8 @@ export default function Liveactivity() {
 
 	const liveActivity = useLiveActivity()
 	const isLiveActivityAvailable = liveActivity.isLiveActivityAvailable
-	const isCompleteAlertVisibleRef = useRef(false)
 
 	const confirmCompleteActivity = (activityId?: string) => {
-		if (isCompleteAlertVisibleRef.current) {
-			return
-		}
-
-		isCompleteAlertVisibleRef.current = true
-
 		Alert.alert(
 			'Would you like to complete your activity?',
 			'This will end your activity and update your timer.',
@@ -53,53 +45,39 @@ export default function Liveactivity() {
 				{
 					text: 'Yes',
 					onPress: async () => {
-						const success = await liveActivity.endActivity(activityId)
-						if (!success) {
-							console.warn('Failed to end Live Activity')
-						}
-						timer.reset()
-						isCompleteAlertVisibleRef.current = false
+						await handleEnd(activityId)
 					}
 				},
 				{
 					text: 'No',
-					onPress: () => {
-						isCompleteAlertVisibleRef.current = false
-					},
+					onPress: () => {},
 					style: 'cancel'
 				}
 			],
 			{
-				onDismiss: () => {
-					isCompleteAlertVisibleRef.current = false
-				}
+				onDismiss: () => {}
 			}
 		)
 	}
 
-	const consumePendingWidgetAction = () => {
-		const pendingWidgetAction = liveActivity.consumePendingWidgetAction()
-		if (!pendingWidgetAction) {
-			return
-		}
-
-		if (pendingWidgetAction.action === 'pause') {
-			console.log('[LiveActivity] Widget pause action received in JS', pendingWidgetAction)
-			setLastWidgetAction('pause')
+	const handleWidgetAction = (widgetAction: PendingWidgetAction) => {
+		if (widgetAction.action === 'pause') {
+			console.log('[LiveActivity] Widget pause action received in JS', widgetAction)
+			// Training screen integration point:
+			// setActiveWorkoutPauseState(true, user?.id)
 			timer.pause()
 			return
 		}
 
-		if (pendingWidgetAction.action === 'resume') {
-			console.log('[LiveActivity] Widget resume action received in JS', pendingWidgetAction)
-			setLastWidgetAction('resume')
+		if (widgetAction.action === 'resume') {
+			console.log('[LiveActivity] Widget resume action received in JS', widgetAction)
+			// Training screen integration point:
+			// setActiveWorkoutPauseState(false, user?.id)
 			timer.resume()
 			return
 		}
 
-		if (pendingWidgetAction.action === 'complete') {
-			confirmCompleteActivity(pendingWidgetAction.activityId || undefined)
-		}
+		confirmCompleteActivity(widgetAction.activityId || undefined)
 	}
 
 	const syncTimerWithLiveActivity = async () => {
@@ -108,7 +86,10 @@ export default function Liveactivity() {
 		}
 
 		try {
-			consumePendingWidgetAction()
+			const pendingWidgetAction = liveActivity.consumePendingWidgetAction()
+			if (pendingWidgetAction) {
+				handleWidgetAction(pendingWidgetAction)
+			}
 
 			if (!liveActivity.liveActivityId) {
 				return
@@ -116,15 +97,15 @@ export default function Liveactivity() {
 
 			const status = await liveActivity.updateStatus()
 
+			if (status.state === 'active' && timer.state !== 'active') {
+				timer.resume()
+			}
+
+			if (status.state === 'paused' && timer.state !== 'paused') {
+				timer.pause()
+			}
+
 			if (status.state === 'active' || status.state === 'paused') {
-				if (status.state === 'active' && timer.state !== 'active') {
-					timer.resume()
-				}
-
-				if (status.state === 'paused' && timer.state !== 'paused') {
-					timer.pause()
-				}
-
 				const timeDiff = Math.abs(status.elapsedTime - timer.elapsedTime)
 				if (timeDiff >= 1) {
 					console.log(`Syncing timer - difference of ${timeDiff}s detected`)
@@ -147,26 +128,6 @@ export default function Liveactivity() {
 	}, [currentAppState, previousAppState])
 
 	useEffect(() => {
-		if (currentAppState === 'active' && liveActivity.isLiveActivityAvailable) {
-			consumePendingWidgetAction()
-		}
-	}, [currentAppState, liveActivity.isLiveActivityAvailable])
-
-	useEffect(() => {
-		if (currentAppState !== 'active' || !liveActivity.isLiveActivityAvailable) {
-			return
-		}
-
-		const intervalId = setInterval(() => {
-			consumePendingWidgetAction()
-		}, 1000)
-
-		return () => {
-			clearInterval(intervalId)
-		}
-	}, [currentAppState, liveActivity.isLiveActivityAvailable])
-
-	useEffect(() => {
 		const liveActivityUpdateSubscription = liveActivity.addListener('onLiveActivityUpdate', (event) => {
 			const updateEvent = event as LiveActivityUpdateEvent
 
@@ -183,36 +144,13 @@ export default function Liveactivity() {
 			timer.reset()
 		})
 
-		const widgetCompleteSubscription = liveActivity.addListener('onWidgetCompleteActivity', (_event) => {
-			confirmCompleteActivity()
-		})
-
 		const widgetActionSubscription = liveActivity.addListener('onWidgetAction', (event) => {
-			const widgetAction = event as PendingWidgetAction
-
-			if (widgetAction.action === 'pause') {
-				console.log('[LiveActivity] Widget pause action event received in JS', widgetAction)
-				console.log('onLiveActivityUpdate paused!')
-				setLastWidgetAction('pause')
-				// Training screen integration point:
-				// setActiveWorkoutPauseState(true, user?.id)
-				timer.pause()
-			}
-
-			if (widgetAction.action === 'resume') {
-				console.log('[LiveActivity] Widget resume action event received in JS', widgetAction)
-				console.log('onLiveActivityUpdate resumed!')
-				setLastWidgetAction('resume')
-				// Training screen integration point:
-				// setActiveWorkoutPauseState(false, user?.id)
-				timer.resume()
-			}
+			handleWidgetAction(event as PendingWidgetAction)
 		})
 
 		return () => {
 			liveActivityUpdateSubscription.remove()
 			liveActivityEndSubscription.remove()
-			widgetCompleteSubscription.remove()
 			widgetActionSubscription.remove()
 		}
 	}, [isLiveActivityAvailable])
@@ -263,11 +201,15 @@ export default function Liveactivity() {
 		}
 	}
 
-	const handleEnd = async () => {
+	const handleEnd = async (activityId?: string) => {
 		timer.reset()
 
-		if (Platform.OS === 'ios' && liveActivity.isLiveActivityAvailable && liveActivity.liveActivityId) {
-			const success = await liveActivity.endActivity()
+		if (
+			Platform.OS === 'ios' &&
+			liveActivity.isLiveActivityAvailable &&
+			(activityId || liveActivity.liveActivityId)
+		) {
+			const success = await liveActivity.endActivity(activityId)
 			if (!success) {
 				console.warn('Failed to end Live Activity')
 			}
@@ -289,11 +231,6 @@ export default function Liveactivity() {
 									Live Activity:{' '}
 									{liveActivity.isLiveActivityAvailable ? 'Available' : 'Not Available'}
 								</Text>
-								{lastWidgetAction && (
-									<Text style={styles.statusText}>
-										Last widget action: {lastWidgetAction === 'pause' ? 'Pause' : 'Resume'}
-									</Text>
-								)}
 							</View>
 						)}
 					</View>
@@ -369,7 +306,10 @@ export default function Liveactivity() {
 								<TouchableOpacity style={[styles.button, styles.resumeButton]} onPress={handleResume}>
 									<Text style={styles.buttonText}>Resume</Text>
 								</TouchableOpacity>
-								<TouchableOpacity style={[styles.button, styles.endButton]} onPress={handleEnd}>
+								<TouchableOpacity
+									style={[styles.button, styles.endButton]}
+									onPress={() => confirmCompleteActivity()}
+								>
 									<Text style={styles.buttonText}>End</Text>
 								</TouchableOpacity>
 							</>

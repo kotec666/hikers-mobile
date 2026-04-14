@@ -4,6 +4,8 @@ import Foundation
 import WidgetKit
 internal import ExpoLiveActivity
 
+private let widgetActionDarwinNotificationName = "run.hikers.app.liveActivityWidgetAction"
+
 @available(iOS 16.2, *)
 struct CompleteIntent: AppIntent, LiveActivityIntent {
     static var title: LocalizedStringResource = "Complete Exercise"
@@ -29,6 +31,13 @@ struct CompleteIntent: AppIntent, LiveActivityIntent {
         defaults?.set(activityId, forKey: "pendingWidgetActivityId")
         defaults?.set(elapsedTime, forKey: "pendingWidgetElapsedTime")
         defaults?.set(Date().timeIntervalSince1970, forKey: "pendingWidgetActionCreatedAt")
+        CFNotificationCenterPostNotification(
+            CFNotificationCenterGetDarwinNotifyCenter(),
+            CFNotificationName(widgetActionDarwinNotificationName as CFString),
+            nil,
+            nil,
+            true
+        )
 
         return .result()
     }
