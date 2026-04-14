@@ -2,7 +2,7 @@ import { Platform } from 'react-native'
 import { TrainingType } from '@shared/enums'
 import { WorkoutTypesMap } from '@/constants/WorkoutTypes'
 import * as liveActivities from '@/modules/expo-live-activity'
-import type { PendingWidgetAction } from '@/modules/expo-live-activity'
+import type { LiveActivityMetrics, PendingWidgetAction } from '@/modules/expo-live-activity'
 
 type WorkoutLiveActivityIcon = 'RUNNING' | 'WALKING' | 'BIKING' | 'WORKOUT'
 
@@ -79,18 +79,15 @@ export const addWorkoutLiveActivityWidgetActionListener = (listener: WorkoutWidg
 	})
 }
 
-export const updateWorkoutLiveActivityFromLastLocationTimestamp = async (timestamp?: number): Promise<void> => {
-	if (!canUseLiveActivity() || typeof timestamp !== 'number') return
+export const updateWorkoutLiveActivityMetrics = async (metrics: LiveActivityMetrics): Promise<void> => {
+	if (!canUseLiveActivity()) return
 
-	const success = await liveActivities.updateLiveActivityLastLocationTimestamp(
-		timestamp,
-		activeWorkoutLiveActivityId ?? undefined
-	)
+	const success = await liveActivities.updateLiveActivityMetrics(metrics, activeWorkoutLiveActivityId ?? undefined)
 
 	if (!success) {
 		activeWorkoutLiveActivityId = getExistingActivityId()
 		if (activeWorkoutLiveActivityId) {
-			await liveActivities.updateLiveActivityLastLocationTimestamp(timestamp, activeWorkoutLiveActivityId)
+			await liveActivities.updateLiveActivityMetrics(metrics, activeWorkoutLiveActivityId)
 		}
 	}
 }

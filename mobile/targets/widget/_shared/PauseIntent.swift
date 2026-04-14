@@ -35,7 +35,10 @@ struct PauseIntent: AppIntent, LiveActivityIntent {
         let pausedState = LiveActivityAttributes.ContentState(
             startedAt: currentState.startedAt,
             pausedAt: Date(),
-            lastLocationTimestamp: currentState.lastLocationTimestamp
+            lastLocationTimestamp: currentState.lastLocationTimestamp,
+            distanceText: currentState.distanceText,
+            speedText: currentState.speedText,
+            averageSpeedText: currentState.averageSpeedText
         )
 
         await activity.update(ActivityContent(

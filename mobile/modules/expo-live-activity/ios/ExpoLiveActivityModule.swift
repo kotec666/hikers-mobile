@@ -51,7 +51,10 @@ private enum LiveActivityTimer {
     let pausedState = LiveActivityAttributes.ContentState(
       startedAt: currentState.startedAt,
       pausedAt: Date(),
-      lastLocationTimestamp: currentState.lastLocationTimestamp
+      lastLocationTimestamp: currentState.lastLocationTimestamp,
+      distanceText: currentState.distanceText,
+      speedText: currentState.speedText,
+      averageSpeedText: currentState.averageSpeedText
     )
     await activity.update(ActivityContent(
       state: pausedState,
@@ -75,7 +78,10 @@ private enum LiveActivityTimer {
     let resumedState = LiveActivityAttributes.ContentState(
       startedAt: Date().addingTimeInterval(-elapsedTime),
       pausedAt: nil,
-      lastLocationTimestamp: currentState.lastLocationTimestamp
+      lastLocationTimestamp: currentState.lastLocationTimestamp,
+      distanceText: currentState.distanceText,
+      speedText: currentState.speedText,
+      averageSpeedText: currentState.averageSpeedText
     )
     await activity.update(ActivityContent(
       state: resumedState,
@@ -96,7 +102,10 @@ private enum LiveActivityTimer {
     let finalState = LiveActivityAttributes.ContentState(
       startedAt: now.addingTimeInterval(-elapsedTime),
       pausedAt: now,
-      lastLocationTimestamp: currentState.lastLocationTimestamp
+      lastLocationTimestamp: currentState.lastLocationTimestamp,
+      distanceText: currentState.distanceText,
+      speedText: currentState.speedText,
+      averageSpeedText: currentState.averageSpeedText
     )
 
     await activity.end(
@@ -107,9 +116,12 @@ private enum LiveActivityTimer {
     return activity
   }
 
-  static func updateLastLocationTimestamp(
+  static func updateMetrics(
     activityId: String?,
-    timestamp: Double
+    distanceText: String,
+    speedText: String,
+    averageSpeedText: String,
+    lastLocationTimestamp: Double
   ) async -> (activity: Activity<LiveActivityAttributes>, state: LiveActivityAttributes.ContentState)? {
     guard let activity = findActivity(activityId: activityId) else {
       return nil
@@ -119,7 +131,10 @@ private enum LiveActivityTimer {
     let updatedState = LiveActivityAttributes.ContentState(
       startedAt: currentState.startedAt,
       pausedAt: currentState.pausedAt,
-      lastLocationTimestamp: timestamp
+      lastLocationTimestamp: lastLocationTimestamp,
+      distanceText: distanceText,
+      speedText: speedText,
+      averageSpeedText: averageSpeedText
     )
 
     await activity.update(ActivityContent(
@@ -165,6 +180,10 @@ private enum LiveActivityTimer {
     if let lastLocationTimestamp = state.lastLocationTimestamp {
       payload["lastLocationTimestamp"] = lastLocationTimestamp
     }
+
+    payload["distanceText"] = state.distanceText
+    payload["speedText"] = state.speedText
+    payload["averageSpeedText"] = state.averageSpeedText
 
     return payload
   }
@@ -254,16 +273,26 @@ public class ExpoLiveActivityModule: Module {
       }
     }
 
-    AsyncFunction("updateActivity") { (activityId: String?, lastLocationTimestamp: Double, promise: Promise) in
+    AsyncFunction("updateActivity") { (
+      activityId: String?,
+      distanceText: String,
+      speedText: String,
+      averageSpeedText: String,
+      lastLocationTimestamp: Double,
+      promise: Promise
+    ) in
       guard #available(iOS 16.2, *) else {
         promise.resolve(false)
         return
       }
 
       Task {
-        guard let result = await LiveActivityTimer.updateLastLocationTimestamp(
+        guard let result = await LiveActivityTimer.updateMetrics(
           activityId: activityId,
-          timestamp: lastLocationTimestamp
+          distanceText: distanceText,
+          speedText: speedText,
+          averageSpeedText: averageSpeedText,
+          lastLocationTimestamp: lastLocationTimestamp
         ) else {
           promise.resolve(false)
           return

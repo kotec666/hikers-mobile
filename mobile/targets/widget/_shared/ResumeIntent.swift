@@ -36,7 +36,10 @@ struct ResumeIntent: AppIntent, LiveActivityIntent {
         let resumedState = LiveActivityAttributes.ContentState(
             startedAt: Date().addingTimeInterval(-elapsedTime),
             pausedAt: nil,
-            lastLocationTimestamp: currentState.lastLocationTimestamp
+            lastLocationTimestamp: currentState.lastLocationTimestamp,
+            distanceText: currentState.distanceText,
+            speedText: currentState.speedText,
+            averageSpeedText: currentState.averageSpeedText
         )
 
         await activity.update(ActivityContent(

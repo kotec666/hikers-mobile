@@ -1,14 +1,21 @@
 import * as Location from 'expo-location'
 import * as TaskManager from 'expo-task-manager'
 import { LocationActivityType, LocationObject } from 'expo-location'
-import { getWorkoutMeta, markPointsAsSaved, setWorkoutItems } from '@/store/workoutStorage'
+import {
+	getFullActiveWorkout,
+	getWorkoutMeta,
+	IWorkoutMeta,
+	markPointsAsSaved,
+	setWorkoutItems
+} from '@/store/workoutStorage'
 import { locationEmitter } from './locationEmitter'
 import { TaskManagerError } from 'expo-task-manager'
 import { syncTraining } from '@/api/workout'
 import { prepareLocationsForSync } from '@/helpers/prepareLocationsForSync'
 import { getItem } from '@/store/authStorage'
 import { filterLocations } from '@/helpers/location/filterLocations'
-import { updateWorkoutLiveActivityFromLastLocationTimestamp } from '@/hooks/track-location/liveActivity'
+import { updateWorkoutLiveActivityMetrics } from '@/hooks/track-location/liveActivity'
+import { calculateTotalDistance } from '@/helpers/distance'
 // import { LiveActivity } from 'expo-widgets'
 // import WorkoutActivity, {
 // 	getActivityTypeIcon,
@@ -21,6 +28,43 @@ import { updateWorkoutLiveActivityFromLastLocationTimestamp } from '@/hooks/trac
 export const LOCATION_TASK_NAME = 'background-location-task'
 let innerAppMountedPromiseRef: Promise<void> | null = null // Variable to hold the promise resolver logic
 // let liveActivityWorkoutInstance: LiveActivity<WorkoutActivityProps> | null = null
+
+const formatLiveActivityNumber = (value: number): string => {
+	if (!Number.isFinite(value) || value < 0) return '0.0'
+
+	return value.toFixed(1)
+}
+
+const getWorkoutElapsedMs = (meta: IWorkoutMeta): number => {
+	if (meta.isPaused && meta.lastPauseAt) {
+		return meta.lastPauseAt - meta.startedAt - meta.totalPausedMs
+	}
+
+	return Date.now() - meta.startedAt - meta.totalPausedMs
+}
+
+const updateWorkoutLiveActivityFromLocations = async (
+	lastLocation: LocationObject | undefined,
+	userId?: string
+): Promise<void> => {
+	if (!lastLocation || !userId) return
+
+	const meta = getWorkoutMeta(userId)
+	if (!meta) return
+
+	const activeWorkout = getFullActiveWorkout(userId)
+	const distanceMeters = activeWorkout ? calculateTotalDistance(activeWorkout.locations) : 0
+	const elapsedMs = getWorkoutElapsedMs(meta)
+	const speedKmh = Math.max(0, (lastLocation.coords.speed ?? 0) * 3.6)
+	const averageSpeedKmh = elapsedMs > 0 ? (distanceMeters * 3600) / elapsedMs : 0
+
+	await updateWorkoutLiveActivityMetrics({
+		distanceText: formatLiveActivityNumber(distanceMeters / 1000),
+		speedText: formatLiveActivityNumber(speedKmh),
+		averageSpeedText: formatLiveActivityNumber(averageSpeedKmh),
+		lastLocationTimestamp: lastLocation.timestamp
+	})
+}
 
 // const startWorkoutActivity = () => {
 // 	if (Platform.OS !== 'ios') return
@@ -145,8 +189,8 @@ TaskManager.defineTask(
 		if (!meta || !data?.locations?.length) return
 		const cleanedLocations = filterLocations(data.locations, { keepLast: true })
 		console.log('last location timestamp received', cleanedLocations.at(-1)?.timestamp)
-		void updateWorkoutLiveActivityFromLastLocationTimestamp(cleanedLocations.at(-1)?.timestamp)
 		const savedLocations = setWorkoutItems(cleanedLocations, user?.id)
+		void updateWorkoutLiveActivityFromLocations(cleanedLocations.at(-1), user?.id)
 		locationEmitter.emit(savedLocations)
 
 		const preparedLocations = prepareLocationsForSync(savedLocations)

@@ -6,7 +6,13 @@ type ExpoLiveActivityModule = {
 	startActivity: (activityName: string, activityIcon: string) => Promise<string>
 	pauseActivity: (activityId?: string) => Promise<boolean>
 	resumeActivity: (activityId?: string) => Promise<boolean>
-	updateActivity: (activityId: string | null, lastLocationTimestamp: number) => Promise<boolean>
+	updateActivity: (
+		activityId: string | null,
+		distanceText: string,
+		speedText: string,
+		averageSpeedText: string,
+		lastLocationTimestamp: number
+	) => Promise<boolean>
 	endActivity: (activityId?: string) => Promise<boolean>
 	getTimerStatus: () => Promise<TimerStatus>
 	getActiveActivities: () => ActivityInfo[]
@@ -27,6 +33,9 @@ export interface LiveActivityUpdateEvent {
 	elapsedTime: number
 	activityId: string
 	lastLocationTimestamp?: number
+	distanceText: string
+	speedText: string
+	averageSpeedText: string
 }
 
 export interface LiveActivityEndEvent {
@@ -44,11 +53,21 @@ export interface TimerStatus {
 	activityId: string
 	elapsedTime: number
 	lastLocationTimestamp?: number
+	distanceText?: string
+	speedText?: string
+	averageSpeedText?: string
 }
 
 export interface ActivityInfo {
 	id: string
 	activityName: string
+}
+
+export interface LiveActivityMetrics {
+	distanceText: string
+	speedText: string
+	averageSpeedText: string
+	lastLocationTimestamp?: number
 }
 
 export interface PendingWidgetAction {
@@ -108,14 +127,17 @@ export async function resumeLiveActivity(activityId?: string): Promise<boolean> 
 	}
 }
 
-export async function updateLiveActivityLastLocationTimestamp(
-	lastLocationTimestamp: number,
-	activityId?: string
-): Promise<boolean> {
+export async function updateLiveActivityMetrics(metrics: LiveActivityMetrics, activityId?: string): Promise<boolean> {
 	if (!ExpoLiveActivity) return false
 
 	try {
-		return await ExpoLiveActivity.updateActivity(activityId ?? null, lastLocationTimestamp)
+		return await ExpoLiveActivity.updateActivity(
+			activityId ?? null,
+			metrics.distanceText,
+			metrics.speedText,
+			metrics.averageSpeedText,
+			metrics.lastLocationTimestamp ?? 0
+		)
 	} catch (error) {
 		console.error('[LiveActivities] Error updating activity:', error)
 		return false
@@ -213,7 +235,7 @@ export default {
 	startLiveActivity,
 	pauseLiveActivity,
 	resumeLiveActivity,
-	updateLiveActivityLastLocationTimestamp,
+	updateLiveActivityMetrics,
 	endLiveActivity,
 	getTimerStatus,
 	getActiveActivities,

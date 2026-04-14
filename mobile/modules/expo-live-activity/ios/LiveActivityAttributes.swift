@@ -7,11 +7,24 @@ public struct LiveActivityAttributes: ActivityAttributes {
     public var startedAt: Date
     public var pausedAt: Date?
     public var lastLocationTimestamp: Double?
+    public var distanceText: String
+    public var speedText: String
+    public var averageSpeedText: String
 
-    public init(startedAt: Date, pausedAt: Date?, lastLocationTimestamp: Double? = nil) {
+    public init(
+      startedAt: Date,
+      pausedAt: Date?,
+      lastLocationTimestamp: Double? = nil,
+      distanceText: String = "0.0",
+      speedText: String = "0.0",
+      averageSpeedText: String = "0.0"
+    ) {
       self.startedAt = startedAt
       self.pausedAt = pausedAt
       self.lastLocationTimestamp = lastLocationTimestamp
+      self.distanceText = distanceText
+      self.speedText = speedText
+      self.averageSpeedText = averageSpeedText
     }
 
     public func elapsedTime(now: Date = Date()) -> TimeInterval {
