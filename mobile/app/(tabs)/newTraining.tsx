@@ -1,6 +1,6 @@
-import { AppState } from 'react-native'
+import { AppState, Platform } from 'react-native'
 import { SafeAreaProvider, useSafeAreaInsets } from 'react-native-safe-area-context'
-import React, { useCallback, useEffect, useRef, useState } from 'react'
+import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { useToast } from '@/hooks/useToast'
 import WorkoutStarted from '@/components/training/WorkoutStarted'
 import NewWorkout, { IWorkoutModeElement } from '@/components/training/NewWorkout'
@@ -45,6 +45,16 @@ import { getFieldsErrors } from '@/helpers/getFieldsErrors'
 import { ERRORS } from '@shared/errors'
 import BlurProvider from '@/components/providers/BlurProvider'
 import { saveSingleWorkout, WorkoutSource } from '@/helpers/saveUnsavedTraining'
+import EndTrainingModal from '@/components/training/EndTrainingModal'
+import {
+	addWorkoutLiveActivityWidgetActionListener,
+	consumePendingWorkoutLiveActivityAction,
+	endWorkoutLiveActivity,
+	pauseWorkoutLiveActivity,
+	resumeWorkoutLiveActivity,
+	startWorkoutLiveActivity
+} from '@/hooks/track-location/liveActivity'
+import type { PendingWidgetAction } from '@/modules/expo-live-activity'
 // Debugging
 TaskManager.getRegisteredTasksAsync().then((tasks) => {
 	console.log(tasks)
@@ -79,6 +89,7 @@ export default function NewTraining() {
 	const isInternetConnectedRef = useInternetConnectionRef()
 
 	const [chosenWorkout, setChosenWorkout] = useState<IWorkoutModeElement>(WorkoutTypesData[0])
+	const [isEndTrainingModalOpen, setIsEndTrainingModalOpen] = useState(false)
 	// Добавляем флаг ожидания старта после получения прав
 	const isPendingStartRef = useRef(false) // флаг, который отвечает за ожидание запуска тренировки (пока permissions !== granted)
 	const isPendingActiveTrackingRef = useRef(false) // флаг, который отвечает за ожидание запуска трекинга позиции в активном режиме (пока permissions !== granted)
@@ -119,6 +130,68 @@ export default function NewTraining() {
 		setIsWorkoutStarted,
 		setIsPaused
 	} = useLocationData(resolver, onInitialDataLoaded, chosenWorkout.type)
+
+	const setWorkoutPauseState = useCallback(
+		(nextPauseState: boolean) => {
+			if (!user?.id) return
+
+			if (nextPauseState) {
+				metricSpeedRef.current?.setSpeed(0)
+			}
+
+			setActiveWorkoutPauseState(nextPauseState, user.id)
+			setIsPaused(nextPauseState)
+		},
+		[metricSpeedRef, setIsPaused, user?.id]
+	)
+
+	const handleCloseEndModal = useCallback(() => {
+		setIsEndTrainingModalOpen(false)
+	}, [])
+
+	const handleClickOpenEndModal = useCallback(() => {
+		setIsEndTrainingModalOpen(true)
+	}, [])
+
+	const handleWorkoutLiveActivityAction = useCallback(
+		(event: PendingWidgetAction | null) => {
+			if (!event || !user?.id || !getWorkoutMeta(user.id)) return
+
+			if (event.action === 'pause') {
+				setWorkoutPauseState(true)
+				return
+			}
+
+			if (event.action === 'resume') {
+				setWorkoutPauseState(false)
+				return
+			}
+
+			// Нажатие завершения в live activity
+			handleClickOpenEndModal()
+		},
+		[handleClickOpenEndModal, setWorkoutPauseState, user?.id]
+	)
+
+	useEffect(() => {
+		const syncPendingWidgetAction = () => {
+			handleWorkoutLiveActivityAction(consumePendingWorkoutLiveActivityAction())
+		}
+
+		syncPendingWidgetAction()
+
+		const widgetActionSubscription = addWorkoutLiveActivityWidgetActionListener(handleWorkoutLiveActivityAction)
+		const appStateSubscription = AppState.addEventListener('change', (nextAppState) => {
+			if (nextAppState === 'active') {
+				syncPendingWidgetAction()
+			}
+		})
+
+		return () => {
+			widgetActionSubscription.remove()
+			appStateSubscription.remove()
+		}
+	}, [handleWorkoutLiveActivityAction])
 
 	// Watchdog: если тренировка активна, проверяем, жив ли сервис локации.
 	// Если телефон был перезагружен, isTrackingLocation() вернет false, но isWorkoutStarted будет true.
@@ -322,6 +395,7 @@ export default function NewTraining() {
 			acceptLivePointsRef.current = true // включаем live точки сразу после старта
 		}
 
+		await startWorkoutLiveActivity(workoutType)
 		stopActiveTracking()
 		await startHeadingTracking()
 		return startTrackingLocation()
@@ -391,12 +465,13 @@ export default function NewTraining() {
 
 	const handleClickPause = useCallback(async () => {
 		try {
-			metricSpeedRef.current?.setSpeed(0)
-			setIsPaused((prevState) => {
-				const nextPauseState = !prevState
-				setActiveWorkoutPauseState(nextPauseState, user?.id)
-				return nextPauseState
-			})
+			const nextPauseState = !isPaused
+			setWorkoutPauseState(nextPauseState)
+			if (nextPauseState) {
+				void pauseWorkoutLiveActivity()
+			} else {
+				void resumeWorkoutLiveActivity()
+			}
 			// Fix: Используем последнюю позицию из маршрута, если это доступно.
 			// Это убирает прыгание к "Настоящей GPS" позиции, когда мы используем моковый маршрут.
 			if (pointsRef.current.length > 0) {
@@ -409,9 +484,9 @@ export default function NewTraining() {
 		} catch (e) {
 			console.log('handleClickPause error:', e)
 		}
-	}, [])
+	}, [isPaused, pointsRef, setWorkoutPauseState, user?.id])
 
-	const pauseDebounced = useCallback(debounce(handleClickPause, PAUSE_DEBOUNCE_MS), [])
+	const pauseDebounced = useMemo(() => debounce(handleClickPause, PAUSE_DEBOUNCE_MS), [handleClickPause])
 
 	const calculateMetricsWhenFinished = (meta: IWorkoutMeta | null | void) => {
 		if (!meta) return
@@ -472,6 +547,7 @@ export default function NewTraining() {
 	const handleClickEndWorkout = useCallback(async () => {
 		try {
 			await tracking.stopTracking()
+			await endWorkoutLiveActivity()
 
 			if (headingSubscriptionRef.current) {
 				headingSubscriptionRef.current.remove()
@@ -523,13 +599,24 @@ export default function NewTraining() {
 		}
 	}, [chosenWorkout.type, user?.id, isInternetConnectedRef, resetWorkoutState, router, toast, tracking])
 
+	const handleClickEnd = useCallback(() => {
+		handleCloseEndModal()
+		void handleClickEndWorkout()
+	}, [handleClickEndWorkout, handleCloseEndModal])
+
 	return (
 		<SafeAreaProvider style={{ paddingTop: insets.top, backgroundColor: Colors['black-0d'] }}>
 			<BlurProvider>
+				<EndTrainingModal
+					blurDisabled={Platform.OS === 'android'}
+					open={isEndTrainingModalOpen}
+					handleClose={handleCloseEndModal}
+					handleClickEnd={handleClickEnd}
+				/>
 				{isWorkoutStarted ? (
 					<WorkoutStarted
 						handleClickPause={pauseDebounced}
-						handleClickEndWorkout={handleClickEndWorkout}
+						handleClickOpenEndModal={handleClickOpenEndModal}
 						workoutType={chosenWorkout.type}
 						isPaused={isPaused}
 						mapComponentRef={mapComponentRef}

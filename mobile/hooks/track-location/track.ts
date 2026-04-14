@@ -8,6 +8,7 @@ import { syncTraining } from '@/api/workout'
 import { prepareLocationsForSync } from '@/helpers/prepareLocationsForSync'
 import { getItem } from '@/store/authStorage'
 import { filterLocations } from '@/helpers/location/filterLocations'
+import { updateWorkoutLiveActivityFromLastLocationTimestamp } from '@/hooks/track-location/liveActivity'
 // import { LiveActivity } from 'expo-widgets'
 // import WorkoutActivity, {
 // 	getActivityTypeIcon,
@@ -143,7 +144,8 @@ TaskManager.defineTask(
 		const meta = getWorkoutMeta(user?.id)
 		if (!meta || !data?.locations?.length) return
 		const cleanedLocations = filterLocations(data.locations, { keepLast: true })
-		// updateWorkoutActivity(cleanedLocations.at(-1)?.timestamp) // @TODO проверка liveActivity ios в бэкграунде
+		console.log('last location timestamp received', cleanedLocations.at(-1)?.timestamp)
+		void updateWorkoutLiveActivityFromLastLocationTimestamp(cleanedLocations.at(-1)?.timestamp)
 		const savedLocations = setWorkoutItems(cleanedLocations, user?.id)
 		locationEmitter.emit(savedLocations)
 

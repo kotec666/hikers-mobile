@@ -35,7 +35,8 @@ struct ResumeIntent: AppIntent, LiveActivityIntent {
         let elapsedTime = pausedAt.timeIntervalSince(currentState.startedAt)
         let resumedState = LiveActivityAttributes.ContentState(
             startedAt: Date().addingTimeInterval(-elapsedTime),
-            pausedAt: nil
+            pausedAt: nil,
+            lastLocationTimestamp: currentState.lastLocationTimestamp
         )
 
         await activity.update(ActivityContent(

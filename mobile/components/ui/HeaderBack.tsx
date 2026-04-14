@@ -36,7 +36,7 @@ export const BackButton = memo(({ onPress }: { onPress: () => void }) => {
 	)
 
 	const renderWithEffect = (EffectComponent: any, effectProps: any) => (
-		<Motion.Pressable onPress={onPress}>
+		<Motion.Pressable onPress={onPress} className="w-[50px] h-[50px]">
 			<EffectComponent style={{ borderRadius: 999, overflow: 'hidden' }} {...effectProps}>
 				{buttonContent}
 			</EffectComponent>

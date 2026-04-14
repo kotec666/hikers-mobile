@@ -1,7 +1,6 @@
 import React, { RefObject, useCallback, useMemo, useState } from 'react'
-import EndTrainingModal from '@/components/training/EndTrainingModal'
 import { Container } from '@/components/ui/Container'
-import { Dimensions, Platform, Text, View } from 'react-native'
+import { Dimensions, Text, View } from 'react-native'
 import { fontFamily } from '@/constants/Fonts'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
 import { IWorkoutLocationStorageItem } from '@/store/workoutStorage'
@@ -29,7 +28,7 @@ interface IProps {
 
 	isPaused: boolean
 	handleClickPause: () => void
-	handleClickEndWorkout: () => void
+	handleClickOpenEndModal: () => void
 	workoutType: TrainingType
 
 	mapComponentRef: React.RefObject<MapComponentSegmentsHandle | null>
@@ -48,17 +47,8 @@ const { height } = Dimensions.get('screen')
 const WorkoutStarted = (props: IProps) => {
 	const insets = useSafeAreaInsets()
 	const maxMapHeight = useMemo(() => height / 2 - 40 - insets.top, [insets.top])
-	const [isEndTrainingModalOpen, setIsEndTrainingModalOpen] = useState(false)
 	const [peopleListHidden, setPeopleListHidden] = useState(true)
 	const [mapViewHidden, setMapViewHidden] = useState(true)
-
-	const handleCloseEndModal = useCallback(() => {
-		setIsEndTrainingModalOpen(false)
-	}, [])
-
-	const handleClickOpenEndModal = useCallback(() => {
-		setIsEndTrainingModalOpen(true)
-	}, [])
 
 	const handleClickPeopleList = useCallback(() => {
 		setPeopleListHidden((prevState) => !prevState)
@@ -70,19 +60,8 @@ const WorkoutStarted = (props: IProps) => {
 		setMapViewHidden((prevState) => !prevState)
 	}, [])
 
-	const handleClickEnd = useCallback(() => {
-		handleCloseEndModal()
-		props.handleClickEndWorkout()
-	}, [])
-
 	return (
 		<>
-			<EndTrainingModal
-				blurDisabled={Platform.OS === 'android'}
-				open={isEndTrainingModalOpen}
-				handleClose={handleCloseEndModal}
-				handleClickEnd={handleClickEnd}
-			/>
 			{/*<CompassDebug*/}
 			{/*	heading={props.headingDebug || 0}*/}
 			{/*	accuracy={props.accuracyDebug || 0}*/}
@@ -128,7 +107,7 @@ const WorkoutStarted = (props: IProps) => {
 						handleClickSwitchViewMode={handleClickSwitchViewMode}
 						handleClickPeopleList={handleClickPeopleList}
 						handleClickPause={props.handleClickPause}
-						handleClickOpenEndModal={handleClickOpenEndModal}
+						handleClickOpenEndModal={props.handleClickOpenEndModal}
 					/>
 				</View>
 			</Container>

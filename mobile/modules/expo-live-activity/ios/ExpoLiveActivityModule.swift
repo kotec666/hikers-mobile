@@ -48,7 +48,11 @@ private enum LiveActivityTimer {
       return (activity, currentState)
     }
 
-    let pausedState = LiveActivityAttributes.ContentState(startedAt: currentState.startedAt, pausedAt: Date())
+    let pausedState = LiveActivityAttributes.ContentState(
+      startedAt: currentState.startedAt,
+      pausedAt: Date(),
+      lastLocationTimestamp: currentState.lastLocationTimestamp
+    )
     await activity.update(ActivityContent(
       state: pausedState,
       staleDate: nil
@@ -70,7 +74,8 @@ private enum LiveActivityTimer {
     let elapsedTime = pausedAt.timeIntervalSince(currentState.startedAt)
     let resumedState = LiveActivityAttributes.ContentState(
       startedAt: Date().addingTimeInterval(-elapsedTime),
-      pausedAt: nil
+      pausedAt: nil,
+      lastLocationTimestamp: currentState.lastLocationTimestamp
     )
     await activity.update(ActivityContent(
       state: resumedState,
@@ -90,7 +95,8 @@ private enum LiveActivityTimer {
     let elapsedTime = currentState.elapsedTime(now: now)
     let finalState = LiveActivityAttributes.ContentState(
       startedAt: now.addingTimeInterval(-elapsedTime),
-      pausedAt: now
+      pausedAt: now,
+      lastLocationTimestamp: currentState.lastLocationTimestamp
     )
 
     await activity.end(
@@ -99,6 +105,29 @@ private enum LiveActivityTimer {
     )
 
     return activity
+  }
+
+  static func updateLastLocationTimestamp(
+    activityId: String?,
+    timestamp: Double
+  ) async -> (activity: Activity<LiveActivityAttributes>, state: LiveActivityAttributes.ContentState)? {
+    guard let activity = findActivity(activityId: activityId) else {
+      return nil
+    }
+
+    let currentState = activity.content.state
+    let updatedState = LiveActivityAttributes.ContentState(
+      startedAt: currentState.startedAt,
+      pausedAt: currentState.pausedAt,
+      lastLocationTimestamp: timestamp
+    )
+
+    await activity.update(ActivityContent(
+      state: updatedState,
+      staleDate: nil
+    ))
+
+    return (activity, updatedState)
   }
 
   static func getTimerStatus(activityId: String? = nil) -> [String: Any] {
@@ -127,11 +156,17 @@ private enum LiveActivityTimer {
     state: LiveActivityAttributes.ContentState? = nil
   ) -> [String: Any] {
     let state = state ?? activity.content.state
-    return [
+    var payload: [String: Any] = [
       "state": state.timerState(),
       "activityId": activity.id,
       "elapsedTime": Int(state.elapsedTime())
     ]
+
+    if let lastLocationTimestamp = state.lastLocationTimestamp {
+      payload["lastLocationTimestamp"] = lastLocationTimestamp
+    }
+
+    return payload
   }
 
   private static func findActivity(activityId: String?) -> Activity<LiveActivityAttributes>? {
@@ -210,6 +245,26 @@ public class ExpoLiveActivityModule: Module {
 
       Task {
         guard let result = await LiveActivityTimer.resumeActivity(activityId: activityId) else {
+          promise.resolve(false)
+          return
+        }
+
+        sendEvent(onLiveActivityUpdate, LiveActivityTimer.statusPayload(for: result.activity, state: result.state))
+        promise.resolve(true)
+      }
+    }
+
+    AsyncFunction("updateActivity") { (activityId: String?, lastLocationTimestamp: Double, promise: Promise) in
+      guard #available(iOS 16.2, *) else {
+        promise.resolve(false)
+        return
+      }
+
+      Task {
+        guard let result = await LiveActivityTimer.updateLastLocationTimestamp(
+          activityId: activityId,
+          timestamp: lastLocationTimestamp
+        ) else {
           promise.resolve(false)
           return
         }

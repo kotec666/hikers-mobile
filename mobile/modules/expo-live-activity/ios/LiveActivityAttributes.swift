@@ -6,10 +6,12 @@ public struct LiveActivityAttributes: ActivityAttributes {
   public struct ContentState: Codable, Hashable {
     public var startedAt: Date
     public var pausedAt: Date?
+    public var lastLocationTimestamp: Double?
 
-    public init(startedAt: Date, pausedAt: Date?) {
+    public init(startedAt: Date, pausedAt: Date?, lastLocationTimestamp: Double? = nil) {
       self.startedAt = startedAt
       self.pausedAt = pausedAt
+      self.lastLocationTimestamp = lastLocationTimestamp
     }
 
     public func elapsedTime(now: Date = Date()) -> TimeInterval {

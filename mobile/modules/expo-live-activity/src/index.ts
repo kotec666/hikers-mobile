@@ -6,6 +6,7 @@ type ExpoLiveActivityModule = {
 	startActivity: (activityName: string, activityIcon: string) => Promise<string>
 	pauseActivity: (activityId?: string) => Promise<boolean>
 	resumeActivity: (activityId?: string) => Promise<boolean>
+	updateActivity: (activityId: string | null, lastLocationTimestamp: number) => Promise<boolean>
 	endActivity: (activityId?: string) => Promise<boolean>
 	getTimerStatus: () => Promise<TimerStatus>
 	getActiveActivities: () => ActivityInfo[]
@@ -25,6 +26,7 @@ export interface LiveActivityUpdateEvent {
 	state: TimerState
 	elapsedTime: number
 	activityId: string
+	lastLocationTimestamp?: number
 }
 
 export interface LiveActivityEndEvent {
@@ -41,6 +43,7 @@ export interface TimerStatus {
 	state: TimerState
 	activityId: string
 	elapsedTime: number
+	lastLocationTimestamp?: number
 }
 
 export interface ActivityInfo {
@@ -101,6 +104,20 @@ export async function resumeLiveActivity(activityId?: string): Promise<boolean> 
 		return await ExpoLiveActivity.resumeActivity(activityId)
 	} catch (error) {
 		console.error('[LiveActivities] Error resuming activity:', error)
+		return false
+	}
+}
+
+export async function updateLiveActivityLastLocationTimestamp(
+	lastLocationTimestamp: number,
+	activityId?: string
+): Promise<boolean> {
+	if (!ExpoLiveActivity) return false
+
+	try {
+		return await ExpoLiveActivity.updateActivity(activityId ?? null, lastLocationTimestamp)
+	} catch (error) {
+		console.error('[LiveActivities] Error updating activity:', error)
 		return false
 	}
 }
@@ -196,6 +213,7 @@ export default {
 	startLiveActivity,
 	pauseLiveActivity,
 	resumeLiveActivity,
+	updateLiveActivityLastLocationTimestamp,
 	endLiveActivity,
 	getTimerStatus,
 	getActiveActivities,
