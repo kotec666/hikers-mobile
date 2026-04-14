@@ -19,8 +19,7 @@ import { LiveActivityUpdateEvent } from '@/modules/expo-live-activity'
 
 const { width } = Dimensions.get('window')
 
-//@TODO сейчас в приложении в tsx части необходимо нажимать кнопки по два раза чтобы поставить на паузу / продолжить / завершить, надо это пофиксить
-//@TODO в FIGMA придумать и совместить дизайн с кнопками паузы, таймером и метриками
+//@TODO проверить обновление live activity когда приложение перешло в неактивный режим
 //@TODO переверстать на swift вариант с кнопками взаимодействия и метриками, проверить все варианты (виды) отображения live activity
 
 export default function Liveactivity() {

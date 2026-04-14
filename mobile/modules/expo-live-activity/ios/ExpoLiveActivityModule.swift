@@ -27,44 +27,46 @@ private enum LiveActivityTimer {
     )
   }
 
-  static func pauseActivity(activityId: String?) async -> Activity<LiveActivityAttributes>? {
+  static func pauseActivity(activityId: String?) async -> (activity: Activity<LiveActivityAttributes>, state: LiveActivityAttributes.ContentState)? {
     guard let activity = findActivity(activityId: activityId) else {
       return nil
     }
 
     let currentState = activity.content.state
     guard currentState.pausedAt == nil else {
-      return activity
+      return (activity, currentState)
     }
 
+    let pausedState = LiveActivityAttributes.ContentState(startedAt: currentState.startedAt, pausedAt: Date())
     await activity.update(ActivityContent(
-      state: LiveActivityAttributes.ContentState(startedAt: currentState.startedAt, pausedAt: Date()),
+      state: pausedState,
       staleDate: nil
     ))
 
-    return activity
+    return (activity, pausedState)
   }
 
-  static func resumeActivity(activityId: String?) async -> Activity<LiveActivityAttributes>? {
+  static func resumeActivity(activityId: String?) async -> (activity: Activity<LiveActivityAttributes>, state: LiveActivityAttributes.ContentState)? {
     guard let activity = findActivity(activityId: activityId) else {
       return nil
     }
 
     let currentState = activity.content.state
     guard let pausedAt = currentState.pausedAt else {
-      return activity
+      return (activity, currentState)
     }
 
     let elapsedTime = pausedAt.timeIntervalSince(currentState.startedAt)
+    let resumedState = LiveActivityAttributes.ContentState(
+      startedAt: Date().addingTimeInterval(-elapsedTime),
+      pausedAt: nil
+    )
     await activity.update(ActivityContent(
-      state: LiveActivityAttributes.ContentState(
-        startedAt: Date().addingTimeInterval(-elapsedTime),
-        pausedAt: nil
-      ),
+      state: resumedState,
       staleDate: nil
     ))
 
-    return activity
+    return (activity, resumedState)
   }
 
   static func endActivity(activityId: String?) async -> Activity<LiveActivityAttributes>? {
@@ -109,9 +111,11 @@ private enum LiveActivityTimer {
     }
   }
 
-  static func statusPayload(for activity: Activity<LiveActivityAttributes>) -> [String: Any] {
-    let state = activity.content.state
-
+  static func statusPayload(
+    for activity: Activity<LiveActivityAttributes>,
+    state: LiveActivityAttributes.ContentState? = nil
+  ) -> [String: Any] {
+    let state = state ?? activity.content.state
     return [
       "state": state.timerState(),
       "activityId": activity.id,
@@ -167,12 +171,12 @@ public class ExpoLiveActivityModule: Module {
       }
 
       Task {
-        guard let activity = await LiveActivityTimer.pauseActivity(activityId: activityId) else {
+        guard let result = await LiveActivityTimer.pauseActivity(activityId: activityId) else {
           promise.resolve(false)
           return
         }
 
-        sendEvent(onLiveActivityUpdate, LiveActivityTimer.statusPayload(for: activity))
+        sendEvent(onLiveActivityUpdate, LiveActivityTimer.statusPayload(for: result.activity, state: result.state))
         promise.resolve(true)
       }
     }
@@ -184,12 +188,12 @@ public class ExpoLiveActivityModule: Module {
       }
 
       Task {
-        guard let activity = await LiveActivityTimer.resumeActivity(activityId: activityId) else {
+        guard let result = await LiveActivityTimer.resumeActivity(activityId: activityId) else {
           promise.resolve(false)
           return
         }
 
-        sendEvent(onLiveActivityUpdate, LiveActivityTimer.statusPayload(for: activity))
+        sendEvent(onLiveActivityUpdate, LiveActivityTimer.statusPayload(for: result.activity, state: result.state))
         promise.resolve(true)
       }
     }
