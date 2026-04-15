@@ -396,13 +396,14 @@ export default function ViewWorkout() {
 	}
 
 	const myParticipant = extendedTraining?.participants.find((p) => p.user.id === user?.id)
+	const creatorParticipant = existPost?.training.participants.find(
+		(participant) => participant.user.id === existPost?.userCreator.id
+	)
 
 	const adaptedLocationsFromHistory = adaptLocations(myParticipant?.route?.points || [])
-	const adaptedLocations = adaptLocations(existPost?.training?.participants?.[0]?.route?.points || [])
+	const adaptedLocations = adaptLocations(creatorParticipant?.route?.points || [])
 
-	const creatorMetrics = existPost?.training.participants.find(
-		(participant) => participant.user.id === existPost?.userCreator.id
-	)?.metrics
+	const creatorMetrics = creatorParticipant?.metrics
 	const myMetrics = myParticipant?.metrics
 
 	const distanceText = isView

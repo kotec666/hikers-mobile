@@ -476,10 +476,12 @@ export default function NewTraining() {
 			// Это убирает прыгание к "Настоящей GPS" позиции, когда мы используем моковый маршрут.
 			if (pointsRef.current.length > 0) {
 				const lastPoint = pointsRef.current[pointsRef.current.length - 1]
-				setWorkoutItems([lastPoint.locationObject], user?.id)
+				const savedPoints = setWorkoutItems([{ ...lastPoint.locationObject, timestamp: Date.now() }], user?.id)
+				pointsRef.current.push(...savedPoints)
 			} else {
 				const lastUserPosition = await getLastUserPosition()
-				setWorkoutItems([lastUserPosition], user?.id) // save pause position
+				const savedPoints = setWorkoutItems([{ ...lastUserPosition, timestamp: Date.now() }], user?.id)
+				pointsRef.current.push(...savedPoints)
 			}
 		} catch (e) {
 			console.log('handleClickPause error:', e)
