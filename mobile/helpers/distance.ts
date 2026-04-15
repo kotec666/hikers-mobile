@@ -1,4 +1,4 @@
-import { IWorkoutLocationStorageItem } from '@/store/workoutStorage'
+import type { IWorkoutLocationStorageItem } from '@/store/workoutStorage'
 
 /**
  * Вычисляет расстояние между двумя точками по координатам (в метрах)
@@ -32,28 +32,32 @@ export const calculateTotalDistance = (points: IWorkoutLocationStorageItem[]): n
 		}
 
 		if (prev) {
-			const prevCoords = prev.locationObject.coords
-			const currCoords = point.locationObject.coords
-
-			if (
-				prevCoords.latitude != null &&
-				prevCoords.longitude != null &&
-				currCoords.latitude != null &&
-				currCoords.longitude != null
-			) {
-				totalDistance += haversineDistance(
-					prevCoords.latitude,
-					prevCoords.longitude,
-					currCoords.latitude,
-					currCoords.longitude
-				)
-			}
+			totalDistance += calculateDistanceBetweenWorkoutPoints(prev, point)
 		}
 
 		prev = point
 	}
 
 	return Math.round(totalDistance)
+}
+
+export const calculateDistanceBetweenWorkoutPoints = (
+	prev: IWorkoutLocationStorageItem,
+	curr: IWorkoutLocationStorageItem
+): number => {
+	const prevCoords = prev.locationObject.coords
+	const currCoords = curr.locationObject.coords
+
+	if (
+		prevCoords.latitude == null ||
+		prevCoords.longitude == null ||
+		currCoords.latitude == null ||
+		currCoords.longitude == null
+	) {
+		return 0
+	}
+
+	return haversineDistance(prevCoords.latitude, prevCoords.longitude, currCoords.latitude, currCoords.longitude)
 }
 
 // С фильтрацией только активных точек

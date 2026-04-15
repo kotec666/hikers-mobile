@@ -10,6 +10,7 @@ import {
 	clearActiveWorkoutData,
 	getShortWorkouts,
 	getUnsavedWorkoutsThatHaveId,
+	getWorkoutDistanceMeters,
 	getWorkoutMeta,
 	IWorkoutMeta,
 	moveActiveWorkoutToNotSaved,
@@ -46,6 +47,7 @@ import { ERRORS } from '@shared/errors'
 import BlurProvider from '@/components/providers/BlurProvider'
 import { saveSingleWorkout, WorkoutSource } from '@/helpers/saveUnsavedTraining'
 import EndTrainingModal from '@/components/training/EndTrainingModal'
+import { calculateAverageSpeedKmh, getWorkoutElapsedMs } from '@/helpers/workoutMetrics'
 import {
 	addWorkoutLiveActivityWidgetActionListener,
 	consumePendingWorkoutLiveActivityAction,
@@ -494,29 +496,17 @@ export default function NewTraining() {
 		if (!meta) return
 
 		// Время
-		let timeElapsed = 0 // в миллисекундах
-		if (meta) {
-			if (meta.isPaused && meta.lastPauseAt) {
-				timeElapsed = meta.lastPauseAt - meta.startedAt - meta.totalPausedMs
-			} else {
-				timeElapsed = Date.now() - meta.startedAt - meta.totalPausedMs
-			}
-		}
+		const timeElapsed = getWorkoutElapsedMs(meta)
+		const distanceMeters = getWorkoutDistanceMeters(user?.id)
 
 		// Ср. скорость
-		let avgKmh = 0
-
-		if (timeElapsed > 0) {
-			avgKmh = (accumulatedDistanceRef.current * 3600) / timeElapsed // distance(m) → km/h
-		}
-
-		if (!Number.isFinite(avgKmh) || avgKmh < 0) avgKmh = 0
+		const avgKmh = calculateAverageSpeedKmh(distanceMeters, timeElapsed)
 
 		const totalAvgSpeed = Math.round(avgKmh) + 'км/ч'
 		const totalTimeFormatted = formatTime(timeElapsed)
-		const totalCalories = calculateCalories(timeElapsed, accumulatedDistanceRef.current, chosenWorkout.type, 70) // @TODO вес пользователя
-		const totalDistanceFormatted = formatDistance(accumulatedDistanceRef.current)
-		const totalAvgPace = calculatePace(timeElapsed, accumulatedDistanceRef.current)
+		const totalCalories = calculateCalories(timeElapsed, distanceMeters, chosenWorkout.type, 70) // @TODO вес пользователя
+		const totalDistanceFormatted = formatDistance(distanceMeters)
+		const totalAvgPace = calculatePace(timeElapsed, distanceMeters)
 		const totalHeight = getWorkoutHeight(pointsRef.current)
 
 		setTrainingId(meta.id)

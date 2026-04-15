@@ -196,7 +196,10 @@ const WorkoutHistory = () => {
 							>
 								{notSavedWorkouts.map((notSavedWorkout) => {
 									const date = new Date(notSavedWorkout.startedAt)
-									const title = format(date, 'd MMMM, HH:mm', { locale: ru })
+									const titleDate = format(date, 'd MMMM, HH:mm', {
+										locale: ru
+									})
+									const title = `${titleDate}${Number.isFinite(notSavedWorkout.distanceMeters) && notSavedWorkout.distanceMeters >= 0 ? `, ${formatDistance(notSavedWorkout.distanceMeters)}` : ''}`
 									const typeData = workoutTypeMap[notSavedWorkout.type]
 									const IconComponent = typeData?.IconComponent ?? PeopleRunningSvg
 

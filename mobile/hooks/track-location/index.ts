@@ -1,6 +1,12 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { startTracking, stopTracking } from '@/hooks/track-location/track'
-import { CHUNK_POINT_COUNT, getWorkoutChunk, getWorkoutMeta, IWorkoutLocationStorageItem } from '@/store/workoutStorage'
+import {
+	CHUNK_POINT_COUNT,
+	getWorkoutChunk,
+	getWorkoutDistanceMeters,
+	getWorkoutMeta,
+	IWorkoutLocationStorageItem
+} from '@/store/workoutStorage'
 import { UserLocationMarkerHandle } from '@/components/map/markers/UserLocationMarker/UserLocationMarker'
 import { locationEmitter } from '@/hooks/track-location/locationEmitter'
 import { Point } from 'react-native-yamap-plus'
@@ -11,10 +17,10 @@ import { TrainingType } from '@/shared/enums'
 import { MetricDistanceHandle } from '@/components/training/tabs/metrics/MetricDistance'
 import { MetricCaloriesHandle } from '@/components/training/tabs/metrics/MetricCalories'
 import { MetricHeightHandle } from '@/components/training/tabs/metrics/MetricHeight'
-import { calculateTotalDistance } from '@/helpers/distance'
 import { MapComponentSegmentsHandle } from '@/components/map/MapComponentSegments'
 import { MetricAvgSpeedHandle } from '@/components/training/tabs/metrics/MetricAvgSpeed'
 import { useAuthStore } from '@/store/authStore'
+import { calculateAverageSpeedKmh, getWorkoutElapsedMs } from '@/helpers/workoutMetrics'
 
 export function useLocationTracking() {
 	const onStartTracking = useCallback(async () => {
@@ -55,7 +61,7 @@ export function useLocationData(
 	const metricDistanceRef = useRef<MetricDistanceHandle>(null)
 	const metricCaloriesRef = useRef<MetricCaloriesHandle>(null)
 	const metricHeightRef = useRef<MetricHeightHandle>(null)
-	const accumulatedDistanceRef = useRef<number>(0) // Инкрементальная дистанция
+	const accumulatedDistanceRef = useRef<number>(0) // UI cache; source of truth is workout meta.
 
 	const pointsRef = useRef<IWorkoutLocationStorageItem[]>([])
 
@@ -144,11 +150,12 @@ export function useLocationData(
 		}
 	}, [])
 
-	// Вспомогательная функция для расчета дистанции между двумя точками (LocationObject)
-	// Можно вынести в helpers, но для наглядности оставим здесь или используем calculateTotalDistance([p1, p2])
-	const getDist = useCallback((p1: IWorkoutLocationStorageItem, p2: IWorkoutLocationStorageItem) => {
-		return calculateTotalDistance([p1, p2])
-	}, [])
+	const syncAccumulatedDistanceFromStorage = useCallback(() => {
+		const distanceMeters = getWorkoutDistanceMeters(user?.id)
+		accumulatedDistanceRef.current = distanceMeters
+
+		return distanceMeters
+	}, [user?.id])
 
 	/**
 	 * Основная функция обновления метрик при получении новой точки
@@ -161,6 +168,7 @@ export function useLocationData(
 			// Если пауза и это не принудительное обновление — выходим
 			if (isPausedRef.current && !forceUpdate) return
 			const meta = getWorkoutMeta(user?.id)
+			const distanceMeters = syncAccumulatedDistanceFromStorage()
 
 			// 1. Скорость
 			if (forceUpdate) {
@@ -170,34 +178,22 @@ export function useLocationData(
 			}
 
 			// 2. Дистанция
-			metricDistanceRef.current?.setDistance(accumulatedDistanceRef.current)
+			metricDistanceRef.current?.setDistance(distanceMeters)
 
 			// 3. Калории
-			let timeElapsed = 0 // в миллисекундах
-			if (meta) {
-				if (meta.isPaused && meta.lastPauseAt) {
-					timeElapsed = meta.lastPauseAt - meta.startedAt - meta.totalPausedMs
-				} else {
-					timeElapsed = Date.now() - meta.startedAt - meta.totalPausedMs
-				}
-			}
+			const timeElapsed = meta ? getWorkoutElapsedMs(meta) : 0
 
-			metricCaloriesRef.current?.updateCalories(accumulatedDistanceRef.current, timeElapsed, workoutType)
+			metricCaloriesRef.current?.updateCalories(distanceMeters, timeElapsed, workoutType)
 
 			// 4. Средняя скорость
-			let avgKmh = 0
-			if (timeElapsed > 0) {
-				avgKmh = (accumulatedDistanceRef.current * 3600) / timeElapsed // distance(m) → km/h
-			}
-
-			if (!Number.isFinite(avgKmh) || avgKmh < 0) avgKmh = 0
+			const avgKmh = calculateAverageSpeedKmh(distanceMeters, timeElapsed)
 
 			metricAvgSpeedRef.current?.setAvgSpeed(avgKmh)
 
 			// 5. Высота
 			metricHeightRef.current?.updateHeight(pointsRef.current)
 		},
-		[user?.id, workoutType, isPausedRef]
+		[user?.id, workoutType, isPausedRef, syncAccumulatedDistanceFromStorage]
 	)
 
 	// Универсальный обработчик для новых точек (push в pointsRef + обновление UI/метрик)
@@ -205,10 +201,6 @@ export function useLocationData(
 		(stored: IWorkoutLocationStorageItem[] | null) => {
 			if (!stored || stored.length === 0) return
 			if (!isMountedRef.current) return
-
-			// Запоминаем последнюю точку ДО добавления новых
-			const hasPreviousData = pointsRef.current.length > 0
-			const prevLastPoint = hasPreviousData ? pointsRef.current[pointsRef.current.length - 1] : null
 
 			// отфильтруем дубли по timestamp (чтобы избежать наложений истории)
 
@@ -236,28 +228,11 @@ export function useLocationData(
 
 			// Обновляем метрики
 			if (!isPausedRef.current) {
-				let batchDistance = 0
-				let previousPoint = prevLastPoint
-
-				for (const item of incomingFiltered) {
-					if (previousPoint) {
-						// Считаем дистанцию только когда обе точки не являются паузой
-						if (!previousPoint.paused && !item.paused) {
-							batchDistance += getDist(previousPoint, item)
-						}
-					}
-					previousPoint = item
-				}
-
-				if (batchDistance > 0) {
-					accumulatedDistanceRef.current += batchDistance
-				}
-
 				// Обновляем метрики UI
 				updateRealtimeMetrics(speed ?? 0)
 			}
 		},
-		[getDist, saveInitialLocations, saveInitialMarkerLocation, updateRealtimeMetrics, isPausedRef]
+		[saveInitialLocations, saveInitialMarkerLocation, updateRealtimeMetrics, isPausedRef]
 	)
 
 	// Callback, который подписка locationEmitter будет вызывать.
@@ -295,8 +270,7 @@ export function useLocationData(
 			const totalChunks = meta.chunkCount
 			// Сценарий 1: Полная загрузка (при старте приложения)
 			if (pointsRef.current.length === 0) {
-				// Временный массив для хранения всех точек, чтобы потом правильно посчитать дистанцию
-				// (или можно считать на лету, если память критична, но здесь проще так)
+				// Временный массив для восстановления карты; дистанция хранится инкрементально в meta.
 				const allLoadedPoints: IWorkoutLocationStorageItem[] = []
 
 				// Грузим чанки. Для правильного порядка лучше грузить с 0 до N
@@ -317,8 +291,7 @@ export function useLocationData(
 					}
 				})
 
-				// пересчитаем дистанцию
-				accumulatedDistanceRef.current = calculateTotalDistance(pointsRef.current)
+				syncAccumulatedDistanceFromStorage()
 
 				if (pointsRef.current.length > 0) {
 					const last = pointsRef.current[pointsRef.current.length - 1]
@@ -377,22 +350,7 @@ export function useLocationData(
 				}
 
 				if (newPoints.length > 0 && isMountedRef.current) {
-					let gapDistance = 0
-
-					// 1. Дистанция от старой последней до первой новой
-					if (
-						lastKnownPoint &&
-						lastKnownPoint.locationObject.timestamp !== newPoints[0].locationObject.timestamp
-					) {
-						gapDistance += getDist(lastKnownPoint, newPoints[0])
-					}
-
-					// 2. Дистанция внутри новых точек (если их > 1)
-					// Используем имеющийся helper, передавая массив LocationObject
-					if (newPoints.length > 1) {
-						gapDistance += calculateTotalDistance(newPoints)
-					}
-					accumulatedDistanceRef.current += gapDistance
+					syncAccumulatedDistanceFromStorage()
 					pointsRef.current.push(...newPoints)
 
 					// Обновляем карту и метрики
@@ -420,7 +378,14 @@ export function useLocationData(
 			isHistoryLoading.current = false
 			isLoadingRef.current = false
 		}
-	}, [user?.id, saveInitialMarkerLocation, saveInitialLocations, updateRealtimeMetrics, getDist, processPoints])
+	}, [
+		user?.id,
+		saveInitialMarkerLocation,
+		saveInitialLocations,
+		updateRealtimeMetrics,
+		syncAccumulatedDistanceFromStorage,
+		processPoints
+	])
 
 	/**
 	 * Функция для полного сброса состояния тренировки и очистки карты.
@@ -567,18 +532,3 @@ export function useLocationData(
 		setIsWorkoutStarted
 	}
 }
-
-// @TODO Переместить в хранилище расчет дистанции или сделать хуком?
-// /**
-//  * A hook to calculate the distance, in meters, between the registered locations.
-//  */
-// export function useLocationDistance(locations: LocationObject[], precision = 2) {
-// 	// Let's memoize this method to avoid costly calculations
-// 	return useMemo(() => {
-// 		const distance = getDistanceFromLocations(locations)
-// 		const factor = Math.pow(10, precision)
-// 		const rounded = Math.round(distance * factor) / factor
-//
-// 		return Number.isNaN(rounded) ? 0 : rounded
-// 	}, [locations, precision])
-// }

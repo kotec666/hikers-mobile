@@ -7,6 +7,7 @@ import {
 	POINT_BYTE_SIZE,
 	serializeLocation
 } from '@/helpers/binarySerializer'
+import { calculateDistanceBetweenWorkoutPoints } from '@/helpers/distance'
 
 export const workoutStorage = createMMKV({
 	id: 'workout-storage'
@@ -31,6 +32,7 @@ export interface IWorkout {
 	startedAt: number
 	totalPausedMs: number
 	lastPauseAt: null | number
+	distanceMeters: number
 	locations: IWorkoutLocationStorageItem[]
 }
 
@@ -44,6 +46,8 @@ export interface IWorkoutMeta {
 	lastPauseAt: null | number
 	chunkCount: number
 	nextPointId: number
+	distanceMeters: number
+	lastDistancePoint: IWorkoutLocationStorageItem | null
 }
 
 export interface IWorkoutLocationStorageItem {
@@ -52,6 +56,19 @@ export interface IWorkoutLocationStorageItem {
 	locationObject: LocationObject
 	paused: boolean
 	isSavedToServer: boolean
+}
+
+const addWorkoutDistancePointToMeta = (meta: IWorkoutMeta, entry: IWorkoutLocationStorageItem): void => {
+	if (entry.paused) {
+		meta.lastDistancePoint = null
+		return
+	}
+
+	if (meta.lastDistancePoint) {
+		meta.distanceMeters += calculateDistanceBetweenWorkoutPoints(meta.lastDistancePoint, entry)
+	}
+
+	meta.lastDistancePoint = entry
 }
 
 // --- CLEANUP ---
@@ -84,7 +101,9 @@ export const removeUserWorkoutStorage = (userId?: string): void => {
 export const getWorkoutMeta = (userId?: string): IWorkoutMeta | null | void => {
 	if (!userId) return console.error('getWorkoutMeta [error]: no userId provided')
 	const metaStr = workoutStorage.getString(KEY_ACTIVE_META(userId))
-	return metaStr ? (JSON.parse(metaStr) as IWorkoutMeta) : null
+	if (!metaStr) return null
+
+	return JSON.parse(metaStr) as IWorkoutMeta
 }
 
 // --- ACTIVE WORKOUT ---
@@ -106,7 +125,9 @@ export const startAndStoreNewActiveWorkout = (
 		totalPausedMs: 0,
 		lastPauseAt: null,
 		chunkCount: 1,
-		nextPointId: 0
+		nextPointId: 0,
+		distanceMeters: 0,
+		lastDistancePoint: null
 	}
 
 	workoutStorage.set(KEY_ACTIVE_META(userId), JSON.stringify(meta))
@@ -161,6 +182,7 @@ export const setWorkoutItems = (items: LocationObject[], userId?: string): IWork
 		}
 
 		saved.push(entry)
+		addWorkoutDistancePointToMeta(meta, entry)
 
 		const bytes = serializeLocation(entry)
 		const limit = CHUNK_POINT_COUNT * POINT_BYTE_SIZE
@@ -215,6 +237,7 @@ export const getFullActiveWorkout = (userId?: string): IWorkout | null => {
 		isPaused: meta.isPaused,
 		totalPausedMs: meta.totalPausedMs,
 		lastPauseAt: meta.lastPauseAt,
+		distanceMeters: meta.distanceMeters,
 		locations
 	}
 }
@@ -319,6 +342,15 @@ export const getActiveWorkoutPoints = (
 	}
 
 	return result
+}
+
+export const getWorkoutDistanceMeters = (userId?: string): number => {
+	if (!userId) return 0
+
+	const meta = getWorkoutMeta(userId)
+	if (!meta) return 0
+
+	return Math.max(0, meta.distanceMeters)
 }
 
 export const removeAllShortWorkouts = (userId?: string): void => {
