@@ -3,7 +3,12 @@ import { Platform } from 'react-native'
 
 type ExpoLiveActivityModule = {
 	isLiveActivityAvailable: () => boolean
-	startActivity: (activityName: string, activityIcon: string) => Promise<string>
+	startActivity: (
+		activityName: string,
+		activityIcon: string,
+		startedAtTimestamp?: number,
+		pausedAtTimestamp?: number
+	) => Promise<string>
 	pauseActivity: (activityId?: string) => Promise<boolean>
 	resumeActivity: (activityId?: string) => Promise<boolean>
 	updateActivity: (
@@ -92,13 +97,23 @@ export function isLiveActivityAvailable(): boolean {
 	}
 }
 
-export async function startLiveActivity(activityName: string, activityIcon: string): Promise<string> {
+export async function startLiveActivity(
+	activityName: string,
+	activityIcon: string,
+	startedAtTimestamp?: number,
+	pausedAtTimestamp?: number | null
+): Promise<string> {
 	if (!ExpoLiveActivity) {
 		console.warn('[LiveActivities] Module not available.')
 		return ''
 	}
 	try {
-		return await ExpoLiveActivity.startActivity(activityName, activityIcon)
+		return await ExpoLiveActivity.startActivity(
+			activityName,
+			activityIcon,
+			startedAtTimestamp,
+			pausedAtTimestamp ?? undefined
+		)
 	} catch (error) {
 		console.error('[LiveActivities] Error starting activity:', error)
 		return ''

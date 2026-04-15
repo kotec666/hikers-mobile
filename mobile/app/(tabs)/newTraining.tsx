@@ -48,6 +48,7 @@ import BlurProvider from '@/components/providers/BlurProvider'
 import { saveSingleWorkout, WorkoutSource } from '@/helpers/saveUnsavedTraining'
 import EndTrainingModal from '@/components/training/EndTrainingModal'
 import { calculateAverageSpeedKmh, getWorkoutElapsedMs } from '@/helpers/workoutMetrics'
+import { restoreWorkoutLiveActivity } from '@/hooks/track-location/liveActivityMetrics'
 import {
 	addWorkoutLiveActivityWidgetActionListener,
 	consumePendingWorkoutLiveActivityAction,
@@ -105,7 +106,7 @@ export default function NewTraining() {
 			}
 		}
 
-		handleClickStart(true)
+		handleClickStart(true, restoredType)
 	}, [])
 
 	const tracking = useLocationTracking()
@@ -397,15 +398,20 @@ export default function NewTraining() {
 			acceptLivePointsRef.current = true // включаем live точки сразу после старта
 		}
 
-		await startWorkoutLiveActivity(workoutType)
+		if (afterReboot) {
+			await restoreWorkoutLiveActivity(workoutType, user?.id)
+		} else {
+			await startWorkoutLiveActivity(workoutType)
+		}
+
 		stopActiveTracking()
 		await startHeadingTracking()
 		return startTrackingLocation()
 	}
 
 	const handleClickStart = useCallback(
-		(afterReboot: boolean) => {
-			startWorkout(chosenWorkout.type, afterReboot)
+		(afterReboot: boolean, workoutTypeOverride?: TrainingType) => {
+			startWorkout(workoutTypeOverride ?? chosenWorkout.type, afterReboot)
 		},
 		[chosenWorkout.type]
 	)

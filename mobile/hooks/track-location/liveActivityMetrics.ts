@@ -1,12 +1,18 @@
 import type { LocationObject } from 'expo-location'
-import { getWorkoutDistanceMeters, getWorkoutMeta } from '@/store/workoutStorage'
-import { updateWorkoutLiveActivityMetrics } from '@/hooks/track-location/liveActivity'
+import { getLastActiveWorkoutPoint, getWorkoutDistanceMeters, getWorkoutMeta } from '@/store/workoutStorage'
+import {
+	pauseWorkoutLiveActivity,
+	resumeWorkoutLiveActivity,
+	startWorkoutLiveActivity,
+	updateWorkoutLiveActivityMetrics
+} from '@/hooks/track-location/liveActivity'
 import {
 	calculateAverageSpeedKmh,
 	calculateSpeedKmh,
 	formatMetricNumber,
 	getWorkoutElapsedMs
 } from '@/helpers/workoutMetrics'
+import type { TrainingType } from '@shared/enums'
 
 export const updateWorkoutLiveActivityFromLastLocation = async (
 	lastLocation: LocationObject | undefined,
@@ -28,4 +34,22 @@ export const updateWorkoutLiveActivityFromLastLocation = async (
 		averageSpeedText: formatMetricNumber(averageSpeedKmh),
 		lastLocationTimestamp: lastLocation.timestamp
 	})
+}
+
+export const restoreWorkoutLiveActivity = async (workoutType: TrainingType, userId?: string): Promise<void> => {
+	if (!userId) return
+
+	const meta = getWorkoutMeta(userId)
+	if (!meta) return
+
+	await startWorkoutLiveActivity(workoutType, meta.startedAt, meta.isPaused ? meta.lastPauseAt : null)
+
+	if (meta.isPaused) {
+		await pauseWorkoutLiveActivity()
+	} else {
+		await resumeWorkoutLiveActivity()
+	}
+
+	const lastPoint = getLastActiveWorkoutPoint(userId)
+	await updateWorkoutLiveActivityFromLastLocation(lastPoint?.locationObject, userId)
 }

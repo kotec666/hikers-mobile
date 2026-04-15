@@ -24,10 +24,17 @@ private let widgetActionNotificationCallback: CFNotificationCallback = { _, obse
 
 @available(iOS 16.2, *)
 private enum LiveActivityTimer {
-  static func startActivity(activityName: String, activityIcon: String) throws -> Activity<LiveActivityAttributes> {
+  static func startActivity(
+    activityName: String,
+    activityIcon: String,
+    startedAtTimestamp: Double?,
+    pausedAtTimestamp: Double?
+  ) throws -> Activity<LiveActivityAttributes> {
     let attributes = LiveActivityAttributes(activityName: activityName, activityIcon: activityIcon)
+    let startedAt = startedAtTimestamp.map { Date(timeIntervalSince1970: $0 / 1000) } ?? Date()
+    let pausedAt = pausedAtTimestamp.map { Date(timeIntervalSince1970: $0 / 1000) }
     let content = ActivityContent(
-      state: LiveActivityAttributes.ContentState(startedAt: Date(), pausedAt: nil),
+      state: LiveActivityAttributes.ContentState(startedAt: startedAt, pausedAt: pausedAt),
       staleDate: nil
     )
 
@@ -221,7 +228,13 @@ public class ExpoLiveActivityModule: Module {
       return false
     }
 
-    AsyncFunction("startActivity") { (activityName: String, activityIcon: String, promise: Promise) in
+    AsyncFunction("startActivity") { (
+      activityName: String,
+      activityIcon: String,
+      startedAtTimestamp: Double?,
+      pausedAtTimestamp: Double?,
+      promise: Promise
+    ) in
       guard #available(iOS 16.2, *) else {
         promise.resolve("")
         return
@@ -230,7 +243,9 @@ public class ExpoLiveActivityModule: Module {
       do {
         let activity = try LiveActivityTimer.startActivity(
           activityName: activityName,
-          activityIcon: activityIcon
+          activityIcon: activityIcon,
+          startedAtTimestamp: startedAtTimestamp,
+          pausedAtTimestamp: pausedAtTimestamp
         )
         sendEvent(onLiveActivityUpdate, LiveActivityTimer.statusPayload(for: activity))
         promise.resolve(activity.id)

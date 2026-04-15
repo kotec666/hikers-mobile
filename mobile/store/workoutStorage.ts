@@ -344,6 +344,25 @@ export const getActiveWorkoutPoints = (
 	return result
 }
 
+export const getLastActiveWorkoutPoint = (userId?: string): IWorkoutLocationStorageItem | null => {
+	if (!userId) return null
+
+	const meta = getWorkoutMeta(userId)
+	if (!meta) return null
+
+	for (let i = meta.chunkCount - 1; i >= 0; i--) {
+		const buffer = workoutStorage.getBuffer(KEY_ACTIVE_BIN(userId, i))
+		if (!buffer) continue
+
+		const points = deserializeLocations(new Uint8Array(buffer), meta.startedAt, deserializeGetterType.ALL)
+		const lastPoint = points.at(-1)
+
+		if (lastPoint) return lastPoint
+	}
+
+	return null
+}
+
 export const getWorkoutDistanceMeters = (userId?: string): number => {
 	if (!userId) return 0
 

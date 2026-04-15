@@ -26,7 +26,11 @@ const getExistingActivityId = () => {
 
 const canUseLiveActivity = () => isIOS && liveActivities.isLiveActivityAvailable()
 
-export const startWorkoutLiveActivity = async (workoutType: TrainingType): Promise<string | null> => {
+export const startWorkoutLiveActivity = async (
+	workoutType: TrainingType,
+	startedAt?: number,
+	pausedAt?: number | null
+): Promise<string | null> => {
 	if (!canUseLiveActivity()) return null
 
 	const existingActivityId = getExistingActivityId()
@@ -37,7 +41,9 @@ export const startWorkoutLiveActivity = async (workoutType: TrainingType): Promi
 
 	const activityId = await liveActivities.startLiveActivity(
 		WorkoutTypesMap?.[workoutType]?.name ?? 'Тренировка',
-		getWorkoutLiveActivityIcon(workoutType)
+		getWorkoutLiveActivityIcon(workoutType),
+		startedAt,
+		pausedAt
 	)
 
 	activeWorkoutLiveActivityId = activityId || null
