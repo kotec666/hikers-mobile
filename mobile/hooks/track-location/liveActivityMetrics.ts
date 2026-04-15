@@ -42,7 +42,11 @@ export const restoreWorkoutLiveActivity = async (workoutType: TrainingType, user
 	const meta = getWorkoutMeta(userId)
 	if (!meta) return
 
-	await startWorkoutLiveActivity(workoutType, meta.startedAt, meta.isPaused ? meta.lastPauseAt : null)
+	const elapsedMs = getWorkoutElapsedMs(meta)
+	const liveActivityNow = meta.isPaused && meta.lastPauseAt ? meta.lastPauseAt : Date.now()
+	const liveActivityStartedAt = liveActivityNow - elapsedMs
+
+	await startWorkoutLiveActivity(workoutType, liveActivityStartedAt, meta.isPaused ? meta.lastPauseAt : null)
 
 	if (meta.isPaused) {
 		await pauseWorkoutLiveActivity()
