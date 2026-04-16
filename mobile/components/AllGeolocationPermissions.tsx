@@ -133,14 +133,17 @@ const AllGeolocationPermissions = forwardRef<AllGeolocationPermissionsHandle, IP
 		)
 	}
 
-	const checkIOSLocationServicesAndThrowSystemAlert = async (granted: boolean, canAskAgain: boolean) => {
+	const checkIOSLocationServicesAndShowAlert = async (granted: boolean, canAskAgain: boolean): Promise<boolean> => {
 		if (Platform.OS === 'ios' && !granted && !canAskAgain) {
 			const isGPSEnabled = await Location.hasServicesEnabledAsync() // ios + android
 
 			if (!isGPSEnabled) {
-				return showIOSLocationServicesAlert()
+				showIOSLocationServicesAlert()
+				return true
 			}
 		}
+
+		return false
 	}
 
 	// ==========================================
@@ -149,7 +152,8 @@ const AllGeolocationPermissions = forwardRef<AllGeolocationPermissionsHandle, IP
 	const checkForegroundPermission = async () => {
 		/** Шаг 1, проверка разрешения на предоставление геолокации в активном режиме */
 		const { granted, canAskAgain } = await Location.getForegroundPermissionsAsync() // ios + android
-		await checkIOSLocationServicesAndThrowSystemAlert(granted, canAskAgain)
+		const isIOSLocationServicesAlertShown = await checkIOSLocationServicesAndShowAlert(granted, canAskAgain)
+		if (isIOSLocationServicesAlertShown) return
 
 		if (granted) {
 			return checkBackgroundPermission()
@@ -179,7 +183,8 @@ const AllGeolocationPermissions = forwardRef<AllGeolocationPermissionsHandle, IP
 	const checkBackgroundPermission = async () => {
 		/** Шаг 2, проверка разрешения на предоставление геолокации в фоновом режиме */
 		const { granted, canAskAgain } = await Location.getBackgroundPermissionsAsync() // ios + android
-		await checkIOSLocationServicesAndThrowSystemAlert(granted, canAskAgain)
+		const isIOSLocationServicesAlertShown = await checkIOSLocationServicesAndShowAlert(granted, canAskAgain)
+		if (isIOSLocationServicesAlertShown) return
 
 		if (granted) {
 			return checkIsGPSEnabled()
