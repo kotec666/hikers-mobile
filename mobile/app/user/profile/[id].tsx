@@ -25,6 +25,7 @@ import { adaptLocations } from '@/helpers/adaptPointsToIWorkoutLocationStorageIt
 import { useOptimisticToggle } from '@/hooks/useOptimisticToggle'
 import { useInfiniteQuery, useQueryClient, InfiniteData, useQuery } from '@tanstack/react-query'
 import BlurProvider from '@/components/providers/BlurProvider'
+import HeaderBack from '@/components/ui/HeaderBack'
 
 /**
  *
@@ -420,6 +421,7 @@ const UserProfilePage = () => {
 									</View>
 								</Modal>
 								<View className="gap-[20px] mb-[16px]">
+									<HeaderBack>Профиль</HeaderBack>
 									<View className="gap-[20px]">
 										<View className="gap-[20px]">
 											<View className="gap-[16px]">

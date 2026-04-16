@@ -1,5 +1,6 @@
 import React from 'react'
-import { View, Text, StyleSheet, ColorValue, Image, TouchableOpacity } from 'react-native'
+import { View, Text, StyleSheet, ColorValue, TouchableOpacity } from 'react-native'
+import { Image } from 'expo-image'
 import { fontFamily } from '@/constants/Fonts'
 import { LinearGradient } from 'expo-linear-gradient'
 import { cn } from '@/helpers/cn'
@@ -61,7 +62,7 @@ const AchievementsListItem = ({
 					<Image
 						className="w-[20px] h-[20px]"
 						source={{ uri: `${PATH_TO_IMAGE}${iconFilename}` }}
-						resizeMode="cover"
+						contentFit="cover"
 					/>
 					<Text className="text-white text-base" style={{ fontFamily: fontFamily.bold }}>
 						{title}

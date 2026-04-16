@@ -1,4 +1,5 @@
-import { Dimensions, Image, Platform, StyleSheet, View } from 'react-native'
+import { Dimensions, Platform, StyleSheet, View } from 'react-native'
+import { Image } from 'expo-image'
 import { ImageSliderType } from '@/components/Slider/Slider'
 import { fontFamily } from '@/constants/Fonts'
 import { Motion } from '@legendapp/motion'

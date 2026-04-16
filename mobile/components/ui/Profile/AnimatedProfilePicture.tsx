@@ -1,16 +1,7 @@
 import { BlurView } from 'expo-blur'
+import { Image } from 'expo-image'
 import React, { useCallback, useEffect, useState } from 'react'
-import {
-	Dimensions,
-	Image,
-	Text,
-	TouchableOpacity,
-	View,
-	StyleSheet,
-	StyleProp,
-	ViewStyle,
-	Platform
-} from 'react-native'
+import { Dimensions, Text, TouchableOpacity, View, StyleSheet, StyleProp, ViewStyle, Platform } from 'react-native'
 import { Gesture, GestureDetector } from 'react-native-gesture-handler'
 import Animated, {
 	Extrapolation,
@@ -206,30 +197,28 @@ export const AnimatedProfilePicture = ({ size = 40, imageUrl, bordered }: Props)
 		zIndex: 1001
 	}))
 
-    const renderBackdrop = () => {
-        if (Platform.OS === 'ios') {
-            return <BlurView style={{ flex: 1 }} tint="dark" intensity={10} />
-        }
+	const renderBackdrop = () => {
+		if (Platform.OS === 'ios') {
+			return <BlurView style={{ flex: 1 }} tint="dark" intensity={10} />
+		}
 
-        return (
-            <BlurView
-                style={{ flex: 1 }}
-                tint="dark"
-                intensity={30}
-                blurTarget={blurTargetRef}
-                blurMethod="dimezisBlurView"
-            />
-        )
-    }
+		return (
+			<BlurView
+				style={{ flex: 1 }}
+				tint="dark"
+				intensity={30}
+				blurTarget={blurTargetRef}
+				blurMethod="dimezisBlurView"
+			/>
+		)
+	}
 
 	return (
 		<View ref={containerRef} style={{ width: size, height: size }}>
 			{isPortalVisible ? (
 				<Portal>
 					<GestureDetector gesture={backdropTapGesture}>
-						<Animated.View style={backdropStyle}>
-                            {renderBackdrop()}
-						</Animated.View>
+						<Animated.View style={backdropStyle}>{renderBackdrop()}</Animated.View>
 					</GestureDetector>
 
 					<Animated.View style={[styles.closeButton, closeButtonStyle]}>
@@ -253,7 +242,7 @@ export const AnimatedProfilePicture = ({ size = 40, imageUrl, bordered }: Props)
 							{hasImage ? (
 								<Image
 									source={{ uri: imageUrl }}
-									resizeMode="cover"
+									contentFit="cover"
 									className={cn({
 										'border-[1px] border-white/20': bordered
 									})}
@@ -286,7 +275,7 @@ export const AnimatedProfilePicture = ({ size = 40, imageUrl, bordered }: Props)
 						{hasImage ? (
 							<Image
 								source={{ uri: imageUrl }}
-								resizeMode="cover"
+								contentFit="cover"
 								className={cn({
 									'border-[1px] border-white/20': bordered
 								})}

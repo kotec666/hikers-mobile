@@ -1,4 +1,5 @@
-import { Image, ImageStyle, StyleProp, View, ViewStyle } from 'react-native'
+import { Image, ImageStyle } from 'expo-image'
+import { StyleProp, View, ViewStyle } from 'react-native'
 import PeopleSvg from '@/components/svg/PeopleSvg'
 import React, { useEffect, useState } from 'react'
 import { cn } from '@/helpers/cn'
@@ -28,14 +29,19 @@ export function UserAvatar(props: IProps) {
 	) {
 		return (
 			<View
-				className={cn('relative rounded-full', {
+				className={cn('relative h-[50px] w-[50px] rounded-full', props.className, {
 					'border-[1px] border-white/20': props.bordered
 				})}
+				style={[
+					props.style as StyleProp<ViewStyle>,
+					{ borderRadius: 999, overflow: 'hidden' },
+					props.bordered && { borderWidth: 1, borderColor: 'rgba(255, 255, 255, 0.4)' }
+				]}
 			>
 				<Image
 					source={{ uri: props.avatar }}
-					className={cn('h-[50px] w-[50px] rounded-full', props.className)}
-					style={props.style as StyleProp<ImageStyle>}
+					className="h-full w-full rounded-full"
+					style={{ width: '100%', height: '100%', borderRadius: 999 }}
 					onError={() => setImageError(true)}
 				/>
 				{props.isEditMode && (
@@ -54,7 +60,7 @@ export function UserAvatar(props: IProps) {
 			className={cn('relative h-[50px] w-[50px] justify-center items-center bg-blue-98', props.className)}
 			style={[
 				props.style as StyleProp<ViewStyle>,
-				{ borderRadius: 999 },
+				{ borderRadius: 999, overflow: 'hidden' },
 				props.bordered && { borderWidth: 1, borderColor: 'rgba(255, 255, 255, 0.4)' }
 			]}
 		>

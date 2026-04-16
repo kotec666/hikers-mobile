@@ -1,5 +1,4 @@
 import {
-	Image,
 	Keyboard,
 	KeyboardAvoidingView,
 	Platform,
@@ -8,6 +7,7 @@ import {
 	TouchableWithoutFeedback,
 	View
 } from 'react-native'
+import { Image } from 'expo-image'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
 import { Container } from '@/components/ui/Container'
 import { useLocalSearchParams, useRouter } from 'expo-router'
@@ -527,7 +527,7 @@ export default function ViewWorkout() {
 							<Image
 								className="w-full h-full"
 								source={require('@/assets/images/view-training.webp')}
-								resizeMode="cover"
+								contentFit="cover"
 							/>
 							<Container
 								className="absolute w-full h-full inset-0 justify-between pb-4"
@@ -732,7 +732,7 @@ export default function ViewWorkout() {
 																<Image
 																	source={{ uri: `${PATH_TO_IMAGE}${fileName}` }}
 																	className="w-full aspect-square rounded-[15px] border-[1px] border-white/20"
-																	resizeMode="cover"
+																	contentFit="cover"
 																/>
 																<View className="absolute right-[12px] top-[12px] rounded-full w-[28px] h-[28px] bg-black/40 items-center justify-center">
 																	<CloseCross
@@ -748,7 +748,7 @@ export default function ViewWorkout() {
 														<Image
 															source={{ uri }}
 															className="w-full aspect-square rounded-[15px] border-[1px] border-white/20"
-															resizeMode="cover"
+															contentFit="cover"
 														/>
 														<View className="absolute right-[12px] top-[12px] rounded-full w-[28px] h-[28px] bg-black/40 items-center justify-center">
 															<CloseCross

@@ -17,6 +17,7 @@ import { removeUserWorkoutStorage } from '@/store/workoutStorage'
 import { useAuthStore } from '@/store/authStore'
 import { useToast } from '@/hooks/useToast'
 import { useRouter } from 'expo-router'
+import { deleteMyAccount } from '@/api/profile'
 
 const SettingsPage = () => {
 	const { push } = useSafeNavigation()
@@ -37,6 +38,7 @@ const SettingsPage = () => {
 
 	const handleDeleteAccount = async () => {
 		removeUserWorkoutStorage(user?.id)
+		await deleteMyAccount()
 		await logout()
 		toast.success('Аккаунт успешно удален')
 		router.replace('/')

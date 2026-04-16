@@ -1,5 +1,6 @@
 import React from 'react'
-import { Image, Text, View, StyleSheet } from 'react-native'
+import { Text, View, StyleSheet } from 'react-native'
+import { Image } from 'expo-image'
 import { fontFamily } from '@/constants/Fonts'
 import { IAchievement } from '@/api/achievements'
 import { PATH_TO_IMAGE } from '@/constants/PATH_TO_FILES'
@@ -50,7 +51,7 @@ const AchievementDetailed = (props: IProps) => {
 					<Image
 						className="w-[43px] h-[43px] z-10"
 						source={{ uri: `${PATH_TO_IMAGE}${achievement.iconFilename}` }}
-						resizeMode="cover"
+						contentFit="cover"
 					/>
 				</View>
 
