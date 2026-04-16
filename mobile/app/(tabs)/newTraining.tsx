@@ -20,7 +20,7 @@ import {
 	setWorkoutItems,
 	startAndStoreNewActiveWorkout
 } from '@/store/workoutStorage'
-import { useRouter } from 'expo-router'
+import { useFocusEffect, useRouter } from 'expo-router'
 import { AllGeolocationPermissionsHandle } from '@/components/AllGeolocationPermissions'
 import { debounce } from '@/helpers/debounce'
 import { throttle } from '@/helpers/throttle'
@@ -89,6 +89,7 @@ export default function NewTraining() {
 	const permissionsRef = useRef<AllGeolocationPermissionsHandle>(null)
 	const headingSubscriptionRef = useRef<null | Location.LocationSubscription>(null)
 	const activeLocationSubscriptionRef = useRef<null | Location.LocationSubscription>(null)
+	const isScreenFocusedRef = useRef(false)
 	const isInternetConnectedRef = useInternetConnectionRef()
 
 	const [chosenWorkout, setChosenWorkout] = useState<IWorkoutModeElement>(WorkoutTypesData[0])
@@ -242,8 +243,17 @@ export default function NewTraining() {
 	}, HEADING_THROTTLE_MS)
 
 	const startHeadingTracking = useCallback(async () => {
+		if (headingSubscriptionRef.current) return
+
 		headingSubscriptionRef.current = await Location.watchHeadingAsync(throttledHeadingUpdate)
 	}, [throttledHeadingUpdate])
+
+	const stopHeadingTracking = useCallback(() => {
+		if (headingSubscriptionRef.current) {
+			headingSubscriptionRef.current.remove()
+			headingSubscriptionRef.current = null
+		}
+	}, [])
 
 	const startActiveTracking = useCallback(async () => {
 		if (activeLocationSubscriptionRef.current) return // уже запущено
@@ -272,6 +282,7 @@ export default function NewTraining() {
 
 	const stopActiveTracking = useCallback(() => {
 		if (activeLocationSubscriptionRef.current) {
+			console.log('[active-tracking] stopping active location tracking...')
 			activeLocationSubscriptionRef.current.remove()
 			activeLocationSubscriptionRef.current = null
 		}
@@ -452,24 +463,44 @@ export default function NewTraining() {
 			return startWorkout(chosenWorkout.type, false)
 		}
 		if (isPendingActiveTrackingRef.current) {
+			const meta = getWorkoutMeta(user?.id)
+			if (!isScreenFocusedRef.current || meta || isWorkoutStarted) return
+
 			startActiveTracking()
 			startHeadingTracking()
 			isPendingActiveTrackingRef.current = false
 		}
-	}, [chosenWorkout.type, getFastUserPosAndSetWithCenter])
+	}, [
+		chosenWorkout.type,
+		getFastUserPosAndSetWithCenter,
+		isWorkoutStarted,
+		startActiveTracking,
+		startHeadingTracking,
+		user?.id
+	])
 
-	useEffect(() => {
-		const meta = getWorkoutMeta(user?.id)
-		// Если нет мета - значит тренировка не активна, можно запускать трекинг в активном режиме
-		if (!meta) {
-			isPendingActiveTrackingRef.current = true
-			permissionsRef.current?.checkPermissions()
-		}
+	useFocusEffect(
+		useCallback(() => {
+			isScreenFocusedRef.current = true
 
-		return () => {
-			stopActiveTracking()
-		}
-	}, [stopActiveTracking])
+			const meta = getWorkoutMeta(user?.id)
+			// Если нет мета - значит тренировка не активна, можно запускать трекинг в активном режиме
+			if (!meta && !isWorkoutStarted) {
+				isPendingActiveTrackingRef.current = true
+				permissionsRef.current?.checkPermissions()
+			}
+
+			return () => {
+				isScreenFocusedRef.current = false
+				isPendingActiveTrackingRef.current = false
+				stopActiveTracking()
+
+				if (!getWorkoutMeta(user?.id)) {
+					stopHeadingTracking()
+				}
+			}
+		}, [isWorkoutStarted, stopActiveTracking, stopHeadingTracking, user?.id])
+	)
 
 	const handleClickPause = useCallback(async () => {
 		try {
@@ -547,10 +578,7 @@ export default function NewTraining() {
 			await tracking.stopTracking()
 			await endWorkoutLiveActivity()
 
-			if (headingSubscriptionRef.current) {
-				headingSubscriptionRef.current.remove()
-				headingSubscriptionRef.current = null
-			}
+			stopHeadingTracking()
 
 			const meta = getWorkoutMeta(user?.id)
 			calculateMetricsWhenFinished(meta)
@@ -595,7 +623,16 @@ export default function NewTraining() {
 			console.error('handleClickEndWorkout error: ', e)
 			await getFieldsErrors(e)
 		}
-	}, [chosenWorkout.type, user?.id, isInternetConnectedRef, resetWorkoutState, router, toast, tracking])
+	}, [
+		chosenWorkout.type,
+		user?.id,
+		isInternetConnectedRef,
+		resetWorkoutState,
+		router,
+		stopHeadingTracking,
+		toast,
+		tracking
+	])
 
 	const handleClickEnd = useCallback(() => {
 		handleCloseEndModal()

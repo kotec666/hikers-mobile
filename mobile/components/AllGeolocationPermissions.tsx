@@ -72,12 +72,17 @@ const AllGeolocationPermissions = forwardRef<AllGeolocationPermissionsHandle, IP
 		return () => subscription.remove()
 	}, []) // appState
 
-	const openAppSettings = async (isNotificationSetting = false) => {
+	const openAppSettings = async (isNotificationSetting = false, isIOSGPSSetting = false) => {
 		closeBottomSheet()
 		wasInSettingsRef.current = true
 		try {
-			if (Platform.OS === 'ios') {
+			if (Platform.OS === 'ios' && !isIOSGPSSetting) {
 				await Linking.openURL('app-settings:')
+			} else if (Platform.OS === 'ios' && isIOSGPSSetting) {
+				await Linking.openURL('App-Prefs:root=Privacy&path=LOCATION')
+				// Linking.openURL('App-Prefs:Privacy&path=LOCATION')
+				// Note: 'App-Prefs:root=Privacy&path=LOCATION' may not work on all iOS versions. In that case, fallback to general settings.
+				// await Linking.openURL('app-settings:')
 			} else {
 				if (isNotificationSetting) {
 					await Linking.sendIntent('android.settings.APP_NOTIFICATION_SETTINGS', [
