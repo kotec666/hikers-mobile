@@ -40,7 +40,6 @@ export function UserAvatar(props: IProps) {
 			>
 				<Image
 					source={{ uri: props.avatar }}
-					className="h-full w-full rounded-full"
 					style={{ width: '100%', height: '100%', borderRadius: 999 }}
 					onError={() => setImageError(true)}
 				/>

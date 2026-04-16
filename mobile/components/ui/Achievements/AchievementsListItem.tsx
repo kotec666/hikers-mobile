@@ -60,7 +60,10 @@ const AchievementsListItem = ({
 				<View className="px-[10px] py-[16px] flex-row gap-[6px] items-center">
 					{/*<AchievementsMedalSvg /> @TODO удалить*/}
 					<Image
-						className="w-[20px] h-[20px]"
+						style={{
+							width: 20,
+							height: 20
+						}}
 						source={{ uri: `${PATH_TO_IMAGE}${iconFilename}` }}
 						contentFit="cover"
 					/>

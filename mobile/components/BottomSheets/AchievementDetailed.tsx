@@ -49,7 +49,11 @@ const AchievementDetailed = (props: IProps) => {
 						style={[styles.progressVertical, { height: progressPx }]}
 					/>
 					<Image
-						className="w-[43px] h-[43px] z-10"
+						style={{
+							width: 43,
+							height: 43,
+							zIndex: 10
+						}}
 						source={{ uri: `${PATH_TO_IMAGE}${achievement.iconFilename}` }}
 						contentFit="cover"
 					/>

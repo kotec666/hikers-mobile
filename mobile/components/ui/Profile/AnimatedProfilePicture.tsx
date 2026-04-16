@@ -243,13 +243,12 @@ export const AnimatedProfilePicture = ({ size = 40, imageUrl, bordered }: Props)
 								<Image
 									source={{ uri: imageUrl }}
 									contentFit="cover"
-									className={cn({
-										'border-[1px] border-white/20': bordered
-									})}
 									style={{
 										width: '100%',
 										height: '100%',
-										borderRadius: size / 2
+										borderRadius: size / 2,
+										borderWidth: bordered ? 1 : 0,
+										borderColor: 'rgba(255, 255, 255, 0.2)'
 									}}
 									onError={() => setImageError(true)}
 								/>
@@ -276,13 +275,12 @@ export const AnimatedProfilePicture = ({ size = 40, imageUrl, bordered }: Props)
 							<Image
 								source={{ uri: imageUrl }}
 								contentFit="cover"
-								className={cn({
-									'border-[1px] border-white/20': bordered
-								})}
 								style={{
 									width: '100%',
 									height: '100%',
-									borderRadius: size / 2
+									borderRadius: size / 2,
+									borderWidth: bordered ? 1 : 0,
+									borderColor: 'rgba(255, 255, 255, 0.2)'
 								}}
 								onError={() => setImageError(true)}
 							/>

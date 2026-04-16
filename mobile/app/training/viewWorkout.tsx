@@ -525,8 +525,11 @@ export default function ViewWorkout() {
 					>
 						<View className="relative" style={{ height: 300 }}>
 							<Image
-								className="w-full h-full"
-								source={require('@/assets/images/view-training.webp')}
+								style={{
+									width: '100%',
+									height: '100%'
+								}}
+								source={require('@/assets/images/view-training.avif')}
 								contentFit="cover"
 							/>
 							<Container
@@ -731,7 +734,14 @@ export default function ViewWorkout() {
 															<View key={fileName} className="w-1/2 px-[7.5px] relative">
 																<Image
 																	source={{ uri: `${PATH_TO_IMAGE}${fileName}` }}
-																	className="w-full aspect-square rounded-[15px] border-[1px] border-white/20"
+																	style={{
+																		width: '100%',
+																		aspectRatio: 1,
+																		borderRadius: 15,
+																		borderWidth: 1,
+																		borderColor: 'rgba(255, 255, 255, 0.2)',
+																		overflow: 'hidden'
+																	}}
 																	contentFit="cover"
 																/>
 																<View className="absolute right-[12px] top-[12px] rounded-full w-[28px] h-[28px] bg-black/40 items-center justify-center">
@@ -747,7 +757,14 @@ export default function ViewWorkout() {
 													<View key={uri} className="w-1/2 px-[7.5px] relative">
 														<Image
 															source={{ uri }}
-															className="w-full aspect-square rounded-[15px] border-[1px] border-white/20"
+															style={{
+																width: '100%',
+																aspectRatio: 1,
+																borderRadius: 15,
+																borderWidth: 1,
+																borderColor: 'rgba(255, 255, 255, 0.2)',
+																overflow: 'hidden'
+															}}
 															contentFit="cover"
 														/>
 														<View className="absolute right-[12px] top-[12px] rounded-full w-[28px] h-[28px] bg-black/40 items-center justify-center">
