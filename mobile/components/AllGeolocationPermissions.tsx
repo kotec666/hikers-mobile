@@ -10,6 +10,10 @@ import * as Location from 'expo-location'
 import * as Application from 'expo-application'
 
 const { height: screenHeight } = Dimensions.get('screen')
+const IOS_LOCATION_SERVICES_ALERT_COOLDOWN_MS = 1500
+
+let isIOSLocationServicesAlertVisible = false
+let lastIOSLocationServicesAlertShownAt = 0
 
 interface IProps {
 	allPermissionsGrantedCallback?: () => void
@@ -72,17 +76,12 @@ const AllGeolocationPermissions = forwardRef<AllGeolocationPermissionsHandle, IP
 		return () => subscription.remove()
 	}, []) // appState
 
-	const openAppSettings = async (isNotificationSetting = false, isIOSGPSSetting = false) => {
+	const openAppSettings = async (isNotificationSetting = false) => {
 		closeBottomSheet()
 		wasInSettingsRef.current = true
 		try {
-			if (Platform.OS === 'ios' && !isIOSGPSSetting) {
-				await Linking.openURL('app-settings:')
-			} else if (Platform.OS === 'ios' && isIOSGPSSetting) {
-				await Linking.openURL('App-Prefs:root=Privacy&path=LOCATION')
-				// Linking.openURL('App-Prefs:Privacy&path=LOCATION')
-				// Note: 'App-Prefs:root=Privacy&path=LOCATION' may not work on all iOS versions. In that case, fallback to general settings.
-				// await Linking.openURL('app-settings:')
+			if (Platform.OS === 'ios') {
+				await Linking.openSettings()
 			} else {
 				if (isNotificationSetting) {
 					await Linking.sendIntent('android.settings.APP_NOTIFICATION_SETTINGS', [
@@ -99,12 +98,58 @@ const AllGeolocationPermissions = forwardRef<AllGeolocationPermissionsHandle, IP
 		}
 	}
 
+	const showIOSLocationServicesAlert = () => {
+		const now = Date.now()
+
+		if (
+			isIOSLocationServicesAlertVisible ||
+			now - lastIOSLocationServicesAlertShownAt < IOS_LOCATION_SERVICES_ALERT_COOLDOWN_MS
+		) {
+			return
+		}
+
+		isIOSLocationServicesAlertVisible = true
+		lastIOSLocationServicesAlertShownAt = now
+		closeBottomSheet()
+		Alert.alert(
+			'Службы геолокации выключены',
+			'Откройте Настройки > Конфиденциальность и безопасность > Службы геолокации и включите переключатель.',
+			[
+				{
+					text: 'Настройки',
+					onPress: () => {
+						isIOSLocationServicesAlertVisible = false
+						openAppSettings()
+					}
+				},
+				{
+					text: 'Отмена',
+					style: 'cancel',
+					onPress: () => {
+						isIOSLocationServicesAlertVisible = false
+					}
+				}
+			]
+		)
+	}
+
+	const checkIOSLocationServicesAndThrowSystemAlert = async (granted: boolean, canAskAgain: boolean) => {
+		if (Platform.OS === 'ios' && !granted && !canAskAgain) {
+			const isGPSEnabled = await Location.hasServicesEnabledAsync() // ios + android
+
+			if (!isGPSEnabled) {
+				return showIOSLocationServicesAlert()
+			}
+		}
+	}
+
 	// ==========================================
 	// 1. Foreground Location
 	// ==========================================
 	const checkForegroundPermission = async () => {
 		/** Шаг 1, проверка разрешения на предоставление геолокации в активном режиме */
 		const { granted, canAskAgain } = await Location.getForegroundPermissionsAsync() // ios + android
+		await checkIOSLocationServicesAndThrowSystemAlert(granted, canAskAgain)
 
 		if (granted) {
 			return checkBackgroundPermission()
@@ -113,7 +158,7 @@ const AllGeolocationPermissions = forwardRef<AllGeolocationPermissionsHandle, IP
 				<AllowGeolocation allow={allowForegroundLocationPermission} close={closeBottomSheet} />
 			)
 		} else if (!granted && !canAskAgain) {
-			return openBottomSheet(<AllowDeniedGeolocation allow={openAppSettings} close={closeBottomSheet} />)
+			return openBottomSheet(<AllowDeniedGeolocation allow={() => openAppSettings()} close={closeBottomSheet} />)
 		}
 	}
 
@@ -134,6 +179,7 @@ const AllGeolocationPermissions = forwardRef<AllGeolocationPermissionsHandle, IP
 	const checkBackgroundPermission = async () => {
 		/** Шаг 2, проверка разрешения на предоставление геолокации в фоновом режиме */
 		const { granted, canAskAgain } = await Location.getBackgroundPermissionsAsync() // ios + android
+		await checkIOSLocationServicesAndThrowSystemAlert(granted, canAskAgain)
 
 		if (granted) {
 			return checkIsGPSEnabled()
@@ -142,7 +188,7 @@ const AllGeolocationPermissions = forwardRef<AllGeolocationPermissionsHandle, IP
 				<AllowBackgroundGeolocation allow={allowBackgroundLocationPermission} close={closeBottomSheet} />
 			)
 		} else if (!granted && !canAskAgain) {
-			return openBottomSheet(<AllowDeniedGeolocation allow={openAppSettings} close={closeBottomSheet} />)
+			return openBottomSheet(<AllowDeniedGeolocation allow={() => openAppSettings()} close={closeBottomSheet} />)
 		}
 	}
 
@@ -165,9 +211,11 @@ const AllGeolocationPermissions = forwardRef<AllGeolocationPermissionsHandle, IP
 		const isGPSEnabled = await Location.hasServicesEnabledAsync() // ios + android
 
 		if (!isGPSEnabled) {
-			return openBottomSheet(
-				<EnableGPS allow={Platform.OS === 'ios' ? openAppSettings : allowGPS} close={closeBottomSheet} />
-			)
+			if (Platform.OS === 'ios') {
+				return showIOSLocationServicesAlert()
+			}
+
+			return openBottomSheet(<EnableGPS allow={allowGPS} close={closeBottomSheet} />)
 		} else {
 			// return checkNotificationPermission() DEPRECATED notifee
 			return props.allPermissionsGrantedCallback?.()
