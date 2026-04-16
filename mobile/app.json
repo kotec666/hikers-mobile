@@ -11,9 +11,9 @@
 			"supportsTablet": true,
 			"bundleIdentifier": "run.hikers.app",
 			"icon": "./assets/images/icon-ios.icon",
-            "infoPlist": {
-              "NSSupportsLiveActivities": true
-            },
+			"infoPlist": {
+				"NSSupportsLiveActivities": true
+			},
 			"entitlements": {
 				"com.apple.security.application-groups": ["group.run.hikers.app"]
 			}
@@ -41,6 +41,21 @@
 		"plugins": [
 			"expo-router",
 			[
+				"expo-quick-actions",
+				{
+					"androidIcons": {
+						"quick_action_new_training": {
+							"foregroundImage": "./assets/quick-actions/new-training.png",
+							"backgroundColor": "#FFFFFF"
+						},
+						"quick_action_search": {
+							"foregroundImage": "./assets/quick-actions/search.png",
+							"backgroundColor": "#FFFFFF"
+						}
+					}
+				}
+			],
+			[
 				"expo-sensors",
 				{
 					"motionPermission": "Разрешите хайкерс доступ к датчикам устройства"
@@ -59,7 +74,7 @@
 				"expo-location",
 				{
 					"locationAlwaysAndWhenInUsePermission": "Включите определение вашего местоположения для хайкерс в фоновом режиме",
-                    "locationWhenInUsePermission": "Включите определение вашего местоположения для хайкерс в активном режиме",
+					"locationWhenInUsePermission": "Включите определение вашего местоположения для хайкерс в активном режиме",
 					"isAndroidForegroundServiceEnabled": true,
 					"isAndroidBackgroundLocationEnabled": true,
 					"isIosBackgroundLocationEnabled": true
@@ -90,7 +105,7 @@
 			"expo-font",
 			"expo-image",
 			"expo-secure-store",
-            "@bacons/apple-targets",
+			"@bacons/apple-targets",
 			"./plugins/with-live-activity-widget-embed-fix"
 		],
 		"experiments": {

@@ -2,7 +2,7 @@ import { cn } from '@/helpers/cn'
 import { StyleSheet, TextInput, TextInputProps, View } from 'react-native'
 import { fontFamily } from '@/constants/Fonts'
 import { Colors } from '@/constants/Colors'
-import React, { ReactNode } from 'react'
+import React, { forwardRef, ReactNode } from 'react'
 import SearchSvg from '@/components/svg/SearchSvg'
 import ErrorMessage from '@/components/ErrorMessage'
 
@@ -14,12 +14,13 @@ export interface Props extends TextInputProps {
 	isFind?: boolean
 }
 
-export function Input(props: Props) {
-	const { className, svg, error, isFind, ...restProps } = props
+export const Input = forwardRef<TextInput, Props>(function Input(props, ref) {
+	const { className, svg, error, isFind, containerClassName, ...restProps } = props
 
 	return (
-		<View className={cn('', props.containerClassName)}>
+		<View className={cn('', containerClassName)}>
 			<TextInput
+				ref={ref}
 				style={[
 					styles.input,
 					error
@@ -52,7 +53,7 @@ export function Input(props: Props) {
 			{!isFind && <ErrorMessage error={error} />}
 		</View>
 	)
-}
+})
 
 const styles = StyleSheet.create({
 	input: {

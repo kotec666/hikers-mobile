@@ -7,7 +7,8 @@ import {
 	TouchableWithoutFeedback,
 	Keyboard,
 	RefreshControl,
-	ActivityIndicator
+	ActivityIndicator,
+	TextInput
 } from 'react-native'
 import { SafeAreaProvider, useSafeAreaInsets } from 'react-native-safe-area-context'
 import { Input } from '@/components/ui/Input'
@@ -128,7 +129,38 @@ const PostsPage = () => {
 	})
 
 	const legendListRef = useRef<LegendListRef>(null)
-	const params = useLocalSearchParams()
+	const searchInputRef = useRef<TextInput>(null)
+	const params = useLocalSearchParams<{
+		scrollToTop?: string
+		quickAction?: string
+		quickActionAt?: string
+	}>()
+
+	const activateSearch = useCallback(() => {
+		setState((s) => (s.isSearchActive ? s : { ...s, isSearchActive: true }))
+	}, [])
+
+	useEffect(() => {
+		if (!state.isSearchActive) return
+
+		const timeoutId = setTimeout(() => {
+			searchInputRef.current?.focus()
+		}, 0)
+
+		return () => clearTimeout(timeoutId)
+	}, [state.isSearchActive])
+
+	useEffect(() => {
+		if (params.quickAction !== 'search') return
+
+		activateSearch()
+
+		const timeoutId = setTimeout(() => {
+			searchInputRef.current?.focus()
+		}, 0)
+
+		return () => clearTimeout(timeoutId)
+	}, [activateSearch, params.quickAction, params.quickActionAt])
 
 	// Если пользователь кликнет на ту же страницу, то пойдёт скролл вверх. Навбар передаст params при переходе на эту же страницу
 	useEffect(() => {
@@ -233,9 +265,12 @@ const PostsPage = () => {
 								}}
 							/>
 							<Input
+								key="posts-search-input"
+								ref={searchInputRef}
+								autoFocus
 								isFind
 								containerClassName="flex-1"
-								onPress={() => setState((s) => ({ ...s, isSearchActive: true }))}
+								onFocus={activateSearch}
 								value={searchWord}
 								onChangeText={setSearchWord}
 								placeholder="Поиск"
@@ -362,9 +397,14 @@ const PostsPage = () => {
 				<Container className="gap-[20px] flex-1">
 					<View className="flex-row justify-center items-center gap-[10px] w-full">
 						<Input
+							key="posts-search-input"
+							ref={searchInputRef}
 							isFind
 							containerClassName="flex-1"
-							onPress={() => setState((s) => ({ ...s, isSearchActive: true }))}
+							onFocus={activateSearch}
+							onPressIn={activateSearch}
+							value=""
+							onChangeText={setSearchWord}
 							placeholder="Поиск"
 						/>
 						<NotificationsButton />
