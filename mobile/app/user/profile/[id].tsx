@@ -159,16 +159,19 @@ const UserProfilePage = () => {
 		}
 	})
 
-	const updateProfileData = (updater: (prev: INotMyProfile) => Partial<INotMyProfile>) => {
-		queryClient.setQueryData<INotMyProfile>(['user-profile', id], (old) => {
-			if (!old) return old
+	const updateProfileData = useCallback(
+		(updater: (prev: INotMyProfile) => Partial<INotMyProfile>) => {
+			queryClient.setQueryData<INotMyProfile>(['user-profile', id], (old) => {
+				if (!old) return old
 
-			return {
-				...old,
-				...updater(old)
-			}
-		})
-	}
+				return {
+					...old,
+					...updater(old)
+				}
+			})
+		},
+		[id, queryClient]
+	)
 
 	const subUnsubCallback = useCallback(
 		(isSubscribed: boolean, authorId?: string) => {
@@ -188,7 +191,7 @@ const UserProfilePage = () => {
 				updatePostsSubscription(authorId, isSubscribed)
 			}
 		},
-		[updatePostsSubscription]
+		[updatePostsSubscription, updateProfileData]
 	)
 
 	// Функция для инвалидации запросов на друзей

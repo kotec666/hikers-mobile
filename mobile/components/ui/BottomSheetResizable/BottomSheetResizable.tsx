@@ -1,4 +1,4 @@
-import React, { forwardRef, ReactNode, useCallback, useImperativeHandle } from 'react'
+import React, { forwardRef, ReactNode, useCallback, useImperativeHandle, useMemo } from 'react'
 import { Dimensions, Platform, StyleSheet, View } from 'react-native'
 import { Gesture, GestureDetector, PanGesture } from 'react-native-gesture-handler'
 import Animated, {
@@ -44,27 +44,33 @@ const BottomSheetResizable = forwardRef<BottomSheetResizableRef, BottomSheetResi
 
 		const TOP_OFFSET = insets.top
 		const MAX_SHEET_TRANSLATION = -SCREEN_HEIGHT + TOP_OFFSET
-        const SNAP_POINTS = [-SCREEN_HEIGHT * 0.5, MAX_SHEET_TRANSLATION] // Snap points: 50%, 100%
+		const SNAP_POINTS = useMemo(() => [-SCREEN_HEIGHT * 0.5, MAX_SHEET_TRANSLATION], [MAX_SHEET_TRANSLATION]) // Snap points: 50%, 100%
 
-		const scrollTo = useCallback((destination: number) => {
-			'worklet'
-			isSheetActive.value = destination !== 0
-			translateY.value = withSpring(destination, { damping: 50, stiffness: 200 })
-		}, [])
+		const scrollTo = useCallback(
+			(destination: number) => {
+				'worklet'
+				isSheetActive.value = destination !== 0
+				translateY.value = withSpring(destination, { damping: 50, stiffness: 200 })
+			},
+			[isSheetActive, translateY]
+		)
 
-		const isActive = useCallback(() => isSheetActive.value, [])
+		const isActive = useCallback(() => isSheetActive.value, [isSheetActive])
 
 		const close = useCallback(() => {
 			'worklet'
 			isSheetActive.value = false
 			translateY.value = withSpring(0, { damping: 50, stiffness: 200 })
-		}, [])
+		}, [isSheetActive, translateY])
 
-		const open = useCallback((destination = SNAP_POINTS[0]) => {
-			'worklet'
-			isSheetActive.value = true
-			translateY.value = withSpring(destination, { damping: 50, stiffness: 200 })
-		}, [])
+		const open = useCallback(
+			(destination = SNAP_POINTS[0]) => {
+				'worklet'
+				isSheetActive.value = true
+				translateY.value = withSpring(destination, { damping: 50, stiffness: 200 })
+			},
+			[SNAP_POINTS, isSheetActive, translateY]
+		)
 
 		useImperativeHandle(
 			ref,

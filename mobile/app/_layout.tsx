@@ -119,8 +119,8 @@ export default function RootLayout() {
 	const isReady = loaded && isAuthChecked
 
 	useEffect(() => {
-		checkAuth()
-	}, [])
+		void checkAuth()
+	}, [checkAuth])
 
 	useEffect(() => {
 		if (isReady) {

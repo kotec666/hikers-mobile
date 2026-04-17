@@ -116,7 +116,7 @@ const personalErrorFields: PersonalErrorFields = {
 		[ERRORS.BAD_REQUEST]: 'Невалидный формат строки активностей'
 	},
 	avatarFilename: {
-		[ERRORS.BAD_REQUEST]: 'Невалидный формат аватара / слишком большой вес' // @TODO добавление проверки веса изображения?
+		[ERRORS.BAD_REQUEST]: 'Невалидный формат аватара'
 	},
 	id: {
 		[ERRORS.MISMATCH]: 'Некорректный id',

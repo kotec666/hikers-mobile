@@ -9,7 +9,7 @@ import { cn } from '@/helpers/cn'
 import { useNavBarVisibility } from '@/hooks/useNavBarVisibility'
 import { tabsConfig } from '@/components/ui/Navbar/tabs.config'
 import { useSafeNavigation } from '@/hooks/useSafeNavigation'
-import {isLiquidGlassAvailable} from "expo-glass-effect";
+import { isLiquidGlassAvailable } from 'expo-glass-effect'
 
 type AnimatedButtonProps = {
 	isActive: boolean
@@ -22,7 +22,7 @@ const AnimatedButton: React.FC<AnimatedButtonProps> = ({ isActive, onPress, Icon
 
 	useEffect(() => {
 		progress.value = withTiming(isActive ? 1 : 0, { duration: 250 })
-	}, [isActive])
+	}, [isActive, progress])
 
 	const animatedStyle = useAnimatedStyle(() => {
 		const scale = withTiming(isActive ? 1.1 : 1, { duration: 250 })
@@ -73,11 +73,11 @@ const NavBar = () => {
 		})
 	}
 
-    // Костыль, потому что на странице новой тренировки из-за NativeTabs нельзя перетаскивать BottomSheetResizable
-    const isGlassAvailable = Platform.OS === 'ios' && isLiquidGlassAvailable()
-    if (isGlassAvailable) {
-        return null
-    }
+	// Костыль, потому что на странице новой тренировки из-за NativeTabs нельзя перетаскивать BottomSheetResizable
+	const isGlassAvailable = Platform.OS === 'ios' && isLiquidGlassAvailable()
+	if (isGlassAvailable) {
+		return null
+	}
 	return (
 		<Animated.View
 			style={[styles.NavBarContainer, animatedContainer, { bottom: insets.bottom }]}

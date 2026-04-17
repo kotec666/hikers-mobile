@@ -26,7 +26,7 @@ export const useUnsavedWorkoutSync = () => {
 		setNotSavedWorkouts(getNotSavedWorkouts(user?.id))
 	}, [user?.id])
 
-	const processQueue = async () => {
+	const processQueue = useCallback(async () => {
 		if (isProcessingRef.current) return
 
 		const nextWorkout = syncQueueRef.current.shift()
@@ -54,10 +54,10 @@ export const useUnsavedWorkoutSync = () => {
 			isProcessingRef.current = false
 
 			if (syncQueueRef.current.length) {
-				processQueue()
+				void processQueue()
 			}
 		}
-	}
+	}, [refresh])
 
 	// const enqueueWorkoutSync = (startedAt: number) => {
 	// 	if (syncQueueRef.current.some((i) => i.startedAt === startedAt) || syncingIds.includes(startedAt)) return
@@ -70,45 +70,51 @@ export const useUnsavedWorkoutSync = () => {
 	// 	processQueue()
 	// }
 
-	const enqueueWorkoutSync = (startedAt: number) => {
-		const existingPromise = promisesRef.current.get(startedAt)
-		if (existingPromise) {
-			return existingPromise
-		}
+	const enqueueWorkoutSync = useCallback(
+		(startedAt: number) => {
+			const existingPromise = promisesRef.current.get(startedAt)
+			if (existingPromise) {
+				return existingPromise
+			}
 
-		const promise = new Promise<void>((resolve, reject) => {
-			syncQueueRef.current.push({
-				startedAt,
-				userId: user?.id,
-				resolve,
-				reject
+			const promise = new Promise<void>((resolve, reject) => {
+				syncQueueRef.current.push({
+					startedAt,
+					userId: user?.id,
+					resolve,
+					reject
+				})
+
+				void processQueue()
 			})
+			promisesRef.current.set(startedAt, promise)
 
-			processQueue()
-		})
-		promisesRef.current.set(startedAt, promise)
-
-		return promise
-	}
+			return promise
+		},
+		[processQueue, user?.id]
+	)
 
 	// const saveAll = () => {
 	// 	notSavedWorkouts.forEach((w) => enqueueWorkoutSync(w.startedAt))
 	// }
 
-	const saveAll = () => {
+	const saveAll = useCallback(() => {
 		const promises: Promise<void>[] = notSavedWorkouts.map((w) => enqueueWorkoutSync(w.startedAt))
 		return Promise.all(promises)
-	}
+	}, [enqueueWorkoutSync, notSavedWorkouts])
 
-	const deleteWorkout = async (startedAt: number) => {
-		await deleteSingleWorkout(startedAt, user?.id)
-		refresh()
-	}
+	const deleteWorkout = useCallback(
+		async (startedAt: number) => {
+			await deleteSingleWorkout(startedAt, user?.id)
+			refresh()
+		},
+		[refresh, user?.id]
+	)
 
-	const deleteAll = async () => {
+	const deleteAll = useCallback(async () => {
 		await Promise.all(notSavedWorkouts.map((w) => deleteSingleWorkout(w.startedAt, user?.id)))
 		refresh()
-	}
+	}, [notSavedWorkouts, refresh, user?.id])
 
 	// const deleteAll = () => {
 	// 	notSavedWorkouts.forEach((w) => deleteUnsavedTrainingByStartedAt(w.startedAt, user?.id))

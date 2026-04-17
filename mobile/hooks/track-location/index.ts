@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useRef, useState } from 'react'
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { startTracking, stopTracking } from '@/hooks/track-location/track'
 import {
 	CHUNK_POINT_COUNT,
@@ -31,10 +31,13 @@ export function useLocationTracking() {
 		await stopTracking()
 	}, [])
 
-	return {
-		startTracking: onStartTracking,
-		stopTracking: onStopTracking
-	}
+	return useMemo(
+		() => ({
+			startTracking: onStartTracking,
+			stopTracking: onStopTracking
+		}),
+		[onStartTracking, onStopTracking]
+	)
 }
 
 const YAMAP_POLYLINE_MINIMUM_POINTS = 2
@@ -89,21 +92,24 @@ export function useLocationData(
 	const appStateRef = useRef(AppState.currentState)
 
 	// Функция генерации ключа координат
-	const coordsKey = (lat: number, lon: number) => `${lat.toFixed(6)}_${lon.toFixed(6)}`
+	const coordsKey = useCallback((lat: number, lon: number) => `${lat.toFixed(6)}_${lon.toFixed(6)}`, [])
 
-	const addPointToMap = (p: IWorkoutLocationStorageItem) => {
-		const ts = p.locationObject.timestamp
-		const key = coordsKey(p.locationObject.coords.latitude, p.locationObject.coords.longitude)
+	const addPointToMap = useCallback(
+		(p: IWorkoutLocationStorageItem) => {
+			const ts = p.locationObject.timestamp
+			const key = coordsKey(p.locationObject.coords.latitude, p.locationObject.coords.longitude)
 
-		if (!tsMap.current.has(ts)) {
-			tsMap.current.set(ts, new Set())
-		}
+			if (!tsMap.current.has(ts)) {
+				tsMap.current.set(ts, new Set())
+			}
 
-		const setForTs = tsMap.current.get(ts)!
-		if (setForTs.has(key)) return false // дубли
-		setForTs.add(key)
-		return true
-	}
+			const setForTs = tsMap.current.get(ts)!
+			if (setForTs.has(key)) return false // дубли
+			setForTs.add(key)
+			return true
+		},
+		[coordsKey]
+	)
 
 	const ensureMinPolylinePoints = useCallback(
 		(locations: IWorkoutLocationStorageItem[]): IWorkoutLocationStorageItem[] => {
@@ -232,7 +238,7 @@ export function useLocationData(
 				updateRealtimeMetrics(speed ?? 0)
 			}
 		},
-		[saveInitialLocations, saveInitialMarkerLocation, updateRealtimeMetrics, isPausedRef]
+		[addPointToMap, saveInitialLocations, saveInitialMarkerLocation, updateRealtimeMetrics, isPausedRef]
 	)
 
 	// Callback, который подписка locationEmitter будет вызывать.
@@ -384,7 +390,8 @@ export function useLocationData(
 		saveInitialLocations,
 		updateRealtimeMetrics,
 		syncAccumulatedDistanceFromStorage,
-		processPoints
+		processPoints,
+		addPointToMap
 	])
 
 	/**

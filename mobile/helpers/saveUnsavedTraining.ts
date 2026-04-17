@@ -98,7 +98,7 @@ export const saveSingleWorkout = async (
 	startedAt: number,
 	userId?: string
 ): Promise<null | string> => {
-	let workout: IWorkout | null = null
+	let workout: IWorkout | null
 
 	if (source === WorkoutSource.UNSAVED) {
 		workout = getUnsavedWorkoutByStartedAt(startedAt, userId)
@@ -169,7 +169,7 @@ export const saveSingleWorkout = async (
 		userId
 	})
 
-	let updated: IWorkout | null = null
+	let updated: IWorkout | null
 	if (source === WorkoutSource.UNSAVED) {
 		updated = getUnsavedWorkoutByStartedAt(startedAt, userId)
 	} else {

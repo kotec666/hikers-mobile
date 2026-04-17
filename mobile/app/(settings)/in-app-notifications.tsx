@@ -85,6 +85,7 @@ const SettingsInAppNotificationsPage = () => {
 			queryClient.invalidateQueries({ queryKey: ['inAppNotificationSettings'] })
 		}
 	})
+	const { mutate } = mutation
 
 	const handleToggleChange = (key: keyof NotificationSettings, value: boolean) => {
 		setLocalSettings((prevState) => {
@@ -102,10 +103,10 @@ const SettingsInAppNotificationsPage = () => {
 				const original = settingsRef.current
 
 				if (local && original && JSON.stringify(local) !== JSON.stringify(original)) {
-					mutation.mutate(local)
+					mutate(local)
 				}
 			}
-		}, [])
+		}, [mutate])
 	)
 
 	// Отправка изменений при уходе приложения в фон
@@ -116,12 +117,12 @@ const SettingsInAppNotificationsPage = () => {
 				const original = settingsRef.current
 
 				if (local && original && JSON.stringify(local) !== JSON.stringify(original)) {
-					mutation.mutate(local)
+					mutate(local)
 				}
 			}
 		})
 		return () => sub.remove()
-	}, [])
+	}, [mutate])
 
 	return (
 		<SafeAreaProvider style={{ paddingTop: insets.top, paddingBottom: insets.bottom }}>

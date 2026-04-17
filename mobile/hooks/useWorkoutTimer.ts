@@ -9,7 +9,7 @@ export const useWorkoutTimer = (isPaused: boolean) => {
 	const { user } = useAuthStore()
 	const intervalRef = useRef<null | ReturnType<typeof setInterval>>(null)
 	const appStateRef = useRef(AppState.currentState)
-	// Инициализируем стейт сразу, используя данные из хранилища.
+	// Инициализируем state сразу, используя данные из хранилища.
 	// Это важно, чтобы при перезагрузке приложения в состоянии "Пауза"
 	// время отображалось корректно сразу же.
 	const [elapsed, setElapsed] = useState(() => {

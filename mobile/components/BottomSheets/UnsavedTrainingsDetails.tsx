@@ -63,7 +63,7 @@ const UnsavedTrainingsDetails = ({
 				/>
 			)
 		},
-		[syncingIds]
+		[handleClickDelete, handleClickSaveOneWorkout, syncingIds, workoutTypeMap]
 	)
 
 	const isDeletingDisabled = !notSavedWorkouts.length || syncingIds.length > 0

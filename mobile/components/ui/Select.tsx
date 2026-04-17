@@ -100,19 +100,16 @@ export function Select(props: SelectProps) {
 
 			<Animated.View
 				className="absolute border-[1px] border-white/20 rounded-[25px] left-0 gap-[15px] w-full overflow-hidden"
-				style={[
-					{ top: 60, zIndex: 2, backgroundColor: 'black' },
-					animatedStyle
-				]}
+				style={[{ top: 60, zIndex: 2, backgroundColor: 'black' }, animatedStyle]}
 			>
-				{showDropdown &&
-						<SelectContainer
-							options={options}
-							handleSelect={handleSelect}
-							value={value}
-							handleClose={() => toggleOpen()}
-						/>
-                }
+				{showDropdown && (
+					<SelectContainer
+						options={options}
+						handleSelect={handleSelect}
+						value={value}
+						handleClose={() => toggleOpen()}
+					/>
+				)}
 			</Animated.View>
 			{error && (
 				<Container className="mt-[10px]">

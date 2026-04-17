@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react'
+import React, { useCallback, useEffect, useState } from 'react'
 import { SafeAreaProvider, useSafeAreaInsets } from 'react-native-safe-area-context'
 import { Container } from '@/components/ui/Container'
 import { Keyboard, TouchableOpacity, TouchableWithoutFeedback, View } from 'react-native'
@@ -66,10 +66,13 @@ const ProfileEdit = () => {
 	})
 	const [avatar, setAvatar] = useState<string | null>(null)
 
-	const setImage = (image: null | string) => {
-		setAvatar(image)
-		setValue('avatarFilename', image)
-	}
+	const setImage = useCallback(
+		(image: null | string) => {
+			setAvatar(image)
+			setValue('avatarFilename', image)
+		},
+		[setValue]
+	)
 
 	useEffect(() => {
 		;(async () => {
@@ -86,7 +89,7 @@ const ProfileEdit = () => {
 				setData((s) => ({ ...s, errors: formattedErrors }))
 			}
 		})()
-	}, [])
+	}, [setImage, setValue])
 
 	const onSubmit = async (editProfileFormState: IEditProfileFormState) => {
 		setData((s) => ({ ...s, isLoading: true, errors: undefined, isSaved: false }))

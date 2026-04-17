@@ -30,7 +30,7 @@ export const useReadNotificationsOnView = <T extends Identifiable>(
 		if (!ids.length) return
 
 		bufferRef.current.clear()
-		readNotificationsByIds(ids)
+		return readNotificationsByIds(ids)
 	}
 
 	useFocusEffect(

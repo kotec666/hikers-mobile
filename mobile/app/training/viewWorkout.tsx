@@ -229,7 +229,7 @@ export default function ViewWorkout() {
 				}
 			}
 		})()
-	}, [])
+	}, [editPostId, historyTrainingId, isEdit, isFromHistory, router, setValue, toast, user?.id])
 
 	const renderIcon = (IconComponent?: React.ComponentType<any>, color?: string) => {
 		if (!IconComponent) return null

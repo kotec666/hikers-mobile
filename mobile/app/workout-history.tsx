@@ -23,7 +23,6 @@ import { useInfiniteQuery, useQueryClient } from '@tanstack/react-query'
 import { useToast } from '@/hooks/useToast'
 import { formatDistance } from '@/helpers/distance'
 import { useInternetConnection } from '@/hooks/useInternetConnection'
-import { useRouter } from 'expo-router'
 
 interface WorkoutItem {
 	id: string
@@ -165,7 +164,6 @@ const WorkoutHistory = () => {
 							<TrainingsEmpty text="К сожалению, тренировок еще не существует" />
 						) : null
 					}
-					// refreshControl={<RefreshControl refreshing={refreshing} onRefresh={refresh} tintColor="#22CB5A" />}
 					refreshControl={
 						<RefreshControl
 							refreshing={isRefetching}

@@ -50,7 +50,7 @@
     }
    ``` 
 2. Сжатие android проекта осуществляется в `./android/app/build.gradle` следующим образом:
-   ```xml
+   ```groovy
         // minifyEnabled enableProguardInReleaseBuilds
            minifyEnabled true
            shrinkResources true

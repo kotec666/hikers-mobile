@@ -19,6 +19,7 @@ export interface UseTimerReturn {
 	syncWithExternalTimer: (externalElapsedTime: number) => void
 }
 
+// @TODO не используется
 export function useTimer({ initialElapsedTime = 0, onUpdate }: UseTimerOptions = {}): UseTimerReturn {
 	const [elapsedTime, setElapsedTime] = useState<number>(initialElapsedTime)
 	const [state, setState] = useState<TimerState>('idle')
@@ -88,7 +89,7 @@ export function useTimer({ initialElapsedTime = 0, onUpdate }: UseTimerOptions =
 			timerRef.current = null
 		}
 		setState('paused')
-	}, [state])
+	}, [])
 
 	const resume = useCallback(() => {
 		lastTimeRef.current = Date.now()
@@ -98,7 +99,7 @@ export function useTimer({ initialElapsedTime = 0, onUpdate }: UseTimerOptions =
 
 		setState('active')
 		timerRef.current = setInterval(updateTimer, 1000)
-	}, [state, updateTimer])
+	}, [updateTimer])
 
 	const reset = useCallback(() => {
 		if (timerRef.current) {

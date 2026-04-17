@@ -2,7 +2,7 @@ import React, { memo, PropsWithChildren } from 'react'
 import { cn } from '@/helpers/cn'
 import { Platform, Pressable, PressableProps, StyleSheet } from 'react-native'
 import { BlurView } from 'expo-blur'
-import {GlassView, isLiquidGlassAvailable} from "expo-glass-effect";
+import { GlassView, isLiquidGlassAvailable } from 'expo-glass-effect'
 
 export interface Props extends PropsWithChildren {
 	className?: string
@@ -10,31 +10,19 @@ export interface Props extends PropsWithChildren {
 
 const MapActionButton = memo((props: Props & PressableProps) => {
 	const { children, className } = props
-    const isGlassAvailable = Platform.OS === 'ios' && isLiquidGlassAvailable()
+	const isGlassAvailable = Platform.OS === 'ios' && isLiquidGlassAvailable()
 
-    const renderBackground = () => {
-        if (Platform.OS !== 'ios') return null
+	const renderBackground = () => {
+		if (Platform.OS !== 'ios') return null
 
-        if (isGlassAvailable) {
-            return (
-                <GlassView
-                    pointerEvents="none"
-                    style={StyleSheet.absoluteFill}
-                />
-            )
-        }
+		if (isGlassAvailable) {
+			return <GlassView pointerEvents="none" style={StyleSheet.absoluteFill} />
+		}
 
-        return (
-            <BlurView
-                pointerEvents="none"
-                tint="dark"
-                intensity={10}
-                style={StyleSheet.absoluteFill}
-            />
-        )
-    }
+		return <BlurView pointerEvents="none" tint="dark" intensity={10} style={StyleSheet.absoluteFill} />
+	}
 
-    return (
+	return (
 		<Pressable
 			{...props}
 			className={cn(
@@ -42,8 +30,8 @@ const MapActionButton = memo((props: Props & PressableProps) => {
 				className
 			)}
 		>
-            {renderBackground()}
-            {children}
+			{renderBackground()}
+			{children}
 		</Pressable>
 	)
 })

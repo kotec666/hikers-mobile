@@ -1,5 +1,5 @@
 import React, { PropsWithChildren } from 'react'
-import { View, StyleSheet, Platform, Pressable, AccessibilityInfo } from 'react-native'
+import { View, StyleSheet, Platform, Pressable } from 'react-native'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
 import { BlurView } from 'expo-blur'
 import Portal from '@/components/Portal/Portal'
@@ -15,12 +15,10 @@ const Popup = ({ children, onClose }: PropsWithChildren<PopupProps>) => {
 	const blurTargetRef = useBlurContext()
 	const isGlassAvailable = Platform.OS === 'ios' && isLiquidGlassAvailable()
 
-	const renderContent =  () => {
+	const renderContent = () => {
 		if (isGlassAvailable) {
 			return (
-				<GlassView
-					style={styles.glassView}
-				>
+				<GlassView style={styles.glassView}>
 					<View style={styles.content}>{children}</View>
 				</GlassView>
 			)
@@ -51,7 +49,11 @@ const Popup = ({ children, onClose }: PropsWithChildren<PopupProps>) => {
 		<Portal>
 			<Pressable style={styles.overlay} onPress={onClose}>
 				<Pressable
-					style={[styles.container, { top: insets.top + 35, right: 16 }, !isGlassAvailable && { borderWidth: 1 }]}
+					style={[
+						styles.container,
+						{ top: insets.top + 35, right: 16 },
+						!isGlassAvailable && { borderWidth: 1 }
+					]}
 					onPress={(e) => e.stopPropagation()}
 				>
 					{renderContent()}
@@ -70,7 +72,6 @@ const styles = StyleSheet.create({
 		right: 0,
 		zIndex: 5,
 		borderRadius: 25,
-		//borderWidth: 1,
 		borderColor: 'rgba(255, 255, 255, 0.2)',
 		overflow: 'hidden',
 		minWidth: 150

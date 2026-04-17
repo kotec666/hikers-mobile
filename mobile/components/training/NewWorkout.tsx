@@ -21,7 +21,7 @@ import BottomSheet from '@/components/ui/BottomSheet/BottomSheet'
 import UnsavedTrainings from '@/components/BottomSheets/UnsavedTrainings'
 import { getNotSavedWorkouts, getWorkoutMeta } from '@/store/workoutStorage'
 import { useToast } from '@/hooks/useToast'
-import { useInternetConnectionRef } from '@/hooks/useInternetConnectionRef'
+import { useInternetConnection } from '@/hooks/useInternetConnection'
 import { useAuthStore } from '@/store/authStore'
 import UnsavedTrainingsDetails from '@/components/BottomSheets/UnsavedTrainingsDetails'
 import { useUnsavedWorkoutSync } from '@/hooks/useUnsavedWorkoutSync'
@@ -51,13 +51,14 @@ const { height: WINDOW_HEIGHT } = Dimensions.get('window')
 type ResizableSheetContent = 'workouts' | 'unsavedDetails'
 
 const NewWorkout = memo((props: IProps) => {
+	const { handleChangeWorkout: onChangeWorkout } = props
 	const { user } = useAuthStore()
 	const router = useRouter()
 	const insets = useSafeAreaInsets()
 	const toast = useToast()
 	const bottomSheetRef = useRef<BottomSheetHandle>(null)
 	const unsavedWorkoutsShownRef = useRef<boolean>(false)
-	const isInternetConnectedRef = useInternetConnectionRef()
+	const { isConnected: isInternetConnected } = useInternetConnection()
 	const [notSavedWorkoutsCount, setNotSavedWorkoutsCount] = useState(0)
 	const [sheetContent, setSheetContent] = useState<ResizableSheetContent>('workouts')
 
@@ -70,7 +71,7 @@ const NewWorkout = memo((props: IProps) => {
 	// Проверка на наличие несохраненных тренировок
 	useFocusEffect(
 		useCallback(() => {
-			if (unsavedWorkoutsShownRef.current || !isInternetConnectedRef.current) return
+			if (unsavedWorkoutsShownRef.current || !isInternetConnected) return
 
 			const meta = getWorkoutMeta(user?.id)
 			if (meta) return
@@ -81,7 +82,7 @@ const NewWorkout = memo((props: IProps) => {
 			setNotSavedWorkoutsCount(notSavedWorkouts.length)
 			openBottomSheet()
 			unsavedWorkoutsShownRef.current = true
-		}, [isInternetConnectedRef, isInternetConnectedRef.current, openBottomSheet, user?.id])
+		}, [isInternetConnected, openBottomSheet, user?.id])
 	)
 
 	useEffect(() => {
@@ -96,11 +97,11 @@ const NewWorkout = memo((props: IProps) => {
 		}
 	}, [])
 
-	const closeResizableSheet = () => {
-		bottomSheetResizableRef.current?.close()
-	}
-
 	const bottomSheetResizableRef = useRef<BottomSheetResizableRef>(null)
+
+	const closeResizableSheet = useCallback(() => {
+		bottomSheetResizableRef.current?.close()
+	}, [])
 
 	const toggleResizableSheet = useCallback(() => {
 		const isSheetActive = bottomSheetResizableRef.current?.isActive?.()
@@ -112,30 +113,33 @@ const NewWorkout = memo((props: IProps) => {
 		// bottomSheetResizableRef?.current?.scrollTo?.(isSheetActive ? 0 : -200)
 	}, [])
 
-	const handleChangeWorkout = (workoutType: TrainingType) => {
-		toggleResizableSheet()
-		props.handleChangeWorkout(workoutType)
-	}
+	const handleChangeWorkout = useCallback(
+		(workoutType: TrainingType) => {
+			toggleResizableSheet()
+			onChangeWorkout(workoutType)
+		},
+		[onChangeWorkout, toggleResizableSheet]
+	)
 
 	const renderIcon = (IconComponent: React.ComponentType<any>, color?: string) => {
 		return <IconComponent color={color} />
 	}
 
-	const handleClickDetails = () => {
+	const handleClickDetails = useCallback(() => {
 		closeBottomSheet()
 		setSheetContent('unsavedDetails')
 		toggleResizableSheet()
-	}
+	}, [closeBottomSheet, toggleResizableSheet])
 
-	const toggleWorkoutTypeSheet = () => {
+	const toggleWorkoutTypeSheet = useCallback(() => {
 		toggleResizableSheet()
 		setSheetContent('workouts')
-	}
+	}, [toggleResizableSheet])
 
 	const { deleteAll, notSavedWorkouts, syncingIds, enqueueWorkoutSync, deleteWorkout, saveAll } =
 		useUnsavedWorkoutSync()
 
-	const saveUnsavedTrainings = async () => {
+	const saveUnsavedTrainings = useCallback(async () => {
 		try {
 			await saveAll()
 			toast.success(notSavedWorkoutsCount === 1 ? 'Тренировка сохранена' : 'Все тренировки сохранены')
@@ -145,32 +149,38 @@ const NewWorkout = memo((props: IProps) => {
 			closeBottomSheet()
 			closeResizableSheet()
 		}
-	}
+	}, [closeBottomSheet, closeResizableSheet, notSavedWorkoutsCount, saveAll, toast])
 
-	const handleClickSaveOneWorkout = async (startedAt: number) => {
-		try {
-			await enqueueWorkoutSync(startedAt)
-			toast.success('Тренировка сохранена успешно')
-		} catch {
-			toast.error('Не удалось сохранить тренировку')
-		}
-	}
-
-	const handleClickDeleteWorkout = async (startedAt: number) => {
-		try {
-			await deleteWorkout(startedAt)
-			toast.success('Несохраненная тренировка удалена успешно')
-		} catch {
-			toast.error('Не удалось удалить тренировку')
-		} finally {
-			unsavedWorkoutsShownRef.current = false
-			if (notSavedWorkoutsCount === 1) {
-				closeResizableSheet()
+	const handleClickSaveOneWorkout = useCallback(
+		async (startedAt: number) => {
+			try {
+				await enqueueWorkoutSync(startedAt)
+				toast.success('Тренировка сохранена успешно')
+			} catch {
+				toast.error('Не удалось сохранить тренировку')
 			}
-		}
-	}
+		},
+		[enqueueWorkoutSync, toast]
+	)
 
-	const deleteUnsavedWorkouts = async () => {
+	const handleClickDeleteWorkout = useCallback(
+		async (startedAt: number) => {
+			try {
+				await deleteWorkout(startedAt)
+				toast.success('Несохраненная тренировка удалена успешно')
+			} catch {
+				toast.error('Не удалось удалить тренировку')
+			} finally {
+				unsavedWorkoutsShownRef.current = false
+				if (notSavedWorkoutsCount === 1) {
+					closeResizableSheet()
+				}
+			}
+		},
+		[closeResizableSheet, deleteWorkout, notSavedWorkoutsCount, toast]
+	)
+
+	const deleteUnsavedWorkouts = useCallback(async () => {
 		try {
 			await deleteAll()
 			toast.success('Все несохраненные тренировки удалены успешно')
@@ -181,21 +191,21 @@ const NewWorkout = memo((props: IProps) => {
 			closeBottomSheet()
 			closeResizableSheet()
 		}
-	}
+	}, [closeBottomSheet, closeResizableSheet, deleteAll, toast])
 
 	return (
 		<>
 			<Container>
 				<HeaderBack className="my-[20px]">Новая тренировка</HeaderBack>
 			</Container>
-			{/*<MapComponentSegments*/}
-			{/*	ref={props.mapComponentRef}*/}
-			{/*	userLocationMarkerRef={props.userLocationMarkerRef}*/}
-			{/*	latestUserMarkerLocationRef={props.latestUserMarkerLocationRef}*/}
-			{/*	initialMarkerLocation={props.initialMarkerLocation}*/}
-			{/*	maxMapHeight={WINDOW_HEIGHT}*/}
-			{/*	maxContainerHeight={WINDOW_HEIGHT}*/}
-			{/*/>*/}
+			<MapComponentSegments
+				ref={props.mapComponentRef}
+				userLocationMarkerRef={props.userLocationMarkerRef}
+				latestUserMarkerLocationRef={props.latestUserMarkerLocationRef}
+				initialMarkerLocation={props.initialMarkerLocation}
+				maxMapHeight={WINDOW_HEIGHT}
+				maxContainerHeight={WINDOW_HEIGHT}
+			/>
 			<View
 				style={{
 					bottom: insets.bottom + 35,
@@ -207,7 +217,6 @@ const NewWorkout = memo((props: IProps) => {
 			>
 				<MapActionButton onPress={toggleWorkoutTypeSheet}>
 					{props.chosenWorkout && renderIcon(props.chosenWorkout.IconComponent, '#fff')}
-					{/*<SneakerSvg />*/}
 				</MapActionButton>
 				<StartButton onPress={() => props.handleClickStart(false)}>Начать</StartButton>
 				<MapActionButton onPress={() => router.navigate('/find-people')}>

@@ -14,11 +14,11 @@ export async function setAuthData(partial: Partial<IAuthStorage>): Promise<void>
 	await setItem('authData', { ...existing, ...partial })
 }
 
-export async function setToken(token: string): Promise<void> {
-	const existing = (await getItem('authData')) ?? {}
-	await setItem('authData', { ...existing, accessToken: token })
-}
-
 export async function removeAuthData(): Promise<void> {
 	await removeItem('authData')
 }
+
+// export async function setToken(token: string): Promise<void> {
+// 	const existing = (await getItem('authData')) ?? {}
+// 	await setItem('authData', { ...existing, accessToken: token })
+// }

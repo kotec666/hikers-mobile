@@ -51,13 +51,11 @@ const MySubscriptionsPage = () => {
 				await unsubscribeFromUser(unsubUserId)
 				await refetch()
 				await queryClient.invalidateQueries({ queryKey: ['my-profile'] })
-				// setSubscriptions((prev) => prev.filter((subscription) => subscription.user.id !== unsubUserId))
 			} catch {
 				toast.error('Произошла ошибка, повторите попытку позже')
 			}
 		},
-		// [setSubscriptions, toast]
-		[toast]
+		[queryClient, refetch, toast]
 	)
 
 	const renderItem = useCallback(
@@ -107,17 +105,13 @@ const MySubscriptionsPage = () => {
 						data={subscriptions}
 						renderItem={renderItem}
 						keyExtractor={(item) => item.user.id}
-						// onEndReached={loadMore}
 						onEndReached={() => {
 							if (hasNextPage && !isFetchingNextPage) {
-								fetchNextPage()
+								return fetchNextPage()
 							}
 						}}
 						onEndReachedThreshold={0.5}
 						ItemSeparatorComponent={() => <View style={{ height: 15 }} />}
-						// refreshControl={
-						// 	<RefreshControl refreshing={refreshing} onRefresh={refresh} tintColor="#22CB5A" />
-						// }
 						refreshControl={
 							<RefreshControl
 								refreshing={isRefetching}

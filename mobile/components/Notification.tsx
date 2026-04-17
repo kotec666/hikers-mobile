@@ -1,4 +1,4 @@
-import { useEffect, useState, useRef } from 'react'
+import { useCallback, useEffect, useState, useRef } from 'react'
 import { Text, StyleSheet, Dimensions, Animated, PanResponder, View, Platform, Pressable } from 'react-native'
 import { fontFamily } from '@/constants/Fonts'
 import { cn } from '@/helpers/cn'
@@ -58,16 +58,16 @@ export function Notification({ text, type, onPress, clearErrorCallback }: IProps
 
 	const isGlassAvailable = Platform.OS === 'ios' && isLiquidGlassAvailable()
 
-	const onEnter = () => {
+	const onEnter = useCallback(() => {
 		isDismissingRef.current = false
 		Animated.timing(animatedValue, {
 			toValue: 0,
 			duration: 300,
 			useNativeDriver: true
 		}).start()
-	}
+	}, [animatedValue])
 
-	const onExit = () => {
+	const onExit = useCallback(() => {
 		isDismissingRef.current = true
 		Animated.timing(animatedValue, {
 			toValue: -100,
@@ -80,7 +80,7 @@ export function Notification({ text, type, onPress, clearErrorCallback }: IProps
 		setTimeout(() => {
 			clearErrorCallback?.()
 		}, 300)
-	}
+	}, [animatedValue, clearErrorCallback, pan])
 
 	const panResponder = useRef(
 		PanResponder.create({
@@ -144,7 +144,7 @@ export function Notification({ text, type, onPress, clearErrorCallback }: IProps
 		}, 3000)
 
 		return () => clearTimeout(timerId)
-	}, [text])
+	}, [onEnter, onExit, text])
 
 	if (!isShown) return null
 

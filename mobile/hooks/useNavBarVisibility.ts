@@ -13,7 +13,7 @@ export function useNavBarVisibility(hideRoutes: string[] = ['/newTraining']) {
 	useEffect(() => {
 		const shouldHide = hideRoutes.some((route) => pathname.startsWith(route))
 		hidden.value = withTiming(shouldHide ? 1 : 0, { duration: 300 })
-	}, [pathname, hideRoutes])
+	}, [pathname, hideRoutes, hidden])
 
 	return hidden
 }

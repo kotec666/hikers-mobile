@@ -13,7 +13,7 @@ export const useSafeNavigation = () => {
 			try {
 				router.push(href, options)
 			} finally {
-				// Через небольшой таймаут снимаем блокировку, чтобы не было "залипаний"
+				// Через небольшой тайм-аут снимаем блокировку, чтобы не было "залипаний"
 				setTimeout(() => setIsNavigating(false), 500)
 			}
 		},

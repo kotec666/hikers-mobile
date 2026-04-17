@@ -577,7 +577,6 @@ export const markPointsAsSaved = (pointIds: number[], userId?: string) => {
 }
 
 // --- CLEANUP ---
-
-export const removeAllWorkoutStorage = () => {
-	workoutStorage.clearAll()
-}
+// export const removeAllWorkoutStorage = () => {
+// 	workoutStorage.clearAll()
+// }

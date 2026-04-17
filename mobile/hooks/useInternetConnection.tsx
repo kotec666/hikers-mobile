@@ -58,7 +58,7 @@ export const useInternetConnection = () => {
 				}
 
 				await checkInternetReachable()
-			} catch (e) {
+			} catch {
 				if (mountedRef.current) {
 					setIsConnected(false)
 					setIsLoading(false)

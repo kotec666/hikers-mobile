@@ -54,6 +54,6 @@ export const updateMapSettings = (settings: Partial<InitialRegion>) => {
 	}
 }
 
-export const removeMapStorage = () => {
-	mapStorage.remove(mapStorageKey)
-}
+// export const removeMapStorage = () => {
+// 	mapStorage.remove(mapStorageKey)
+// }

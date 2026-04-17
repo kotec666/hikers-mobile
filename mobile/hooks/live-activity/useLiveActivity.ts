@@ -55,7 +55,9 @@ interface UseLiveActivityReturn {
 	consumePendingWidgetAction: () => PendingWidgetAction | null
 	addListener: (
 		eventName: LiveActivityEventName,
-		callback: (event: LiveActivityUpdateEvent | LiveActivityEndEvent | WidgetCompleteEvent | PendingWidgetAction) => void
+		callback: (
+			event: LiveActivityUpdateEvent | LiveActivityEndEvent | WidgetCompleteEvent | PendingWidgetAction
+		) => void
 	) => { remove: () => void }
 
 	getElapsedTime: () => number
@@ -67,6 +69,7 @@ interface UseLiveActivityReturn {
 
 const isIOS = Platform.OS === 'ios'
 
+// @TODO не используется
 export function useLiveActivity(): UseLiveActivityReturn {
 	const [liveActivityState, setLiveActivityState] = useState<LiveActivityState>('unknown')
 	const [liveActivityId, setLiveActivityId] = useState<string | null>(null)
@@ -89,6 +92,21 @@ export function useLiveActivity(): UseLiveActivityReturn {
 
 	const isLiveActivityAvailable = liveActivityState === 'supported'
 
+	const updateActiveActivities = useCallback(async () => {
+		if (!isIOS || liveActivityState !== 'supported') {
+			return []
+		}
+
+		try {
+			const activities = liveActivities.getActiveActivities()
+			setActiveActivities(activities)
+			return activities
+		} catch (error) {
+			console.error('Error getting active activities:', error)
+			return []
+		}
+	}, [liveActivityState])
+
 	const checkAvailability = useCallback(async () => {
 		if (!isIOS) {
 			setLiveActivityState('unsupported')
@@ -105,22 +123,7 @@ export function useLiveActivity(): UseLiveActivityReturn {
 			console.error('Error checking Live Activity availability:', error)
 			setLiveActivityState('unavailable')
 		}
-	}, [])
-
-	const updateActiveActivities = useCallback(async () => {
-		if (!isIOS || liveActivityState !== 'supported') {
-			return []
-		}
-
-		try {
-			const activities = liveActivities.getActiveActivities()
-			setActiveActivities(activities)
-			return activities
-		} catch (error) {
-			console.error('Error getting active activities:', error)
-			return []
-		}
-	}, [liveActivityState])
+	}, [updateActiveActivities])
 
 	const updateStatus = useCallback(async (): Promise<TimerStatus> => {
 		if (!isIOS || liveActivityState !== 'supported') {
@@ -222,36 +225,41 @@ export function useLiveActivity(): UseLiveActivityReturn {
 		}
 	}, [liveActivityState, liveActivityId])
 
-	const endActivity = useCallback(async (activityId?: string): Promise<boolean> => {
-		const targetActivityId = activityId || liveActivityId
+	const endActivity = useCallback(
+		async (activityId?: string): Promise<boolean> => {
+			const targetActivityId = activityId || liveActivityId
 
-		if (!isIOS || liveActivityState !== 'supported' || !targetActivityId) {
-			return false
-		}
-
-		try {
-			const success = await liveActivities.endLiveActivity(targetActivityId)
-
-			if (success) {
-				setTimerStatus({
-					state: 'finished',
-					elapsedTime: 0
-				})
-				setLiveActivityId(null)
-				await updateActiveActivities()
+			if (!isIOS || liveActivityState !== 'supported' || !targetActivityId) {
+				return false
 			}
 
-			return success
-		} catch (error) {
-			console.error('Error ending Live Activity:', error)
-			return false
-		}
-	}, [liveActivityState, liveActivityId, updateActiveActivities])
+			try {
+				const success = await liveActivities.endLiveActivity(targetActivityId)
+
+				if (success) {
+					setTimerStatus({
+						state: 'finished',
+						elapsedTime: 0
+					})
+					setLiveActivityId(null)
+					await updateActiveActivities()
+				}
+
+				return success
+			} catch (error) {
+				console.error('Error ending Live Activity:', error)
+				return false
+			}
+		},
+		[liveActivityState, liveActivityId, updateActiveActivities]
+	)
 
 	const addListener = useCallback(
 		(
 			eventName: LiveActivityEventName,
-			callback: (event: LiveActivityUpdateEvent | LiveActivityEndEvent | WidgetCompleteEvent | PendingWidgetAction) => void
+			callback: (
+				event: LiveActivityUpdateEvent | LiveActivityEndEvent | WidgetCompleteEvent | PendingWidgetAction
+			) => void
 		) => {
 			if (!isIOS || !liveActivities.addListener) {
 				return { remove: () => {} }

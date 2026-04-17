@@ -44,7 +44,7 @@ const UserAchievementsPage = () => {
 				// setState((s) => ({ ...s, errors: formattedErrors }))
 			}
 		})()
-	}, [])
+	}, [id])
 
 	const handleClickAchievement = (achievementId: string) => {
 		const clickedAchievement = state.claimedAchievements.find((achievement) => achievement.id === achievementId)

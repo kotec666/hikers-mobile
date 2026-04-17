@@ -64,7 +64,7 @@ const Toggle = ({ value, onChange, disabled }: ToggleProps) => {
 		thumbX.value = withTiming(value ? WIDTH - THUMB - HORIZONTAL_PADDING : HORIZONTAL_PADDING, {
 			duration: DURATION
 		})
-	}, [value])
+	}, [progress, thumbX, value])
 
 	return (
 		<GestureDetector gesture={pan}>

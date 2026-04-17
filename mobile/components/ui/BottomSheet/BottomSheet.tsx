@@ -24,7 +24,7 @@ const BottomSheet = forwardRef<BottomSheetHandle, BottomSheetProps>(
 		// const safeAreaInsets = useSafeAreaInsets()
 		const blurTargetRef = useBlurContext()
 		const { height: screenHeight } = Dimensions.get('screen')
-        const isGlassAvailable = Platform.OS === 'ios' && isLiquidGlassAvailable()
+		const isGlassAvailable = Platform.OS === 'ios' && isLiquidGlassAvailable()
 
 		const closedPositionY = screenHeight
 		const openPositionY = screenHeight - activeHeight
@@ -38,25 +38,28 @@ const BottomSheet = forwardRef<BottomSheetHandle, BottomSheetProps>(
 				stiffness: 150,
 				mass: 0.5
 			})
-		}, [])
+		}, [openPositionY, sheetPositionY])
 
-		const closeSheet = useCallback((onFinished?: () => void) => {
-			sheetPositionY.value = withSpring(
-				closedPositionY,
-				{
-					damping: 50,
-					stiffness: 150,
-					mass: 0.5
-				},
-				(finished) => {
-					if (finished) {
-						if (onFinished) {
-							scheduleOnRN(onFinished)
+		const closeSheet = useCallback(
+			(onFinished?: () => void) => {
+				sheetPositionY.value = withSpring(
+					closedPositionY,
+					{
+						damping: 50,
+						stiffness: 150,
+						mass: 0.5
+					},
+					(finished) => {
+						if (finished) {
+							if (onFinished) {
+								scheduleOnRN(onFinished)
+							}
 						}
 					}
-				}
-			)
-		}, [])
+				)
+			},
+			[closedPositionY, sheetPositionY]
+		)
 
 		useImperativeHandle(
 			ref,
@@ -116,41 +119,31 @@ const BottomSheet = forwardRef<BottomSheetHandle, BottomSheetProps>(
 			}
 		]
 
+		const renderBackground = () => {
+			if (blurDisabled) return null
 
-        const renderBackground = () => {
-            if (blurDisabled) return null
+			if (isGlassAvailable) {
+				return (
+					<GlassView
+						style={[StyleSheet.absoluteFill, { borderTopLeftRadius: 50, borderTopRightRadius: 50 }]}
+					/>
+				)
+			}
 
-            if (isGlassAvailable) {
-                return (
-                    <GlassView
-                        style={[
-                            StyleSheet.absoluteFill,
-                            { borderTopLeftRadius: 50, borderTopRightRadius: 50 }
-                        ]}
-                    />
-                )
-            }
+			if (Platform.OS === 'ios') {
+				return <BlurView tint="dark" style={StyleSheet.absoluteFill} intensity={10} />
+			}
 
-            if (Platform.OS === 'ios') {
-                return (
-                    <BlurView
-                        tint="dark"
-                        style={StyleSheet.absoluteFill}
-                        intensity={10}
-                    />
-                )
-            }
-
-            return (
-                <BlurView
-                    tint="dark"
-                    style={StyleSheet.absoluteFill}
-                    intensity={23}
-                    blurTarget={blurTargetRef}
-                    blurMethod="dimezisBlurView"
-                />
-            )
-        }
+			return (
+				<BlurView
+					tint="dark"
+					style={StyleSheet.absoluteFill}
+					intensity={23}
+					blurTarget={blurTargetRef}
+					blurMethod="dimezisBlurView"
+				/>
+			)
+		}
 
 		return (
 			<Portal>
@@ -159,15 +152,17 @@ const BottomSheet = forwardRef<BottomSheetHandle, BottomSheetProps>(
 				</TouchableWithoutFeedback>
 				<GestureDetector gesture={panGestureHandler}>
 					<Animated.View style={platformStyles}>
-                        <View style={{
-                            flex: 1,
-                        }}>
-                            {renderBackground()}
-                            <Pressable style={styles.lineContainer}>
-                                <View style={styles.line} />
-                            </Pressable>
-                            <View style={styles.contentContainer}>{children}</View>
-                        </View>
+						<View
+							style={{
+								flex: 1
+							}}
+						>
+							{renderBackground()}
+							<Pressable style={styles.lineContainer}>
+								<View style={styles.line} />
+							</Pressable>
+							<View style={styles.contentContainer}>{children}</View>
+						</View>
 					</Animated.View>
 				</GestureDetector>
 			</Portal>
@@ -188,10 +183,10 @@ const styles = StyleSheet.create({
 		bottom: 0,
 		zIndex: 2,
 		elevation: 2,
-		overflow: 'hidden',
+		overflow: 'hidden'
 	},
 	contentContainer: {
-		flex: 1,
+		flex: 1
 	},
 	lineContainer: {
 		height: 20,

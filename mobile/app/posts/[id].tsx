@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react'
+import React, { useCallback, useEffect, useState } from 'react'
 import { View, ScrollView, Dimensions, ActivityIndicator } from 'react-native'
 import { SafeAreaProvider, useSafeAreaInsets } from 'react-native-safe-area-context'
 import { Container } from '@/components/ui/Container'
@@ -38,6 +38,14 @@ const Post = () => {
 	const [post, setPost] = useState<IPost | null>(null)
 	const [isPageLoading, setIsPageLoading] = useState<boolean>(false)
 
+	const handleClickBack = useCallback(() => {
+		if (router.canGoBack()) {
+			router.back()
+		} else {
+			router.push('/(tabs)/profile')
+		}
+	}, [router])
+
 	useEffect(() => {
 		;(async () => {
 			setIsPageLoading(true)
@@ -51,7 +59,7 @@ const Post = () => {
 				setIsPageLoading(false)
 			}
 		})()
-	}, [])
+	}, [handleClickBack, id, toast])
 
 	const handleOpenDeleteModal = () => {
 		return setIsDeleteModalOpen((prevState) => !prevState)
@@ -72,14 +80,6 @@ const Post = () => {
 	const creatorMetrics = post?.training.participants.find(
 		(participant) => participant.user.id === post?.userCreator.id
 	)?.metrics
-
-	const handleClickBack = () => {
-		if (router.canGoBack()) {
-			router.back()
-		} else {
-			router.push('/(tabs)/profile')
-		}
-	}
 
 	if (isPageLoading) {
 		return (

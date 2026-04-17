@@ -1,7 +1,7 @@
 import { NativeTabs } from 'expo-router/unstable-native-tabs'
 import { tabsConfig } from '@/components/ui/Navbar/tabs.config'
 import { SFSymbols6_0 } from 'sf-symbols-typescript'
-import {usePathname} from 'expo-router'
+import { usePathname } from 'expo-router'
 
 export default function NativeTabsComponent() {
 	const pathname = usePathname()

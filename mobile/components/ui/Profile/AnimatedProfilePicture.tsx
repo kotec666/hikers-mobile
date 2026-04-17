@@ -98,7 +98,7 @@ export const AnimatedProfilePicture = ({ size = 40, imageUrl, bordered }: Props)
 		closeButtonOpacity.value = withTiming(0, { duration: 200 })
 
 		scheduleOnRN(() => setIsPortalVisible(false))
-	}, [])
+	}, [backdropOpacity, closeButtonOpacity, isOpen, scale, translateX, translateY])
 
 	/**
 	 * Измерение позиции и запуск анимации
