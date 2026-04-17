@@ -3,7 +3,7 @@ import { SafeAreaProvider, useSafeAreaInsets } from 'react-native-safe-area-cont
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { useToast } from '@/hooks/useToast'
 import WorkoutStarted from '@/components/training/WorkoutStarted'
-import NewWorkout, { IWorkoutModeElement } from '@/components/training/NewWorkout'
+import NewWorkout, { IWorkoutModeElement, NewWorkoutHandle } from '@/components/training/NewWorkout'
 import * as Location from 'expo-location'
 import * as TaskManager from 'expo-task-manager'
 import {
@@ -87,6 +87,7 @@ export default function NewTraining() {
 
 	const router = useRouter()
 	const permissionsRef = useRef<AllGeolocationPermissionsHandle>(null)
+	const toggleBottomSheetOnNewWorkoutRef = useRef<NewWorkoutHandle>(null)
 	const headingSubscriptionRef = useRef<null | Location.LocationSubscription>(null)
 	const activeLocationSubscriptionRef = useRef<null | Location.LocationSubscription>(null)
 	const isScreenFocusedRef = useRef(false)
@@ -396,7 +397,7 @@ export default function NewTraining() {
 							const response = (e as any).response
 							const errors = await response.json()
 							if (errors?.message === ERRORS.USER_IN_NOT_FINISHED_TRAINING) {
-								return
+								return toggleBottomSheetOnNewWorkoutRef.current?.toggleBottomSheetOnNewWorkout()
 							}
 							if (
 								errors?.message === ERRORS.USER_IS_TRAINING_PARTICIPANT ||
@@ -692,6 +693,7 @@ export default function NewTraining() {
 					/>
 				) : (
 					<NewWorkout
+						ref={toggleBottomSheetOnNewWorkoutRef}
 						userLocationMarkerRef={userLocationMarkerRef}
 						initialMarkerLocation={initialMarkerLocationState}
 						latestUserMarkerLocationRef={latestUserMarkerLocationRef}
