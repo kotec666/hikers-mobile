@@ -1,8 +1,10 @@
-import { Controller, Get, UseInterceptors } from '@nestjs/common';
+import { Controller, Delete, Get, UseInterceptors } from '@nestjs/common';
 import { UserService } from './user.service';
 import { UserInterceptor } from '@interceptors/user.interceptor';
 import { User } from '@decorators/user.decorator';
 import { TokenDto } from '../token/token.dto';
+import { UserDto } from './user.dto';
+import { CommonDto } from '../../common/dto/common.dto';
 
 @Controller('user')
 @UseInterceptors(UserInterceptor)
@@ -15,7 +17,17 @@ export class UserController {
 	 * @security token
 	 */
 	@Get('me')
-	public async getMe(@User() user: TokenDto.Payload) {
+	public async getMe(@User() user: TokenDto.Payload): Promise<UserDto.Entity> {
 		return this.userService.getUser(user.id);
+	}
+
+	/**
+	 * @tag User
+	 * @summary Удалить аккаунт
+	 * @security token
+	 */
+	@Delete('me')
+	public async deleteMe(@User() user: TokenDto.Payload): Promise<CommonDto.BooleanResponse> {
+		return this.userService.deleteUser(user.id);
 	}
 }

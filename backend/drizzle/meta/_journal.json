@@ -218,6 +218,13 @@
       "when": 1775456694954,
       "tag": "0030_notif_settings_table",
       "breakpoints": true
+    },
+    {
+      "idx": 31,
+      "version": "7",
+      "when": 1776069254422,
+      "tag": "0031_trainings_posts_author_nullable",
+      "breakpoints": true
     }
   ]
 }
