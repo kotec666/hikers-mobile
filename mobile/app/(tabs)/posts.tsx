@@ -218,14 +218,14 @@ const PostsPage = () => {
 						likesCount: item.likesCount
 					}}
 					onToggleSubscribeCallback={toggleSubscribeCallback}
-					// mapComponent={
-					// 	<MapComponent
-					// 		rounded={25}
-					// 		needFinishMarker
-					// 		interactiveDisabled
-					// 		initialLocations={{ current: adaptLocations(item.training.participants[0].route.points) }}
-					// 	/>
-					// }
+					mapComponent={
+						<MapComponent
+							rounded={25}
+							needFinishMarker
+							interactiveDisabled
+							initialLocations={{ current: adaptLocations(item.training.participants[0].route.points) }}
+						/>
+					}
 				/>
 			)
 		},

@@ -124,14 +124,14 @@ const Profile = () => {
 						postId: item.id
 					}}
 					participants={item.training.participants}
-					// mapComponent={
-					// 	<MapComponent
-					// 		rounded={25}
-					// 		interactiveDisabled
-					// 		needFinishMarker
-					// 		initialLocations={{ current: adaptLocations(item.training.participants[0].route.points) }}
-					// 	/>
-					// }
+					mapComponent={
+						<MapComponent
+							rounded={25}
+							interactiveDisabled
+							needFinishMarker
+							initialLocations={{ current: adaptLocations(item.training.participants[0].route.points) }}
+						/>
+					}
 				/>
 			)
 		},

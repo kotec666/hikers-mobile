@@ -595,14 +595,14 @@ export default function ViewWorkout() {
 										График
 									</Button>
 								</View>
-								{/*{state.switchChartView === 'map' && (*/}
-								{/*	<MapComponent*/}
-								{/*		minMapHeight={320}*/}
-								{/*		rounded={25}*/}
-								{/*		needFinishMarker*/}
-								{/*		initialLocations={mapLocations}*/}
-								{/*	/>*/}
-								{/*)}*/}
+								{state.switchChartView === 'map' && (
+									<MapComponent
+										minMapHeight={320}
+										rounded={25}
+										needFinishMarker
+										initialLocations={mapLocations}
+									/>
+								)}
 								{state.switchChartView === 'chart' && (
 									<View className="rounded-[25px] p-[15px] items-center justify-center bg-black-25 h-[320px]">
 										<View className="w-full pb-[15px]">

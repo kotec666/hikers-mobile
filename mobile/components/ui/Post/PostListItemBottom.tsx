@@ -92,7 +92,7 @@ const PostListItemBottom = (props: IProps) => {
 											marginLeft: index === 0 ? 0 : -10,
 											//zIndex: props?.participants?.length || 1 - index,
 											zIndex: 3 - index,
-											shadowColor: Colors['green-main'],
+											shadowColor: Colors['gray-ab'],
 											shadowOffset: {
 												width: 0,
 												height: 1
