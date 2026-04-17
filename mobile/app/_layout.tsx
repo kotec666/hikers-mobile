@@ -16,12 +16,26 @@ const queryClient = new QueryClient()
 
 SplashScreen.preventAutoHideAsync()
 
-YamapInstance.setLocale('ru_RU')
-YamapInstance.init(process.env.EXPO_PUBLIC_YAMAP_KEY || '')
-	.then(() => {
+const initializeYamap = async () => {
+	try {
+		await YamapInstance.setLocale('ru_RU')
+	} catch (error) {
+		const message = error instanceof Error ? error.message : String(error)
+
+		if (!message.includes('setLocale() should be called before initialize()')) {
+			console.warn(error)
+		}
+	}
+
+	try {
+		await YamapInstance.init(process.env.EXPO_PUBLIC_YAMAP_KEY || '')
 		console.log('Yamap initialized')
-	})
-	.catch(console.warn)
+	} catch (error) {
+		console.warn(error)
+	}
+}
+
+void initializeYamap()
 
 // Глобальный обработчик фоновых событий (нужно для кнопок уведомлений)
 // notifee.onBackgroundEvent(async ({ type, detail }) => {
