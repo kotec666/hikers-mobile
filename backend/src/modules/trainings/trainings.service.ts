@@ -321,7 +321,7 @@ export class TrainingsService {
 		if (trainingRoute) {
 			const lastSavedRelTs = trainingRoute.points?.length
 				? trainingRoute.points[trainingRoute.points.length - 1].rel_ts
-				: 0;
+				: -1;
 
 			const matchesRouteTimings = (relTs: number): boolean => {
 				if (relTs < lastSavedRelTs) {
