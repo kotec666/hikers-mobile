@@ -59,6 +59,17 @@ type Param = {
 	value?: string | number | null
 }
 
+const workoutResultImages: Record<TrainingType, number> = {
+	[TrainingType.RUN]: require('@/assets/images/view-workout-results/run.avif'),
+	[TrainingType.WALK]: require('@/assets/images/view-workout-results/walk.avif'),
+	[TrainingType.TRACK]: require('@/assets/images/view-workout-results/track.avif'),
+	[TrainingType.BICYCLE]: require('@/assets/images/view-workout-results/bicycle.avif')
+}
+
+const getWorkoutResultImage = (workoutType?: TrainingType | null) => {
+	return workoutResultImages[workoutType ?? TrainingType.RUN]
+}
+
 const getWorkoutParams = ({
 	mode,
 	results,
@@ -231,11 +242,6 @@ export default function ViewWorkout() {
 		})()
 	}, [editPostId, historyTrainingId, isEdit, isFromHistory, router, setValue, toast, user?.id])
 
-	const renderIcon = (IconComponent?: React.ComponentType<any>, color?: string) => {
-		if (!IconComponent) return null
-		return <IconComponent color={color} width={21} height={21} />
-	}
-
 	const handlePostImages = (postImages: string[], formData: FormData) => {
 		if (postImages.length) {
 			const filesArray: any[] = []
@@ -389,12 +395,6 @@ export default function ViewWorkout() {
 		setExistingImages((prev) => prev.filter((f) => f !== fileName))
 	}
 
-	const renderIconForExistPost = (workoutType?: TrainingType) => {
-		const found = workoutType ? WorkoutTypesMap[workoutType] : null
-		if (!found) return null
-		return <found.IconComponent color="black" width={21} height={21} />
-	}
-
 	const myParticipant = extendedTraining?.participants.find((p) => p.user.id === user?.id)
 	const creatorParticipant = existPost?.training.participants.find(
 		(participant) => participant.user.id === existPost?.userCreator.id
@@ -417,6 +417,11 @@ export default function ViewWorkout() {
 	const mapLocations = isView ? pointsRef : { current: isEdit ? adaptedLocations : adaptedLocationsFromHistory }
 	const chartPoints = isView ? results.points : isEdit ? adaptedLocations : adaptedLocationsFromHistory
 	const canPublish = isView || isEdit || (isFromHistory && isTrainingAuthor)
+	const canManageExistingImages = isEdit || Boolean(isFromHistory && isTrainingAuthor && existPost)
+	const currentWorkoutType = isView ? results.type?.type : isEdit ? existPost?.training?.type : extendedTraining?.type
+	const currentWorkout = isView ? results.type : currentWorkoutType ? WorkoutTypesMap[currentWorkoutType] : null
+	const CurrentWorkoutIcon = currentWorkout?.IconComponent as React.ComponentType<any> | undefined
+	const currentWorkoutImage = getWorkoutResultImage(currentWorkout?.type)
 
 	const [leftParams, rightParams] = getWorkoutParams({
 		mode,
@@ -529,7 +534,7 @@ export default function ViewWorkout() {
 									width: '100%',
 									height: '100%'
 								}}
-								source={require('@/assets/images/view-training.avif')}
+								source={currentWorkoutImage}
 								contentFit="cover"
 							/>
 							<Container
@@ -540,9 +545,9 @@ export default function ViewWorkout() {
 								<View className="flex-row w-full justify-between items-center">
 									<View className="flex-row items-center gap-[10px]">
 										<View className="bg-white rounded-xl items-center justify-center w-[40px] h-[40px]">
-											{isView && renderIcon(results?.type?.IconComponent, '#000')}
-											{isEdit && renderIconForExistPost(existPost?.training?.type)}
-											{isFromHistory && renderIconForExistPost(extendedTraining?.type)}
+											{CurrentWorkoutIcon ? (
+												<CurrentWorkoutIcon color="#000" width={21} height={21} />
+											) : null}
 										</View>
 										<Text
 											className="text-white text-[23px]"
@@ -726,33 +731,30 @@ export default function ViewWorkout() {
 												/>
 											</View>
 											<View className="flex-row flex-wrap -mx-[7.5px] gap-y-[15px] mt-[10px]">
-												{isEdit ||
-													(isFromHistory &&
-														isTrainingAuthor &&
-														existPost &&
-														existingImages.map((fileName) => (
-															<View key={fileName} className="w-1/2 px-[7.5px] relative">
-																<Image
-																	source={{ uri: `${PATH_TO_IMAGE}${fileName}` }}
-																	style={{
-																		width: '100%',
-																		aspectRatio: 1,
-																		borderRadius: 15,
-																		borderWidth: 1,
-																		borderColor: 'rgba(255, 255, 255, 0.2)',
-																		overflow: 'hidden'
-																	}}
-																	contentFit="cover"
+												{canManageExistingImages &&
+													existingImages.map((fileName) => (
+														<View key={fileName} className="w-1/2 px-[7.5px] relative">
+															<Image
+																source={{ uri: `${PATH_TO_IMAGE}${fileName}` }}
+																style={{
+																	width: '100%',
+																	aspectRatio: 1,
+																	borderRadius: 15,
+																	borderWidth: 1,
+																	borderColor: 'rgba(255, 255, 255, 0.2)',
+																	overflow: 'hidden'
+																}}
+																contentFit="cover"
+															/>
+															<View className="absolute right-[12px] top-[12px] rounded-full w-[28px] h-[28px] bg-black/40 items-center justify-center">
+																<CloseCross
+																	handleClose={() =>
+																		handleDeleteExistingImage(fileName)
+																	}
 																/>
-																<View className="absolute right-[12px] top-[12px] rounded-full w-[28px] h-[28px] bg-black/40 items-center justify-center">
-																	<CloseCross
-																		handleClose={() =>
-																			handleDeleteExistingImage(fileName)
-																		}
-																	/>
-																</View>
 															</View>
-														)))}
+														</View>
+													))}
 												{postImages.map((uri, index) => (
 													<View key={uri} className="w-1/2 px-[7.5px] relative">
 														<Image

@@ -6,6 +6,7 @@ import { TrainingType } from '@shared/enums'
 export const WorkoutTypesData = [
 	{ type: TrainingType.RUN, name: 'Забег', IconComponent: WorkoutRunning },
 	{ type: TrainingType.WALK, name: 'Ходьба', IconComponent: WorkoutWalking },
+	{ type: TrainingType.TRACK, name: 'Трек', IconComponent: WorkoutWalking },
 	{ type: TrainingType.BICYCLE, name: 'Велосипед', IconComponent: WorkoutBicycle }
 ]
 
