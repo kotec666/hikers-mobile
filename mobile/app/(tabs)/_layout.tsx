@@ -1,6 +1,6 @@
 import { Tabs, Stack, Redirect, usePathname, useRouter } from 'expo-router'
 import { useAuthStore } from '@/store/authStore'
-import { Platform } from 'react-native'
+import { Keyboard, Platform } from 'react-native'
 import NativeTabsComponent from '@/components/ui/Navbar/NativeTabsComponent'
 import NavBar from '@/components/ui/Navbar/NavBar'
 import { Colors } from '@/constants/Colors'
@@ -70,6 +70,8 @@ export default function TabLayout() {
 
 	const handleQuickAction = useCallback(
 		(action: QuickActions.Action) => {
+			Keyboard.dismiss()
+
 			if (action.id === 'new-training') {
 				router.navigate('/newTraining')
 				return true

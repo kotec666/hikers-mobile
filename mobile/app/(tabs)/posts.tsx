@@ -22,7 +22,7 @@ import PostSearchResult from '@/components/ui/Post/PostSearchResult'
 import { LegendList, LegendListRef } from '@legendapp/list'
 import { getPostsFeed, IPost } from '@/api/posts'
 import { Colors } from '@/constants/Colors'
-import { useLocalSearchParams } from 'expo-router'
+import { useFocusEffect, useLocalSearchParams } from 'expo-router'
 import MapComponent from '@/components/map/MapComponent'
 import { adaptLocations } from '@/helpers/adaptPointsToIWorkoutLocationStorageItem'
 import TrainingsEmpty from '@/components/ui/Post/TrainingsEmpty'
@@ -139,6 +139,19 @@ const PostsPage = () => {
 	const activateSearch = useCallback(() => {
 		setState((s) => (s.isSearchActive ? s : { ...s, isSearchActive: true }))
 	}, [])
+
+	const dismissSearchKeyboard = useCallback(() => {
+		searchInputRef.current?.blur()
+		Keyboard.dismiss()
+	}, [])
+
+	useFocusEffect(
+		useCallback(() => {
+			return () => {
+				dismissSearchKeyboard()
+			}
+		}, [dismissSearchKeyboard])
+	)
 
 	useEffect(() => {
 		if (!state.isSearchActive) return
