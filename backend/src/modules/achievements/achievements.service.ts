@@ -245,7 +245,7 @@ export class AchievementsService {
 	private notifyAchievementDone(userId: string, achievementId: string) {
 		this.notifications
 			.create(userId, {
-				type: NotificationType.ACHIEVEMENT,
+				type: NotificationType.NEW_ACHIEVEMENT,
 				relEntityId: achievementId,
 			})
 			.catch((r) => {

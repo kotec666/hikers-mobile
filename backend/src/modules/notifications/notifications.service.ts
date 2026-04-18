@@ -245,7 +245,7 @@ export class NotificationsService {
 	// @TODO проблема - текст уведа будет всегда на одном и том же языке (русский)
 	private getTextByTypeAndEntity(type: NotificationType, relEntityName?: string): string {
 		switch (type) {
-			case NotificationType.ACHIEVEMENT:
+			case NotificationType.NEW_ACHIEVEMENT:
 				return `Получено достижение${relEntityName ? ': ' + relEntityName : ''}`;
 			case NotificationType.FRIEND_INVITE:
 				return `Пользователь ${relEntityName ? relEntityName + ' ' : ''}отправил запрос в друзья`;
@@ -269,7 +269,7 @@ export class NotificationsService {
 		title: string;
 	} | null> {
 		switch (type) {
-			case NotificationType.ACHIEVEMENT: {
+			case NotificationType.NEW_ACHIEVEMENT: {
 				const [achieve] = await this.db.db
 					.select({
 						iconFilename: achievements.iconFilename,
