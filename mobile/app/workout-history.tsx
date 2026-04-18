@@ -75,7 +75,7 @@ const WorkoutHistory = () => {
 		.map((item) => {
 			const date = new Date(item.startedAt || item.createdAt)
 			const month = format(date, 'LLLL', { locale: ru })
-			const title = format(item.createdAt, 'd MMMM, HH:mm', { locale: ru }) // format(item.createdAt, 'dd-MM-yy, HH:mm')
+			const title = format(date, 'd MMMM, HH:mm', { locale: ru }) // format(item.createdAt, 'dd-MM-yy, HH:mm')
 			const typeData = WorkoutTypesData.find((t) => t.type === item.type)
 			const IconComponent = typeData?.IconComponent ?? PeopleRunningSvg
 

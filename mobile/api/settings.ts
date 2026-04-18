@@ -2,10 +2,7 @@ import fetcher from '@/api/fetcher'
 import { NotificationType } from '@shared/enums'
 import { ISuccess } from '@/api/posts'
 
-// Маппинг enum в объект с boolean
-export type NotificationSettings = {
-	[K in NotificationType as K extends 'ACHIEVEMENT' ? 'new_achievement' : K]: boolean
-}
+export type NotificationSettings = Record<NotificationType, boolean>
 
 // Получить настройки уведомлений
 export const getNotificationSettings = async (): Promise<NotificationSettings> => {

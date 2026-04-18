@@ -281,7 +281,7 @@ const MapComponentSegments = forwardRef<MapComponentSegmentsHandle, IProps>((pro
 					logoPosition={{ horizontal: 'right', vertical: 'top' }}
 					showUserPosition={false}
 					tiltGesturesDisabled={true}
-					rotateGesturesDisabled={false} // @TODO включить после дебага
+					rotateGesturesDisabled={false}
 					onCameraPositionChange={(e) => {
 						if (['GESTURES', 'UNKNOWN'].includes(e.nativeEvent.reason)) {
 							handleBlockAnimation()
