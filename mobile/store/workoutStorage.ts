@@ -171,12 +171,13 @@ export const setWorkoutItems = (items: LocationObject[], userId?: string): IWork
 	const saved: IWorkoutLocationStorageItem[] = []
 
 	for (const item of items) {
-		if (item.timestamp < meta.startedAt) continue
+		const normalizedTimestamp = Math.trunc(item.timestamp)
+		if (normalizedTimestamp < meta.startedAt) continue
 
 		const entry: IWorkoutLocationStorageItem = {
 			pointId: meta.nextPointId++,
-			relTs: item.timestamp - meta.startedAt,
-			locationObject: item,
+			relTs: normalizedTimestamp - meta.startedAt,
+			locationObject: { ...item, timestamp: normalizedTimestamp },
 			paused: meta.isPaused,
 			isSavedToServer: false
 		}
