@@ -94,6 +94,9 @@ export class AchievementsService {
 		) {
 			activities.add(UserActivity.STEPS);
 		}
+		if (trainingType === TrainingType.WALK) {
+			activities.add(UserActivity.RUN);
+		}
 
 		const activity = getActivityByTrainingType(trainingType);
 		if (activity) {
