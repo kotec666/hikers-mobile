@@ -3,6 +3,7 @@ export const POST_MAX_FILES_COUNT = 10;
 
 export const VALID_IMAGE_MIME_TYPES = [
 	'image/jpeg',
+	'image/jpg',
 	'image/png',
 	'image/gif',
 	'image/webp',
