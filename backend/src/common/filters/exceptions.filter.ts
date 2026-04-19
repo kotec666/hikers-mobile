@@ -78,20 +78,26 @@ export class HttpExceptionFilter implements ExceptionFilter {
 
 					// Если ошибка по нескольким полям, то считаем как общюю, а не проперти
 					if (match[1].includes(', ')) {
-						return response.status(statusCode).json({
+						const error = {
 							statusCode,
 							message: ERRORS.ALREADY_EXISTS,
-						});
+						};
+						this.logger.error(JSON.stringify(error));
+
+						return response.status(statusCode).json(error);
 					}
 
 					const message: string = `_${match[1]}:${ERRORS.ALREADY_EXISTS}`;
 
-					return response.status(statusCode).json({
+					const error = {
 						statusCode,
 						message: message.startsWith('_')
 							? [parsePropertyMessage(message)]
 							: (statusCodeToError[statusCode] ?? ERRORS.UNKNOWN_ERROR),
-					});
+					};
+					this.logger.error(JSON.stringify(error));
+
+					return response.status(statusCode).json(error);
 				}
 
 				default: {
@@ -105,14 +111,17 @@ export class HttpExceptionFilter implements ExceptionFilter {
 			const exceptionResponse = exception.getResponse() as object;
 
 			if (Array.isArray(exceptionResponse['message'])) {
-				return response.status(exceptionStatus).json({
+				const error = {
 					statusCode: exception.getStatus(),
 					message: parsePropertyMessages(exceptionResponse['message']),
-				});
+				};
+				this.logger.error(JSON.stringify(error));
+
+				return response.status(exceptionStatus).json(error);
 			} else {
 				const message: string = exceptionResponse['message'];
 
-				return response.status(exceptionStatus).json({
+				const error = {
 					statusCode: exception.getStatus(),
 					message: message.startsWith('_')
 						? [parsePropertyMessage(message)]
@@ -120,26 +129,35 @@ export class HttpExceptionFilter implements ExceptionFilter {
 							? message
 							: (statusCodeToError[exceptionStatus] ?? ERRORS.UNKNOWN_ERROR),
 					text: exceptionStatus === 500 ? message : undefined,
-				});
+				};
+				this.logger.error(JSON.stringify(error));
+
+				return response.status(exceptionStatus).json(error);
 			}
 		} else if (exception instanceof Error) {
 			if ('status' in exception) {
 				const exceptionStatus = exception.status as number;
 
-				return response.status(exceptionStatus).json({
+				const error = {
 					statusCode: exceptionStatus,
 					message: statusCodeToError[exceptionStatus] ?? ERRORS.UNKNOWN_ERROR,
 					text: exceptionStatus === 500 ? exception.stack : undefined,
-				});
+				};
+				this.logger.error(JSON.stringify(error));
+
+				return response.status(exceptionStatus).json(error);
 			}
 		}
 
 		this.logger.error(`Unhandled exception: ${exception}. Stack ${exception.stack}`);
 
-		response.status(500).json({
+		const error = {
 			statusCode: 500,
 			message: ERRORS.INTERNAL,
 			text: `Unhandled exception: ${exception}. Stack: ${exception.stack}`,
-		});
+		};
+		this.logger.error(JSON.stringify(error));
+
+		response.status(500).json(error);
 	}
 }

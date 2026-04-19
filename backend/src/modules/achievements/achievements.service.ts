@@ -94,6 +94,9 @@ export class AchievementsService {
 		) {
 			activities.add(UserActivity.STEPS);
 		}
+		if (trainingType === TrainingType.WALK) {
+			activities.add(UserActivity.RUN);
+		}
 
 		const activity = getActivityByTrainingType(trainingType);
 		if (activity) {
@@ -245,7 +248,7 @@ export class AchievementsService {
 	private notifyAchievementDone(userId: string, achievementId: string) {
 		this.notifications
 			.create(userId, {
-				type: NotificationType.ACHIEVEMENT,
+				type: NotificationType.NEW_ACHIEVEMENT,
 				relEntityId: achievementId,
 			})
 			.catch((r) => {
