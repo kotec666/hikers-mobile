@@ -635,7 +635,8 @@ export default function NewTraining() {
 				// 1. сначала догружаем старые
 				await saveUnsavedWorkoutsBeforeFinish()
 				// 2. затем текущую активную
-				await saveSingleWorkout(WorkoutSource.ACTIVE, meta.startedAt, user?.id)
+				const newTrainingId = await saveSingleWorkout(WorkoutSource.ACTIVE, meta.startedAt, user?.id)
+				setTrainingId(newTrainingId)
 			} else {
 				toast.info('Нет доступа к интернету, тренировку можно будет сохранить позже')
 				moveActiveWorkoutToNotSaved(user?.id)
@@ -648,6 +649,7 @@ export default function NewTraining() {
 			await getFieldsErrors(e)
 		}
 	}, [
+		setTrainingId,
 		calculateMetricsWhenFinished,
 		isInternetConnectedRef,
 		resetWorkoutState,

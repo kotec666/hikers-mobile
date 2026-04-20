@@ -7,7 +7,6 @@ import Setting from '@/components/Setting'
 import { useSafeNavigation } from '@/hooks/useSafeNavigation'
 import { Colors } from '@/constants/Colors'
 import { fontFamily } from '@/constants/Fonts'
-import AlertTriangle from '@/components/svg/AlertTriangle'
 import { Motion } from '@legendapp/motion'
 import Modal from '@/components/ui/Modal/Modal'
 import React from 'react'
@@ -18,6 +17,7 @@ import { useAuthStore } from '@/store/authStore'
 import { useToast } from '@/hooks/useToast'
 import { useRouter } from 'expo-router'
 import { deleteMyAccount } from '@/api/profile'
+import AlertTriangleSvg from '@/components/svg/AlertTriangleSvg'
 
 const SettingsPage = () => {
 	const { push } = useSafeNavigation()
@@ -99,7 +99,7 @@ const SettingsPage = () => {
 										stiffness: 400
 									}}
 								>
-									<AlertTriangle />
+									<AlertTriangleSvg />
 									<Text style={{ fontFamily: fontFamily.medium }} className="text-gray-ab text-base">
 										Удалить аккаунт
 									</Text>

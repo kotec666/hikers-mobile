@@ -27,6 +27,7 @@ import { loginUser, registrationUser } from '@/api/auth'
 import { cn } from '@/helpers/cn'
 import { lengths } from '@shared/lengths'
 import * as Haptics from 'expo-haptics'
+// import { useSafeNavigation } from '@/hooks/useSafeNavigation'
 
 export enum AUTH_MODE {
 	AUTH = 'auth',
@@ -42,6 +43,7 @@ interface IAuthFormState {
 const AuthPage = () => {
 	const insets = useSafeAreaInsets()
 	const { mode } = useLocalSearchParams<{ mode: AUTH_MODE }>()
+	// const { push } = useSafeNavigation()
 	const {
 		handleSubmit,
 		control,
@@ -248,6 +250,9 @@ const AuthPage = () => {
 				<Button variant="white" onPress={handleClickRedirect}>
 					{data.mode === AUTH_MODE.AUTH ? 'Зарегистрироваться' : 'Войти'}
 				</Button>
+				{/*<Button variant="white" onPress={() => push('/mail-confirmation')}>*/}
+				{/*	email confirmation page*/}
+				{/*</Button>*/}
 			</Container>
 			<StatusBar style="light" />
 		</SafeAreaProvider>

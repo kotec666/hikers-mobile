@@ -274,7 +274,8 @@ export default function ViewWorkout() {
 		// Если появился интернет
 		try {
 			return await saveSingleWorkout(WorkoutSource.UNSAVED, Number(unsavedStartedAt), user?.id)
-		} catch {
+		} catch (e) {
+			console.error(e)
 			toast.error('Ошибка при сохранении тренировки, её можно будет сохранить позже')
 			return null
 		}

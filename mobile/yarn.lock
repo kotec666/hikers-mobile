@@ -4295,6 +4295,11 @@ expo-build-properties@~55.0.12:
     resolve-from "^5.0.0"
     semver "^7.6.0"
 
+expo-clipboard@~55.0.13:
+  version "55.0.13"
+  resolved "https://registry.yarnpkg.com/expo-clipboard/-/expo-clipboard-55.0.13.tgz#29e9920bf3b22fe80378f438aa9929e7cbcd289c"
+  integrity sha512-PrOmmuVsGW4bAkNQmGKtxMXj3invsfN+jfIKmQxHwE/dn7ODqwFWviUTa+PMUjP3XZmYCDLyu/i0GLeu7HF9Ew==
+
 expo-constants@~55.0.11:
   version "55.0.11"
   resolved "https://registry.yarnpkg.com/expo-constants/-/expo-constants-55.0.11.tgz#3bd7f8ff03b9f77792115c93a842b41fb05f0362"
