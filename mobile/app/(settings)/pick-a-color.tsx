@@ -36,6 +36,7 @@ const SettingsPickAColorPage = () => {
 	// runs on the js thread on color pick
 	const onColorPick = (color: string | ColorFormatsObject) => {
 		if (typeof color === 'string') {
+			currentColor.value = color
 			setColor(color)
 		} else {
 			setColor(color.hex)
@@ -48,7 +49,7 @@ const SettingsPickAColorPage = () => {
 		currentColor.value = color.hex
 	}
 
-	const isFreeMode = true
+	const isFreeMode = false
 
 	return (
 		<SafeAreaView>
