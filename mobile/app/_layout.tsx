@@ -88,7 +88,8 @@ const Root = ({ isAuthenticated }: { isAuthenticated: boolean }) => {
 							<Stack.Screen name="achievements" />
 							<Stack.Screen name="user/profile/[id]" />
 							<Stack.Screen name="training/viewWorkout" />
-							<Stack.Screen name="about" />
+							<Stack.Screen name="(about)/index" />
+							<Stack.Screen name="(about)/report-a-problem" />
 							<Stack.Screen name="(settings)/index" />
 							<Stack.Screen name="(settings)/in-app-notifications" />
 							{/*<Stack.Screen name="friends/search" /> не используется*/}

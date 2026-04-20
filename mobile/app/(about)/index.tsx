@@ -8,9 +8,9 @@ import { useSafeNavigation } from '@/hooks/useSafeNavigation'
 import { useToast } from '@/hooks/useToast'
 
 const AboutPage = () => {
-	const { push } = useSafeNavigation()
 	const insets = useSafeAreaInsets()
 	const toast = useToast()
+	const { push } = useSafeNavigation()
 
 	const openLink = async (url: string) => {
 		const supported = await Linking.canOpenURL(url)
@@ -37,6 +37,7 @@ const AboutPage = () => {
 							title="Условия использования отдельных сервисов Яндекс карт"
 							onPress={() => openLink('https://yandex.ru/legal/maps_api/')}
 						/>
+						<Setting title="Сообщить о проблеме" onPress={() => push('/(about)/report-a-problem')} />
 						{/*<Setting*/}
 						{/*	title={[{ text: 'Выбор своего ' }, { text: 'цвета', color: Colors['green-main'] }]}*/}
 						{/*	onPress={() => push('/document')}*/}
