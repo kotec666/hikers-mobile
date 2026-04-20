@@ -1,6 +1,6 @@
 import { Text, View, Platform } from 'react-native'
 import { fontFamily } from '@/constants/Fonts'
-import React, { memo } from 'react'
+import React, { memo, ReactNode } from 'react'
 import { useRouter } from 'expo-router'
 import { cn } from '@/helpers/cn'
 import { Motion } from '@legendapp/motion'
@@ -11,7 +11,7 @@ import { GlassView, isLiquidGlassAvailable } from 'expo-glass-effect'
 interface IProps {
 	className?: string
 	returnCallback?: () => void
-	children: string
+	children: ReactNode
 }
 
 export const BackButton = memo(({ onPress }: { onPress: () => void }) => {
@@ -35,7 +35,7 @@ export const BackButton = memo(({ onPress }: { onPress: () => void }) => {
 		</Motion.View>
 	)
 
-	const renderWithEffect = (EffectComponent: any, effectProps: any) => (
+	const renderWithEffect = (EffectComponent: React.ComponentType<any>, effectProps: any) => (
 		<Motion.Pressable onPress={onPress} className="w-[50px] h-[50px]">
 			<EffectComponent style={{ borderRadius: 999, overflow: 'hidden' }} {...effectProps}>
 				{buttonContent}
@@ -61,7 +61,7 @@ const HeaderBack = memo((props: IProps) => {
 
 	const handleClickBack = () => {
 		if (props.returnCallback) {
-			props.returnCallback?.()
+			props.returnCallback()
 		} else {
 			router.back()
 		}

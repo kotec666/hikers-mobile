@@ -151,7 +151,7 @@ const SettingsInAppNotificationsPage = () => {
 							title="Новое достижение"
 							description="Получать уведомление, когда я получаю новое достижение"
 							enabled={localSettings?.new_achievement ?? true}
-							onToggle={(val) => handleToggleChange(NotificationType.ACHIEVEMENT, val)}
+							onToggle={(val) => handleToggleChange(NotificationType.NEW_ACHIEVEMENT, val)}
 							disabled={isLoading}
 						/>
 						<InAppNotificationSetting

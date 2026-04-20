@@ -26,7 +26,7 @@ export const handleRedirectOnPageWhenNotificationPressed = (
 		case NotificationType.TAGGED_IN_POST:
 			redirectLink = `/posts/${relEntityId}`
 			break
-		case NotificationType.ACHIEVEMENT:
+		case NotificationType.NEW_ACHIEVEMENT:
 			redirectLink = `/achievements?id=${relEntityId}`
 			break
 		case NotificationType.TRAINING_INVITE:
@@ -68,7 +68,7 @@ export function NotificationListItem(props: INotificationListItemProps) {
 			onPress={() => (redirectLink ? push(redirectLink) : undefined)}
 			className={cn('flex-row gap-4 items-center bg-black-0d px-[16px]', props.className)}
 		>
-			{props.notification.type !== NotificationType.ACHIEVEMENT ? (
+			{props.notification.type !== NotificationType.NEW_ACHIEVEMENT ? (
 				<UserAvatar
 					avatar={
 						props.notification.action.iconFilename

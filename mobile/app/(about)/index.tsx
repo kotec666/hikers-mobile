@@ -38,10 +38,6 @@ const AboutPage = () => {
 							onPress={() => openLink('https://yandex.ru/legal/maps_api/')}
 						/>
 						<Setting title="Сообщить о проблеме" onPress={() => push('/(about)/report-a-problem')} />
-						{/*<Setting*/}
-						{/*	title={[{ text: 'Выбор своего ' }, { text: 'цвета', color: Colors['green-main'] }]}*/}
-						{/*	onPress={() => push('/document')}*/}
-						{/*/>*/}
 					</View>
 				</ScrollView>
 			</Container>

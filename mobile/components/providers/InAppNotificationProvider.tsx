@@ -26,7 +26,7 @@ const InAppNotificationProvider = () => {
 				break
 			case NotificationType.TAGGED_IN_POST:
 				break
-			case NotificationType.ACHIEVEMENT:
+			case NotificationType.NEW_ACHIEVEMENT:
 				queryKey = 'my-achievements'
 				break
 			case NotificationType.TRAINING_INVITE:

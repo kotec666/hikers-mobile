@@ -7131,6 +7131,11 @@ readdirp@~3.6.0:
   dependencies:
     picomatch "^2.2.1"
 
+reanimated-color-picker@^4.2.0:
+  version "4.2.0"
+  resolved "https://registry.yarnpkg.com/reanimated-color-picker/-/reanimated-color-picker-4.2.0.tgz#1a6647238f027b820d4758ae649faf9be170f50f"
+  integrity sha512-nDG/OiQu7hcvVJw3IP0rIdhw+x0rSNxhmfnrXC2je6kqlLSs4txbSVCqDA0kTnVjbD0o2CBvw9/LjY8aq2Lelw==
+
 reflect.getprototypeof@^1.0.6, reflect.getprototypeof@^1.0.9:
   version "1.0.10"
   resolved "https://registry.yarnpkg.com/reflect.getprototypeof/-/reflect.getprototypeof-1.0.10.tgz#c629219e78a3316d8b604c765ef68996964e7bf9"

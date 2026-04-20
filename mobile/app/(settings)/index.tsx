@@ -85,7 +85,7 @@ const SettingsPage = () => {
 							/>
 							<Setting
 								title={[{ text: 'Выбор своего ' }, { text: 'цвета', color: Colors['green-main'] }]}
-								onPress={() => push('/document')}
+								onPress={() => push('/(settings)/pick-a-color')}
 							/>
 						</View>
 						<View className="gap-[16px]">
