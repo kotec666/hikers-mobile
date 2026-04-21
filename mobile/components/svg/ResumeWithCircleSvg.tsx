@@ -5,13 +5,14 @@ import { Colors } from '@/constants/Colors'
 import PlaySvg from '@/components/svg/PlaySvg'
 
 interface IProps {
+	color?: string
 	width?: number
 	height?: number
 	style?: StyleProp<ViewStyle>
 }
 
 const ResumeWithCircleSvg = (props: IProps) => {
-	const { width = 100, height = 100 } = props
+	const { width = 100, height = 100, color = Colors['green-main'] } = props
 
 	const centerX = width / 2
 	const centerY = width / 2
@@ -33,7 +34,7 @@ const ResumeWithCircleSvg = (props: IProps) => {
 		>
 			<Circle cx={centerX} cy={centerY} r={circleRadius} fill="white" strokeWidth={0} />
 			<G transform={`translate(${centerX - 7}, ${centerY - 7})`}>
-				<PlaySvg width={14} height={14} color={Colors['green-main']} />
+				<PlaySvg width={14} height={14} color={color} />
 			</G>
 		</Svg>
 	)

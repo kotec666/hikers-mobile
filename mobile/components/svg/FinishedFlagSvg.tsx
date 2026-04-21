@@ -9,12 +9,12 @@ interface IProps {
 }
 
 const SvgComponent = (props: IProps) => {
-	const { width = 14, height = 14 } = props
+	const { width = 14, height = 14, color = Colors['green-main'] } = props
 
 	return (
 		<Svg width={width} height={height} fill="none" viewBox="0 0 14 14">
 			<Path
-				stroke={props.color || Colors['green-main']}
+				stroke={color}
 				strokeLinecap="round"
 				strokeLinejoin="round"
 				strokeWidth={1.6}

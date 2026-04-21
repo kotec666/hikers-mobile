@@ -7,6 +7,8 @@ import AccuracyCircle, { AccuracyCircleHandle } from '@/components/map/markers/U
 interface IProps {
 	initialPosition?: Point | null
 	triangleScale?: number
+	color?: string
+	debugAccuracyM?: number
 }
 
 export interface UserLocationMarkerHandle {
@@ -80,11 +82,11 @@ const UserLocationMarker = forwardRef<UserLocationMarkerHandle, IProps>((props, 
 		<>
 			<Marker ref={markerRef} point={initialPoint} zIndex={6} rotated={true}>
 				<View>
-					<UserWithCircleSvg heading={0} />
+					<UserWithCircleSvg heading={0} color={props.color} />
 				</View>
 			</Marker>
 
-			<AccuracyCircle initialPosition={initialPoint} ref={accuracyRef} />
+			<AccuracyCircle ref={accuracyRef} initialPosition={initialPoint} debugAccuracyM={props.debugAccuracyM} />
 		</>
 	)
 })
@@ -96,5 +98,6 @@ export default React.memo(
 	(prev, next) =>
 		prev.triangleScale === next.triangleScale &&
 		prev.initialPosition?.lat === next.initialPosition?.lat &&
-		prev.initialPosition?.lon === next.initialPosition?.lon
+		prev.initialPosition?.lon === next.initialPosition?.lon &&
+		prev.color === next.color
 )

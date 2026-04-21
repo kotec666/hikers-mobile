@@ -6,7 +6,7 @@ export const hexToRgba = (colorHex: string | null, opacityLevel: number): string
 	let hex = colorHex.replace(/^#/, '')
 
 	// Проверяем валидность HEX цвета
-	if (!/^[0-9A-F]{3,6}$/i.test(hex)) {
+	if (!/^[0-9A-F]{3,8}$/i.test(hex)) {
 		throw new Error('Invalid HEX color format')
 	}
 
@@ -21,6 +21,15 @@ export const hexToRgba = (colorHex: string | null, opacityLevel: number): string
 			.split('')
 			.map((char) => char + char)
 			.join('')
+	}
+
+	if (hex.length === 8) {
+		const r = parseInt(hex.substring(0, 2), 16)
+		const g = parseInt(hex.substring(2, 4), 16)
+		const b = parseInt(hex.substring(4, 6), 16)
+		const a = parseInt(hex.substring(6, 8), 16) / 255
+
+		return `rgba(${r}, ${g}, ${b}, ${a})`
 	}
 
 	// Преобразуем HEX в RGB

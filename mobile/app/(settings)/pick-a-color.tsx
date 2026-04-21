@@ -1,13 +1,28 @@
 import { SafeAreaView } from 'react-native-safe-area-context'
 import { Container } from '@/components/ui/Container'
 import HeaderBack from '@/components/ui/HeaderBack'
-import { ScrollView, View, Pressable, Platform, StyleSheet } from 'react-native'
+import {
+	ScrollView,
+	View,
+	Pressable,
+	Platform,
+	StyleSheet,
+	Dimensions,
+	KeyboardAvoidingView,
+	TouchableWithoutFeedback,
+	Keyboard
+} from 'react-native'
 import { StatusBar } from 'expo-status-bar'
 import { Colors } from '@/constants/Colors'
 import React, { useState } from 'react'
 import { fontFamily } from '@/constants/Fonts'
 import ColorPicker, { ColorFormatsObject, HueSlider, InputWidget, OpacitySlider, Panel1 } from 'reanimated-color-picker'
 import Animated, { useAnimatedStyle, useSharedValue } from 'react-native-reanimated'
+import { Button } from '@/components/ui/Button'
+import MapComponentColorPick from '@/components/map/MapComponentColorPick'
+
+const { height } = Dimensions.get('screen')
+const MAP_HEIGHT = height / 3.83
 
 const Divider = () => {
 	return <View style={{ height: 1, backgroundColor: Colors['gray-3a'] }} />
@@ -49,55 +64,80 @@ const SettingsPickAColorPage = () => {
 		currentColor.value = color.hex
 	}
 
-	const isFreeMode = false
+	const isFreeMode = true
 
 	return (
-		<SafeAreaView>
-			<Container className="gap-[20px]">
-				<HeaderBack>
-					Выбор{' '}
-					<Animated.Text className="text-[20px]" style={[{ fontFamily: fontFamily.bold }, animatedTextStyle]}>
-						цвета
-					</Animated.Text>
-				</HeaderBack>
-
-				{isFreeMode ? (
-					<View style={colorPickerStyle.pickerContainer}>
-						<ColorPicker
-							value={color}
-							sliderThickness={25}
-							thumbSize={24}
-							thumbShape="circle"
-							onChange={onColorChange}
-							onCompleteJS={onColorPick}
-							style={colorPickerStyle.picker}
-							boundedThumb
-						>
-							<Panel1 style={colorPickerStyle.panelStyle} />
-							<HueSlider style={colorPickerStyle.sliderStyle} />
-							<OpacitySlider style={colorPickerStyle.sliderStyle} />
-							<Divider />
-							<InputWidget
-								inputStyle={colorPickerStyle.inputStyle}
-								iconColor="#fff"
-								inputTitleStyle={colorPickerStyle.inputTitleStyle}
-							/>
-						</ColorPicker>
-					</View>
-				) : (
+		<SafeAreaView style={{ flex: 1 }}>
+			<KeyboardAvoidingView style={{ flex: 1 }} behavior={Platform.OS === 'ios' ? 'padding' : 'height'}>
+				<TouchableWithoutFeedback onPress={Keyboard.dismiss} accessible={false}>
 					<ScrollView
-					//contentContainerStyle={{ paddingBottom: insets.bottom + 50 }}
+						contentInsetAdjustmentBehavior="automatic"
+						contentContainerStyle={{ flexGrow: 1 }}
+						keyboardShouldPersistTaps="handled"
 					>
-						<View className="flex-row flex-wrap gap-[16px]">
-							{Object.values(Colors).map((color) => {
-								return (
-									<ColorBox key={color} color={color} onPress={(newColor) => onColorPick(newColor)} />
-								)
-							})}
-						</View>
+						<Container className="gap-[20px]">
+							<HeaderBack>
+								Выбор{' '}
+								<Animated.Text
+									className="text-[20px]"
+									style={[{ fontFamily: fontFamily.bold }, animatedTextStyle]}
+								>
+									цвета
+								</Animated.Text>
+							</HeaderBack>
+							<MapComponentColorPick
+								minMapHeight={MAP_HEIGHT}
+								maxMapHeight={MAP_HEIGHT}
+								rounded={25}
+								// interactiveDisabled
+								activeColor={color}
+							/>
+							{isFreeMode ? (
+								<View style={colorPickerStyle.pickerContainer}>
+									<ColorPicker
+										value={color}
+										sliderThickness={25}
+										thumbSize={24}
+										thumbShape="circle"
+										onChange={onColorChange}
+										onCompleteJS={onColorPick}
+										style={colorPickerStyle.picker}
+										boundedThumb
+									>
+										<Panel1 style={colorPickerStyle.panelStyle} />
+										<HueSlider style={colorPickerStyle.sliderStyle} />
+										<OpacitySlider style={colorPickerStyle.sliderStyle} />
+										<Divider />
+										<InputWidget
+											inputStyle={colorPickerStyle.inputStyle}
+											iconColor="#fff"
+											inputTitleStyle={colorPickerStyle.inputTitleStyle}
+										/>
+									</ColorPicker>
+								</View>
+							) : (
+								<ScrollView
+								//contentContainerStyle={{ paddingBottom: insets.bottom + 50 }}
+								>
+									<View className="flex-row flex-wrap gap-[16px]">
+										{Object.values(Colors).map((color) => {
+											return (
+												<ColorBox
+													key={color}
+													color={color}
+													onPress={(newColor) => onColorPick(newColor)}
+												/>
+											)
+										})}
+									</View>
+								</ScrollView>
+							)}
+							<Button variant="white">Сохранить</Button>
+						</Container>
 					</ScrollView>
-				)}
-			</Container>
+				</TouchableWithoutFeedback>
+			</KeyboardAvoidingView>
+
 			<StatusBar style="light" />
 		</SafeAreaView>
 	)

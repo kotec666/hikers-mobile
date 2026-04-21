@@ -6,6 +6,7 @@ import { processColorsToNative } from 'react-native-yamap-plus/src/utils'
 
 interface IProps {
 	initialPosition: Point
+	debugAccuracyM?: number
 }
 
 export interface AccuracyCircleHandle {
@@ -58,7 +59,7 @@ const AccuracyCircle = forwardRef<AccuracyCircleHandle, IProps>((props, ref) => 
 		<CircleCustom
 			ref={circleRef}
 			center={initialPoint}
-			radius={radiusRef.current}
+			radius={props.debugAccuracyM ?? radiusRef.current}
 			fillColor="rgba(0,200,100,0.2)"
 			strokeColor="transparent"
 			strokeWidth={0}
