@@ -86,7 +86,12 @@ const UserLocationMarker = forwardRef<UserLocationMarkerHandle, IProps>((props, 
 				</View>
 			</Marker>
 
-			<AccuracyCircle ref={accuracyRef} initialPosition={initialPoint} debugAccuracyM={props.debugAccuracyM} />
+			<AccuracyCircle
+				ref={accuracyRef}
+				initialPosition={initialPoint}
+				debugAccuracyM={props.debugAccuracyM}
+				color={props.color}
+			/>
 		</>
 	)
 })

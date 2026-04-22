@@ -4,8 +4,8 @@ import { Image } from 'expo-image'
 import { fontFamily } from '@/constants/Fonts'
 import { IAchievement } from '@/api/achievements'
 import { PATH_TO_IMAGE } from '@/constants/PATH_TO_FILES'
-import { hexToRgba } from '@/helpers/hexToRgba'
 import { LinearGradient } from 'expo-linear-gradient'
+import { hexToRgba } from '@/helpers/colors/hexToRgba'
 // import AchievementsMedalSvg from '@/components/svg/AchievementsMedalSvg'
 
 interface IProps {

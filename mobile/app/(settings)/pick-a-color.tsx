@@ -20,6 +20,7 @@ import ColorPicker, { ColorFormatsObject, HueSlider, InputWidget, OpacitySlider,
 import Animated, { useAnimatedStyle, useSharedValue } from 'react-native-reanimated'
 import { Button } from '@/components/ui/Button'
 import MapComponentColorPick from '@/components/map/MapComponentColorPick'
+import { FREE_COLORS } from '@shared/constants'
 
 const { height } = Dimensions.get('screen')
 const MAP_HEIGHT = height / 3.83
@@ -39,8 +40,8 @@ const ColorBox = ({ color, onPress }: { color: string; onPress?: (color: string)
 }
 
 const SettingsPickAColorPage = () => {
-	const [color, setColor] = useState<string>(Colors['green-main'])
-	const currentColor = useSharedValue(Colors['green-main'])
+	const [color, setColor] = useState<string>('rgba(0, 200, 100, 1)') // rgba(0,200,100,0.2)
+	const currentColor = useSharedValue('rgba(0, 200, 100, 1)')
 
 	const animatedTextStyle = useAnimatedStyle(() => {
 		return {
@@ -54,17 +55,17 @@ const SettingsPickAColorPage = () => {
 			currentColor.value = color
 			setColor(color)
 		} else {
-			setColor(color.hex)
+			setColor(color.rgba)
 		}
 	}
 
 	// runs on the ui thread on color change
 	const onColorChange = (color: ColorFormatsObject) => {
 		'worklet'
-		currentColor.value = color.hex
+		currentColor.value = color.rgba
 	}
 
-	const isFreeMode = true
+	const isFreeMode = false
 
 	return (
 		<SafeAreaView style={{ flex: 1 }}>
@@ -120,7 +121,7 @@ const SettingsPickAColorPage = () => {
 								//contentContainerStyle={{ paddingBottom: insets.bottom + 50 }}
 								>
 									<View className="flex-row flex-wrap gap-[16px]">
-										{Object.values(Colors).map((color) => {
+										{Object.values(FREE_COLORS).map((color) => {
 											return (
 												<ColorBox
 													key={color}

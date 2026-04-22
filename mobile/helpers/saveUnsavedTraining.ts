@@ -16,10 +16,10 @@ import {
 	finishTraining,
 	syncTraining
 } from '@/api/workout'
-import { randomHexColor } from '@/helpers/randomHexColor'
 import { chunkArray } from '@/helpers/chunkArray'
 import { prepareLocationsForSync } from '@/helpers/prepareLocationsForSync'
 import { getFieldsErrors } from '@/helpers/getFieldsErrors'
+import { randomHexColor } from '@/helpers/colors/randomHexColor'
 
 export enum WorkoutSource {
 	ACTIVE = 'active',

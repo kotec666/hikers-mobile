@@ -1,14 +1,13 @@
 import { Yamap } from 'react-native-yamap-plus'
 import React from 'react'
 import { View } from 'react-native'
-import { Colors } from '@/constants/Colors'
 import PauseLocationMarker from '@/components/map/markers/PauseLocationMarker'
 import ResumeLocationMarker from '@/components/map/markers/ResumeLocationMarker'
 import StartLocationMarker from '@/components/map/markers/StartLocationMarker'
 import FinishLocationMarker from '@/components/map/markers/FinishLocationMarker'
 import { PolylineCustom } from '@/components/map/PolylineCustom'
 import UserLocationMarker from '@/components/map/markers/UserLocationMarker/UserLocationMarker'
-import { hexToRgba } from '@/helpers/hexToRgba'
+import { adjustRgbaOpacity } from '@/helpers/colors/adjustRgbaOpacity'
 
 interface IProps {
 	activeColor?: string
@@ -46,13 +45,13 @@ const mapCenter = {
 
 const getSegmentColor = (isPaused: boolean, userColor: string) => {
 	if (isPaused) {
-		return hexToRgba(userColor, 0.5) // ← 50% opacity
+		return adjustRgbaOpacity(userColor, (a) => a / 2)
 	}
 	return userColor
 }
 
 const MapComponentColorPick = (props: IProps) => {
-	const activeColor = props.activeColor ?? Colors['green-main']
+	const activeColor = props.activeColor ?? 'rgba(0, 200, 100, 1)'
 	return (
 		<View
 			pointerEvents={props.interactiveDisabled ? 'none' : 'auto'}

@@ -1,6 +1,5 @@
 import * as React from 'react'
 import Svg, { Circle, Polygon, G } from 'react-native-svg'
-import { Colors } from '@/constants/Colors'
 
 interface IProps {
 	color?: string
@@ -10,7 +9,7 @@ interface IProps {
 }
 
 const UserWithCircleSvg = React.memo((props: IProps) => {
-	const { width = 100, height = 100, heading, color = Colors['green-main'] } = props
+	const { width = 100, height = 100, heading, color = 'rgba(0, 200, 100, 1)' } = props
 
 	const { centerX, centerY, viewBox } = React.useMemo(() => {
 		const cx = width / 2

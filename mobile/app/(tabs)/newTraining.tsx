@@ -28,7 +28,6 @@ import { initializeBackgroundLocationTask, isTrackingLocation, startTracking } f
 import { useLocationData, useLocationTracking } from '@/hooks/track-location'
 import { updateMapSettings } from '@/store/mapStorage'
 import { deleteNotFinishedTraining, deleteNotFinishedTrainingById, startTraining } from '@/api/workout'
-import { randomHexColor } from '@/helpers/randomHexColor'
 import { isWorkoutTooShort } from '@/helpers/isWorkoutTooShort'
 import { useInternetConnectionRef } from '@/hooks/useInternetConnectionRef'
 import { formatTime } from '@/helpers/formatTime'
@@ -58,6 +57,7 @@ import {
 	startWorkoutLiveActivity
 } from '@/hooks/track-location/liveActivity'
 import type { PendingWidgetAction } from '@/modules/expo-live-activity'
+import { randomHexColor } from '@/helpers/colors/randomHexColor'
 // Debugging
 TaskManager.getRegisteredTasksAsync().then((tasks) => {
 	console.log(tasks)
