@@ -99,6 +99,9 @@ const Root = ({ isAuthenticated }: { isAuthenticated: boolean }) => {
 						<Stack.Protected guard={!isAuthenticated}>
 							<Stack.Screen name="index" />
 							<Stack.Screen name="auth" />
+							<Stack.Screen name="(password-restore)/firstStep" />
+							<Stack.Screen name="(password-restore)/secondStep" />
+							<Stack.Screen name="(password-restore)/thirdStep" />
 						</Stack.Protected>
 					</Stack>
 

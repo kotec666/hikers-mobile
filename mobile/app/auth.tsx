@@ -191,6 +191,12 @@ const AuthPage = () => {
 										/>
 									)}
 								/>
+
+								<LinkCustom
+									href="/(password-restore)/firstStep"
+									text="Забыли пароль?"
+									className="text-blue-3d"
+								/>
 							</View>
 						</View>
 					</TouchableWithoutFeedback>

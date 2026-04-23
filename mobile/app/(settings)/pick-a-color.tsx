@@ -21,6 +21,9 @@ import Animated, { useAnimatedStyle, useSharedValue } from 'react-native-reanima
 import { Button } from '@/components/ui/Button'
 import MapComponentColorPick from '@/components/map/MapComponentColorPick'
 import { FREE_COLORS } from '@shared/constants'
+import Modal from '@/components/ui/Modal/Modal'
+import { useRouter } from 'expo-router'
+import BlurProvider from '@/components/providers/BlurProvider'
 
 const { height } = Dimensions.get('screen')
 const MAP_HEIGHT = height / 3.83
@@ -40,6 +43,26 @@ const ColorBox = ({ color, onPress }: { color: string; onPress?: (color: string)
 }
 
 const SettingsPickAColorPage = () => {
+	const [notSavedModal, setNotSavedModal] = useState(false)
+	const router = useRouter()
+
+	const handleCloseNotSavedModal = () => {
+		setNotSavedModal(false)
+	}
+
+	const handleOpenNotSavedModal = () => {
+		setNotSavedModal(true)
+	}
+
+	const exitWithoutSave = () => {
+		handleCloseNotSavedModal()
+		if (router.canGoBack()) {
+			router.back()
+		} else {
+			router.push('/(settings)')
+		}
+	}
+
 	const [color, setColor] = useState<string>('rgba(0, 200, 100, 1)') // rgba(0,200,100,0.2)
 	const currentColor = useSharedValue('rgba(0, 200, 100, 1)')
 
@@ -69,76 +92,98 @@ const SettingsPickAColorPage = () => {
 
 	return (
 		<SafeAreaView style={{ flex: 1 }}>
-			<KeyboardAvoidingView style={{ flex: 1 }} behavior={Platform.OS === 'ios' ? 'padding' : 'height'}>
-				<TouchableWithoutFeedback onPress={Keyboard.dismiss} accessible={false}>
-					<ScrollView
-						contentInsetAdjustmentBehavior="automatic"
-						contentContainerStyle={{ flexGrow: 1 }}
-						keyboardShouldPersistTaps="handled"
-					>
-						<Container className="gap-[20px]">
-							<HeaderBack>
-								Выбор{' '}
-								<Animated.Text
-									className="text-[20px]"
-									style={[{ fontFamily: fontFamily.bold }, animatedTextStyle]}
-								>
-									цвета
-								</Animated.Text>
-							</HeaderBack>
-							<MapComponentColorPick
-								minMapHeight={MAP_HEIGHT}
-								maxMapHeight={MAP_HEIGHT}
-								rounded={25}
-								// interactiveDisabled
-								activeColor={color}
-							/>
-							{isFreeMode ? (
-								<View style={colorPickerStyle.pickerContainer}>
-									<ColorPicker
-										value={color}
-										sliderThickness={25}
-										thumbSize={24}
-										thumbShape="circle"
-										onChange={onColorChange}
-										onCompleteJS={onColorPick}
-										style={colorPickerStyle.picker}
-										boundedThumb
+			<BlurProvider>
+				<Modal
+					isOpen={notSavedModal}
+					handleClose={handleCloseNotSavedModal}
+					label="Выйти без сохранения данных?"
+					labelSize={16}
+				>
+					<View className="gap-[20px]">
+						<View className="flex-row gap-[10px]">
+							<Button onPress={exitWithoutSave} variant="white" buttonContainerClassName="flex-1">
+								Да
+							</Button>
+							<Button
+								onPress={handleCloseNotSavedModal}
+								variant="white"
+								buttonContainerClassName="flex-1"
+							>
+								Нет
+							</Button>
+						</View>
+					</View>
+				</Modal>
+				<KeyboardAvoidingView style={{ flex: 1 }} behavior={Platform.OS === 'ios' ? 'padding' : 'height'}>
+					<TouchableWithoutFeedback onPress={Keyboard.dismiss} accessible={false}>
+						<ScrollView
+							contentInsetAdjustmentBehavior="automatic"
+							contentContainerStyle={{ flexGrow: 1 }}
+							keyboardShouldPersistTaps="handled"
+						>
+							<Container className="gap-[20px]">
+								<HeaderBack returnCallback={handleOpenNotSavedModal}>
+									Выбор{' '}
+									<Animated.Text
+										className="text-[20px]"
+										style={[{ fontFamily: fontFamily.bold }, animatedTextStyle]}
 									>
-										<Panel1 style={colorPickerStyle.panelStyle} />
-										<HueSlider style={colorPickerStyle.sliderStyle} />
-										<OpacitySlider style={colorPickerStyle.sliderStyle} />
-										<Divider />
-										<InputWidget
-											inputStyle={colorPickerStyle.inputStyle}
-											iconColor="#fff"
-											inputTitleStyle={colorPickerStyle.inputTitleStyle}
-										/>
-									</ColorPicker>
-								</View>
-							) : (
-								<ScrollView
-								//contentContainerStyle={{ paddingBottom: insets.bottom + 50 }}
-								>
-									<View className="flex-row flex-wrap gap-[16px]">
-										{Object.values(FREE_COLORS).map((color) => {
-											return (
-												<ColorBox
-													key={color}
-													color={color}
-													onPress={(newColor) => onColorPick(newColor)}
-												/>
-											)
-										})}
+										цвета
+									</Animated.Text>
+								</HeaderBack>
+								<MapComponentColorPick
+									minMapHeight={MAP_HEIGHT}
+									maxMapHeight={MAP_HEIGHT}
+									rounded={25}
+									// interactiveDisabled
+									activeColor={color}
+								/>
+								{isFreeMode ? (
+									<View style={colorPickerStyle.pickerContainer}>
+										<ColorPicker
+											value={color}
+											sliderThickness={25}
+											thumbSize={24}
+											thumbShape="circle"
+											onChange={onColorChange}
+											onCompleteJS={onColorPick}
+											style={colorPickerStyle.picker}
+											boundedThumb
+										>
+											<Panel1 style={colorPickerStyle.panelStyle} />
+											<HueSlider style={colorPickerStyle.sliderStyle} />
+											<OpacitySlider style={colorPickerStyle.sliderStyle} />
+											<Divider />
+											<InputWidget
+												inputStyle={colorPickerStyle.inputStyle}
+												iconColor="#fff"
+												inputTitleStyle={colorPickerStyle.inputTitleStyle}
+											/>
+										</ColorPicker>
 									</View>
-								</ScrollView>
-							)}
-							<Button variant="white">Сохранить</Button>
-						</Container>
-					</ScrollView>
-				</TouchableWithoutFeedback>
-			</KeyboardAvoidingView>
-
+								) : (
+									<ScrollView
+									//contentContainerStyle={{ paddingBottom: insets.bottom + 50 }}
+									>
+										<View className="flex-row flex-wrap gap-[16px]">
+											{Object.values(FREE_COLORS).map((color) => {
+												return (
+													<ColorBox
+														key={color}
+														color={color}
+														onPress={(newColor) => onColorPick(newColor)}
+													/>
+												)
+											})}
+										</View>
+									</ScrollView>
+								)}
+								<Button variant="white">Сохранить</Button>
+							</Container>
+						</ScrollView>
+					</TouchableWithoutFeedback>
+				</KeyboardAvoidingView>
+			</BlurProvider>
 			<StatusBar style="light" />
 		</SafeAreaView>
 	)
