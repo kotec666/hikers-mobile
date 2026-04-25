@@ -25,7 +25,7 @@ export interface IWorkoutResultsStore {
 	clearAll: () => void
 }
 
-export const useWorkoutResultsAfterFinishStore = create<IWorkoutResultsStore>((set, get) => ({
+export const useWorkoutResultsAfterFinishStore = create<IWorkoutResultsStore>((set) => ({
 	startedAt: null,
 	trainingId: null,
 	metrics: null,

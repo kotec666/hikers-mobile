@@ -1,4 +1,4 @@
-import { IWorkoutLocationStorageItem } from '@/store/workoutStorage'
+import type { IWorkoutLocationStorageItem } from '@/store/workoutStorage'
 
 /**
  * Вычисляет расстояние между двумя точками по координатам (в метрах)
@@ -16,45 +16,49 @@ const haversineDistance = (lat1: number, lon1: number, lat2: number, lon2: numbe
 	return R * c
 }
 
+export const calculateDistanceBetweenWorkoutPoints = (
+	prev: IWorkoutLocationStorageItem,
+	curr: IWorkoutLocationStorageItem
+): number => {
+	const prevCoords = prev.locationObject.coords
+	const currCoords = curr.locationObject.coords
+
+	if (
+		prevCoords.latitude == null ||
+		prevCoords.longitude == null ||
+		currCoords.latitude == null ||
+		currCoords.longitude == null
+	) {
+		return 0
+	}
+
+	return haversineDistance(prevCoords.latitude, prevCoords.longitude, currCoords.latitude, currCoords.longitude)
+}
+
 /**
  * Принимает массив объектов, считает суммарное расстояние по последовательным активным точкам и возвращает суммарную дистанцию (в метрах, округлённую до целого)
  * @points IWorkoutLocationStorageItem[]
  * @returns number метры
  */
-export const calculateTotalDistance = (points: IWorkoutLocationStorageItem[]): number => {
-	let totalDistance = 0
-	let prev: IWorkoutLocationStorageItem | null = null
-
-	for (const point of points) {
-		if (point.paused) {
-			prev = null // разрываем трек, первая точка после паузы не соединяется с предыдущей
-			continue
-		}
-
-		if (prev) {
-			const prevCoords = prev.locationObject.coords
-			const currCoords = point.locationObject.coords
-
-			if (
-				prevCoords.latitude != null &&
-				prevCoords.longitude != null &&
-				currCoords.latitude != null &&
-				currCoords.longitude != null
-			) {
-				totalDistance += haversineDistance(
-					prevCoords.latitude,
-					prevCoords.longitude,
-					currCoords.latitude,
-					currCoords.longitude
-				)
-			}
-		}
-
-		prev = point
-	}
-
-	return Math.round(totalDistance)
-}
+// export const calculateTotalDistance = (points: IWorkoutLocationStorageItem[]): number => {
+// 	let totalDistance = 0
+// 	let prev: IWorkoutLocationStorageItem | null = null
+//
+// 	for (const point of points) {
+// 		if (point.paused) {
+// 			prev = null // разрываем трек, первая точка после паузы не соединяется с предыдущей
+// 			continue
+// 		}
+//
+// 		if (prev) {
+// 			totalDistance += calculateDistanceBetweenWorkoutPoints(prev, point)
+// 		}
+//
+// 		prev = point
+// 	}
+//
+// 	return Math.round(totalDistance)
+// }
 
 // С фильтрацией только активных точек
 // export const calculateTotalDistance = (points: IWorkoutLocationStorageItem[]): number => {

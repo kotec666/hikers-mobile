@@ -11,6 +11,7 @@ import DeleteTrashSvg from '@/components/svg/DeleteTrashSvg'
 import { LegendList } from '@legendapp/list'
 import { IWorkout } from '@/store/workoutStorage'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
+import { formatDistance } from '@/helpers/distance'
 
 interface IProps {
 	notSavedWorkouts: IWorkout[]
@@ -35,7 +36,8 @@ const UnsavedTrainingsDetails = ({
 		({ item }: { item: IWorkout }) => {
 			const date = new Date(item.startedAt)
 
-			const title = format(date, 'd MMMM, HH:mm', { locale: ru })
+			const titleDate = format(date, 'd MMMM, HH:mm', { locale: ru })
+			const title = `${titleDate}${Number.isFinite(item.distanceMeters) && item.distanceMeters >= 0 ? `, ${formatDistance(item.distanceMeters)}` : ''}`
 			const typeData = workoutTypeMap[item.type]
 
 			const IconComponent = typeData?.IconComponent ?? PeopleRunningSvg
@@ -61,7 +63,7 @@ const UnsavedTrainingsDetails = ({
 				/>
 			)
 		},
-		[syncingIds]
+		[handleClickDelete, handleClickSaveOneWorkout, syncingIds, workoutTypeMap]
 	)
 
 	const isDeletingDisabled = !notSavedWorkouts.length || syncingIds.length > 0

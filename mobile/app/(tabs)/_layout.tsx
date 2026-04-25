@@ -1,9 +1,33 @@
-import { Tabs, Stack, Redirect } from 'expo-router'
+import { Tabs, Stack, Redirect, usePathname, useRouter } from 'expo-router'
 import { useAuthStore } from '@/store/authStore'
-import { Platform } from 'react-native'
+import { Keyboard, Platform } from 'react-native'
 import NativeTabsComponent from '@/components/ui/Navbar/NativeTabsComponent'
 import NavBar from '@/components/ui/Navbar/NavBar'
 import { Colors } from '@/constants/Colors'
+import { isLiquidGlassAvailable } from 'expo-glass-effect'
+import { useCallback, useEffect } from 'react'
+import * as QuickActions from 'expo-quick-actions'
+import { useQuickActionRouting } from 'expo-quick-actions/router'
+import type { RouterAction } from 'expo-quick-actions/router'
+
+const QUICK_ACTION_ITEMS: RouterAction<string>[] = [
+	{
+		id: 'new-training',
+		title: 'Новая тренировка',
+		icon: Platform.select({ ios: 'add', android: 'quick_action_new_training' }),
+		params: {
+			href: '/newTraining'
+		}
+	},
+	{
+		id: 'search',
+		title: 'Поиск',
+		icon: Platform.select({ ios: 'search', android: 'quick_action_search' }),
+		params: {
+			href: '/posts?quickAction=search'
+		}
+	}
+]
 
 const AppNavigator = (props: { isAuthenticated: boolean }) => {
 	return (
@@ -29,32 +53,53 @@ const AppNavigator = (props: { isAuthenticated: boolean }) => {
 	)
 }
 
-const Root = ({ isIOS26OrHigher, isAuthenticated }: { isIOS26OrHigher: boolean; isAuthenticated: boolean }) => {
-	return (
-		<>
-			{/*<NotificationProvider />*/}
-			{isIOS26OrHigher ? <NativeTabsComponent /> : <AppNavigator isAuthenticated={isAuthenticated} />}
-		</>
-	)
+const Root = ({
+	isLiquidGlassAvailable,
+	isAuthenticated
+}: {
+	isLiquidGlassAvailable: boolean
+	isAuthenticated: boolean
+}) => {
+	return <>{isLiquidGlassAvailable ? <NativeTabsComponent /> : <AppNavigator isAuthenticated={isAuthenticated} />}</>
 }
 
 export default function TabLayout() {
 	const { isAuthenticated } = useAuthStore()
+	const pathname = usePathname()
+	const router = useRouter()
 
-	const LiquidGlassIosVersionFrom = 26
-	const isIOS = Platform.OS === 'ios'
-	const versionString = String(Platform.Version)
-	const majorVersion = parseInt(versionString.split('.')[0], 10)
+	const handleQuickAction = useCallback(
+		(action: QuickActions.Action) => {
+			Keyboard.dismiss()
 
-	const isIOS26OrHigher = isIOS && majorVersion >= LiquidGlassIosVersionFrom
+			if (action.id === 'new-training') {
+				router.navigate('/newTraining')
+				return true
+			}
+
+			if (action.id === 'search') {
+				router.navigate(`/posts?quickAction=search&quickActionAt=${Date.now()}`)
+				return true
+			}
+		},
+		[router]
+	)
+
+	useQuickActionRouting(handleQuickAction)
+
+	useEffect(() => {
+		QuickActions.setItems<RouterAction<string>>(QUICK_ACTION_ITEMS).catch(console.warn)
+	}, [])
 
 	if (!isAuthenticated) {
 		return <Redirect href="/auth" />
 	}
 
+	const shouldHide = pathname.startsWith('/newTraining') // Костыль, потому что на странице новой тренировки из-за NativeTabs нельзя перетаскивать BottomSheetResizable
+	const isGlassAvailable = Platform.OS === 'ios' && isLiquidGlassAvailable()
 	return (
 		<>
-			<Root isIOS26OrHigher={isIOS26OrHigher} isAuthenticated={isAuthenticated} />
+			<Root isLiquidGlassAvailable={isGlassAvailable && !shouldHide} isAuthenticated={isAuthenticated} />
 		</>
 	)
 }

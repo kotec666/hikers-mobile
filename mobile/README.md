@@ -21,26 +21,24 @@
 
 ## Подготовка Android-проекта
 
+[//]: # (В app.json добавить "android.permission.FOREGROUND_SERVICE_HEALTH" в разделе android.permissions)
+[//]: # (В app.json в expo-build-properties.android добавьте:)
+[//]: # (```json)
+[//]: # ("extraMavenRepos": [)
+[//]: # (              "$rootDir/../node_modules/@notifee/react-native/android/libs")
+[//]: # (  ])
+[//]: # (```)
+
 [//]: # (1. Откройте `./android/build.gradle` и добавьте репозиторий Notifee:)
-
 [//]: # (   ```)
-
 [//]: # (   allprojects {)
-
 [//]: # (     repositories {)
-
 [//]: # (       maven { url&#40;reactNativeAndroidDir&#41; })
-
 [//]: # (       google&#40;&#41;)
-
 [//]: # (       mavenCentral&#40;&#41;)
-
 [//]: # (       maven { url "$rootDir/../node_modules/@notifee/react-native/android/libs" })
-
 [//]: # (       maven { url "https://www.jitpack.io" })
-
 [//]: # (     })
-
 [//]: # (   })
 
 [//]: # (   ```)
@@ -52,7 +50,7 @@
     }
    ``` 
 2. Сжатие android проекта осуществляется в `./android/app/build.gradle` следующим образом:
-   ```xml
+   ```groovy
         // minifyEnabled enableProguardInReleaseBuilds
            minifyEnabled true
            shrinkResources true
@@ -63,28 +61,23 @@
    sdk.dir=C:\\Users\\alexk\\AppData\\Local\\Android\\Sdk
    ```
 
-4. В сгенерированном `AndroidManifest.xml` добавьте foreground‑сервис Notifee внутри тега `<application>`:
-   ```xml
-   <service
-     android:name="app.notifee.core.ForegroundService"
-     android:foregroundServiceType="health"
-     android:exported="false"
-     android:stopWithTask="false" />
-   ```
-   Это необходимо для корректной работы таймера тренировки в фоне.
+[//]: # (4. В сгенерированном `AndroidManifest.xml` добавьте foreground‑сервис Notifee внутри тега `<application>`:)
+[//]: # (   ```xml)
+[//]: # (   <service)
+[//]: # (     android:name="app.notifee.core.ForegroundService")
+[//]: # (     android:foregroundServiceType="health")
+[//]: # (     android:exported="false")
+[//]: # (     android:stopWithTask="false" />)
+[//]: # (   ```)
+[//]: # (   Это необходимо для корректной работы таймера тренировки в фоне.)
 
 
 ## Подготовка Ios-проекта
 
 1. Для использования lite версии yandex maps в файле `Podfile` добавьте в начало строку:
    ```
-   + ENV['USE_YANDEX_MAPS_LITE'] = "1"
+   + ENV['USE_YANDEX_MAPS_LITE'] = '1'
    ...
-   ```
-
-2. Проверить наличие строки в файле `Podfile.properties.json`:
-   ```
-   "newArchEnabled": "true",
    ```
 
 

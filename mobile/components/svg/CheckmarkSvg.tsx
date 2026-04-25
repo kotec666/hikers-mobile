@@ -10,7 +10,7 @@ const SvgComponent = () => {
 
 	useEffect(() => {
 		progress.value = withTiming(1, { duration: 500 })
-	}, [])
+	}, [progress])
 
 	const animatedProps = useAnimatedProps(() => ({
 		strokeDashoffset: pathLength * (1 - progress.value)

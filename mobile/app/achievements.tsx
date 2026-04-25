@@ -5,73 +5,89 @@ import HeaderBack from '@/components/ui/HeaderBack'
 import React, { useCallback, useEffect, useRef, useState } from 'react'
 import AchievementsListItem from '@/components/ui/Achievements/AchievementsListItem'
 import { fontFamily } from '@/constants/Fonts'
-import { getClaimedAchievements, getUnclaimedAchievements, IAchievement } from '@/api/achievements'
-import { getFieldsErrors } from '@/helpers/getFieldsErrors'
+import { getAchievements, IAchievement, IAchievementsResponse } from '@/api/achievements'
 import BottomSheet from '@/components/ui/BottomSheet/BottomSheet'
 import { BottomSheetHandle } from '@/components/ui/BottomSheet/types'
 import AchievementDetailed from '@/components/BottomSheets/AchievementDetailed'
+import BlurProvider from '@/components/providers/BlurProvider'
+import { useLocalSearchParams } from 'expo-router'
+import { useQuery } from '@tanstack/react-query'
 
 const { height: screenHeight } = Dimensions.get('screen')
 
+type AchievementsVM = {
+	claimed: IAchievement[]
+	unclaimed: IAchievement[]
+	all: IAchievement[]
+}
+
 const AchievementsPage = () => {
 	const insets = useSafeAreaInsets()
+	const { id } = useLocalSearchParams<{ id?: string }>()
+
 	const bottomSheetRef = useRef<BottomSheetHandle>(null)
 	const [bottomSheetContent, setBottomSheetContent] = useState<React.ReactNode>(null)
-	const [state, setState] = useState<{
-		claimedAchievements: IAchievement[]
-		unClaimedAchievements: IAchievement[]
-	}>({
-		claimedAchievements: [],
-		unClaimedAchievements: []
+
+	const { data = { claimed: [], unclaimed: [], all: [] }, isLoading } = useQuery<
+		IAchievementsResponse,
+		unknown,
+		AchievementsVM
+	>({
+		queryKey: ['my-achievements'],
+		queryFn: getAchievements,
+		select: (data) => ({
+			claimed: data.claimed,
+			unclaimed: data.unclaimed,
+			all: [...data.claimed, ...data.unclaimed]
+		})
 	})
+
+	const claimedAchievements = data.claimed
+	const unClaimedAchievements = data.unclaimed
+	const allAchievements = data.all
 
 	const openBottomSheet = useCallback((newContent: React.ReactNode) => {
 		setBottomSheetContent(newContent)
-		if (bottomSheetRef.current) {
-			bottomSheetRef.current.openSheet()
-		}
+		bottomSheetRef.current?.openSheet()
 	}, [])
 
+	// открытие по query param
 	useEffect(() => {
-		;(async () => {
-			try {
-				const [unClaimedAchievements, claimedAchievements] = await Promise.all([
-					getUnclaimedAchievements(),
-					getClaimedAchievements()
-				])
+		if (!id || isLoading || !allAchievements) return
 
-				setState((s) => ({ ...s, claimedAchievements, unClaimedAchievements }))
-			} catch (e: unknown) {
-				/* const formattedErrors = */
-				await getFieldsErrors(e)
-				// setState((s) => ({ ...s, errors: formattedErrors }))
-			}
-		})()
-	}, [])
+		const targetAchievement = allAchievements.find((a) => a.id === id)
 
-	const handleClickAchievement = (achievementId: string) => {
-		const clickedAchievement = [...state.claimedAchievements, ...state.unClaimedAchievements].find(
-			(achievement) => achievement.id === achievementId
-		)
-		if (clickedAchievement) {
-			openBottomSheet(<AchievementDetailed achievement={clickedAchievement} />)
+		if (targetAchievement) {
+			openBottomSheet(<AchievementDetailed achievement={targetAchievement} />)
+		}
+	}, [id, isLoading, allAchievements, openBottomSheet])
+
+	const handlePressAchievement = (achievementId: string) => {
+		const achievement = allAchievements.find((a) => a.id === achievementId)
+
+		if (achievement) {
+			openBottomSheet(<AchievementDetailed achievement={achievement} />)
 		}
 	}
 
 	return (
-		// <GestureHandlerRootView style={{ flex: 1 }}>
-		<SafeAreaProvider style={{ paddingTop: insets.top, paddingBottom: insets.bottom + 20 }}>
-			<View style={{ flex: 1 }}>
+		<SafeAreaProvider style={{ paddingTop: insets.top }}>
+			<BlurProvider>
 				<Container className="gap-[20px] mt-[20px] flex-1">
 					<HeaderBack>Мои достижения</HeaderBack>
-					<ScrollView style={{ flex: 1, width: '100%' }}>
+					<ScrollView
+						style={{ flex: 1, width: '100%' }}
+						contentContainerStyle={{
+							paddingBottom: insets.bottom + 20
+						}}
+					>
 						<View className="gap-[10px]">
-							{state.claimedAchievements.length > 0 ? (
+							{claimedAchievements.length > 0 ? (
 								<Text className="text-base text-white" style={{ fontFamily: fontFamily.bold }}>
 									Полученные
 								</Text>
 							) : null}
-							{state.claimedAchievements.map((achievement) => (
+							{claimedAchievements.map((achievement) => (
 								<AchievementsListItem
 									key={achievement.id}
 									id={achievement.id}
@@ -79,15 +95,15 @@ const AchievementsPage = () => {
 									title={achievement.title}
 									colorHex={achievement.colorHex}
 									iconFilename={achievement.iconFilename}
-									handleClickAchievement={handleClickAchievement}
+									handleClickAchievement={handlePressAchievement}
 								/>
 							))}
-							{state.unClaimedAchievements.length > 0 ? (
+							{unClaimedAchievements.length > 0 ? (
 								<Text className="text-base text-white" style={{ fontFamily: fontFamily.bold }}>
 									Не полученные
 								</Text>
 							) : null}
-							{state.unClaimedAchievements.map((achievement) => (
+							{unClaimedAchievements.map((achievement) => (
 								<AchievementsListItem
 									key={achievement.id}
 									id={achievement.id}
@@ -95,7 +111,7 @@ const AchievementsPage = () => {
 									title={achievement.title}
 									colorHex={achievement.colorHex}
 									iconFilename={achievement.iconFilename}
-									handleClickAchievement={handleClickAchievement}
+									handleClickAchievement={handlePressAchievement}
 								/>
 							))}
 						</View>
@@ -104,9 +120,8 @@ const AchievementsPage = () => {
 				<BottomSheet ref={bottomSheetRef} activeHeight={screenHeight * 0.5}>
 					{bottomSheetContent}
 				</BottomSheet>
-			</View>
+			</BlurProvider>
 		</SafeAreaProvider>
-		// </GestureHandlerRootView>
 	)
 }
 

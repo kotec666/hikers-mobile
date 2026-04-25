@@ -5,15 +5,16 @@ import ResumeWithCircleSvg from '@/components/svg/ResumeWithCircleSvg'
 
 interface Props {
 	position?: Point | null
+	color?: string
 }
 
-const ResumeLocationMarker = ({ position }: Props) => {
+const ResumeLocationMarker = ({ position, color }: Props) => {
 	if (!position?.lat || !position?.lon) return null
 
 	return (
 		<Marker point={position} zIndex={5}>
 			<View>
-				<ResumeWithCircleSvg />
+				<ResumeWithCircleSvg color={color} />
 			</View>
 		</Marker>
 	)

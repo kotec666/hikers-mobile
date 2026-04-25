@@ -9,36 +9,49 @@ export type SliderPaginationProps = {
 	scrollX: SharedValue<number>
 }
 
+type SliderPaginationDotProps = {
+	idx: number
+	isActive: boolean
+	scrollX: SharedValue<number>
+	totalItems: number
+}
+
 const { width } = Dimensions.get('screen')
+
+function SliderPaginationDot({ idx, isActive, scrollX, totalItems }: SliderPaginationDotProps) {
+	const pgAnimationStyle = useAnimatedStyle(() => {
+		const dotWidth = interpolate(
+			scrollX.value % (totalItems * width),
+			[(idx - 1) * width, idx * width, (idx + 1) * width],
+			[6, 20, 8],
+			Extrapolation.CLAMP
+		)
+
+		return {
+			width: dotWidth
+		}
+	})
+
+	return (
+		<Animated.View
+			style={[pgAnimationStyle, { backgroundColor: isActive ? Colors['green-main'] : Colors['gray-d9'] }]}
+			className="w-[6px] h-[6px] rounded-[6px] mx-[4px]"
+		/>
+	)
+}
 
 export function SliderPagination({ items, paginationIndex, scrollX }: SliderPaginationProps) {
 	return (
 		<View className="flex-row justify-center items-center gap-[5px]">
-			{items.map((_, idx) => {
-				const pgAnimationStyle = useAnimatedStyle(() => {
-					const dotWidth = interpolate(
-						scrollX.value % (items.length * width),
-						[(idx - 1) * width, idx * width, (idx + 1) * width],
-						[6, 20, 8],
-						Extrapolation.CLAMP
-					)
-
-					return {
-						width: dotWidth
-					}
-				})
-
-				return (
-					<Animated.View
-						key={idx}
-						style={[
-							pgAnimationStyle,
-							{ backgroundColor: paginationIndex === idx ? Colors['green-main'] : Colors['gray-d9'] }
-						]}
-						className="w-[6px] h-[6px] rounded-[6px] mx-[4px]"
-					/>
-				)
-			})}
+			{items.map((_, idx) => (
+				<SliderPaginationDot
+					key={idx}
+					idx={idx}
+					isActive={paginationIndex === idx}
+					scrollX={scrollX}
+					totalItems={items.length}
+				/>
+			))}
 		</View>
 	)
 }

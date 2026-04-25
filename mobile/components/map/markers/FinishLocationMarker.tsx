@@ -5,15 +5,16 @@ import FinishWithCircleSvg from '@/components/svg/FinishWithCircleSvg'
 
 interface Props {
 	position?: Point | null
+	color?: string
 }
 
-const FinishLocationMarker = ({ position }: Props) => {
+const FinishLocationMarker = ({ position, color }: Props) => {
 	if (!position?.lat || !position?.lon) return null
 
 	return (
 		<Marker point={position} zIndex={6}>
 			<View>
-				<FinishWithCircleSvg />
+				<FinishWithCircleSvg color={color} />
 			</View>
 		</Marker>
 	)

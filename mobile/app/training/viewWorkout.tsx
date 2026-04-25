@@ -1,18 +1,16 @@
 import {
-	Pressable,
-	Image,
-	View,
-	Text,
-	ScrollView,
+	Keyboard,
 	KeyboardAvoidingView,
 	Platform,
-	Keyboard,
-	TouchableWithoutFeedback
+	ScrollView,
+	Text,
+	TouchableWithoutFeedback,
+	View
 } from 'react-native'
+import { Image } from 'expo-image'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
 import { Container } from '@/components/ui/Container'
 import { useLocalSearchParams, useRouter } from 'expo-router'
-import ArrowBackSvg from '@/components/svg/ArrowBackSvg'
 import React, { useEffect, useRef, useState } from 'react'
 import { fontFamily } from '@/constants/Fonts'
 import Parameter from '@/components/training/Parameter'
@@ -51,10 +49,25 @@ import { useAuthStore } from '@/store/authStore'
 import { formatTimeFromSecondsCompact } from '@/helpers/formatTime'
 import { mpsToKmph } from '@/helpers/mpsToKmph'
 import { formatBackendPace } from '@/helpers/formatBackendPace'
+import BlurProvider from '@/components/providers/BlurProvider'
+import { useInternetConnection } from '@/hooks/useInternetConnection'
+import { saveSingleWorkout, WorkoutSource } from '@/helpers/saveUnsavedTraining'
+import { BackButton } from '@/components/ui/HeaderBack'
 
 type Param = {
 	label: string
 	value?: string | number | null
+}
+
+const workoutResultImages: Record<TrainingType, number> = {
+	[TrainingType.RUN]: require('@/assets/images/view-workout-results/run.avif'),
+	[TrainingType.WALK]: require('@/assets/images/view-workout-results/walk.avif'),
+	[TrainingType.TRACK]: require('@/assets/images/view-workout-results/track.avif'),
+	[TrainingType.BICYCLE]: require('@/assets/images/view-workout-results/bicycle.avif')
+}
+
+const getWorkoutResultImage = (workoutType?: TrainingType | null) => {
+	return workoutResultImages[workoutType ?? TrainingType.RUN]
 }
 
 const getWorkoutParams = ({
@@ -145,11 +158,12 @@ export default function ViewWorkout() {
 	const router = useRouter()
 	const insets = useSafeAreaInsets()
 	const toast = useToast()
-	const { mode, editPostId, connection, historyTrainingId } = useLocalSearchParams<{
+	const { isConnected } = useInternetConnection()
+	const { mode, editPostId, historyTrainingId, unsavedStartedAt } = useLocalSearchParams<{
 		mode: VIEWWORKOUT_MODE
 		editPostId?: string
-		connection?: 'offline'
 		historyTrainingId?: string
+		unsavedStartedAt?: string
 	}>()
 	const isView = mode === VIEWWORKOUT_MODE.VIEW
 	const isEdit = mode === VIEWWORKOUT_MODE.EDIT
@@ -164,6 +178,7 @@ export default function ViewWorkout() {
 	const results = useWorkoutResultsAfterFinishStore((state) => state)
 	const pointsRef = useRef(results.points || [])
 	const [isPhotoModalOpen, setIsPhotoModalOpen] = useState(false)
+	const [isExitWithoutCreatePostModal, setIsExitWithoutCreatePostModal] = useState(false)
 	const [deletedImages, setDeletedImages] = useState<string[]>([]) // только для редактирования
 	const [existingImages, setExistingImages] = useState<string[]>([]) // только для редактирования
 	const [postImages, setPostImages] = useState<string[]>([])
@@ -225,12 +240,7 @@ export default function ViewWorkout() {
 				}
 			}
 		})()
-	}, [])
-
-	const renderIcon = (IconComponent?: React.ComponentType<any>, color?: string) => {
-		if (!IconComponent) return null
-		return <IconComponent color={color} width={21} height={21} />
-	}
+	}, [editPostId, historyTrainingId, isEdit, isFromHistory, router, setValue, toast, user?.id])
 
 	const handlePostImages = (postImages: string[], formData: FormData) => {
 		if (postImages.length) {
@@ -260,6 +270,17 @@ export default function ViewWorkout() {
 		}
 	}
 
+	const saveWorkoutBeforeSubmit = async (): Promise<string | null> => {
+		// Если появился интернет
+		try {
+			return await saveSingleWorkout(WorkoutSource.UNSAVED, Number(unsavedStartedAt), user?.id)
+		} catch (e) {
+			console.error(e)
+			toast.error('Ошибка при сохранении тренировки, её можно будет сохранить позже')
+			return null
+		}
+	}
+
 	const onSubmit = async (postFormState: IPostFormState) => {
 		setState((s) => ({ ...s, isLoading: true, errors: undefined }))
 
@@ -267,6 +288,12 @@ export default function ViewWorkout() {
 			const formData = new FormData()
 			if (isView && results.trainingId) {
 				formData.append('trainingId', results.trainingId)
+			}
+			if (isView && !results.trainingId && unsavedStartedAt) {
+				const newTrainingId = await saveWorkoutBeforeSubmit()
+				if (newTrainingId) {
+					formData.append('trainingId', newTrainingId)
+				}
 			}
 			if (isFromHistory && historyTrainingId && !existPost) {
 				formData.append('trainingId', historyTrainingId)
@@ -340,7 +367,6 @@ export default function ViewWorkout() {
 			}
 
 			if (result.canceled || !result.assets?.length) return
-
 			const pickedUri = result.assets[0].uri
 
 			if (!pickedUri) {
@@ -348,7 +374,7 @@ export default function ViewWorkout() {
 				return
 			}
 
-			const { isValid, errorMessage } = await validateFile(pickedUri, postImages.length + existingImages.length)
+			const { isValid, errorMessage } = validateFile(pickedUri, postImages.length + existingImages.length)
 
 			if (!isValid) {
 				toast.error(errorMessage || 'Файл не прошёл проверку')
@@ -370,20 +396,15 @@ export default function ViewWorkout() {
 		setExistingImages((prev) => prev.filter((f) => f !== fileName))
 	}
 
-	const renderIconForExistPost = (workoutType?: TrainingType) => {
-		const found = workoutType ? WorkoutTypesMap[workoutType] : null
-		if (!found) return null
-		return <found.IconComponent color="black" width={21} height={21} />
-	}
-
 	const myParticipant = extendedTraining?.participants.find((p) => p.user.id === user?.id)
+	const creatorParticipant = existPost?.training.participants.find(
+		(participant) => participant.user.id === existPost?.userCreator.id
+	)
 
 	const adaptedLocationsFromHistory = adaptLocations(myParticipant?.route?.points || [])
-	const adaptedLocations = adaptLocations(existPost?.training?.participants?.[0]?.route?.points || [])
+	const adaptedLocations = adaptLocations(creatorParticipant?.route?.points || [])
 
-	const creatorMetrics = existPost?.training.participants.find(
-		(participant) => participant.user.id === existPost?.userCreator.id
-	)?.metrics
+	const creatorMetrics = creatorParticipant?.metrics
 	const myMetrics = myParticipant?.metrics
 
 	const distanceText = isView
@@ -397,6 +418,11 @@ export default function ViewWorkout() {
 	const mapLocations = isView ? pointsRef : { current: isEdit ? adaptedLocations : adaptedLocationsFromHistory }
 	const chartPoints = isView ? results.points : isEdit ? adaptedLocations : adaptedLocationsFromHistory
 	const canPublish = isView || isEdit || (isFromHistory && isTrainingAuthor)
+	const canManageExistingImages = isEdit || Boolean(isFromHistory && isTrainingAuthor && existPost)
+	const currentWorkoutType = isView ? results.type?.type : isEdit ? existPost?.training?.type : extendedTraining?.type
+	const currentWorkout = isView ? results.type : currentWorkoutType ? WorkoutTypesMap[currentWorkoutType] : null
+	const CurrentWorkoutIcon = currentWorkout?.IconComponent as React.ComponentType<any> | undefined
+	const currentWorkoutImage = getWorkoutResultImage(currentWorkout?.type)
 
 	const [leftParams, rightParams] = getWorkoutParams({
 		mode,
@@ -422,6 +448,23 @@ export default function ViewWorkout() {
 		if (isFromHistory && isTrainingAuthor && !existPost) return 'Публикация'
 	}
 
+	const handlePressGoBack = () => {
+		if (isView) {
+			setIsExitWithoutCreatePostModal(true)
+		} else {
+			router.back()
+		}
+	}
+
+	const confirmExitWithoutCreatingPost = () => {
+		router.replace({
+			pathname: '/workout-history',
+			params: {
+				from: 'viewWorkout'
+			}
+		})
+	}
+
 	const offlineActionText = isView
 		? 'создать'
 		: isEdit
@@ -431,7 +474,7 @@ export default function ViewWorkout() {
 				: 'создать'
 
 	return (
-		<>
+		<BlurProvider>
 			<Modal
 				isOpen={isPhotoModalOpen}
 				handleClose={() => setIsPhotoModalOpen(false)}
@@ -451,6 +494,34 @@ export default function ViewWorkout() {
 					/>
 				</View>
 			</Modal>
+			<Modal
+				isOpen={isExitWithoutCreatePostModal}
+				handleClose={() => setIsExitWithoutCreatePostModal(false)}
+				label="Выйти без создания публикации?"
+				labelSize={16}
+			>
+				<View className="gap-[20px]">
+					<Text className="text-white text-sm" style={{ fontFamily: fontFamily.bold }}>
+						Тренировка сохранена в истории, а пост создать можно будет позже.
+					</Text>
+					<View className="flex-row gap-[10px]">
+						<Button
+							onPress={confirmExitWithoutCreatingPost}
+							variant="white"
+							buttonContainerClassName="flex-1"
+						>
+							Да
+						</Button>
+						<Button
+							onPress={() => setIsExitWithoutCreatePostModal(false)}
+							variant="white"
+							buttonContainerClassName="flex-1"
+						>
+							Нет
+						</Button>
+					</View>
+				</View>
+			</Modal>
 			<KeyboardAvoidingView style={{ flex: 1 }} behavior={Platform.OS === 'ios' ? 'padding' : 'height'}>
 				<TouchableWithoutFeedback onPress={Keyboard.dismiss} accessible={false}>
 					<ScrollView
@@ -460,36 +531,24 @@ export default function ViewWorkout() {
 					>
 						<View className="relative" style={{ height: 300 }}>
 							<Image
-								className="w-full h-full"
-								source={require('@/assets/images/view-training.webp')}
-								resizeMode="cover"
+								style={{
+									width: '100%',
+									height: '100%'
+								}}
+								source={currentWorkoutImage}
+								contentFit="cover"
 							/>
 							<Container
 								className="absolute w-full h-full inset-0 justify-between pb-4"
 								style={{ paddingTop: insets.top + 40 }}
 							>
-								<Pressable
-									onPress={() => {
-										if (isView) {
-											router.replace({
-												pathname: '/workout-history',
-												params: {
-													from: 'viewWorkout'
-												}
-											})
-										} else {
-											router.back()
-										}
-									}}
-								>
-									<ArrowBackSvg />
-								</Pressable>
+								<BackButton onPress={handlePressGoBack} />
 								<View className="flex-row w-full justify-between items-center">
 									<View className="flex-row items-center gap-[10px]">
 										<View className="bg-white rounded-xl items-center justify-center w-[40px] h-[40px]">
-											{isView && renderIcon(results?.type?.IconComponent, '#000')}
-											{isEdit && renderIconForExistPost(existPost?.training?.type)}
-											{isFromHistory && renderIconForExistPost(extendedTraining?.type)}
+											{CurrentWorkoutIcon ? (
+												<CurrentWorkoutIcon color="#000" width={21} height={21} />
+											) : null}
 										</View>
 										<Text
 											className="text-white text-[23px]"
@@ -564,7 +623,7 @@ export default function ViewWorkout() {
 									</View>
 								)}
 							</View>
-							{connection !== 'offline' ? (
+							{isConnected ? (
 								<>
 									<View className="mt-[20px] gap-[15px]">
 										<Text className="text-white text-base" style={{ fontFamily: fontFamily.bold }}>
@@ -673,32 +732,43 @@ export default function ViewWorkout() {
 												/>
 											</View>
 											<View className="flex-row flex-wrap -mx-[7.5px] gap-y-[15px] mt-[10px]">
-												{isEdit ||
-													(isFromHistory &&
-														isTrainingAuthor &&
-														existPost &&
-														existingImages.map((fileName) => (
-															<View key={fileName} className="w-1/2 px-[7.5px] relative">
-																<Image
-																	source={{ uri: `${PATH_TO_IMAGE}${fileName}` }}
-																	className="w-full aspect-square rounded-[15px] border-[1px] border-white/20"
-																	resizeMode="cover"
+												{canManageExistingImages &&
+													existingImages.map((fileName) => (
+														<View key={fileName} className="w-1/2 px-[7.5px] relative">
+															<Image
+																source={{ uri: `${PATH_TO_IMAGE}${fileName}` }}
+																style={{
+																	width: '100%',
+																	aspectRatio: 1,
+																	borderRadius: 15,
+																	borderWidth: 1,
+																	borderColor: 'rgba(255, 255, 255, 0.2)',
+																	overflow: 'hidden'
+																}}
+																contentFit="cover"
+															/>
+															<View className="absolute right-[12px] top-[12px] rounded-full w-[28px] h-[28px] bg-black/40 items-center justify-center">
+																<CloseCross
+																	handleClose={() =>
+																		handleDeleteExistingImage(fileName)
+																	}
 																/>
-																<View className="absolute right-[12px] top-[12px] rounded-full w-[28px] h-[28px] bg-black/40 items-center justify-center">
-																	<CloseCross
-																		handleClose={() =>
-																			handleDeleteExistingImage(fileName)
-																		}
-																	/>
-																</View>
 															</View>
-														)))}
+														</View>
+													))}
 												{postImages.map((uri, index) => (
 													<View key={uri} className="w-1/2 px-[7.5px] relative">
 														<Image
 															source={{ uri }}
-															className="w-full aspect-square rounded-[15px] border-[1px] border-white/20"
-															resizeMode="cover"
+															style={{
+																width: '100%',
+																aspectRatio: 1,
+																borderRadius: 15,
+																borderWidth: 1,
+																borderColor: 'rgba(255, 255, 255, 0.2)',
+																overflow: 'hidden'
+															}}
+															contentFit="cover"
 														/>
 														<View className="absolute right-[12px] top-[12px] rounded-full w-[28px] h-[28px] bg-black/40 items-center justify-center">
 															<CloseCross
@@ -744,6 +814,6 @@ export default function ViewWorkout() {
 					</ScrollView>
 				</TouchableWithoutFeedback>
 			</KeyboardAvoidingView>
-		</>
+		</BlurProvider>
 	)
 }

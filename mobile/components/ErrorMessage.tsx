@@ -39,7 +39,7 @@ const ErrorMessage = ({ error }: ErrorMessageProps) => {
 				})
 			]).start()
 		}
-	}, [error])
+	}, [error, height, opacity])
 
 	return (
 		<Animated.View

@@ -1,4 +1,4 @@
-import { TrainingType } from '../../shared/enums'
+import { TrainingType } from '@shared/enums'
 
 /**
  * timeMs: общее активное время (без пауз)

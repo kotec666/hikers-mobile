@@ -12,6 +12,7 @@ export function NotificationProvider() {
 					key={notification.id}
 					text={notification.text}
 					type={notification.type}
+					onPress={notification.onPress}
 					clearErrorCallback={() => hideNotification(notification.id)}
 				/>
 			))}

@@ -1,6 +1,6 @@
 import { Animation, InitialRegion, Point, Yamap, YamapRef } from 'react-native-yamap-plus'
 import React, { forwardRef, useCallback, useEffect, useImperativeHandle, useRef, useState } from 'react'
-import { View } from 'react-native'
+import { LayoutChangeEvent, View } from 'react-native'
 import { IWorkoutLocationStorageItem } from '@/store/workoutStorage'
 import { Colors } from '@/constants/Colors'
 import { debounce } from '@/helpers/debounce'
@@ -27,6 +27,11 @@ interface IProps {
 		horizontal?: 'left' | 'center' | 'right'
 		vertical?: 'top' | 'bottom'
 	}
+	logoPadding?: {
+		horizontal?: number
+		vertical?: number
+	}
+	deferInitialRouteRender?: boolean
 	initialMarkerLocation?: Point | null
 	userLocationMarkerRef?: React.RefObject<UserLocationMarkerHandle | null>
 	initialLocations?: React.RefObject<IWorkoutLocationStorageItem[]>
@@ -50,29 +55,162 @@ interface TransitionMarker {
 	id: string
 }
 
+const activeLineColor = Colors['green-main']
+const pausedLineColor = Colors['gray-ab']
+
+const getLocationPoint = (location: IWorkoutLocationStorageItem): Point => ({
+	lat: location.locationObject.coords.latitude,
+	lon: location.locationObject.coords.longitude
+})
+
+const getRoutePoints = (locations?: IWorkoutLocationStorageItem[]): Point[] => {
+	if (!locations || locations.length === 0) return []
+
+	return locations.map(getLocationPoint)
+}
+
+const getInitialRouteZoom = (points: Point[]) => {
+	if (points.length <= 1) return 16
+
+	const bounds = points.reduce(
+		(acc, point) => ({
+			minLat: Math.min(acc.minLat, point.lat),
+			maxLat: Math.max(acc.maxLat, point.lat),
+			minLon: Math.min(acc.minLon, point.lon),
+			maxLon: Math.max(acc.maxLon, point.lon)
+		}),
+		{
+			minLat: points[0].lat,
+			maxLat: points[0].lat,
+			minLon: points[0].lon,
+			maxLon: points[0].lon
+		}
+	)
+
+	const maxDelta = Math.max(bounds.maxLat - bounds.minLat, bounds.maxLon - bounds.minLon)
+
+	if (maxDelta < 0.005) return 16
+	if (maxDelta < 0.01) return 15
+	if (maxDelta < 0.025) return 14
+	if (maxDelta < 0.05) return 13
+	if (maxDelta < 0.1) return 12
+	if (maxDelta < 0.25) return 11
+	if (maxDelta < 0.5) return 10
+	if (maxDelta < 1) return 9
+
+	return 8
+}
+
+const getRouteInitialRegion = (points: Point[], fallback: InitialRegion): InitialRegion => {
+	if (points.length === 0) return fallback
+
+	const bounds = points.reduce(
+		(acc, point) => ({
+			minLat: Math.min(acc.minLat, point.lat),
+			maxLat: Math.max(acc.maxLat, point.lat),
+			minLon: Math.min(acc.minLon, point.lon),
+			maxLon: Math.max(acc.maxLon, point.lon)
+		}),
+		{
+			minLat: points[0].lat,
+			maxLat: points[0].lat,
+			minLon: points[0].lon,
+			maxLon: points[0].lon
+		}
+	)
+
+	return {
+		...fallback,
+		lat: (bounds.minLat + bounds.maxLat) / 2,
+		lon: (bounds.minLon + bounds.maxLon) / 2,
+		zoom: getInitialRouteZoom(points),
+		azimuth: undefined
+	}
+}
+
+const parseLocationsToSegments = (locations: IWorkoutLocationStorageItem[]) => {
+	if (!locations || locations.length === 0) return { segments: [], markers: [] }
+
+	const resultSegments: Segment[] = []
+	const markers: TransitionMarker[] = []
+
+	let currentGroup: IWorkoutLocationStorageItem[] = [locations[0]]
+
+	for (let i = 1; i < locations.length; i++) {
+		const prev = locations[i - 1]
+		const curr = locations[i]
+
+		const sameState = prev.paused === curr.paused
+
+		if (sameState) {
+			currentGroup.push(curr)
+		} else {
+			// Connect segments visually
+			currentGroup.push(curr)
+
+			resultSegments.push({
+				isPaused: prev.paused,
+				points: currentGroup.map(getLocationPoint),
+				color: prev.paused ? pausedLineColor : activeLineColor
+			})
+
+			markers.push({
+				type: prev.paused ? 'resume' : 'pause',
+				position: getLocationPoint(curr),
+				id: `marker-${i}`
+			})
+
+			currentGroup = [curr]
+		}
+	}
+
+	// Add the final group
+	if (currentGroup.length > 0) {
+		resultSegments.push({
+			isPaused: currentGroup[0].paused,
+			points: currentGroup.map(getLocationPoint),
+			color: currentGroup[0].paused ? pausedLineColor : activeLineColor
+		})
+	}
+
+	return { segments: resultSegments, markers }
+}
+
 const MapComponent = forwardRef<MapComponentHandle, IProps>((props, ref) => {
 	const mapRef = useRef<YamapRef>(null)
+	const [containerHeight, setContainerHeight] = useState(0)
+	const shouldDeferInitialRouteRender = props.deferInitialRouteRender ?? true
+	const [initialRouteData] = useState(() =>
+		shouldDeferInitialRouteRender ? null : parseLocationsToSegments(props.initialLocations?.current || [])
+	)
+	const [initialRoutePoints] = useState(() =>
+		shouldDeferInitialRouteRender ? [] : getRoutePoints(props.initialLocations?.current)
+	)
 	// State for React rendering of segments and markers
-	const [segments, setSegments] = useState<Segment[]>([])
-	const [transitionMarkers, setTransitionMarkers] = useState<TransitionMarker[]>([])
+	const [segments, setSegments] = useState<Segment[]>(initialRouteData?.segments || [])
+	const [transitionMarkers, setTransitionMarkers] = useState<TransitionMarker[]>(initialRouteData?.markers || [])
+
+	const initialLastSegment =
+		initialRouteData && initialRouteData.segments.length > 0
+			? initialRouteData.segments[initialRouteData.segments.length - 1]
+			: null
 
 	// Ref for the CURRENT active segment points.
 	// This allows us to mutate the array and use setNativeProps for performance,
 	// while ensuring we don't mutate the React state (which might be frozen).
-	const currentSegmentPointsRef = useRef<Point[]>([])
+	const currentSegmentPointsRef = useRef<Point[]>(initialLastSegment ? [...initialLastSegment.points] : [])
 
 	// Ref для хранения состояния последнего сегмента.
 	// Важно: используем ref вместо segments[last].isPaused, чтобы иметь актуальное значение
 	// внутри императивного метода updatePath, не завися от замыкания и рендеров React.
-	const lastSegmentPausedRef = useRef<boolean>(false)
+	const lastSegmentPausedRef = useRef<boolean>(initialLastSegment?.isPaused ?? false)
 
 	const activePolylineRef = useRef<PolylineComponentInstanceRef | null>(null)
 	const isAnimationBlockedRef = useRef<boolean>(false)
 	const animationBlockTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
-	const mapInitialRegionSettingsRef = useRef<InitialRegion>(getMapSettings()).current
-
-	const activeLineColor = Colors['green-main']
-	const pausedLineColor = Colors['gray-ab']
+	const mapInitialRegionSettingsRef = useRef<InitialRegion>(
+		getRouteInitialRegion(initialRoutePoints, getMapSettings())
+	).current
 
 	// Initialize from props (History load)
 	useEffect(() => {
@@ -98,61 +236,7 @@ const MapComponent = forwardRef<MapComponentHandle, IProps>((props, ref) => {
 		return () => {
 			if (idleId) cancelIdleCallback(idleId)
 		}
-	}, [props.initialLocations?.current])
-
-	const parseLocationsToSegments = (locations: IWorkoutLocationStorageItem[]) => {
-		if (!locations || locations.length === 0) return { segments: [], markers: [] }
-
-		const resultSegments: Segment[] = []
-		const markers: TransitionMarker[] = []
-
-		let currentGroup: IWorkoutLocationStorageItem[] = [locations[0]]
-
-		for (let i = 1; i < locations.length; i++) {
-			const prev = locations[i - 1]
-			const curr = locations[i]
-
-			const sameState = prev.paused === curr.paused
-
-			if (sameState) {
-				currentGroup.push(curr)
-			} else {
-				// Connect segments visually
-				currentGroup.push(curr)
-
-				resultSegments.push({
-					isPaused: prev.paused,
-					points: currentGroup.map((l) => ({
-						lat: l.locationObject.coords.latitude,
-						lon: l.locationObject.coords.longitude
-					})),
-					color: prev.paused ? pausedLineColor : activeLineColor
-				})
-
-				markers.push({
-					type: prev.paused ? 'resume' : 'pause',
-					position: { lat: curr.locationObject.coords.latitude, lon: curr.locationObject.coords.longitude },
-					id: `marker-${i}`
-				})
-
-				currentGroup = [curr]
-			}
-		}
-
-		// Add the final group
-		if (currentGroup.length > 0) {
-			resultSegments.push({
-				isPaused: currentGroup[0].paused,
-				points: currentGroup.map((l) => ({
-					lat: l.locationObject.coords.latitude,
-					lon: l.locationObject.coords.longitude
-				})),
-				color: currentGroup[0].paused ? pausedLineColor : activeLineColor
-			})
-		}
-
-		return { segments: resultSegments, markers }
-	}
+	}, [props.initialLocations, segments.length])
 
 	const updatePath = useCallback(
 		(newItem: IWorkoutLocationStorageItem) => {
@@ -231,7 +315,7 @@ const MapComponent = forwardRef<MapComponentHandle, IProps>((props, ref) => {
 				])
 			}
 		},
-		[segments, activeLineColor, pausedLineColor]
+		[segments]
 	)
 
 	useImperativeHandle(ref, () => ({
@@ -244,6 +328,29 @@ const MapComponent = forwardRef<MapComponentHandle, IProps>((props, ref) => {
 	const fitAllMarkers = (durationInSeconds?: number) => {
 		if (!mapRef.current) return
 		mapRef.current.fitAllMarkers(durationInSeconds, Animation.LINEAR)
+	}
+
+	const fitInitialRoute = (durationInSeconds?: number) => {
+		if (!mapRef.current) return
+
+		if (initialRoutePoints.length > 1) {
+			mapRef.current.fitMarkers(initialRoutePoints, durationInSeconds, Animation.LINEAR)
+			return
+		}
+
+		if (initialRoutePoints.length === 1) {
+			mapRef.current.setCenter(
+				initialRoutePoints[0],
+				mapInitialRegionSettingsRef.zoom,
+				undefined,
+				undefined,
+				durationInSeconds ?? 0,
+				Animation.LINEAR
+			)
+			return
+		}
+
+		fitAllMarkers(durationInSeconds)
 	}
 
 	const changeMapCenter = (
@@ -284,6 +391,12 @@ const MapComponent = forwardRef<MapComponentHandle, IProps>((props, ref) => {
 
 	const updateMapSettingsDebounced = debounce(updateMapSettings, 300)
 
+	const handleContainerLayout = useCallback((event: LayoutChangeEvent) => {
+		const nextHeight = event.nativeEvent.layout.height
+
+		setContainerHeight((height) => (height === nextHeight ? height : nextHeight))
+	}, [])
+
 	useEffect(() => {
 		return () => {
 			if (animationBlockTimerRef.current) {
@@ -311,85 +424,90 @@ const MapComponent = forwardRef<MapComponentHandle, IProps>((props, ref) => {
 	return (
 		<View
 			pointerEvents={props.interactiveDisabled ? 'none' : 'auto'}
+			onLayout={handleContainerLayout}
 			className="flex-1 border-[1px] border-white/20"
 			style={{
 				overflow: 'hidden',
 				borderRadius: props.rounded || 0,
+				minHeight: props.minMapHeight,
 				maxHeight: props.maxContainerHeight ?? 'auto'
 			}}
 		>
-			<Yamap
-				ref={mapRef}
-				nightMode
-				initialRegion={mapInitialRegionSettingsRef}
-				style={{ flex: 1, maxHeight: props.maxMapHeight, minHeight: props.minMapHeight }}
-				logoPosition={props.logoPosition || { horizontal: 'right', vertical: 'top' }}
-				showUserPosition={false}
-				interactiveDisabled={props.interactiveDisabled}
-				tiltGesturesDisabled={true}
-				rotateGesturesDisabled={false}
-				onCameraPositionChange={(e) => {
-					if (['GESTURES', 'UNKNOWN'].includes(e.nativeEvent.reason)) {
-						handleBlockAnimation()
-					}
-				}}
-				onCameraPositionChangeEnd={() => {
-					if (!props.needSaveCenter) return
-					mapRef.current?.getCameraPosition((pos) => {
-						updateMapSettingsDebounced({
-							lat: pos.point.lat,
-							lon: pos.point.lon,
-							zoom: pos.zoom,
-							azimuth: pos.azimuth
+			{containerHeight > 0 && (
+				<Yamap
+					ref={mapRef}
+					nightMode
+					initialRegion={mapInitialRegionSettingsRef}
+					style={{ flex: 1, maxHeight: props.maxMapHeight, minHeight: props.minMapHeight }}
+					logoPosition={props.logoPosition || { horizontal: 'right', vertical: 'top' }}
+					logoPadding={props.logoPadding}
+					showUserPosition={false}
+					interactiveDisabled={props.interactiveDisabled}
+					tiltGesturesDisabled={true}
+					rotateGesturesDisabled={false}
+					onCameraPositionChange={(e) => {
+						if (['GESTURES', 'UNKNOWN'].includes(e.nativeEvent.reason)) {
+							handleBlockAnimation()
+						}
+					}}
+					onCameraPositionChangeEnd={() => {
+						if (!props.needSaveCenter) return
+						mapRef.current?.getCameraPosition((pos) => {
+							updateMapSettingsDebounced({
+								lat: pos.point.lat,
+								lon: pos.point.lon,
+								zoom: pos.zoom,
+								azimuth: pos.azimuth
+							})
 						})
-					})
-				}}
-				onMapLoaded={() => {
-					fitAllMarkers(0)
-				}}
-			>
-				{/*<DirectionMarkersDebug center={{ lat: 53.374451, lon: 49.460469 }} />*/}
-				{props.initialMarkerLocation && (
-					<UserLocationMarker
-						ref={props.userLocationMarkerRef}
-						initialPosition={props.initialMarkerLocation}
-					/>
-				)}
-
-				{props.initialLocations?.current && props.initialLocations?.current.length >= 1 && (
-					<StartLocationMarker
-						position={{
-							lat: props.initialLocations.current[0].locationObject.coords.latitude,
-							lon: props.initialLocations.current[0].locationObject.coords.longitude
-						}}
-					/>
-				)}
-
-				{/* Render Dynamic Segments */}
-				{segments.map((segment, index) => {
-					const isLast = index === segments.length - 1
-					return (
-						<PolylineCustom
-							key={`poly-${index}`}
-							ref={isLast ? activePolylineRef : undefined} // Only attach ref to the active segment
-							points={segment.points}
-							strokeColor={segment.color}
-							strokeWidth={4}
+					}}
+					onMapLoaded={() => {
+						fitInitialRoute(0)
+					}}
+				>
+					{/*<DirectionMarkersDebug center={{ lat: 53.374451, lon: 49.460469 }} />*/}
+					{props.initialMarkerLocation && (
+						<UserLocationMarker
+							ref={props.userLocationMarkerRef}
+							initialPosition={props.initialMarkerLocation}
 						/>
-					)
-				})}
+					)}
 
-				{/* Render Transition Markers */}
-				{transitionMarkers.map((tm) =>
-					tm.type === 'pause' ? (
-						<PauseLocationMarker key={tm.id} position={tm.position} />
-					) : (
-						<ResumeLocationMarker key={tm.id} position={tm.position} />
-					)
-				)}
+					{props.initialLocations?.current && props.initialLocations?.current.length >= 1 && (
+						<StartLocationMarker
+							position={{
+								lat: props.initialLocations.current[0].locationObject.coords.latitude,
+								lon: props.initialLocations.current[0].locationObject.coords.longitude
+							}}
+						/>
+					)}
 
-				{props.needFinishMarker && lastPoint && <FinishLocationMarker position={lastPoint} />}
-			</Yamap>
+					{/* Render Dynamic Segments */}
+					{segments.map((segment, index) => {
+						const isLast = index === segments.length - 1
+						return (
+							<PolylineCustom
+								key={`poly-${index}`}
+								ref={isLast ? activePolylineRef : undefined} // Only attach ref to the active segment
+								points={segment.points}
+								strokeColor={segment.color}
+								strokeWidth={4}
+							/>
+						)
+					})}
+
+					{/* Render Transition Markers */}
+					{transitionMarkers.map((tm) =>
+						tm.type === 'pause' ? (
+							<PauseLocationMarker key={tm.id} position={tm.position} />
+						) : (
+							<ResumeLocationMarker key={tm.id} position={tm.position} />
+						)
+					)}
+
+					{props.needFinishMarker && lastPoint && <FinishLocationMarker position={lastPoint} />}
+				</Yamap>
+			)}
 		</View>
 	)
 })
@@ -406,6 +524,7 @@ export default React.memo(MapComponent, (prev, next) => {
 		prev.maxMapHeight === next.maxMapHeight &&
 		prev.minMapHeight === next.minMapHeight &&
 		prev.rounded === next.rounded &&
+		prev.deferInitialRouteRender === next.deferInitialRouteRender &&
 		prev.initialMarkerLocation === next.initialMarkerLocation &&
 		prev.userLocationMarkerRef === next.userLocationMarkerRef &&
 		prev.initialLocations === next.initialLocations

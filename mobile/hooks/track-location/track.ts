@@ -1,15 +1,20 @@
 import * as Location from 'expo-location'
 import * as TaskManager from 'expo-task-manager'
-import { LocationActivityType, LocationObject } from 'expo-location'
+import { LocationActivityType } from 'expo-location'
+import type { LocationObject } from 'expo-location'
 import { getWorkoutMeta, markPointsAsSaved, setWorkoutItems } from '@/store/workoutStorage'
 import { locationEmitter } from './locationEmitter'
 import { TaskManagerError } from 'expo-task-manager'
 import { syncTraining } from '@/api/workout'
 import { prepareLocationsForSync } from '@/helpers/prepareLocationsForSync'
-import { getItem } from '@/store/storage'
+import { getItem } from '@/store/authStorage'
+import { filterLocations } from '@/helpers/location/filterLocations'
+import { updateWorkoutLiveActivityFromLastLocation } from '@/hooks/track-location/liveActivityMetrics'
 
 export const LOCATION_TASK_NAME = 'background-location-task'
 let innerAppMountedPromiseRef: Promise<void> | null = null // Variable to hold the promise resolver logic
+// let liveActivityWorkoutInstance: LiveActivity<WorkoutActivityProps> | null = null
+// figure.walk / figure.run / bicycle
 
 export async function isTrackingLocation(): Promise<boolean> {
 	return await Location.hasStartedLocationUpdatesAsync(LOCATION_TASK_NAME)
@@ -53,7 +58,7 @@ export async function stopTracking() {
 TaskManager.defineTask(
 	LOCATION_TASK_NAME,
 	async ({ data, error }: { data: { locations: LocationObject[] }; error: TaskManagerError | null }) => {
-		const user = getItem('authData')?.user
+		const user = (await getItem('authData'))?.user
 		// Delay starting the task until the inner app is mounted
 		if (innerAppMountedPromiseRef) await innerAppMountedPromiseRef
 		if (error) {
@@ -63,8 +68,9 @@ TaskManager.defineTask(
 
 		const meta = getWorkoutMeta(user?.id)
 		if (!meta || !data?.locations?.length) return
-
-		const savedLocations = setWorkoutItems(data.locations, user?.id)
+		const cleanedLocations = filterLocations(data.locations, { keepLast: true })
+		const savedLocations = setWorkoutItems(cleanedLocations, user?.id)
+		void updateWorkoutLiveActivityFromLastLocation(cleanedLocations.at(-1), user?.id)
 		locationEmitter.emit(savedLocations)
 
 		const preparedLocations = prepareLocationsForSync(savedLocations)

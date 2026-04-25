@@ -7,6 +7,7 @@ import {
 	POINT_BYTE_SIZE,
 	serializeLocation
 } from '@/helpers/binarySerializer'
+import { calculateDistanceBetweenWorkoutPoints } from '@/helpers/distance'
 
 export const workoutStorage = createMMKV({
 	id: 'workout-storage'
@@ -31,6 +32,7 @@ export interface IWorkout {
 	startedAt: number
 	totalPausedMs: number
 	lastPauseAt: null | number
+	distanceMeters: number
 	locations: IWorkoutLocationStorageItem[]
 }
 
@@ -44,6 +46,8 @@ export interface IWorkoutMeta {
 	lastPauseAt: null | number
 	chunkCount: number
 	nextPointId: number
+	distanceMeters: number
+	lastDistancePoint: IWorkoutLocationStorageItem | null
 }
 
 export interface IWorkoutLocationStorageItem {
@@ -54,12 +58,52 @@ export interface IWorkoutLocationStorageItem {
 	isSavedToServer: boolean
 }
 
+const addWorkoutDistancePointToMeta = (meta: IWorkoutMeta, entry: IWorkoutLocationStorageItem): void => {
+	if (entry.paused) {
+		meta.lastDistancePoint = null
+		return
+	}
+
+	if (meta.lastDistancePoint) {
+		meta.distanceMeters += calculateDistanceBetweenWorkoutPoints(meta.lastDistancePoint, entry)
+	}
+
+	meta.lastDistancePoint = entry
+}
+
+// --- CLEANUP ---
+export const removeUserWorkoutStorage = (userId?: string): void => {
+	if (!userId) {
+		console.error('removeUserWorkoutStorage [error]: no userId provided')
+		return
+	}
+
+	try {
+		const keys = workoutStorage.getAllKeys()
+
+		// Префиксы, которые относятся к пользователю
+		const prefixes = [`NOT_SAVED_${userId}`, `SHORT_WORKOUTS_${userId}`, `ACTIVE_META_${userId}`, `BIN_${userId}_`]
+
+		for (const key of keys) {
+			const shouldDelete = prefixes.some((prefix) => key.startsWith(prefix))
+
+			if (shouldDelete) {
+				workoutStorage.remove(key)
+			}
+		}
+	} catch (e) {
+		console.error('[removeUserWorkoutStorage] error:', e)
+	}
+}
+
 // --- META ---
 
 export const getWorkoutMeta = (userId?: string): IWorkoutMeta | null | void => {
 	if (!userId) return console.error('getWorkoutMeta [error]: no userId provided')
 	const metaStr = workoutStorage.getString(KEY_ACTIVE_META(userId))
-	return metaStr ? (JSON.parse(metaStr) as IWorkoutMeta) : null
+	if (!metaStr) return null
+
+	return JSON.parse(metaStr) as IWorkoutMeta
 }
 
 // --- ACTIVE WORKOUT ---
@@ -81,7 +125,9 @@ export const startAndStoreNewActiveWorkout = (
 		totalPausedMs: 0,
 		lastPauseAt: null,
 		chunkCount: 1,
-		nextPointId: 0
+		nextPointId: 0,
+		distanceMeters: 0,
+		lastDistancePoint: null
 	}
 
 	workoutStorage.set(KEY_ACTIVE_META(userId), JSON.stringify(meta))
@@ -125,17 +171,19 @@ export const setWorkoutItems = (items: LocationObject[], userId?: string): IWork
 	const saved: IWorkoutLocationStorageItem[] = []
 
 	for (const item of items) {
-		if (item.timestamp < meta.startedAt) continue
+		const normalizedTimestamp = Math.trunc(item.timestamp)
+		if (normalizedTimestamp < meta.startedAt) continue
 
 		const entry: IWorkoutLocationStorageItem = {
 			pointId: meta.nextPointId++,
-			relTs: item.timestamp - meta.startedAt,
-			locationObject: item,
+			relTs: normalizedTimestamp - meta.startedAt,
+			locationObject: { ...item, timestamp: normalizedTimestamp },
 			paused: meta.isPaused,
 			isSavedToServer: false
 		}
 
 		saved.push(entry)
+		addWorkoutDistancePointToMeta(meta, entry)
 
 		const bytes = serializeLocation(entry)
 		const limit = CHUNK_POINT_COUNT * POINT_BYTE_SIZE
@@ -190,6 +238,7 @@ export const getFullActiveWorkout = (userId?: string): IWorkout | null => {
 		isPaused: meta.isPaused,
 		totalPausedMs: meta.totalPausedMs,
 		lastPauseAt: meta.lastPauseAt,
+		distanceMeters: meta.distanceMeters,
 		locations
 	}
 }
@@ -294,6 +343,34 @@ export const getActiveWorkoutPoints = (
 	}
 
 	return result
+}
+
+export const getLastActiveWorkoutPoint = (userId?: string): IWorkoutLocationStorageItem | null => {
+	if (!userId) return null
+
+	const meta = getWorkoutMeta(userId)
+	if (!meta) return null
+
+	for (let i = meta.chunkCount - 1; i >= 0; i--) {
+		const buffer = workoutStorage.getBuffer(KEY_ACTIVE_BIN(userId, i))
+		if (!buffer) continue
+
+		const points = deserializeLocations(new Uint8Array(buffer), meta.startedAt, deserializeGetterType.ALL)
+		const lastPoint = points.at(-1)
+
+		if (lastPoint) return lastPoint
+	}
+
+	return null
+}
+
+export const getWorkoutDistanceMeters = (userId?: string): number => {
+	if (!userId) return 0
+
+	const meta = getWorkoutMeta(userId)
+	if (!meta) return 0
+
+	return Math.max(0, meta.distanceMeters)
 }
 
 export const removeAllShortWorkouts = (userId?: string): void => {
@@ -501,7 +578,6 @@ export const markPointsAsSaved = (pointIds: number[], userId?: string) => {
 }
 
 // --- CLEANUP ---
-
-export const removeAllWorkoutStorage = () => {
-	workoutStorage.clearAll()
-}
+// export const removeAllWorkoutStorage = () => {
+// 	workoutStorage.clearAll()
+// }

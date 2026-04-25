@@ -4,6 +4,7 @@ const fs = require('fs')
 const path = require('path')
 const os = require('os')
 
+// eslint-disable-next-line no-undef
 const projectRoot = path.join(__dirname, '..')
 const androidPath = path.join(projectRoot, 'android')
 const localPropertiesPath = path.join(androidPath, 'local.properties')

@@ -4,9 +4,9 @@ import CheckmarkSvg from '@/components/svg/CheckmarkSvg'
 import { Motion } from '@legendapp/motion'
 
 interface Props extends ViewProps {
-	onValueChange: (value: boolean) => void
+	onValueChange?: (value: boolean) => void
 	value?: boolean
-	error: boolean
+	error?: boolean
 }
 
 export default function Checkbox({ onValueChange, value, error }: Props) {
@@ -19,7 +19,7 @@ export default function Checkbox({ onValueChange, value, error }: Props) {
 	return (
 		<Pressable
 			onPress={() => {
-				onValueChange(!value)
+				onValueChange?.(!value)
 			}}
 		>
 			<Motion.View

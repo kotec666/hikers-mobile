@@ -111,12 +111,6 @@ export const generateBasicMetadata = (meta: IMetaEnter): Metadata => {
 		}
 	}
 
-	// itunes metadata
-	metadata.itunes = {
-		...meta.itunes,
-		appId: '999999999'
-	}
-
 	metadata.other = {
 		...meta.other,
 		'al:ios:app_store_id': '999999999',

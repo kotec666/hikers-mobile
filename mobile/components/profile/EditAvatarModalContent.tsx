@@ -6,6 +6,7 @@ import GallerySvg from '@/components/svg/GallerySvg'
 import * as ImagePicker from 'expo-image-picker'
 import ImagePickerButton from '@/components/ui/ImagePickerButton'
 import { useToast } from '@/hooks/useToast'
+import { validateFile } from '@/helpers/fileValidation'
 
 interface IProps {
 	handleClickDeleteAvatar: () => void
@@ -43,11 +44,26 @@ const EditAvatarModalContent = (props: IProps) => {
 				})
 			}
 
-			if (!result.canceled) {
-				// save image
-				await saveImage(result.assets[0].uri)
+			if (!result.canceled && result.assets?.length) {
+				const pickedUri = result.assets[0].uri
+
+				if (!pickedUri) {
+					toast.error('Невалидный файл')
+					return
+				}
+
+				// Валидация файла
+				const { isValid, errorMessage } = validateFile(pickedUri, 0)
+
+				if (!isValid) {
+					toast.error(errorMessage || 'Файл не прошёл проверку')
+					return
+				}
+
+				saveImage(pickedUri)
 			}
-		} catch {
+		} catch (e) {
+			console.log('Ошибка при загрузке изображения:', e)
 			toast.error('Ошибка при загрузке изображения')
 			props.handleCloseModal()
 		}
@@ -71,14 +87,10 @@ const EditAvatarModalContent = (props: IProps) => {
 		}
 	]
 
-	const saveImage = async (image: string) => {
-		try {
-			// update displayed image
-			props.setNewAvatar(image)
-			props.handleCloseModal()
-		} catch (e) {
-			throw e
-		}
+	const saveImage = (image: string) => {
+		// update displayed image
+		props.setNewAvatar(image)
+		props.handleCloseModal()
 	}
 
 	return (

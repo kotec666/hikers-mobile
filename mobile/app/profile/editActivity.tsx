@@ -29,7 +29,7 @@ const ProfileEditActivity = () => {
 				await getFieldsErrors(e)
 			}
 		})()
-	}, [])
+	}, [newActivitiesOrder.length, setNewActivitiesOrder])
 
 	return (
 		<SafeAreaProvider style={{ paddingTop: insets.top, paddingBottom: insets.bottom }}>

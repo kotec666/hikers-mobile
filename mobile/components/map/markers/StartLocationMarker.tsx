@@ -5,15 +5,16 @@ import StartWithCircleSvg from '@/components/svg/StartWithCircleSvg'
 
 interface Props {
 	position?: Point | null
+	color?: string
 }
 
-const StartLocationMarker = ({ position }: Props) => {
+const StartLocationMarker = ({ position, color }: Props) => {
 	if (!position?.lat || !position?.lon) return null
 
 	return (
 		<Marker point={position} zIndex={5}>
 			<View>
-				<StartWithCircleSvg />
+				<StartWithCircleSvg color={color} />
 			</View>
 		</Marker>
 	)

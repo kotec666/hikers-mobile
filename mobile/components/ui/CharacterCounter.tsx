@@ -35,7 +35,7 @@ export function CharacterCounter({ valueLength, maxLength }: Props) {
 			friction: 5,
 			tension: 150
 		}).start()
-	}, [isNearLimit, isAtLimit, isOverflow])
+	}, [isNearLimit, isAtLimit, isOverflow, scaleAnim])
 
 	return (
 		<View className="flex-row items-center gap-[6px]">

@@ -3,6 +3,7 @@ export interface BottomSheetProps {
 	children: React.ReactNode
 	backgroundColor?: string
 	backDropColor?: string
+	blurDisabled?: boolean
 }
 
 export interface BottomSheetHandle {

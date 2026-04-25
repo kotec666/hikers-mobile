@@ -1,5 +1,6 @@
 import React from 'react'
-import { Image, View, Pressable } from 'react-native'
+import { View, Pressable } from 'react-native'
+import { Image } from 'expo-image'
 import { PATH_TO_IMAGE } from '@/constants/PATH_TO_FILES'
 
 const PostSliderItem = (props: {
@@ -13,12 +14,17 @@ const PostSliderItem = (props: {
 
 	return (
 		<View style={{ width: props.width }}>
-			<Pressable onPress={props.onPress}>
+			<Pressable onPress={props.onPress} style={{ borderRadius: 25, overflow: 'hidden' }}>
 				<Image
-					style={{ height: props.SLIDE_ASPECT_RATIO }}
+					style={{
+						width: '100%',
+						height: props.SLIDE_ASPECT_RATIO,
+						borderRadius: 25,
+						borderWidth: 1,
+						borderColor: 'rgba(255, 255, 255, 0.2)'
+					}}
 					source={{ uri: `${PATH_TO_IMAGE}${props.image}` }}
-					className="rounded-[25px] border-[1px] border-white/20 w-full"
-					resizeMode="cover"
+					contentFit="cover"
 				/>
 			</Pressable>
 		</View>

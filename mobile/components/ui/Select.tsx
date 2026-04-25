@@ -1,5 +1,5 @@
 import { cn } from '@/helpers/cn'
-import { Dimensions, Platform, StyleSheet, Text, TouchableOpacity, View } from 'react-native'
+import { Dimensions, StyleSheet, Text, TouchableOpacity, View } from 'react-native'
 import { fontFamily } from '@/constants/Fonts'
 import { Colors } from '@/constants/Colors'
 import React, { useState } from 'react'
@@ -7,7 +7,6 @@ import { Container } from '@/components/ui/Container'
 import ArrowDownSvg from '@/components/svg/ArrowDownSvg'
 import { FlatList } from 'react-native-gesture-handler'
 import PeopleRunningSvg from '@/components/svg/PeopleRunningSvg'
-import { BlurView } from 'expo-blur'
 import Animated, { Easing, useSharedValue, useAnimatedStyle, withTiming } from 'react-native-reanimated'
 
 export interface SelectOption {
@@ -101,35 +100,17 @@ export function Select(props: SelectProps) {
 
 			<Animated.View
 				className="absolute border-[1px] border-white/20 rounded-[25px] left-0 gap-[15px] w-full overflow-hidden"
-				style={[
-					{ top: 60, backgroundColor: Platform.OS === 'ios' ? 'none' : 'black', zIndex: 2 },
-					animatedStyle
-				]}
+				style={[{ top: 60, zIndex: 2, backgroundColor: 'black' }, animatedStyle]}
 			>
-				{showDropdown &&
-					(Platform.OS === 'ios' ? (
-						<BlurView
-							tint="dark"
-							intensity={10}
-							style={{ overflow: 'hidden', backgroundColor: 'transparent' }}
-						>
-							<SelectContainer
-								options={options}
-								handleSelect={handleSelect}
-								value={value}
-								handleClose={() => toggleOpen()}
-							/>
-						</BlurView>
-					) : (
-						<SelectContainer
-							options={options}
-							handleSelect={handleSelect}
-							value={value}
-							handleClose={() => toggleOpen()}
-						/>
-					))}
+				{showDropdown && (
+					<SelectContainer
+						options={options}
+						handleSelect={handleSelect}
+						value={value}
+						handleClose={() => toggleOpen()}
+					/>
+				)}
 			</Animated.View>
-
 			{error && (
 				<Container className="mt-[10px]">
 					<Text className="text-white text-sm" style={{ fontFamily: fontFamily.regular }}>

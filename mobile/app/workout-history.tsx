@@ -12,6 +12,7 @@ import { format } from 'date-fns'
 import { ru } from 'date-fns/locale'
 import SaveUnsavedTrainingSvg from '@/components/svg/SaveUnsavedTrainingSvg'
 import DeleteTrashSvg from '@/components/svg/DeleteTrashSvg'
+import SwipeableProvider from '@/components/providers/SwipeableProvider'
 import { getMyHistoryTrainings, ITrainingHistoryItem } from '@/api/workout'
 import { LegendList } from '@legendapp/list'
 import { Colors } from '@/constants/Colors'
@@ -23,18 +24,28 @@ import { useInfiniteQuery, useQueryClient } from '@tanstack/react-query'
 import { useToast } from '@/hooks/useToast'
 import { formatDistance } from '@/helpers/distance'
 import { useInternetConnection } from '@/hooks/useInternetConnection'
-import { useLocalSearchParams, useRouter } from 'expo-router'
 
 interface WorkoutItem {
 	id: string
 	title: string
 	icon: React.ReactElement
 	month: string
+	monthKey: string
 	startedAt: number
 	createdAt: string
 	type: string
 	showHeader?: boolean
 }
+
+type WorkoutHistoryRow =
+	| {
+			rowType: 'header'
+			id: string
+			month: string
+	  }
+	| ({
+			rowType: 'workout'
+	  } & WorkoutItem)
 
 const WorkoutHistory = () => {
 	const insets = useSafeAreaInsets()
@@ -42,11 +53,10 @@ const WorkoutHistory = () => {
 	const toast = useToast()
 	const { isConnected } = useInternetConnection()
 
-	const { from } = useLocalSearchParams<{ from?: string }>()
-
 	const { notSavedWorkouts, syncingIds, enqueueWorkoutSync, deleteWorkout } = useUnsavedWorkoutSync()
 
 	const [selectedType, setSelectedType] = useState<string>('')
+	const [deletedWorkoutIds, setDeletedWorkoutIds] = useState<string[]>([])
 
 	const limit = 15
 	const {
@@ -75,18 +85,21 @@ const WorkoutHistory = () => {
 	})
 
 	const data: WorkoutItem[] = history
+		.filter((item) => !deletedWorkoutIds.includes(item.id))
 		.map((item) => {
 			const date = new Date(item.startedAt || item.createdAt)
 			const month = format(date, 'LLLL', { locale: ru })
-			const title = format(item.createdAt, 'd MMMM, HH:mm', { locale: ru }) // format(item.createdAt, 'dd-MM-yy, HH:mm')
+			const monthKey = format(date, 'yyyy-MM')
+			const title = format(date, 'd MMMM, HH:mm', { locale: ru }) // format(item.createdAt, 'dd-MM-yy, HH:mm')
 			const typeData = WorkoutTypesData.find((t) => t.type === item.type)
 			const IconComponent = typeData?.IconComponent ?? PeopleRunningSvg
 
 			const distance = Number(item?.distanceM)
 			return {
 				id: item.id,
-				title: `${title} ${Number.isFinite(distance) && distance >= 0 ? `, ${formatDistance(distance)}` : ''}`,
+				title: `${title}${Number.isFinite(distance) && distance >= 0 ? `, ${formatDistance(distance)}` : ''}`,
 				month,
+				monthKey,
 				icon: <IconComponent width={26} height={26} />,
 				startedAt: date.getTime(),
 				createdAt: item.createdAt,
@@ -95,12 +108,19 @@ const WorkoutHistory = () => {
 		})
 		.sort((a, b) => b.startedAt - a.startedAt)
 
-	const itemsWithHeaders: WorkoutItem[] = []
-	let lastMonth = ''
+	const itemsWithHeaders: WorkoutHistoryRow[] = []
+	let lastMonthKey = ''
 	data.forEach((item) => {
-		const showHeader = item.month !== lastMonth
-		itemsWithHeaders.push({ ...item, showHeader })
-		lastMonth = item.month
+		if (item.monthKey !== lastMonthKey) {
+			itemsWithHeaders.push({
+				rowType: 'header',
+				id: `header-${item.monthKey}`,
+				month: item.month
+			})
+			lastMonthKey = item.monthKey
+		}
+
+		itemsWithHeaders.push({ ...item, rowType: 'workout' })
 	})
 
 	// Функция рендеринга индикатора загрузки
@@ -120,10 +140,13 @@ const WorkoutHistory = () => {
 		try {
 			await deleteWorkout(startedAt)
 			toast.success('Тренировка удалена')
-		} catch {
-			toast.error('Не удалось удалить тренировку')
-		}
+		} catch {}
 	}
+
+	const handleDeleteSavedWorkout = (id: string) => {
+		setDeletedWorkoutIds((prev) => (prev.includes(id) ? prev : [...prev, id]))
+	}
+
 	const handleSync = async (startedAt: number) => {
 		try {
 			await enqueueWorkoutSync(startedAt)
@@ -133,28 +156,16 @@ const WorkoutHistory = () => {
 			})
 
 			toast.success('Тренировка сохранена успешно')
-		} catch {
+		} catch (e) {
+			console.log(e)
 			toast.error('Не удалось сохранить тренировку')
-		}
-	}
-
-	const router = useRouter()
-
-	const goBack = () => {
-		switch (from) {
-			case 'viewWorkout':
-				return '/(tabs)/newTraining'
-			case 'profile':
-				return '/(tabs)/profile'
-			default:
-				return '/(tabs)/profile'
 		}
 	}
 
 	return (
 		<View style={{ flex: 1, paddingTop: insets.top }}>
 			<Container className="gap-[20px] mt-[20px] flex-1">
-				<HeaderBack returnCallback={() => router.replace(goBack())}>История тренировок</HeaderBack>
+				<HeaderBack>История тренировок</HeaderBack>
 				<Select
 					options={[
 						{
@@ -181,7 +192,6 @@ const WorkoutHistory = () => {
 							<TrainingsEmpty text="К сожалению, тренировок еще не существует" />
 						) : null
 					}
-					// refreshControl={<RefreshControl refreshing={refreshing} onRefresh={refresh} tintColor="#22CB5A" />}
 					refreshControl={
 						<RefreshControl
 							refreshing={isRefetching}
@@ -212,7 +222,10 @@ const WorkoutHistory = () => {
 							>
 								{notSavedWorkouts.map((notSavedWorkout) => {
 									const date = new Date(notSavedWorkout.startedAt)
-									const title = format(date, 'd MMMM, HH:mm', { locale: ru })
+									const titleDate = format(date, 'd MMMM, HH:mm', {
+										locale: ru
+									})
+									const title = `${titleDate}${Number.isFinite(notSavedWorkout.distanceMeters) && notSavedWorkout.distanceMeters >= 0 ? `, ${formatDistance(notSavedWorkout.distanceMeters)}` : ''}`
 									const typeData = workoutTypeMap[notSavedWorkout.type]
 									const IconComponent = typeData?.IconComponent ?? PeopleRunningSvg
 
@@ -244,21 +257,32 @@ const WorkoutHistory = () => {
 						</>
 					}
 					renderItem={({ item }) => (
-						<>
-							{item.showHeader && (
+						<View>
+							{item.rowType === 'header' ? (
 								<Text
 									className="text-white text-base mt-[15px] mb-[15px]"
 									style={{ fontFamily: fontFamily.bold }}
 								>
 									{item.month.charAt(0).toUpperCase() + item.month.slice(1)}
 								</Text>
+							) : (
+								<SwipeableProvider
+									variant="action"
+									actionWidth={64}
+									bottomSpacing={16}
+									cardBackgroundColor={Colors['black-0d']}
+									onActionPress={() => handleDeleteSavedWorkout(item.id)}
+								>
+									<WorkoutHistoryListItem
+										isHistoryListItem
+										isInternetConnected={isConnected}
+										{...item}
+									/>
+								</SwipeableProvider>
 							)}
-							<WorkoutHistoryListItem isHistoryListItem isInternetConnected={isConnected} {...item} />
-						</>
+						</View>
 					)}
-					ItemSeparatorComponent={() => <View style={{ height: 16 }} />}
 					keyExtractor={(item) => item.id}
-					// onEndReached={loadMore}
 					onEndReached={() => {
 						if (hasNextPage && !isFetchingNextPage) {
 							fetchNextPage()
