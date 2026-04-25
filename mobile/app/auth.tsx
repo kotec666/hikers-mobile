@@ -192,11 +192,13 @@ const AuthPage = () => {
 									)}
 								/>
 
-								<LinkCustom
-									href="/(password-restore)/firstStep"
-									text="Забыли пароль?"
-									className="text-blue-3d"
-								/>
+								{data.mode === AUTH_MODE.AUTH && (
+									<LinkCustom
+										href="/(password-restore)/firstStep"
+										text="Забыли пароль?"
+										className="text-blue-3d"
+									/>
+								)}
 							</View>
 						</View>
 					</TouchableWithoutFeedback>

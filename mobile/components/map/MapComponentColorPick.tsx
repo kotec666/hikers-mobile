@@ -51,7 +51,7 @@ const getSegmentColor = (isPaused: boolean, userColor: string) => {
 }
 
 const MapComponentColorPick = (props: IProps) => {
-	const activeColor = props.activeColor ?? 'rgba(0, 200, 100, 1)'
+	const activeColor = props.activeColor ?? 'rgb(0, 200, 100, 1)'
 	return (
 		<View
 			pointerEvents={props.interactiveDisabled ? 'none' : 'auto'}

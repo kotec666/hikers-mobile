@@ -9,7 +9,7 @@ interface IProps {
 }
 
 const UserWithCircleSvg = React.memo((props: IProps) => {
-	const { width = 100, height = 100, heading, color = 'rgba(0, 200, 100, 1)' } = props
+	const { width = 100, height = 100, heading, color = 'rgb(0, 200, 100)' } = props
 
 	const { centerX, centerY, viewBox } = React.useMemo(() => {
 		const cx = width / 2

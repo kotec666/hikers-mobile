@@ -16,7 +16,7 @@ import { StatusBar } from 'expo-status-bar'
 import { Colors } from '@/constants/Colors'
 import React, { useState } from 'react'
 import { fontFamily } from '@/constants/Fonts'
-import ColorPicker, { ColorFormatsObject, HueSlider, InputWidget, OpacitySlider, Panel1 } from 'reanimated-color-picker'
+import ColorPicker, { ColorFormatsObject, HueSlider, InputWidget, Panel1 } from 'reanimated-color-picker'
 import Animated, { useAnimatedStyle, useSharedValue } from 'react-native-reanimated'
 import { Button } from '@/components/ui/Button'
 import MapComponentColorPick from '@/components/map/MapComponentColorPick'
@@ -26,7 +26,7 @@ import { useRouter } from 'expo-router'
 import BlurProvider from '@/components/providers/BlurProvider'
 
 const { height } = Dimensions.get('screen')
-const MAP_HEIGHT = height / 3.83
+const MAP_HEIGHT = height / 3
 
 const Divider = () => {
 	return <View style={{ height: 1, backgroundColor: Colors['gray-3a'] }} />
@@ -63,8 +63,8 @@ const SettingsPickAColorPage = () => {
 		}
 	}
 
-	const [color, setColor] = useState<string>('rgba(0, 200, 100, 1)') // rgba(0,200,100,0.2)
-	const currentColor = useSharedValue('rgba(0, 200, 100, 1)')
+	const [color, setColor] = useState<string>('rgb(0, 200, 100)') // rgb(0,200,100) // alpha ,0.2
+	const currentColor = useSharedValue('rgb(0, 200, 100)')
 
 	const animatedTextStyle = useAnimatedStyle(() => {
 		return {
@@ -78,14 +78,14 @@ const SettingsPickAColorPage = () => {
 			currentColor.value = color
 			setColor(color)
 		} else {
-			setColor(color.rgba)
+			setColor(color.rgb)
 		}
 	}
 
 	// runs on the ui thread on color change
 	const onColorChange = (color: ColorFormatsObject) => {
 		'worklet'
-		currentColor.value = color.rgba
+		currentColor.value = color.rgb
 	}
 
 	const isFreeMode = false
@@ -152,11 +152,11 @@ const SettingsPickAColorPage = () => {
 										>
 											<Panel1 style={colorPickerStyle.panelStyle} />
 											<HueSlider style={colorPickerStyle.sliderStyle} />
-											<OpacitySlider style={colorPickerStyle.sliderStyle} />
 											<Divider />
 											<InputWidget
-												inputStyle={colorPickerStyle.inputStyle}
 												iconColor="#fff"
+												disableAlphaChannel
+												inputStyle={colorPickerStyle.inputStyle}
 												inputTitleStyle={colorPickerStyle.inputTitleStyle}
 											/>
 										</ColorPicker>

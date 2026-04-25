@@ -5,7 +5,6 @@ import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context'
 import { View, Text, Platform, Keyboard, KeyboardAvoidingView, TouchableWithoutFeedback } from 'react-native'
 import { Button } from '@/components/ui/Button'
 import { Input } from '@/components/ui/Input'
-import { CharacterCounter } from '@/components/ui/CharacterCounter'
 import Checkbox from '@/components/ui/Checkbox'
 import { fontFamily } from '@/constants/Fonts'
 
@@ -46,12 +45,6 @@ const ReportAProblem = () => {
 												Прикрепить данные о моём устройстве
 											</Text>
 										</View>
-										<CharacterCounter
-											valueLength={15}
-											maxLength={50}
-											// valueLength={currentLength}
-											// maxLength={maxLength}
-										/>
 									</View>
 								</View>
 							</View>

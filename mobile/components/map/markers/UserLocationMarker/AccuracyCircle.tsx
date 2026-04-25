@@ -27,7 +27,7 @@ const AccuracyCircle = forwardRef<AccuracyCircleHandle, IProps>((props, ref) => 
 		(hidden: boolean) => {
 			opacityRef.current = hidden ? 0 : 0.2
 
-			const baseColor = props.color ?? 'rgba(0, 200, 100, 0.2)'
+			const baseColor = props.color ?? 'rgb(0, 200, 100)'
 			const fillColor = setRgbaOpacity(baseColor, opacityRef.current)
 
 			const nativeProps = processColorsToNative({ fillColor }, ['fillColor']) as Partial<CircleNativeProps>
@@ -66,7 +66,7 @@ const AccuracyCircle = forwardRef<AccuracyCircleHandle, IProps>((props, ref) => 
 			ref={circleRef}
 			center={initialPoint}
 			radius={props.debugAccuracyM ?? radiusRef.current}
-			fillColor={setRgbaOpacity(props.color ?? 'rgba(0, 200, 100, 0.2)', 0.2)}
+			fillColor={setRgbaOpacity(props.color ?? 'rgb(0, 200, 100)', opacityRef.current)}
 			strokeColor="transparent"
 			strokeWidth={0}
 			zIndex={5}
