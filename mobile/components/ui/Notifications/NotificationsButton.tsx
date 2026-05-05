@@ -1,28 +1,14 @@
 import { View } from 'react-native'
-import NotificationsBellSvg from '@/components/svg/NotificationsBellSvg'
 import { Motion } from '@legendapp/motion'
-import { checkIsUnreadNotificationsExists } from '@/api/notifications'
-import { getFieldsErrors } from '@/helpers/getFieldsErrors'
 import { useSafeNavigation } from '@/hooks/useSafeNavigation'
-import { useQuery } from '@tanstack/react-query'
+import { useUnreadNotificationsQuery } from '@/queries/notifications'
+import NotificationsBellSvg from '@/components/svg/NotificationsBellSvg'
 
 export function NotificationsButton() {
 	const { push } = useSafeNavigation()
 
-	const { data } = useQuery({
-		queryKey: ['unread-exists'],
-		queryFn: async () => {
-			try {
-				const result = await checkIsUnreadNotificationsExists()
-				return result.exists
-			} catch (e) {
-				await getFieldsErrors(e)
-				throw e
-			}
-		}
-	})
-
-	const haveUnread = !!data
+	const { data } = useUnreadNotificationsQuery()
+	const haveUnread = data?.exists
 
 	const toNotificationsPage = () => {
 		return push('/notifications')

@@ -35,7 +35,7 @@ import CameraSvg from '@/components/svg/CameraSvg'
 import GallerySvg from '@/components/svg/GallerySvg'
 import ImagePickerButton from '@/components/ui/ImagePickerButton'
 import { useToast } from '@/hooks/useToast'
-import { createPost, editPostById, getPostById, getPostByTrainingId, IPost } from '@/api/posts'
+import { IPost } from '@/api/posts'
 import { CharacterCounter } from '@/components/ui/CharacterCounter'
 import { PATH_TO_IMAGE } from '@/constants/PATH_TO_FILES'
 import { TrainingType } from '@shared/enums'
@@ -44,7 +44,7 @@ import { formatDistance } from '@/helpers/distance'
 import { formatRelativeDate } from '@/helpers/formatRelativeDate'
 import { adaptLocations } from '@/helpers/adaptPointsToIWorkoutLocationStorageItem'
 import { validateFile } from '@/helpers/fileValidation'
-import { getExtendedDetails, IExtendedTrainingResponse, ITrainingMetrics } from '@/api/workout'
+import { ITrainingMetrics } from '@/api/workout'
 import { useAuthStore } from '@/store/authStore'
 import { formatTimeFromSecondsCompact } from '@/helpers/formatTime'
 import { mpsToKmph } from '@/helpers/mpsToKmph'
@@ -53,6 +53,8 @@ import BlurProvider from '@/components/providers/BlurProvider'
 import { useInternetConnection } from '@/hooks/useInternetConnection'
 import { saveSingleWorkout, WorkoutSource } from '@/helpers/saveUnsavedTraining'
 import { BackButton } from '@/components/ui/HeaderBack'
+import { useCreatePostMutation, usePostByTrainingQuery, usePostQuery, useUpdatePostMutation } from '@/queries/posts'
+import { useExtendedDetailsWorkoutQuery, useFinishWorkoutMutation } from '@/queries/workout'
 
 type Param = {
 	label: string
@@ -170,10 +172,13 @@ export default function ViewWorkout() {
 	const isFromHistory = mode === VIEWWORKOUT_MODE.FROM_HISTORY
 
 	const [existPost, setExistPost] = useState<IPost | null>(null)
-	const [extendedTraining, setExtendedTraining] = useState<IExtendedTrainingResponse | null>(null)
 
 	const { handleSubmit, control, setValue } = useForm<IPostFormState>()
 	const { ErrorMessages } = useErrorMessage()
+
+	const { mutateAsync: finishWorkout } = useFinishWorkoutMutation()
+	const { mutateAsync: createPostMutation, isPending: isPendingCreate } = useCreatePostMutation()
+	const { mutateAsync: updatePostMutation, isPending: isPendingUpdate } = useUpdatePostMutation()
 
 	const results = useWorkoutResultsAfterFinishStore((state) => state)
 	const pointsRef = useRef(results.points || [])
@@ -186,61 +191,52 @@ export default function ViewWorkout() {
 	const [state, setState] = useState<{
 		switchChartView: 'map' | 'chart'
 		editPost: null | IPost
-		isLoading: boolean
 		errors?: { [key: string]: string | boolean | undefined }
 	}>({
 		switchChartView: 'map',
 		editPost: null,
-		isLoading: false,
 		errors: {} as { [key: string]: string | boolean | undefined }
 	})
 
+	const { data: editPost } = usePostQuery(editPostId)
+
 	useEffect(() => {
-		;(async () => {
-			try {
-				if (isEdit && editPostId) {
-					const postData = await getPostById(editPostId)
-					setExistPost(postData)
-					setExistingImages(postData.fileNames)
-					setValue('title', postData.title)
-					setValue('description', postData.description || '')
-				}
-			} catch {
-				toast.error('Ошибка при загрузке поста')
-				router.back()
-			}
-			if (isFromHistory && historyTrainingId) {
-				let trainingData: IExtendedTrainingResponse | null = null
-				let postData: IPost | null = null
-				try {
-					trainingData = await getExtendedDetails(historyTrainingId)
-					setExtendedTraining(trainingData)
-				} catch {
-					toast.error('Ошибка при загрузке тренировки')
-					router.back()
-				}
+		if (editPost) {
+			// setIsTrainingAuthor(true)
+			setExistPost(editPost)
+			setExistingImages(editPost.fileNames)
+			setValue('title', editPost.title)
+			setValue('description', editPost.description || '')
+		}
+	}, [editPost, setValue])
 
-				if (trainingData?.creatorId === user?.id) {
-					setIsTrainingAuthor(true)
-					try {
-						postData = await getPostByTrainingId(historyTrainingId)
-					} catch (e) {
-						console.log(e)
-						console.log(await e.response.json())
-					}
-				} else {
-					setIsTrainingAuthor(false)
-				}
+	const { data: postFromTraining } = usePostByTrainingQuery(historyTrainingId) // id тренировки может существовать, но поста может не существовать
 
-				if (postData !== null) {
-					setExistPost(postData)
-					setExistingImages(postData.fileNames)
-					setValue('title', postData.title)
-					setValue('description', postData.description || '')
-				}
+	useEffect(() => {
+		if (postFromTraining) {
+			if (postFromTraining?.training?.creatorId === user?.id) {
+				setIsTrainingAuthor(true)
+			} else {
+				setIsTrainingAuthor(false)
 			}
-		})()
-	}, [editPostId, historyTrainingId, isEdit, isFromHistory, router, setValue, toast, user?.id])
+			setExistPost(postFromTraining)
+			setExistingImages(postFromTraining.fileNames)
+			setValue('title', postFromTraining.title)
+			setValue('description', postFromTraining.description || '')
+		}
+	}, [postFromTraining, setValue, user?.id])
+
+	const { data: extendedTrainingDetails } = useExtendedDetailsWorkoutQuery(historyTrainingId)
+
+	useEffect(() => {
+		if (extendedTrainingDetails) {
+			if (extendedTrainingDetails?.creatorId === user?.id) {
+				setIsTrainingAuthor(true)
+			} else {
+				setIsTrainingAuthor(false)
+			}
+		}
+	}, [extendedTrainingDetails, setValue, user?.id])
 
 	const handlePostImages = (postImages: string[], formData: FormData) => {
 		if (postImages.length) {
@@ -273,7 +269,7 @@ export default function ViewWorkout() {
 	const saveWorkoutBeforeSubmit = async (): Promise<string | null> => {
 		// Если появился интернет
 		try {
-			return await saveSingleWorkout(WorkoutSource.UNSAVED, Number(unsavedStartedAt), user?.id)
+			return await saveSingleWorkout(WorkoutSource.UNSAVED, Number(unsavedStartedAt), finishWorkout, user?.id)
 		} catch (e) {
 			console.error(e)
 			toast.error('Ошибка при сохранении тренировки, её можно будет сохранить позже')
@@ -307,22 +303,22 @@ export default function ViewWorkout() {
 
 			handlePostImages(postImages, formData)
 			if (isView) {
-				await createPost(formData)
+				await createPostMutation(formData)
 			}
 			if (isEdit && editPostId) {
 				if (deletedImages.length) {
 					formData.append('deletedFilenames', deletedImages.join(','))
 				}
-				await editPostById(editPostId, formData)
+				await updatePostMutation({ postId: editPostId, data: formData })
 			}
 			if (isFromHistory && !existPost) {
-				await createPost(formData)
+				await createPostMutation(formData)
 			}
 			if (isFromHistory && existPost) {
 				if (deletedImages.length) {
 					formData.append('deletedFilenames', deletedImages.join(','))
 				}
-				await editPostById(existPost.id, formData)
+				await updatePostMutation({ postId: existPost.id, data: formData })
 			}
 			if (isView) {
 				toast.success('Пост опубликован')
@@ -396,7 +392,7 @@ export default function ViewWorkout() {
 		setExistingImages((prev) => prev.filter((f) => f !== fileName))
 	}
 
-	const myParticipant = extendedTraining?.participants.find((p) => p.user.id === user?.id)
+	const myParticipant = extendedTrainingDetails?.participants.find((p) => p.user.id === user?.id)
 	const creatorParticipant = existPost?.training.participants.find(
 		(participant) => participant.user.id === existPost?.userCreator.id
 	)
@@ -413,13 +409,17 @@ export default function ViewWorkout() {
 
 	const dateText = isView
 		? `Сегодня, ${results.startedAt ? format(results.startedAt, 'HH:mm') : ''} - ${format(Date.now(), 'HH:mm')}`
-		: formatRelativeDate(isEdit ? existPost?.createdAt : extendedTraining?.createdAt)
+		: formatRelativeDate(isEdit ? existPost?.createdAt : extendedTrainingDetails?.createdAt)
 
 	const mapLocations = isView ? pointsRef : { current: isEdit ? adaptedLocations : adaptedLocationsFromHistory }
 	const chartPoints = isView ? results.points : isEdit ? adaptedLocations : adaptedLocationsFromHistory
 	const canPublish = isView || isEdit || (isFromHistory && isTrainingAuthor)
 	const canManageExistingImages = isEdit || Boolean(isFromHistory && isTrainingAuthor && existPost)
-	const currentWorkoutType = isView ? results.type?.type : isEdit ? existPost?.training?.type : extendedTraining?.type
+	const currentWorkoutType = isView
+		? results.type?.type
+		: isEdit
+			? existPost?.training?.type
+			: extendedTrainingDetails?.type
 	const currentWorkout = isView ? results.type : currentWorkoutType ? WorkoutTypesMap[currentWorkoutType] : null
 	const CurrentWorkoutIcon = currentWorkout?.IconComponent as React.ComponentType<any> | undefined
 	const currentWorkoutImage = getWorkoutResultImage(currentWorkout?.type)
@@ -603,7 +603,9 @@ export default function ViewWorkout() {
 								</View>
 								{state.switchChartView === 'map' && (
 									<MapComponent
+										deferInitialRouteRender
 										minMapHeight={320}
+										maxContainerHeight={320}
 										rounded={25}
 										needFinishMarker
 										initialLocations={mapLocations}
@@ -636,7 +638,6 @@ export default function ViewWorkout() {
 													id={user.id}
 													username={user.username}
 													name={user.name}
-													// avatar={item.user.avatarFilename ? `${PATH_TO_IMAGE}${item.user.avatarFilename}` : null}
 													avatar={user.avatar}
 													icon={{
 														iconSvg: <EyeSvg color={Colors['green-main']} opened={true} />,
@@ -733,6 +734,7 @@ export default function ViewWorkout() {
 											</View>
 											<View className="flex-row flex-wrap -mx-[7.5px] gap-y-[15px] mt-[10px]">
 												{canManageExistingImages &&
+													Boolean(existingImages.length) &&
 													existingImages.map((fileName) => (
 														<View key={fileName} className="w-1/2 px-[7.5px] relative">
 															<Image
@@ -785,7 +787,7 @@ export default function ViewWorkout() {
 												<Button
 													variant="green"
 													onPress={handleSubmit(onSubmit)}
-													isLoading={state.isLoading}
+													isLoading={isPendingCreate || isPendingUpdate}
 												>
 													{getSubmitButtonText()}
 												</Button>

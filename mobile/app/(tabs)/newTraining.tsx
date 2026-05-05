@@ -58,9 +58,10 @@ import {
 } from '@/hooks/track-location/liveActivity'
 import type { PendingWidgetAction } from '@/modules/expo-live-activity'
 import { randomHexColor } from '@/helpers/colors/randomHexColor'
+import { useFinishWorkoutMutation } from '@/queries/workout'
 // Debugging
 TaskManager.getRegisteredTasksAsync().then((tasks) => {
-	console.log(tasks)
+	console.log('getRegisteredTasksAsync', tasks)
 })
 
 // Declare a variable to store the resolver function
@@ -92,6 +93,7 @@ export default function NewTraining() {
 	const activeLocationSubscriptionRef = useRef<null | Location.LocationSubscription>(null)
 	const isScreenFocusedRef = useRef(false)
 	const isInternetConnectedRef = useInternetConnectionRef()
+	const { mutateAsync: finishWorkout } = useFinishWorkoutMutation()
 
 	const [chosenWorkout, setChosenWorkout] = useState<IWorkoutModeElement>(WorkoutTypesData[0])
 	const [isEndTrainingModalOpen, setIsEndTrainingModalOpen] = useState(false)
@@ -590,12 +592,12 @@ export default function NewTraining() {
 
 		for (const w of createdWorkouts) {
 			try {
-				await saveSingleWorkout(WorkoutSource.UNSAVED, w.startedAt, user?.id)
+				await saveSingleWorkout(WorkoutSource.UNSAVED, w.startedAt, finishWorkout, user?.id)
 			} catch (e) {
 				console.error('[sync-before-finish] failed:', e)
 			}
 		}
-	}, [user?.id])
+	}, [user?.id, finishWorkout])
 
 	const handleClickEndWorkout = useCallback(async () => {
 		try {
@@ -635,7 +637,12 @@ export default function NewTraining() {
 				// 1. сначала догружаем старые
 				await saveUnsavedWorkoutsBeforeFinish()
 				// 2. затем текущую активную
-				const newTrainingId = await saveSingleWorkout(WorkoutSource.ACTIVE, meta.startedAt, user?.id)
+				const newTrainingId = await saveSingleWorkout(
+					WorkoutSource.ACTIVE,
+					meta.startedAt,
+					finishWorkout,
+					user?.id
+				)
 				setTrainingId(newTrainingId)
 			} else {
 				toast.info('Нет доступа к интернету, тренировку можно будет сохранить позже')
@@ -649,6 +656,7 @@ export default function NewTraining() {
 			await getFieldsErrors(e)
 		}
 	}, [
+		finishWorkout,
 		setTrainingId,
 		calculateMetricsWhenFinished,
 		isInternetConnectedRef,

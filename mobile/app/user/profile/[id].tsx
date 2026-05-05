@@ -9,23 +9,27 @@ import PostListItem from '@/components/ui/Post/PostListItem'
 import { SafeAreaProvider, useSafeAreaInsets } from 'react-native-safe-area-context'
 import { useLocalSearchParams, useRouter } from 'expo-router'
 import { PATH_TO_IMAGE } from '@/constants/PATH_TO_FILES'
-import { getUserProfileData, INotMyProfile } from '@/api/profile'
 import { getFieldsErrors } from '@/helpers/getFieldsErrors'
-import { subscribeToUser, unsubscribeFromUser } from '@/api/subscribers'
 import { useToast } from '@/hooks/useToast'
 import Modal from '@/components/ui/Modal/Modal'
-import { acceptFriendRequest, addAsFriend, deleteFriendById, revokeFriendInviteByUserId } from '@/api/friends'
 import { FriendStatus } from '@shared/enums'
 import { AnimatedProfilePicture } from '@/components/ui/Profile/AnimatedProfilePicture'
 import { LegendList, LegendListRef } from '@legendapp/list'
-import { getPostsByUserId, IPost } from '@/api/posts'
+import { IPost } from '@/api/posts'
 import { Colors } from '@/constants/Colors'
 import MapComponent from '@/components/map/MapComponent'
 import { adaptLocations } from '@/helpers/adaptPointsToIWorkoutLocationStorageItem'
-import { useOptimisticToggle } from '@/hooks/useOptimisticToggle'
-import { useInfiniteQuery, useQueryClient, InfiniteData, useQuery } from '@tanstack/react-query'
 import BlurProvider from '@/components/providers/BlurProvider'
 import HeaderBack from '@/components/ui/HeaderBack'
+import { useUserProfileQuery } from '@/queries/user-profile'
+import { useNotMyProfilePostsQuery } from '@/queries/posts'
+import {
+	useAcceptFriendRequestMutation,
+	useRemoveFriendMutation,
+	useRevokeRequestMutation,
+	useSendFriendRequestMutation
+} from '@/queries/friends'
+import { useToggleSubscribeMutation } from '@/queries/subscriptions'
 
 /**
  *
@@ -44,54 +48,10 @@ const UserProfilePage = () => {
 	const insets = useSafeAreaInsets()
 	const toast = useToast()
 	const router = useRouter()
-	const queryClient = useQueryClient()
 	const { id } = useLocalSearchParams<{ id: string }>()
-	const friendActionLockRef = useRef(false)
 	const legendListRef = useRef<LegendListRef>(null)
 
 	const [isDeleteModalOpened, setIsDeleteModalOpened] = useState<boolean>(false)
-	const [isFriendLoading, setIsFriendLoading] = useState(false)
-
-	const postsLimit = 5
-	const {
-		data: posts = [],
-		fetchNextPage: fetchNextPostsPage,
-		hasNextPage: hasNextPostsPage,
-		isFetchingNextPage: isFetchingPostsNextPage,
-		refetch: postsRefetch,
-		isRefetching: postsIsRefetching
-		// isFetching: isPostsFetching для renderEmpty
-	} = useInfiniteQuery<IPost[], Error, IPost[], ['posts-profile', string], number>({
-		queryKey: ['posts-profile', id],
-		queryFn: ({ pageParam }) =>
-			getPostsByUserId(id, {
-				page: pageParam,
-				limit: postsLimit
-			}),
-		initialPageParam: 1,
-		getNextPageParam: (lastPage, pages) => {
-			if (lastPage.length < postsLimit) return undefined
-			return pages.length + 1
-		},
-
-		select: (data) => data.pages.flat()
-	})
-
-	const updatePostsSubscription = useCallback(
-		(authorId: string, isSubscribed: boolean) => {
-			queryClient.setQueryData<InfiniteData<IPost[]>>(['posts-profile', id], (old) => {
-				if (!old) return old
-
-				return {
-					...old,
-					pages: old.pages.map((page) =>
-						page.map((post) => (post.userCreator.id === authorId ? { ...post, isSubscribed } : post))
-					)
-				}
-			})
-		},
-		[id, queryClient]
-	)
 
 	const {
 		data: profileData,
@@ -99,11 +59,27 @@ const UserProfilePage = () => {
 		isError,
 		isFetching: isProfileFetching,
 		refetch: refetchProfile
-	} = useQuery<INotMyProfile>({
-		queryKey: ['user-profile', id],
-		queryFn: () => getUserProfileData(id),
-		enabled: !!id
-	})
+	} = useUserProfileQuery(id)
+
+	const { mutateAsync: acceptFriend, isPending: isAcceptPending } = useAcceptFriendRequestMutation()
+	const { mutateAsync: removeFriend, isPending: isRemoveFriendPending } = useRemoveFriendMutation()
+	const { mutateAsync: sendRequest, isPending: isSendRequestPending } = useSendFriendRequestMutation()
+	const { mutateAsync: revokeRequest, isPending: isRevokeRequestPending } = useRevokeRequestMutation()
+
+	// Общее состояние загрузки для действий с друзьями
+	const isFriendActionPending =
+		isAcceptPending || isRemoveFriendPending || isSendRequestPending || isRevokeRequestPending
+
+	const {
+		data: posts = [],
+		fetchNextPage: fetchNextPostsPage,
+		hasNextPage: hasNextPostsPage,
+		isFetchingNextPage: isFetchingPostsNextPage,
+		refetch: postsRefetch,
+		isRefetching: postsIsRefetching
+	} = useNotMyProfilePostsQuery(id)
+
+	const { mutateAsync: toggleSubscribe, isPending: isPendingSubscribe } = useToggleSubscribeMutation()
 
 	useEffect(() => {
 		if (!isError || !error) return
@@ -125,105 +101,14 @@ const UserProfilePage = () => {
 		await Promise.all([refetchProfile(), postsRefetch()])
 	}, [refetchProfile, postsRefetch])
 
-	const {
-		value: isSubscribed,
-		toggle: toggleSubscribe,
-		isLoading: isSubscribeLoading
-	} = useOptimisticToggle({
-		initialValue: profileData?.isSubscribed ?? false,
-		onEnable: async () => {
-			if (!profileData?.user?.id) throw new Error('Пользователь не выбран')
-			await subscribeToUser(profileData.user.id)
-			await queryClient.invalidateQueries({ queryKey: ['my-profile'] })
-			await queryClient.invalidateQueries({ queryKey: ['subscriptionsList'] })
-		},
-		onDisable: async () => {
-			if (!profileData?.user?.id) throw new Error('Пользователь не выбран')
-			await unsubscribeFromUser(profileData.user.id)
-			await queryClient.invalidateQueries({ queryKey: ['my-profile'] })
-			await queryClient.invalidateQueries({ queryKey: ['subscriptionsList'] })
-		},
-		onError: (e) => {
-			console.log(e)
-			toast.error('Ошибка при подписке/отписке')
-		},
-		onSuccess: (val) => {
-			updateProfileData((prev) => ({
-				isSubscribed: val,
-				subscribers: (prev.subscribers ?? 0) + (val ? 1 : -1)
-			}))
-
-			if (profileData?.user?.id) {
-				updatePostsSubscription(profileData.user.id, val)
-			}
-		}
-	})
-
-	const updateProfileData = useCallback(
-		(updater: (prev: INotMyProfile) => Partial<INotMyProfile>) => {
-			queryClient.setQueryData<INotMyProfile>(['user-profile', id], (old) => {
-				if (!old) return old
-
-				return {
-					...old,
-					...updater(old)
-				}
-			})
-		},
-		[id, queryClient]
-	)
-
-	const subUnsubCallback = useCallback(
-		(isSubscribed: boolean, authorId?: string) => {
-			if (isSubscribed) {
-				updateProfileData((prev) => ({
-					isSubscribed: true,
-					subscribers: (prev.subscribers ?? 0) + 1
-				}))
-			} else {
-				updateProfileData((prev) => ({
-					isSubscribed: false,
-					subscribers: (prev.subscribers ?? 0) - 1
-				}))
-			}
-
-			if (authorId) {
-				updatePostsSubscription(authorId, isSubscribed)
-			}
-		},
-		[updatePostsSubscription, updateProfileData]
-	)
-
-	// Функция для инвалидации запросов на друзей
-	const invalidateFriendQueries = useCallback(async () => {
-		await queryClient.invalidateQueries({ queryKey: ['pendingInvites'] })
-		// Инвалидирование других связанных запросов
-		await queryClient.invalidateQueries({ queryKey: ['friendsList'] })
-	}, [queryClient])
-
 	const handleDeleteFromFriends = async () => {
-		if (isFriendLoading) return
-		friendActionLockRef.current = true
-		setIsFriendLoading(true)
 		try {
-			await deleteFriendById(id)
-			const friendsCount =
-				typeof profileData?.friends === 'number' ? profileData.friends - 1 : profileData?.friends
-
-			updateProfileData(() => ({
-				isFriend: FriendStatus.FALSE,
-				friends: friendsCount
-			}))
-			// Инвалидируем запросы на друзей
-			await invalidateFriendQueries()
-			await queryClient.invalidateQueries({ queryKey: ['my-profile'] })
-			toast.success('Пользователь удалён из списка друзей')
+			await removeFriend(id)
+			toast.success('Пользователь удалён из друзей')
 		} catch (e: unknown) {
 			toast.error('Произошла ошибка, повторите попытку позже')
 			await getFieldsErrors(e)
 		} finally {
-			friendActionLockRef.current = false
-			setIsFriendLoading(false)
 			setIsDeleteModalOpened(false)
 		}
 	}
@@ -232,135 +117,114 @@ const UserProfilePage = () => {
 		setIsDeleteModalOpened(false)
 	}
 
-	const handleOpenDeleteModal = () => {
-		setIsDeleteModalOpened(true)
-	}
-
-	const sendFriendRequest = async () => {
-		if (isFriendLoading) return
-		friendActionLockRef.current = true
-		setIsFriendLoading(true)
+	const handleSendFriendRequest = async () => {
 		try {
-			await addAsFriend(id)
-			updateProfileData(() => ({
-				isFriend: FriendStatus.INVITED
-			}))
+			await sendRequest(id)
 
-			// Инвалидируем запросы на друзей
-			await invalidateFriendQueries()
 			toast.success('Заявка в друзья отправлена')
 		} catch (e: unknown) {
 			toast.error('Произошла ошибка, повторите попытку позже')
 			await getFieldsErrors(e)
-		} finally {
-			friendActionLockRef.current = false
-			setIsFriendLoading(false)
 		}
 	}
 
-	const revokeFriendRequest = async () => {
-		if (isFriendLoading) return
-		friendActionLockRef.current = true
-		setIsFriendLoading(true)
+	const handleRevokeFriendRequest = async () => {
 		try {
-			await revokeFriendInviteByUserId(id)
-			updateProfileData(() => ({
-				isFriend: FriendStatus.FALSE
-			}))
-			// Инвалидируем запросы на друзей
-			await invalidateFriendQueries()
+			await revokeRequest(id)
 			toast.success('Заявка в друзья отозвана')
 		} catch (e: unknown) {
 			toast.error('Произошла ошибка, повторите попытку позже')
 			await getFieldsErrors(e)
-		} finally {
-			friendActionLockRef.current = false
-			setIsFriendLoading(false)
 		}
 	}
 
 	const handleAcceptFriendRequest = async () => {
-		if (isFriendLoading) return
-		friendActionLockRef.current = true
-		setIsFriendLoading(true)
 		try {
-			await acceptFriendRequest(id)
-			updateProfileData(() => ({
-				isFriend: FriendStatus.TRUE
-			}))
-			// Инвалидируем запросы на друзей
-			await invalidateFriendQueries()
-			await queryClient.invalidateQueries({ queryKey: ['my-profile'] })
+			await acceptFriend(id)
 			toast.success('Заявка в друзья принята')
 		} catch (e: unknown) {
 			toast.error('Произошла ошибка, повторите попытку позже')
 			await getFieldsErrors(e)
-		} finally {
-			friendActionLockRef.current = false
-			setIsFriendLoading(false)
 		}
 	}
 
-	const handleClickDeleteAddFriend = async () => {
-		if (isFriendLoading || friendActionLockRef.current) return
+	const handleFriendAction = async () => {
+		if (isFriendActionPending) return
 		switch (profileData?.isFriend) {
 			case FriendStatus.TRUE:
-				return handleOpenDeleteModal()
+				setIsDeleteModalOpened(true)
+				break
 			case FriendStatus.FALSE:
-				return sendFriendRequest()
+				await handleSendFriendRequest()
+				break
 			case FriendStatus.INVITED:
-				return revokeFriendRequest()
+				await handleRevokeFriendRequest()
+				break
 			case FriendStatus.SENT:
-				return handleAcceptFriendRequest()
+				await handleAcceptFriendRequest()
+				break
+			default:
+				break
 		}
 	}
 
-	const renderPostItem = useCallback(
-		({ item }: { item: IPost }) => {
-			return (
-				<PostListItem
-					key={item.id}
-					{...item}
-					postId={item.id}
-					authorId={item.userCreator?.id || ''}
-					authorName={item.userCreator?.name || ''}
-					avatar={item.userCreator.avatarFilename}
-					createdAt={item.createdAt}
-					workoutType={item.training.type}
-					title={item.title}
-					description={item.description}
-					images={item.fileNames}
-					metrics={
-						item.training.participants.find((participant) => participant.user.id === item.userCreator.id)
-							?.metrics
-					}
-					subscribeData={{
-						authorId: item.userCreator.id,
-						isSubscribed: item.isSubscribed
-					}}
-					likeData={{
-						isLiked: item.isLiked,
-						likesCount: item.likesCount,
-						postId: item.id
-					}}
-					participants={item.training.participants}
-					onToggleSubscribeCallback={subUnsubCallback}
-					mapComponent={
-						<MapComponent
-							rounded={25}
-							interactiveDisabled
-							needFinishMarker
-							initialLocations={{ current: adaptLocations(item.training.participants[0].route.points) }}
-						/>
-					}
-				/>
-			)
+	const handleSubscribe = useCallback(
+		async (userId: string, isSubscribed: boolean) => {
+			await toggleSubscribe({
+				userId,
+				isSubscribed
+			})
 		},
-		[subUnsubCallback]
+		[toggleSubscribe]
 	)
 
+	const renderPostItem = useCallback(({ item }: { item: IPost }) => {
+		return (
+			<PostListItem
+				key={item.id}
+				{...item}
+				postId={item.id}
+				authorId={item.userCreator?.id || ''}
+				authorName={item.userCreator?.name || ''}
+				avatar={item.userCreator.avatarFilename}
+				createdAt={item.createdAt}
+				workoutType={item.training.type}
+				title={item.title}
+				description={item.description}
+				images={item.fileNames}
+				metrics={
+					item.training.participants.find((participant) => participant.user.id === item.userCreator.id)
+						?.metrics
+				}
+				subscribeData={{
+					authorId: item.userCreator.id,
+					isSubscribed: item.isSubscribed
+				}}
+				isLiked={item.isLiked}
+				likesCount={item.likesCount}
+				participants={item.training.participants}
+				mapComponent={
+					<MapComponent
+						rounded={25}
+						interactiveDisabled
+						needFinishMarker
+						initialLocations={{ current: adaptLocations(item.training.participants[0].route.points) }}
+					/>
+				}
+			/>
+		)
+	}, [])
+
+	// Определяем вариант кнопки
+	const getButtonVariant = () => {
+		const isFriend = profileData?.isFriend
+		if (isFriend === FriendStatus.TRUE || isFriend === FriendStatus.INVITED) {
+			return 'black'
+		}
+		return 'white'
+	}
+
 	const renderFooter = useCallback(() => {
-		//if (!loadingPosts) return null
 		if (!isFetchingPostsNextPage) return null
 		return (
 			<View style={{ padding: 20 }}>
@@ -378,7 +242,6 @@ const UserProfilePage = () => {
 						data={posts}
 						renderItem={renderPostItem}
 						keyExtractor={(item) => item.id}
-						// onEndReached={loadMore}
 						onEndReached={() => {
 							if (hasNextPostsPage && !isFetchingPostsNextPage) {
 								fetchNextPostsPage()
@@ -410,6 +273,7 @@ const UserProfilePage = () => {
 												onPress={handleDeleteFromFriends}
 												variant="white"
 												buttonContainerClassName="flex-1"
+												isLoading={isRemoveFriendPending}
 											>
 												Да
 											</Button>
@@ -482,29 +346,26 @@ const UserProfilePage = () => {
 											</View>
 											<View className="flex-row gap-[10px]">
 												<Button
-													variant={isSubscribed ? 'black' : 'white'}
+													variant={profileData?.isSubscribed ? 'black' : 'white'}
 													buttonContainerClassName="flex-1"
-													onPress={toggleSubscribe}
-													disabled={isSubscribeLoading}
+													onPress={async () => {
+														if (!profileData?.user?.id) return
+														await handleSubscribe(
+															profileData.user.id,
+															profileData.isSubscribed
+														)
+													}}
+													disabled={isPendingSubscribe}
 												>
-													{isSubscribed ? 'Отписаться' : 'Подписаться'}
+													{profileData?.isSubscribed ? 'Отписаться' : 'Подписаться'}
 												</Button>
 												<Button
-													variant={
-														profileData?.isFriend === FriendStatus.TRUE ||
-														profileData?.isFriend === FriendStatus.INVITED
-															? 'black'
-															: 'white'
-													}
+													variant={getButtonVariant()}
 													buttonContainerClassName="flex-1"
-													onPress={handleClickDeleteAddFriend}
-													disabled={isFriendLoading}
+													onPress={handleFriendAction}
+													isLoading={isFriendActionPending}
 												>
-													{isFriendLoading ? (
-														<ActivityIndicator size="small" color={Colors['green-main']} />
-													) : (
-														profileData && friendStatusLabel[profileData?.isFriend]
-													)}
+													{profileData && friendStatusLabel[profileData?.isFriend]}
 												</Button>
 											</View>
 											<RedirectAchievementsInfo

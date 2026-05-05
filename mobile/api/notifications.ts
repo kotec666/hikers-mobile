@@ -15,6 +15,10 @@ export interface INotification {
 	readedAt: null | string
 }
 
+export interface INotificationUnread {
+	exists: boolean
+}
+
 // Получение списка уведомлений
 export const getNotificationsList = async (data: {
 	page: number
@@ -43,6 +47,6 @@ export const markNotificationsAsReadById = async (data: { ids: string[] }): Prom
 }
 
 // Проверка есть ли непрочитанные уведомления
-export const checkIsUnreadNotificationsExists = async (): Promise<{ exists: boolean }> => {
+export const checkIsUnreadNotificationsExists = async (): Promise<INotificationUnread> => {
 	return (await fetcher.get('notifications/have-unread')).json()
 }

@@ -5,21 +5,14 @@ import HeaderBack from '@/components/ui/HeaderBack'
 import React, { useCallback, useEffect, useRef, useState } from 'react'
 import AchievementsListItem from '@/components/ui/Achievements/AchievementsListItem'
 import { fontFamily } from '@/constants/Fonts'
-import { getAchievements, IAchievement, IAchievementsResponse } from '@/api/achievements'
 import BottomSheet from '@/components/ui/BottomSheet/BottomSheet'
 import { BottomSheetHandle } from '@/components/ui/BottomSheet/types'
 import AchievementDetailed from '@/components/BottomSheets/AchievementDetailed'
 import BlurProvider from '@/components/providers/BlurProvider'
 import { useLocalSearchParams } from 'expo-router'
-import { useQuery } from '@tanstack/react-query'
+import { useAchievementsQuery } from '@/queries/achievements'
 
 const { height: screenHeight } = Dimensions.get('screen')
-
-type AchievementsVM = {
-	claimed: IAchievement[]
-	unclaimed: IAchievement[]
-	all: IAchievement[]
-}
 
 const AchievementsPage = () => {
 	const insets = useSafeAreaInsets()
@@ -28,20 +21,7 @@ const AchievementsPage = () => {
 	const bottomSheetRef = useRef<BottomSheetHandle>(null)
 	const [bottomSheetContent, setBottomSheetContent] = useState<React.ReactNode>(null)
 
-	const { data = { claimed: [], unclaimed: [], all: [] }, isLoading } = useQuery<
-		IAchievementsResponse,
-		unknown,
-		AchievementsVM
-	>({
-		queryKey: ['my-achievements'],
-		queryFn: getAchievements,
-		select: (data) => ({
-			claimed: data.claimed,
-			unclaimed: data.unclaimed,
-			all: [...data.claimed, ...data.unclaimed]
-		})
-	})
-
+	const { data = { claimed: [], unclaimed: [], all: [] }, isLoading } = useAchievementsQuery()
 	const claimedAchievements = data.claimed
 	const unClaimedAchievements = data.unclaimed
 	const allAchievements = data.all

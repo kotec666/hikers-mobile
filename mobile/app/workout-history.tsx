@@ -1,4 +1,4 @@
-import React, { useCallback, useMemo, useState } from 'react'
+import React, { useCallback, useMemo, useRef, useState } from 'react'
 import { View, Text, RefreshControl, ActivityIndicator } from 'react-native'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
 import HeaderBack from '@/components/ui/HeaderBack'
@@ -13,17 +13,15 @@ import { ru } from 'date-fns/locale'
 import SaveUnsavedTrainingSvg from '@/components/svg/SaveUnsavedTrainingSvg'
 import DeleteTrashSvg from '@/components/svg/DeleteTrashSvg'
 import SwipeableProvider from '@/components/providers/SwipeableProvider'
-import { getMyHistoryTrainings, ITrainingHistoryItem } from '@/api/workout'
-import { LegendList } from '@legendapp/list'
+import { LegendList, LegendListRef } from '@legendapp/list'
 import { Colors } from '@/constants/Colors'
 import CheckMarkIconSvg from '@/components/svg/CheckMarkIconSvg'
 import TrainingsEmpty from '@/components/ui/Post/TrainingsEmpty'
 import { useUnsavedWorkoutSync } from '@/hooks/useUnsavedWorkoutSync'
 import { cn } from '@/helpers/cn'
-import { useInfiniteQuery, useQueryClient } from '@tanstack/react-query'
 import { useToast } from '@/hooks/useToast'
 import { formatDistance } from '@/helpers/distance'
-import { useInternetConnection } from '@/hooks/useInternetConnection'
+import { useWorkoutsQuery } from '@/queries/workout'
 
 interface WorkoutItem {
 	id: string
@@ -49,16 +47,14 @@ type WorkoutHistoryRow =
 
 const WorkoutHistory = () => {
 	const insets = useSafeAreaInsets()
-	const queryClient = useQueryClient()
 	const toast = useToast()
-	const { isConnected } = useInternetConnection()
+	const listRef = useRef<LegendListRef>(null)
 
 	const { notSavedWorkouts, syncingIds, enqueueWorkoutSync, deleteWorkout } = useUnsavedWorkoutSync()
 
 	const [selectedType, setSelectedType] = useState<string>('')
 	const [deletedWorkoutIds, setDeletedWorkoutIds] = useState<string[]>([])
 
-	const limit = 15
 	const {
 		data: history = [],
 		isRefetching,
@@ -66,23 +62,7 @@ const WorkoutHistory = () => {
 		refetch,
 		hasNextPage,
 		isFetchingNextPage
-	} = useInfiniteQuery<ITrainingHistoryItem[], Error, ITrainingHistoryItem[], ['workout-history', string], number>({
-		queryKey: ['workout-history', selectedType],
-		queryFn: ({ pageParam = 1 }) =>
-			getMyHistoryTrainings({
-				page: pageParam,
-				limit,
-				finished: true,
-				types: selectedType
-			}),
-		initialPageParam: 1,
-		getNextPageParam: (lastPage, allPages) => {
-			if (lastPage.length < limit) return undefined
-			return allPages.length + 1
-		},
-
-		select: (data) => data.pages.flat()
-	})
+	} = useWorkoutsQuery(selectedType)
 
 	const data: WorkoutItem[] = history
 		.filter((item) => !deletedWorkoutIds.includes(item.id))
@@ -125,14 +105,13 @@ const WorkoutHistory = () => {
 
 	// Функция рендеринга индикатора загрузки
 	const renderFooter = useCallback(() => {
-		//if (!loading) return null
 		if (!isFetchingNextPage) return null
 		return (
 			<View style={{ padding: 20 }}>
 				<ActivityIndicator size="small" color={Colors['green-main']} />
 			</View>
 		)
-	}, [isFetchingNextPage]) // loading
+	}, [isFetchingNextPage])
 
 	const workoutTypeMap = useMemo(() => Object.fromEntries(WorkoutTypesData.map((t) => [t.type, t])), [])
 
@@ -150,16 +129,19 @@ const WorkoutHistory = () => {
 	const handleSync = async (startedAt: number) => {
 		try {
 			await enqueueWorkoutSync(startedAt)
-
-			await queryClient.invalidateQueries({
-				queryKey: ['workout-history']
-			})
-
 			toast.success('Тренировка сохранена успешно')
 		} catch (e) {
 			console.log(e)
 			toast.error('Не удалось сохранить тренировку')
 		}
+	}
+
+	const handleSelectType = async (type: string) => {
+		setSelectedType(type)
+		listRef.current?.scrollToOffset({
+			offset: 0,
+			animated: false
+		})
 	}
 
 	return (
@@ -180,11 +162,11 @@ const WorkoutHistory = () => {
 						}))
 					]}
 					value={selectedType}
-					onChange={setSelectedType}
+					onChange={(type: string) => handleSelectType(type)}
 					placeholder="Выберите тип тренировки"
 				/>
 				<LegendList
-					// key={selectedType} // если этого не сделать, то при смене на BIKE, который [] length 0 и смене обратно на ходьбу не вызывается loadMore
+					ref={listRef}
 					style={{ flex: 1 }}
 					data={itemsWithHeaders}
 					ListEmptyComponent={
@@ -240,7 +222,6 @@ const WorkoutHistory = () => {
 											actionIcon={[
 												{
 													iconSvg: <SaveUnsavedTrainingSvg />,
-													//iconCb: () => enqueueWorkoutSync(notSavedWorkout.startedAt),
 													iconCb: () => handleSync(notSavedWorkout.startedAt),
 													disabled: isSyncing
 												},
@@ -273,11 +254,7 @@ const WorkoutHistory = () => {
 									cardBackgroundColor={Colors['black-0d']}
 									onActionPress={() => handleDeleteSavedWorkout(item.id)}
 								>
-									<WorkoutHistoryListItem
-										isHistoryListItem
-										isInternetConnected={isConnected}
-										{...item}
-									/>
+									<WorkoutHistoryListItem isHistoryListItem {...item} />
 								</SwipeableProvider>
 							)}
 						</View>

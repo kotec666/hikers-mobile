@@ -13,7 +13,6 @@ import DeletePostModal from '@/components/ui/Post/DeletePostModal'
 import MoreOptionsSvg from '@/components/svg/MoreOptionsSvg'
 import MoreOptionsButton from '@/components/ui/MoreOptionsButton/MoreOptionsButton'
 import { useLocalSearchParams, useRouter } from 'expo-router'
-import { deletePostById, getPostById, IPost } from '@/api/posts'
 import { useAuthStore } from '@/store/authStore'
 import MapComponent from '@/components/map/MapComponent'
 import { adaptLocations } from '@/helpers/adaptPointsToIWorkoutLocationStorageItem'
@@ -22,6 +21,8 @@ import { VIEWWORKOUT_MODE } from '@/app/training/viewWorkout'
 import { useSafeNavigation } from '@/hooks/useSafeNavigation'
 import { Colors } from '@/constants/Colors'
 import BlurProvider from '@/components/providers/BlurProvider'
+import { useDeletePostMutation, usePostQuery } from '@/queries/posts'
+import { getFieldsErrors } from '@/helpers/getFieldsErrors'
 
 const { height } = Dimensions.get('screen')
 const SLIDE_ASPECT_RATIO = height / 3.6
@@ -33,10 +34,9 @@ const Post = () => {
 	const { push } = useSafeNavigation()
 	const { id } = useLocalSearchParams<{ id: string }>()
 	const { user } = useAuthStore()
-
 	const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false)
-	const [post, setPost] = useState<IPost | null>(null)
-	const [isPageLoading, setIsPageLoading] = useState<boolean>(false)
+
+	const { data: post, error, isError, isFetching } = usePostQuery(id)
 
 	const handleClickBack = useCallback(() => {
 		if (router.canGoBack()) {
@@ -47,27 +47,19 @@ const Post = () => {
 	}, [router])
 
 	useEffect(() => {
-		;(async () => {
-			setIsPageLoading(true)
-			try {
-				const postData = await getPostById(id)
-				setPost(postData)
-			} catch {
-				toast.info('Ошибка при загрузке поста')
-				handleClickBack()
-			} finally {
-				setIsPageLoading(false)
-			}
-		})()
-	}, [handleClickBack, id, toast])
+		if (!isError) return
+		getFieldsErrors(error)
+		handleClickBack()
+	}, [isError, error, handleClickBack])
 
 	const handleOpenDeleteModal = () => {
 		return setIsDeleteModalOpen((prevState) => !prevState)
 	}
 
+	const { mutateAsync } = useDeletePostMutation()
 	const handleClickDeletePost = async () => {
 		try {
-			const result = await deletePostById(id)
+			const result = await mutateAsync(id)
 			if (result.success) {
 				toast.success('Пост успешно удален')
 				router.back()
@@ -81,7 +73,7 @@ const Post = () => {
 		(participant) => participant.user.id === post?.userCreator.id
 	)?.metrics
 
-	if (isPageLoading) {
+	if (isFetching) {
 		return (
 			<View className="flex-1 items-center justify-center">
 				<ActivityIndicator size="large" color={Colors['green-main']} />
@@ -160,11 +152,8 @@ const Post = () => {
 									post?.id !== undefined && (
 										<PostListItemBottom
 											postId={post.id}
-											likeData={{
-												isLiked: post.isLiked,
-												likesCount: post.likesCount,
-												postId: post.id
-											}}
+											isLiked={post.isLiked}
+											likesCount={post.likesCount}
 											participants={post?.training.participants}
 										/>
 									)}

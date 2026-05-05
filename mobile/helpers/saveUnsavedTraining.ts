@@ -9,17 +9,12 @@ import {
 	markPointsAsSaved,
 	markUnsavedWorkoutPointsAsSaved
 } from '@/store/workoutStorage'
-import {
-	createOfflineTraining,
-	deleteNotFinishedTrainingById,
-	finishOfflineTraining,
-	finishTraining,
-	syncTraining
-} from '@/api/workout'
+import { createOfflineTraining, deleteNotFinishedTrainingById, syncTraining } from '@/api/workout'
 import { chunkArray } from '@/helpers/chunkArray'
 import { prepareLocationsForSync } from '@/helpers/prepareLocationsForSync'
 import { getFieldsErrors } from '@/helpers/getFieldsErrors'
 import { randomHexColor } from '@/helpers/colors/randomHexColor'
+import { UseMutateAsyncFunction } from '@tanstack/react-query'
 
 export enum WorkoutSource {
 	ACTIVE = 'active',
@@ -96,6 +91,17 @@ export const syncWorkoutPoints = async ({
 export const saveSingleWorkout = async (
 	source: WorkoutSource,
 	startedAt: number,
+	finishWorkout: UseMutateAsyncFunction<
+		{
+			success: boolean
+		},
+		Error,
+		{
+			workoutId?: string | undefined
+			ts?: number | undefined
+		},
+		unknown
+	>,
 	userId?: string
 ): Promise<null | string> => {
 	let workout: IWorkout | null
@@ -106,6 +112,7 @@ export const saveSingleWorkout = async (
 		workout = getFullActiveWorkout(userId)
 	}
 
+	console.log(source)
 	if (!workout) {
 		throw new Error('Тренировка не найдена')
 	}
@@ -144,7 +151,8 @@ export const saveSingleWorkout = async (
 		})
 
 		// calc metrics
-		const finishRes = await finishOfflineTraining(trainingId)
+		// const finishRes = await finishOfflineTraining(trainingId)
+		const finishRes = await finishWorkout({ workoutId: trainingId })
 
 		if (!finishRes?.success) {
 			throw new Error('Ошибка calc-metrics')
@@ -177,9 +185,10 @@ export const saveSingleWorkout = async (
 	}
 	if (!updated) return null
 
-	const result = await finishTraining({
-		ts: updated.locations.at(-1)!.relTs + updated.startedAt
-	})
+	// const result = await finishTraining({
+	// 	ts: updated.locations.at(-1)!.relTs + updated.startedAt
+	// })
+	const result = await finishWorkout({ ts: updated.locations.at(-1)!.relTs + updated.startedAt })
 
 	if (!result?.success) {
 		throw new Error('Ошибка finish')

@@ -1,4 +1,4 @@
-import React from 'react'
+import React, { useState } from 'react'
 import { ActivityIndicator, View, Text, RefreshControl } from 'react-native'
 import { Container } from '@/components/ui/Container'
 import HeaderBack from '@/components/ui/HeaderBack'
@@ -7,100 +7,62 @@ import { SafeAreaProvider, useSafeAreaInsets } from 'react-native-safe-area-cont
 import { fontFamily } from '@/constants/Fonts'
 import RoundedPlusSvg from '@/components/svg/RoundedPlusSvg'
 import RoundedMinusSvg from '@/components/svg/RoundedMinusSvg'
-import { acceptFriendRequest, getPendingInvitesList, IInvite, rejectFriendRequest } from '@/api/friends'
 import { useToast } from '@/hooks/useToast'
 import { PATH_TO_IMAGE } from '@/constants/PATH_TO_FILES'
 import { LegendList } from '@legendapp/list'
 import { Colors } from '@/constants/Colors'
-import { useInfiniteQuery, useQueryClient } from '@tanstack/react-query'
-
-interface IInfiniteInvites {
-	pages: IInvite[][]
-	pageParams: number[]
-}
+import { useAcceptFriendRequestMutation, useMyFriendRequestsQuery, useRejectFriendMutation } from '@/queries/friends'
 
 const FriendRequestsPage = () => {
 	const insets = useSafeAreaInsets()
 	const toast = useToast()
-	const loadingIdsRef = React.useRef<Set<string>>(new Set())
-	const queryClient = useQueryClient()
-
-	const limit = 15
 
 	const {
-		data: friendRequestsRaw,
+		data: friendRequests = [],
 		fetchNextPage,
 		hasNextPage,
 		isFetchingNextPage,
 		refetch,
 		isRefetching,
 		isFetching
-	} = useInfiniteQuery({
-		queryKey: ['pendingInvites'],
+	} = useMyFriendRequestsQuery()
 
-		queryFn: ({ pageParam }) =>
-			getPendingInvitesList({
-				page: pageParam,
-				limit
-			}),
+	const { mutateAsync: acceptFriend, isPending: isAcceptPending } = useAcceptFriendRequestMutation()
+	const { mutateAsync: rejectFriend, isPending: isRejectPending } = useRejectFriendMutation()
 
-		initialPageParam: 1,
+	const [loadingId, setLoadingId] = useState<string | null>(null)
 
-		getNextPageParam: (lastPage, pages) => {
-			if (lastPage.length < limit) return undefined
-			return pages.length + 1
-		}
-	})
-
-	const friendRequests = friendRequestsRaw?.pages.flat() ?? []
+	const isRequestLoading = (requestId: string) => {
+		return (isAcceptPending || isRejectPending) && loadingId === requestId
+	}
 
 	const handleAddFriend = async (newFriendId: string) => {
-		if (loadingIdsRef.current.has(newFriendId)) return
-		loadingIdsRef.current.add(newFriendId)
+		if (loadingId) return
+		setLoadingId(newFriendId)
 
 		try {
-			await acceptFriendRequest(newFriendId)
-			// setItems((prev) => prev.filter((req) => req.user.id !== newFriendId))
-			// await refetch()
-			queryClient.setQueryData<IInfiniteInvites>(['pendingInvites'], (oldData) => {
-				if (!oldData) return oldData
-
-				return {
-					...oldData,
-					pages: oldData.pages.map((page: IInvite[]) => page.filter((req) => req.user.id !== newFriendId))
-				}
-			})
-			await queryClient.invalidateQueries({ queryKey: ['friendsList'] })
-			await queryClient.invalidateQueries({ queryKey: ['my-profile'] })
+			await acceptFriend(newFriendId)
 			toast.success('Пользователь добавлен в друзья')
+			setLoadingId(null)
 		} catch {
 			toast.error('Произошла ошибка, повторите попытку позже')
 		} finally {
-			loadingIdsRef.current.delete(newFriendId)
+			setLoadingId(null)
 		}
 	}
 
 	const handleDeleteFriendRequest = async (rejectUserId: string) => {
-		if (loadingIdsRef.current.has(rejectUserId)) return
-		loadingIdsRef.current.add(rejectUserId)
+		if (loadingId) return
+		setLoadingId(rejectUserId)
 
 		try {
-			await rejectFriendRequest(rejectUserId)
-			// setItems((prev) => prev.filter((req) => req.user.id !== rejectUserId))
-			// await refetch()
-			queryClient.setQueryData<IInfiniteInvites>(['pendingInvites'], (oldData) => {
-				if (!oldData) return oldData
-
-				return {
-					...oldData,
-					pages: oldData.pages.map((page: IInvite[]) => page.filter((req) => req.user.id !== rejectUserId))
-				}
-			})
+			await rejectFriend(rejectUserId)
 			toast.success('Заявка отклонена')
+			setLoadingId(null)
 		} catch {
 			toast.error('Произошла ошибка, повторите попытку позже')
 		} finally {
-			loadingIdsRef.current.delete(rejectUserId)
+			setLoadingId(null)
 		}
 	}
 
@@ -126,6 +88,7 @@ const FriendRequestsPage = () => {
 								username={item.user.username}
 								name={item.user.name}
 								avatar={item.user.avatarFilename ? `${PATH_TO_IMAGE}${item.user.avatarFilename}` : null}
+								isIconDisabled={isRequestLoading(item.user.id)}
 								icon={[
 									{
 										iconSvg: <RoundedPlusSvg />,

@@ -6,11 +6,11 @@ import { StatusBar } from 'expo-status-bar'
 import { fontFamily } from '@/constants/Fonts'
 import { cn } from '@/helpers/cn'
 import Toggle from '@/components/ui/Toggle/Toggle'
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
-import { getNotificationSettings, changeNotificationSettings, NotificationSettings } from '@/api/settings'
+import { NotificationSettings } from '@/api/settings'
 import { NotificationType } from '@shared/enums'
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { useFocusEffect } from 'expo-router'
+import { useNotificationsSettingsQuery, useUpdateNotificationsSettingsMutation } from '@/queries/notifications'
 
 const InAppNotificationSetting = ({
 	title,
@@ -60,16 +60,11 @@ const InAppNotificationSetting = ({
 
 const SettingsInAppNotificationsPage = () => {
 	const insets = useSafeAreaInsets()
-	const queryClient = useQueryClient()
-
 	const [localSettings, setLocalSettings] = useState<NotificationSettings | null>(null)
 	const localSettingsRef = useRef<NotificationSettings | null>(null)
 	const settingsRef = useRef<NotificationSettings | null>(null)
-
-	const { data: settings, isLoading } = useQuery<NotificationSettings>({
-		queryKey: ['inAppNotificationSettings'],
-		queryFn: getNotificationSettings
-	})
+	const { data: settings, isLoading } = useNotificationsSettingsQuery()
+	const { mutate } = useUpdateNotificationsSettingsMutation()
 
 	useEffect(() => {
 		if (settings) {
@@ -78,14 +73,6 @@ const SettingsInAppNotificationsPage = () => {
 			settingsRef.current = settings
 		}
 	}, [settings])
-
-	const mutation = useMutation({
-		mutationFn: changeNotificationSettings,
-		onSuccess: () => {
-			queryClient.invalidateQueries({ queryKey: ['inAppNotificationSettings'] })
-		}
-	})
-	const { mutate } = mutation
 
 	const handleToggleChange = (key: keyof NotificationSettings, value: boolean) => {
 		setLocalSettings((prevState) => {

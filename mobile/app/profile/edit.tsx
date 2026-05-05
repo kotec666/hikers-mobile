@@ -8,7 +8,6 @@ import ActivityInfo from '@/components/ui/Profile/ActivityInfo'
 import HeaderBack from '@/components/ui/HeaderBack'
 import { Input } from '@/components/ui/Input'
 import { useRouter } from 'expo-router'
-import { editProfileData, getProfileData } from '@/api/profile'
 import { getFieldsErrors } from '@/helpers/getFieldsErrors'
 import { Controller, useForm } from 'react-hook-form'
 import { useErrorMessage } from '@/hooks/useErrorMessage'
@@ -17,13 +16,12 @@ import { useToast } from '@/hooks/useToast'
 import Modal from '@/components/ui/Modal/Modal'
 import EditAvatarModalContent from '@/components/profile/EditAvatarModalContent'
 import { PATH_TO_IMAGE } from '@/constants/PATH_TO_FILES'
-import { IActivity } from '@/api/activities'
 import { useAuthStore } from '@/store/authStore'
 import { useEditActivitiesStore } from '@/store/editActivitiesStore'
 import { useSafeNavigation } from '@/hooks/useSafeNavigation'
 import BlurProvider from '@/components/providers/BlurProvider'
-import { useQueryClient } from '@tanstack/react-query'
 import { lengths } from '@shared/lengths'
+import { useProfileQuery, useUpdateProfileMutation } from '@/queries/my-profile'
 
 interface IEditProfileFormState {
 	name: string
@@ -36,30 +34,34 @@ const FormData = global.FormData
 const ProfileEdit = () => {
 	const insets = useSafeAreaInsets()
 	const router = useRouter()
-	const queryClient = useQueryClient()
 	const { push } = useSafeNavigation()
+	const { data: profileData, isLoading, isError, error } = useProfileQuery()
 	const {
 		handleSubmit,
 		control,
 		setValue,
+		getValues,
 		formState: { isDirty }
-	} = useForm<IEditProfileFormState>()
+	} = useForm<IEditProfileFormState>({
+		values: {
+			name: profileData?.user?.name || '',
+			username: profileData?.user?.username || '',
+			avatarFilename: PATH_TO_IMAGE + profileData?.user?.avatarFilename
+		}
+	})
 	const { ErrorMessages } = useErrorMessage()
 	const toast = useToast()
 	const { setUser } = useAuthStore()
 	const { newActivitiesOrder, setNewActivitiesOrder } = useEditActivitiesStore()
+	const { mutateAsync, isPending } = useUpdateProfileMutation()
 
 	const [data, setData] = useState<{
-		activities: IActivity[]
 		avatarModal: boolean
-		isLoading: boolean
 		isSaved: boolean
 		notSavedModal: boolean
 		errors?: { [key: string]: string | boolean | undefined }
 	}>({
-		activities: [],
 		avatarModal: false,
-		isLoading: false,
 		isSaved: false,
 		notSavedModal: false,
 		errors: {} as { [key: string]: string | boolean | undefined }
@@ -75,68 +77,59 @@ const ProfileEdit = () => {
 	)
 
 	useEffect(() => {
-		;(async () => {
-			try {
-				const profileData = await getProfileData()
-				const defaultUserImage = PATH_TO_IMAGE + profileData?.user.avatarFilename
+		if (!isError) return
 
-				setImage(defaultUserImage)
-				setValue('username', profileData.user.username)
-				setValue('name', profileData.user.name || '')
-				setData((s) => ({ ...s, activities: profileData.activities }))
-			} catch (e: unknown) {
-				const formattedErrors = await getFieldsErrors(e)
-				setData((s) => ({ ...s, errors: formattedErrors }))
-			}
-		})()
-	}, [setImage, setValue])
+		getFieldsErrors(error).then((formattedErrors) => {
+			setData((s) => ({ ...s, errors: formattedErrors }))
+		})
+	}, [error, isError])
 
-	const onSubmit = async (editProfileFormState: IEditProfileFormState) => {
-		setData((s) => ({ ...s, isLoading: true, errors: undefined, isSaved: false }))
+	const onSubmit = async (formState: IEditProfileFormState) => {
+		setData((s) => ({ ...s, errors: undefined, isSaved: false }))
 
 		const formData = new FormData()
-		if (editProfileFormState.name) {
-			formData.append('name', editProfileFormState.name)
+
+		if (formState.name) {
+			formData.append('name', formState.name)
 		}
-		if (editProfileFormState.username) {
-			formData.append('username', editProfileFormState.username)
+
+		if (formState.username) {
+			formData.append('username', formState.username)
 		}
-		if (editProfileFormState.avatarFilename) {
-			if (editProfileFormState.avatarFilename.startsWith('file://')) {
-				const filename = editProfileFormState.avatarFilename.split('/').pop()
+
+		if (formState.avatarFilename) {
+			if (formState.avatarFilename.startsWith('file://')) {
+				const filename = formState.avatarFilename.split('/').pop()
 				const match = /\.(\w+)$/.exec(filename || '')
 				const type = match ? `image/${match[1]}` : 'image/jpeg'
 
 				formData.append('avatarFilename', {
-					uri: editProfileFormState.avatarFilename,
+					uri: formState.avatarFilename,
 					type,
 					name: filename || 'profile-image.jpg'
 				} as unknown as Blob)
 			} else {
-				formData.append('avatarFilename', editProfileFormState.avatarFilename)
+				formData.append('avatarFilename', formState.avatarFilename)
 			}
 		}
 
 		if (newActivitiesOrder?.length) {
-			formData.append('activities', newActivitiesOrder.map((activity) => activity.name).join(','))
+			formData.append('activities', newActivitiesOrder.map((a) => a.name).join(','))
 		}
 
 		try {
-			const editResponse = await editProfileData(formData)
-			setUser(editResponse.user)
-			await queryClient.invalidateQueries({ queryKey: ['my-profile'] })
-			await queryClient.invalidateQueries({ queryKey: ['posts-my-profile'] })
+			const response = await mutateAsync(formData)
+
+			setUser(response.user)
 
 			Keyboard.dismiss()
 			setData((s) => ({ ...s, isSaved: true }))
 			toast.success('Данные успешно сохранены')
 		} catch (e: unknown) {
 			const formattedErrors = await getFieldsErrors(e)
+
 			setData((s) => ({ ...s, errors: formattedErrors }))
 			Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error)
-			// Alert.alert('Ошибка', 'Неверные учетные данные')
-		} finally {
-			setData((s) => ({ ...s, isLoading: false }))
 		}
 	}
 
@@ -180,7 +173,7 @@ const ProfileEdit = () => {
 		}
 	}
 
-	const sourceArray = newActivitiesOrder?.length ? newActivitiesOrder : data.activities
+	const sourceArray = newActivitiesOrder?.length ? newActivitiesOrder : (profileData?.activities ?? [])
 	const activitiesToRender = sourceArray.length >= 3 ? sourceArray.slice(0, 3) : []
 
 	return (
@@ -230,7 +223,7 @@ const ProfileEdit = () => {
 											isEditMode
 											className="w-[117px] h-[117px]"
 											iconSize={{ width: 60, height: 60 }}
-											avatar={avatar}
+											avatar={avatar || getValues('avatarFilename')}
 										/>
 									</TouchableOpacity>
 								</View>
@@ -315,7 +308,11 @@ const ProfileEdit = () => {
 								/>
 							</TouchableOpacity>
 							<View className="my-[30px]">
-								<Button onPress={handleSubmit(onSubmit)} variant="white" isLoading={data.isLoading}>
+								<Button
+									onPress={handleSubmit(onSubmit)}
+									variant="white"
+									isLoading={isPending || isLoading}
+								>
 									Сохранить
 								</Button>
 							</View>

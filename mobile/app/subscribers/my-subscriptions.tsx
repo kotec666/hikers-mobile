@@ -6,21 +6,17 @@ import PeopleListItem from '@/components/find-people/PeopleListItem'
 import { SafeAreaProvider, useSafeAreaInsets } from 'react-native-safe-area-context'
 import { fontFamily } from '@/constants/Fonts'
 import RoundedMinusSvg from '@/components/svg/RoundedMinusSvg'
-import { getSubscriptionsList, ISubscribe, unsubscribeFromUser } from '@/api/subscribers'
-import { useToast } from '@/hooks/useToast'
+import { ISubscribe } from '@/api/subscribers'
 import { PATH_TO_IMAGE } from '@/constants/PATH_TO_FILES'
 import { LegendList } from '@legendapp/list'
 import { Colors } from '@/constants/Colors'
-import { useInfiniteQuery, useQueryClient } from '@tanstack/react-query'
+import { useMySubscriptionsQuery, useToggleSubscribeMutation } from '@/queries/subscriptions'
 
 /**
  * Мои подписки, на кого подписан я
  * */
 const MySubscriptionsPage = () => {
 	const insets = useSafeAreaInsets()
-	const toast = useToast()
-	const queryClient = useQueryClient()
-	const limit = 15
 
 	const {
 		data: subscriptions = [],
@@ -30,32 +26,18 @@ const MySubscriptionsPage = () => {
 		refetch,
 		isRefetching,
 		isFetching
-	} = useInfiniteQuery<ISubscribe[], Error, ISubscribe[], ['subscriptionsList'], number>({
-		queryKey: ['subscriptionsList'],
-		queryFn: ({ pageParam }) =>
-			getSubscriptionsList({
-				page: pageParam,
-				limit
-			}),
-		initialPageParam: 1,
-		getNextPageParam: (lastPage, pages) => {
-			if (lastPage.length < limit) return undefined
-			return pages.length + 1
-		},
-		select: (data) => data.pages.flat()
-	})
+	} = useMySubscriptionsQuery()
 
-	const handleUnsubscribe = useCallback(
-		async (unsubUserId: string) => {
-			try {
-				await unsubscribeFromUser(unsubUserId)
-				await refetch()
-				await queryClient.invalidateQueries({ queryKey: ['my-profile'] })
-			} catch {
-				toast.error('Произошла ошибка, повторите попытку позже')
-			}
+	const { mutateAsync: toggleSubscribe, isPending: isPendingSubscribe } = useToggleSubscribeMutation()
+
+	const handleSubscribe = useCallback(
+		async (userId: string, isSubscribed: boolean) => {
+			await toggleSubscribe({
+				userId,
+				isSubscribed
+			})
 		},
-		[queryClient, refetch, toast]
+		[toggleSubscribe]
 	)
 
 	const renderItem = useCallback(
@@ -65,18 +47,17 @@ const MySubscriptionsPage = () => {
 				username={item.user.username}
 				name={item.user.name}
 				avatar={item.user.avatarFilename ? `${PATH_TO_IMAGE}${item.user.avatarFilename}` : null}
+				isIconDisabled={isPendingSubscribe}
 				icon={{
 					iconSvg: <RoundedMinusSvg />,
-					iconCb: () => handleUnsubscribe(item.user.id)
+					iconCb: () => handleSubscribe(item.user.id, true)
 				}}
 			/>
 		),
-		[handleUnsubscribe]
+		[handleSubscribe, isPendingSubscribe]
 	)
 
 	const renderFooter = () => {
-		// if (loading) return null
-
 		if (!isFetchingNextPage) return null
 		return (
 			<View style={{ padding: 20 }}>

@@ -16,8 +16,8 @@ import { removeUserWorkoutStorage } from '@/store/workoutStorage'
 import { useAuthStore } from '@/store/authStore'
 import { useToast } from '@/hooks/useToast'
 import { useRouter } from 'expo-router'
-import { deleteMyAccount } from '@/api/profile'
 import AlertTriangleSvg from '@/components/svg/AlertTriangleSvg'
+import { useDeleteProfileMutation } from '@/queries/my-profile'
 
 const SettingsPage = () => {
 	const { push } = useSafeNavigation()
@@ -25,6 +25,7 @@ const SettingsPage = () => {
 	const { user, logout } = useAuthStore()
 	const toast = useToast()
 	const router = useRouter()
+	const { mutateAsync, isPending } = useDeleteProfileMutation()
 
 	const [isDeleteAccountModalOpen, setIsDeleteAccountModalOpen] = React.useState(false)
 
@@ -37,11 +38,15 @@ const SettingsPage = () => {
 	}
 
 	const handleDeleteAccount = async () => {
-		removeUserWorkoutStorage(user?.id)
-		await deleteMyAccount()
-		await logout()
-		toast.success('Аккаунт успешно удален')
-		router.replace('/')
+		try {
+			removeUserWorkoutStorage(user?.id)
+			await mutateAsync()
+			await logout()
+			toast.success('Аккаунт успешно удален')
+			router.replace('/')
+		} catch {
+			toast.error('Ошибка при удалении аккаунта')
+		}
 	}
 
 	return (
@@ -62,7 +67,12 @@ const SettingsPage = () => {
 							<Button onPress={closeDeleteAccountModal} variant="white" buttonContainerClassName="flex-1">
 								Отмена
 							</Button>
-							<Button onPress={handleDeleteAccount} variant="white" buttonContainerClassName="flex-1">
+							<Button
+								onPress={handleDeleteAccount}
+								isLoading={isPending}
+								variant="white"
+								buttonContainerClassName="flex-1"
+							>
 								Удалить
 							</Button>
 						</View>

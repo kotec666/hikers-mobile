@@ -1,4 +1,4 @@
-import React from 'react'
+import React, { useCallback } from 'react'
 import { Pressable, Text, View } from 'react-native'
 import { UserAvatar } from '@/components/ui/UserAvatar'
 import { fontFamily } from '@/constants/Fonts'
@@ -9,10 +9,8 @@ import { PATH_TO_IMAGE } from '@/constants/PATH_TO_FILES'
 import { formatRelativeDate } from '@/helpers/formatRelativeDate'
 import { WorkoutTypesData } from '@/constants/WorkoutTypes'
 import { TrainingType } from '@/shared/enums'
-import { subscribeToUser, unsubscribeFromUser } from '@/api/subscribers'
-import { useToast } from '@/hooks/useToast'
-import { useOptimisticToggle } from '@/hooks/useOptimisticToggle'
 import { useSafeNavigation } from '@/hooks/useSafeNavigation'
+import { useToggleSubscribeMutation } from '@/queries/subscriptions'
 
 interface IProps {
 	isMyPost?: boolean
@@ -25,7 +23,6 @@ interface IProps {
 		authorId?: string
 		isSubscribed?: boolean
 	}
-	onToggleSubscribeCallback?: (isSubscribed: boolean, authorId?: string) => void
 }
 
 const PostListItemHeader = ({
@@ -35,22 +32,23 @@ const PostListItemHeader = ({
 	authorId,
 	avatar,
 	createdAt,
-	workoutType,
-	onToggleSubscribeCallback
+	workoutType
 }: IProps) => {
 	const { push } = useSafeNavigation()
-	const toast = useToast()
-	const {
-		value: isSubscribed,
-		toggle: toggleSubscribe,
-		isLoading
-	} = useOptimisticToggle({
-		initialValue: subscribeData?.isSubscribed,
-		onEnable: () => subscribeToUser(subscribeData!.authorId!),
-		onDisable: () => unsubscribeFromUser(subscribeData!.authorId!),
-		onError: () => toast.error('Ошибка, попробуйте позже'),
-		onSuccess: (val) => onToggleSubscribeCallback?.(val, subscribeData!.authorId)
-	})
+	const { mutateAsync: toggleSubscribe, isPending: isPendingSubscribe } = useToggleSubscribeMutation()
+
+	const handleSubscribe = useCallback(
+		async (userId?: string, isSubscribed?: boolean) => {
+			if (!userId) return
+			if (typeof isSubscribed === 'undefined') return
+
+			await toggleSubscribe({
+				userId,
+				isSubscribed
+			})
+		},
+		[toggleSubscribe]
+	)
 
 	const renderIcon = (workoutType?: TrainingType) => {
 		if (!workoutType) return
@@ -94,14 +92,20 @@ const PostListItemHeader = ({
 				{!isMyPost && (
 					<View>
 						<Pressable
-							onPress={toggleSubscribe}
-							disabled={isLoading}
+							onPress={async () =>
+								await handleSubscribe(subscribeData?.authorId, subscribeData?.isSubscribed)
+							}
+							disabled={isPendingSubscribe}
 							className={cn('w-[50px] h-[50px] rounded-full items-center justify-center', {
-								'bg-white': !isSubscribed,
-								'bg-green-main': isSubscribed
+								'bg-white': !subscribeData?.isSubscribed,
+								'bg-green-main': subscribeData?.isSubscribed
 							})}
 						>
-							{!isSubscribed ? <PlusIconSvg /> : <CheckMarkIconSvg width={25} height={25} />}
+							{!subscribeData?.isSubscribed ? (
+								<PlusIconSvg />
+							) : (
+								<CheckMarkIconSvg width={25} height={25} />
+							)}
 						</Pressable>
 					</View>
 				)}

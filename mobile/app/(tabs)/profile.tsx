@@ -11,18 +11,18 @@ import RedirectAchievementsInfo from '@/components/ui/Profile/RedirectAchievemen
 import PostListItem from '@/components/ui/Post/PostListItem'
 import { RelativePathString, useLocalSearchParams, useRouter } from 'expo-router'
 import { useAuthStore } from '@/store/authStore'
-import { getProfileData, IProfile } from '@/api/profile'
 import { PATH_TO_IMAGE } from '@/constants/PATH_TO_FILES'
 import { AnimatedProfilePicture } from '@/components/ui/Profile/AnimatedProfilePicture'
 import { LegendList, LegendListRef } from '@legendapp/list'
-import { getPostsMy, IPost } from '@/api/posts'
+import { IPost } from '@/api/posts'
 import { Colors } from '@/constants/Colors'
 import MapComponent from '@/components/map/MapComponent'
 import { adaptLocations } from '@/helpers/adaptPointsToIWorkoutLocationStorageItem'
 import { useSafeNavigation } from '@/hooks/useSafeNavigation'
-import { useInfiniteQuery, useQuery } from '@tanstack/react-query'
 import TrainingsEmpty from '@/components/ui/Post/TrainingsEmpty'
 import BlurProvider from '@/components/providers/BlurProvider'
+import { useProfilePostsQuery } from '@/queries/posts'
+import { useProfileQuery } from '@/queries/my-profile'
 
 /**
  *
@@ -46,38 +46,17 @@ const Profile = () => {
 	const params = useLocalSearchParams()
 	const legendListRef = useRef<LegendListRef>(null)
 
-	const {
-		data: profileData,
-		isFetching: isProfileFetching,
-		refetch: refetchProfile
-	} = useQuery<IProfile>({
-		queryKey: ['my-profile'],
-		queryFn: () => getProfileData()
-	})
+	const { data: profileData, isFetching: isProfileFetching, refetch: refetchProfile } = useProfileQuery()
 
-	const postsLimit = 5
 	const {
 		data: posts = [],
 		fetchNextPage: fetchNextPostsPage,
-		hasNextPage: hasNextPostsPage,
-		isFetchingNextPage: isFetchingPostsNextPage,
+		hasNextPage: postsHasNextPage,
+		isFetchingNextPage: postsIsFetchingNextPage,
 		refetch: postsRefetch,
 		isRefetching: postsIsRefetching,
-		isFetching: isPostsFetching
-	} = useInfiniteQuery<IPost[], Error, IPost[], ['posts-my-profile'], number>({
-		queryKey: ['posts-my-profile'],
-		queryFn: ({ pageParam }) =>
-			getPostsMy({
-				page: pageParam,
-				limit: postsLimit
-			}),
-		initialPageParam: 1,
-		getNextPageParam: (lastPage, pages) => {
-			if (lastPage.length < postsLimit) return undefined
-			return pages.length + 1
-		},
-		select: (data) => data.pages.flat()
-	})
+		isFetching: postsIsFetching
+	} = useProfilePostsQuery()
 
 	// Если пользователь кликнет на ту же страницу, то пойдёт скролл вверх. Навбар передаст params при переходе на эту же страницу
 	useEffect(() => {
@@ -118,11 +97,8 @@ const Profile = () => {
 					description={item.description}
 					images={item.fileNames}
 					metrics={userMetrics}
-					likeData={{
-						isLiked: item.isLiked,
-						likesCount: item.likesCount,
-						postId: item.id
-					}}
+					isLiked={item.isLiked}
+					likesCount={item.likesCount}
 					participants={item.training.participants}
 					mapComponent={
 						<MapComponent
@@ -141,19 +117,19 @@ const Profile = () => {
 	// Функция рендеринга индикатора загрузки
 	const renderFooter = useCallback(() => {
 		//if (!loading) return null
-		if (!isFetchingPostsNextPage) return null
+		if (!postsIsFetchingNextPage) return null
 		return (
 			<View style={{ padding: 20 }}>
 				<ActivityIndicator size="small" color={Colors['green-main']} />
 			</View>
 		)
-	}, [isFetchingPostsNextPage]) // loading
+	}, [postsIsFetchingNextPage]) // loading
 
 	const renderEmpty = useCallback(() => {
-		if (isPostsFetching) return null
+		if (postsIsFetching) return null
 
 		return <TrainingsEmpty text="Постов еще не существует, опубликуйте пост после тренировки" />
-	}, [isPostsFetching])
+	}, [postsIsFetching])
 
 	return (
 		<>
@@ -165,7 +141,7 @@ const Profile = () => {
 						renderItem={renderPostItem}
 						keyExtractor={(item) => item.id}
 						onEndReached={() => {
-							if (hasNextPostsPage && !isFetchingPostsNextPage) {
+							if (postsHasNextPage && !postsIsFetchingNextPage) {
 								fetchNextPostsPage()
 							}
 						}}

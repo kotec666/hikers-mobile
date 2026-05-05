@@ -20,17 +20,18 @@ import PeopleListItem from '@/components/find-people/PeopleListItem'
 import { Button } from '@/components/ui/Button'
 import PostSearchResult from '@/components/ui/Post/PostSearchResult'
 import { LegendList, LegendListRef } from '@legendapp/list'
-import { getPostsFeed, IPost } from '@/api/posts'
+import { IPost } from '@/api/posts'
 import { Colors } from '@/constants/Colors'
 import { useFocusEffect, useLocalSearchParams } from 'expo-router'
 import MapComponent from '@/components/map/MapComponent'
 import { adaptLocations } from '@/helpers/adaptPointsToIWorkoutLocationStorageItem'
 import TrainingsEmpty from '@/components/ui/Post/TrainingsEmpty'
 import { SearchType } from '@/shared/enums'
-import { IFoundPost, IFoundUser, searchByAllItems } from '@/api/search'
+import { IFoundPost, IFoundUser } from '@/api/search'
 import { PATH_TO_IMAGE } from '@/constants/PATH_TO_FILES'
-import { useInfiniteQuery, useQueryClient } from '@tanstack/react-query'
 import { BackButton } from '@/components/ui/HeaderBack'
+import { useFeedPostsQuery } from '@/queries/posts'
+import { useSearchQuery } from '@/queries/search'
 
 const isUser = (item: IFoundUser | IFoundPost): item is IFoundUser => {
 	return 'username' in item
@@ -40,14 +41,8 @@ const isPost = (item: IFoundUser | IFoundPost): item is IFoundPost => {
 	return 'title' in item
 }
 
-interface IInfinitePosts {
-	pages: IPost[][]
-	pageParams: number[]
-}
-
 const PostsPage = () => {
 	const insets = useSafeAreaInsets()
-	const queryClient = useQueryClient()
 
 	const [state, setState] = useState<{
 		isSearchActive: boolean
@@ -61,34 +56,14 @@ const PostsPage = () => {
 	const [searchWord, setSearchWord] = useState('')
 	const [debouncedSearchWord, setDebouncedSearchWord] = useState(searchWord)
 
-	const searchLimit = 15
-
 	const {
-		data: searchDataRaw,
+		data: searchData = [],
 		fetchNextPage: fetchNextSearchPage,
 		hasNextPage: hasNextSearchPage,
 		isFetchingNextPage: isFetchingNextSearchPage,
 		refetch: refetchSearch,
 		isRefetching: isRefetchingSearch
-	} = useInfiniteQuery({
-		queryKey: ['search', debouncedSearchWord, state.searchMode],
-		enabled: debouncedSearchWord.trim().length >= 2,
-		queryFn: ({ pageParam = 1, signal }) => {
-			return searchByAllItems(
-				{
-					page: pageParam,
-					limit: searchLimit,
-					word: debouncedSearchWord,
-					type: state.searchMode
-				},
-				signal
-			)
-		},
-		initialPageParam: 1,
-		getNextPageParam: (lastPage, pages) => (lastPage.length === searchLimit ? pages.length + 1 : undefined)
-	})
-
-	const searchData = searchDataRaw?.pages.flat() ?? []
+	} = useSearchQuery(debouncedSearchWord, state.searchMode)
 
 	useEffect(() => {
 		const handler = setTimeout(() => {
@@ -98,9 +73,6 @@ const PostsPage = () => {
 		return () => clearTimeout(handler)
 	}, [searchWord])
 
-	// Состояние для infinite scroll постов
-	const postsLimit = 5
-
 	const {
 		data: posts = [],
 		fetchNextPage,
@@ -109,24 +81,7 @@ const PostsPage = () => {
 		refetch,
 		isRefetching,
 		isFetching
-	} = useInfiniteQuery<IPost[], Error, IPost[], ['posts-feed'], number>({
-		queryKey: ['posts-feed'],
-
-		queryFn: ({ pageParam }) =>
-			getPostsFeed({
-				page: pageParam,
-				limit: postsLimit
-			}),
-
-		initialPageParam: 1,
-
-		getNextPageParam: (lastPage, pages) => {
-			if (lastPage.length < postsLimit) return undefined
-			return pages.length + 1
-		},
-
-		select: (data) => data.pages.flat()
-	})
+	} = useFeedPostsQuery()
 
 	const legendListRef = useRef<LegendListRef>(null)
 	const searchInputRef = useRef<TextInput>(null)
@@ -182,68 +137,45 @@ const PostsPage = () => {
 		}
 	}, [params.scrollToTop])
 
-	const toggleSubscribeCallback = useCallback(
-		(isSubscribed: boolean, authorId?: string) => {
-			queryClient.setQueryData<IInfinitePosts>(['posts-feed'], (oldData) => {
-				if (!oldData) return oldData
-
-				return {
-					...oldData,
-					pages: oldData.pages.map((page: IPost[]) =>
-						page.map((post) => (post.userCreator.id === authorId ? { ...post, isSubscribed } : post))
-					)
-				}
-			})
-		},
-		[queryClient]
-	)
-
 	// Функция рендеринга элемента поста
-	const renderPostItem = useCallback(
-		({ item }: { item: IPost }) => {
-			// Находим метрики текущего пользователя среди участников
-			const userMetrics = item.training.participants.find(
-				(participant) => participant.user.id === item.userCreator.id
-			)?.metrics
+	const renderPostItem = useCallback(({ item }: { item: IPost }) => {
+		// Находим метрики текущего пользователя среди участников
+		const userMetrics = item.training.participants.find(
+			(participant) => participant.user.id === item.userCreator.id
+		)?.metrics
 
-			return (
-				<PostListItem
-					key={item.id}
-					{...item}
-					postId={item.id}
-					authorId={item.userCreator?.id || ''}
-					authorName={item.userCreator?.name || ''}
-					avatar={item.userCreator.avatarFilename}
-					createdAt={item.createdAt}
-					workoutType={item.training.type}
-					title={item.title}
-					description={item.description}
-					metrics={userMetrics}
-					participants={item.training.participants}
-					images={item.fileNames}
-					subscribeData={{
-						authorId: item.userCreator.id,
-						isSubscribed: item.isSubscribed
-					}}
-					likeData={{
-						isLiked: item.isLiked,
-						postId: item.id,
-						likesCount: item.likesCount
-					}}
-					onToggleSubscribeCallback={toggleSubscribeCallback}
-					mapComponent={
-						<MapComponent
-							rounded={25}
-							needFinishMarker
-							interactiveDisabled
-							initialLocations={{ current: adaptLocations(item.training.participants[0].route.points) }}
-						/>
-					}
-				/>
-			)
-		},
-		[toggleSubscribeCallback]
-	)
+		return (
+			<PostListItem
+				key={item.id}
+				{...item}
+				postId={item.id}
+				authorId={item.userCreator?.id || ''}
+				authorName={item.userCreator?.name || ''}
+				avatar={item.userCreator.avatarFilename}
+				createdAt={item.createdAt}
+				workoutType={item.training.type}
+				title={item.title}
+				description={item.description}
+				metrics={userMetrics}
+				participants={item.training.participants}
+				images={item.fileNames}
+				subscribeData={{
+					authorId: item.userCreator.id,
+					isSubscribed: item.isSubscribed
+				}}
+				isLiked={item.isLiked}
+				likesCount={item.likesCount}
+				mapComponent={
+					<MapComponent
+						rounded={25}
+						needFinishMarker
+						interactiveDisabled
+						initialLocations={{ current: adaptLocations(item.training.participants[0].route.points) }}
+					/>
+				}
+			/>
+		)
+	}, [])
 
 	// Функция рендеринга индикатора загрузки
 	const renderFooter = useCallback(() => {

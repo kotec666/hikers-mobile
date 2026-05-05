@@ -5,19 +5,17 @@ import HeaderBack from '@/components/ui/HeaderBack'
 import PeopleListItem from '@/components/find-people/PeopleListItem'
 import { SafeAreaProvider, useSafeAreaInsets } from 'react-native-safe-area-context'
 import { fontFamily } from '@/constants/Fonts'
-import { getSubscribersList, ISubscribe } from '@/api/subscribers'
+import { ISubscribe } from '@/api/subscribers'
 import { PATH_TO_IMAGE } from '@/constants/PATH_TO_FILES'
 import { LegendList } from '@legendapp/list'
 import { Colors } from '@/constants/Colors'
-import { useInfiniteQuery } from '@tanstack/react-query'
+import { useMySubscribersQuery } from '@/queries/subscribers'
 
 /**
  * Мои подписчики, кто подписан на меня
  * */
 const MySubscribersPage = () => {
 	const insets = useSafeAreaInsets()
-	const limit = 15
-
 	const {
 		data: subscribers = [],
 		fetchNextPage,
@@ -26,28 +24,7 @@ const MySubscribersPage = () => {
 		refetch,
 		isRefetching,
 		isFetching
-	} = useInfiniteQuery<ISubscribe[], Error, ISubscribe[], ['subscribersList'], number>({
-		queryKey: ['subscribersList'],
-
-		queryFn: ({ pageParam }) =>
-			getSubscribersList({
-				page: pageParam,
-				limit
-			}),
-
-		initialPageParam: 1,
-
-		getNextPageParam: (lastPage, pages) => {
-			if (lastPage.length < limit) return undefined
-			return pages.length + 1
-		},
-
-		select: (data) => data.pages.flat()
-		// select: (data) => ({
-		//         ...data,
-		//         pages: data.pages.flat()
-		//       }),
-	})
+	} = useMySubscribersQuery()
 
 	const EmptyListComponent = () => {
 		if (isFetching) return null
@@ -91,7 +68,6 @@ const MySubscribersPage = () => {
 						data={subscribers}
 						renderItem={renderItem}
 						keyExtractor={(item) => item.user.id}
-						//onEndReached={loadMore}
 						onEndReached={() => {
 							if (hasNextPage && !isFetchingNextPage) {
 								fetchNextPage()
@@ -99,9 +75,6 @@ const MySubscribersPage = () => {
 						}}
 						onEndReachedThreshold={0.5}
 						ItemSeparatorComponent={() => <View style={{ height: 15 }} />}
-						// refreshControl={
-						// 	<RefreshControl refreshing={refreshing} onRefresh={refresh} tintColor="#22CB5A" />
-						// }
 						refreshControl={
 							<RefreshControl
 								refreshing={isRefetching}
