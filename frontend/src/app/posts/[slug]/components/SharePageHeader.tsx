@@ -3,6 +3,7 @@ import Image from 'next/image'
 import icon from '@/assets/images/icon-40x40.png'
 import { Routes } from '@/consts/routes'
 import { headers } from 'next/headers'
+import Link from 'next/link'
 
 enum DeviceType {
 	android = 'android',
@@ -46,12 +47,14 @@ export async function SharePageHeader() {
 			<div className="max-w-7xl mx-auto px-4 py-3 flex items-center justify-between">
 				<div className="flex items-center gap-3">
 					<div className="min-w-10 w-10 min-h-10 h-10">
-						<Image
-							src={icon}
-							alt="иконка приложения"
-							className="w-full h-full object-cover"
-							draggable="false"
-						/>
+						<Link href="/">
+							<Image
+								src={icon}
+								alt="На главную страницу"
+								className="w-full h-full object-cover"
+								draggable="false"
+							/>
+						</Link>
 					</div>
 					<div>
 						<h1 className="text-white font-semibold text-lg">Hikers</h1>

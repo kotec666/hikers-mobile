@@ -1,108 +1,115 @@
-import { Metadata } from 'next'
-import { generateBasicMetadata } from '@/helpers/generateBasicMetadata'
+'use client'
+// import { Metadata } from 'next'
+// import { generateBasicMetadata } from '@/helpers/generateBasicMetadata'
 import PhoneSceneWrapper from '@/app/components/main-page/PhoneSceneWrapper'
+import { ContentBlock } from '@/app/components/ui/layout/content-block'
+import { Header } from '@/app/components/ui/layout/header'
+import { AboutCompany } from '@/app/components/ui/layout/about-company'
+import { Footer } from '@/app/components/ui/layout/footer'
+import Image from 'next/image'
+import AppStoreSvg from '@/assets/svg/app-store-l.svg'
+import GooglePlaySvg from '@/assets/svg/google-play-l.svg'
+import RustoreSvg from '@/assets/svg/rustore-l.svg'
+import AppGallerySvg from '@/assets/svg/app-gallery-l.svg'
+import { useRef } from 'react'
 
-export const metadata: Metadata = generateBasicMetadata({
-	title: 'Главная страница',
-	description: 'Описание',
-	keywords: 'ключевые, слова'
-})
+// export const metadata: Metadata = generateBasicMetadata({
+// 	title: 'Главная страница',
+// 	description: 'Описание',
+// 	keywords: 'ключевые, слова'
+// })
 
+// <div className="fixed z-[-25] top-0 h-screen w-full bg-[radial-gradient(circle,rgb(34,203,90)_0%,rgb(0,0,0)_100%)]" />
 export default function Home() {
+	const containerRef = useRef<HTMLDivElement>(null)
+
+	const contentBlocks = [
+		{
+			title: 'Персональные тренировки для вас',
+			description:
+				'Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam quis nostrud.'
+		},
+		{
+			title: 'Отслеживайте свой прогресс',
+			description:
+				'Quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore.'
+		},
+		{
+			title: 'Присоединяйтесь к сообществу',
+			description:
+				'Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum. Sed ut perspiciatis unde omnis iste natus error.'
+		}
+	]
 	return (
-		<div className="h-[800vh] relative z-[-100] ">
-			<div className="fixed z-[-25] top-0 h-screen w-full bg-[radial-gradient(circle,rgba(200,0,0,1)_0%,rgba(0,0,0,1)_100%)]" />
-			<div className="sceneWrap fixed -z-10 top-0 h-screen w-full ">
-				<PhoneSceneWrapper />
+		<div className="min-h-screen bg-[#0d0d0d]">
+			<Header />
+
+			<section className="h-[calc(100dvh-4rem)] lg:h-[calc(100dvh-5rem)] py-20 md:py-32 lg:py-40 px-4 sm:px-6 lg:px-8">
+				<div className="max-w-4xl mx-auto text-center space-y-8">
+					<h1 className="text-4xl md:text-5xl lg:text-6xl xl:text-7xl text-white">
+						Тренируйся умнее с современным подходом
+					</h1>
+					<p className="text-[#ababab] text-lg md:text-xl max-w-2xl mx-auto">
+						Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod tempor incididunt ut
+						labore et dolore magna aliqua.
+					</p>
+
+					{/* Store Buttons */}
+					<div className="flex flex-wrap items-center justify-center gap-4 pt-4">
+						<a href="#app-store">
+							<Image
+								title="Скачать приложение хайкерс в App Store"
+								src={AppStoreSvg}
+								alt="Скачайте приложение хайкерс из App Store"
+								width={148}
+								height={44}
+								draggable={false}
+							/>
+						</a>
+						<a href="#google-play">
+							<Image
+								title="Скачать приложение хайкерс в Google Play"
+								src={GooglePlaySvg}
+								alt="Скачайте приложение хайкерс из Google Play"
+								width={148}
+								height={44}
+								draggable={false}
+							/>
+						</a>
+						<a href="#rustore">
+							<Image
+								title="Скачать приложение хайкерс в RuStore"
+								src={RustoreSvg}
+								alt="Скачайте приложение хайкерс из RuStore"
+								width={148}
+								height={44}
+								draggable={false}
+							/>
+						</a>
+						<a href="#appgallery">
+							<Image
+								title="Скачать приложение хайкерс в AppGallery"
+								src={AppGallerySvg}
+								alt="Скачайте приложение хайкерс из AppGallery"
+								width={148}
+								height={44}
+								draggable={false}
+							/>
+						</a>
+					</div>
+				</div>
+			</section>
+			<div ref={containerRef} className="relative w-full lg:h-[300dvh]">
+				{contentBlocks.map((block, idx) => (
+					<ContentBlock idx={idx} key={block.title} title={block.title} description={block.description} />
+				))}
+				<div className="hidden lg:flex sticky z-10 top-0 h-screen w-full">
+					<PhoneSceneWrapper containerRef={containerRef} />
+				</div>
 			</div>
 
-			<div className="up z-10  w-full absolute overflow-hidden hidden md:inline-block">
-				<div className="page h-screen ">
-					<div className="container m-auto flex flex-col justify-end items-end h-screen">
-						<p className="text-white lg:w-2xl px-2.5 text-[1rem] lg:text-2xl mb-20 ">
-							The Nissan Silvia (Japanese: 日産・シルビア, Hepburn: Nissan Shirubia) is the series of
-							small sports cars produced by Nissan. Versions of the Silvia have been marketed as the 200SX
-							or 240SX for export, with some export versions being sold under the Datsun brand.
-						</p>
-					</div>
-				</div>
-				<div className="page h-screen ">
-					<div className="container m-auto flex flex-col justify-end items-end h-screen">
-						<p className="text-white text-center text-[1rem] lg:text-2xl mb-20 ">
-							The Nissan Silvia S15 was the final and most refined version of the Silvia lineup, produced
-							from 1999 to 2002. It was powered by the SR20DET , a 2.0L turbocharged inline-four engine,
-							producing around 250 hp in the Spec-R model. This version featured a ball-bearing turbo ,
-							improved cooling, and a 6-speed manual transmission , making it a favorite among
-							enthusiasts. The non-turbo SR20DE version was also available, delivering around 165 hp .
-							Thanks to its lightweight chassis, rear-wheel drive layout, and tunable engine, the S15
-							remains a top choice for drifting and performance builds.
-						</p>
-					</div>
-				</div>
-				<div className="page h-screen"></div>
-				<div className="page h-screen ">
-					<div className="container m-auto flex flex-col justify-end items-end h-screen">
-						<p className="text-white  lg:w-2xl px-2.5 md:text-[1rem] lg:text-xl ">
-							The Nissan Silvia S15 is a true Japanese legend, known for its balance, agility, and
-							drifting prowess. With a lightweight chassis, turbocharged SR20DET engine, and
-							rear-wheel-drive layout, it became a favorite in street racing and motorsports. The S15
-							dominated touge battles and drift competitions, cementing its status in JDM culture. Its
-							sleek design and performance keep it highly sought after, and with the US import ban nearing
-							its end, its legacy as a top-tier JDM icon continues to grow.
-						</p>
-					</div>
-				</div>
-				<div className="page h-screen "></div>
-				<div className="page h-screen "></div>
-				<div className="page h-screen "></div>
-				<div className="page h-screen ">
-					<div className="container m-auto flex flex-col justify-end items-center h-screen">
-						<p className="text-white  text-[11 em] lg:text-2xl  mb-10">
-							ффффффффффффф фффф фффф фффффффффффффф
-						</p>
-					</div>
-				</div>
-			</div>
-			<div className="down -z-20  w-full  absolute  overflow-hidden ">
-				<div className="page h-screen ">
-					<div className="container m-auto flex flex-col justify-center h-[50vh]">
-						<h4 className="lg:text-[5rem] text-[3rem] text-white font-bold pl-3">Nissan</h4>
-						<h1 className="text-[6rem] pl-3 lg:text-[18rem] leading-10 mb-10 lg:mb-0 lg:leading-44 text-white font-bold ">
-							SILVIA
-						</h1>
-					</div>
-				</div>
-				<div className="page h-screen">
-					<div className="container m-auto flex flex-col justify-center items-center h-[50vh]">
-						<h1 className="text-[6rem] lg:text-[18rem] leading-10 mb-10 lg:mb-0 lg:leading-44 text-white font-bold ">
-							LS V8
-						</h1>
-						<h4 className="text-[5rem] text-white font-bold">engine</h4>
-					</div>
-				</div>
-				<div className="page h-screen "></div>
-				<div className="page h-screen ">
-					<div className="container m-auto flex flex-col justify-center items-end h-[50vh]">
-						<h4 className=" xl:text-[5rem] text-[2rem]  text-white font-bold mt-80">Japanese</h4>
-						<h1 className="text-[6rem]  leading-none xl:text-[18rem]  mb-10 xl:mb-0 xl:leading-44 text-white font-bold ">
-							Legend
-						</h1>
-					</div>
-				</div>
-				<div className="page h-screen "></div>
-				<div className="page h-screen "></div>
-				<div className="page h-screen "></div>
-				<div className="page h-screen ">
-					<div className="container m-auto flex flex-col justify-center items-center h-[50vh]">
-						<h4 className="text-[1rem] lg:text-[4rem] text-white font-bold">
-							The Nissan Silvia isn’t just a car
-						</h4>
-						<h1 className="text-[1rem] lg:text-[3rem] leading-none text-center lg:leading-20 text-white font-bold  mb-20">
-							&#34;it’s a statement of style, speed, and pure driving passion.&#34;
-						</h1>
-					</div>
-				</div>
-			</div>
+			<AboutCompany />
+			<Footer />
 		</div>
 	)
 }
