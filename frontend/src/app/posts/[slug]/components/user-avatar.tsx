@@ -1,9 +1,9 @@
 'use client'
 import React, { useState } from 'react'
 import Image from 'next/image'
-import { PersonSvg } from '@/app/components/svg'
+import { PersonSvg } from '@/components/svg'
 import { PATH_TO_IMAGE } from '@/consts/PATH_TO_FILES'
-import { cn } from '@/helpers/cn'
+import { cn } from '@/lib/utils'
 
 interface Props {
 	avatarFilename?: string | null

@@ -1,16 +1,17 @@
 import React from 'react'
-import { WorkoutPost } from '@/app/posts/[slug]/components/WorkoutPost'
-import { BackgroundPattern } from '@/app/posts/[slug]/components/BackgroundPattern'
+import { WorkoutPost } from '@/app/posts/[slug]/components/workout-post'
+import { BackgroundPattern } from '@/app/posts/[slug]/components/background-pattern'
 import { getPostByIdForGuestCached, IGuestPost } from '@/api/posts'
 import { Metadata } from 'next'
 import { generateBasicMetadata } from '@/helpers/generateBasicMetadata'
 import { WorkoutTypesMap } from '@/consts/workout-types'
 import { PATH_TO_IMAGE } from '@/consts/PATH_TO_FILES'
 import { Routes } from '@/consts/routes'
-import { SharePageHeader } from '@/app/posts/[slug]/components/SharePageHeader'
-import RedirectScheme from '@/app/posts/[slug]/components/RedirectScheme'
-import { env } from '@/consts/env'
+import { SharePageHeader } from '@/app/posts/[slug]/components/share-page-header'
+import RedirectScheme from '@/app/posts/[slug]/components/redirect-scheme'
 import Script from 'next/script'
+import Container from '@/components/layout/container'
+import { env } from '@/consts/env'
 
 interface PostProps {
 	params: { slug: string }
@@ -86,13 +87,15 @@ const Post = async ({ params }: PostProps) => {
 
 	return (
 		<>
-			<div className="min-h-screen bg-[#0d0d0d] relative">
+			<div className="min-h-screen bg-black-0d relative">
 				<RedirectScheme scheme="hikers://posts/" postId={postData?.id} />
 				<BackgroundPattern />
 				<SharePageHeader />
 
-				<main className="max-w-7xl mx-auto px-4 pt-6 relative z-10">
-					<WorkoutPost post={postData} />
+				<main className="pt-6 relative z-10">
+					<Container>
+						<WorkoutPost post={postData} />
+					</Container>
 				</main>
 
 				<p className="text-center text-gray-500 py-6 text-sm relative z-10">

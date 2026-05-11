@@ -4,7 +4,7 @@ import { useFrame } from '@react-three/fiber'
 import { AdaptiveDpr, AdaptiveEvents, Environment } from '@react-three/drei'
 import { ScreenTextureURL, screenTextureURLs } from '@/consts/PhoneScreenTextures'
 import { useScroll, useTransform } from 'framer-motion'
-import { PhoneModel } from '@/app/components/main-page/PhoneModel'
+import { PhoneModel } from '@/components/main-page/phone-model'
 import * as THREE from 'three'
 import { useMotionValueEvent } from 'framer-motion'
 
@@ -21,7 +21,6 @@ const Lights = () => {
 				// ref={dirLight1}
 				position={[5, 5, 5]}
 				intensity={2}
-				castShadow
 				shadow-mapSize-width={1024}
 				shadow-mapSize-height={1024}
 				shadow-camera-near={0.1}
@@ -31,7 +30,6 @@ const Lights = () => {
 				// ref={dirLight2}
 				position={[-5, 5, -5]}
 				intensity={2}
-				// castShadow
 				shadow-mapSize-width={1024}
 				shadow-mapSize-height={1024}
 				shadow-camera-near={0.1}

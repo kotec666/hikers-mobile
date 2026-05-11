@@ -82,17 +82,15 @@ export const PhoneModel = forwardRef<THREE.Group, IModelProps>(({ screenTextureU
 
 	const screenTextures = useTexture(screenTextureURLs as unknown as string[]) as THREE.Texture[]
 
-	screenTextures.forEach((texture) => {
-		texture.flipY = false
-		texture.colorSpace = THREE.SRGBColorSpace
-	})
+	useMemo(() => {
+		screenTextures.forEach((texture) => {
+			texture.flipY = false
+			texture.colorSpace = THREE.SRGBColorSpace
+		})
+	}, [screenTextures])
 
 	const screenTextureIndex = screenTextureURLs.indexOf(screenTextureURL)
 	const screenTexture = screenTextureIndex >= 0 ? screenTextures[screenTextureIndex] : undefined
-	const screenMaterial = useMemo(() => {
-		if (!screenTexture) return null
-		return new THREE.MeshBasicMaterial({ map: screenTexture })
-	}, [screenTexture])
 
 	return (
 		<group ref={ref} dispose={null}>
@@ -136,8 +134,7 @@ export const PhoneModel = forwardRef<THREE.Group, IModelProps>(({ screenTextureU
 				scale={1.002}
 				material={screenTexture ? undefined : materials.Glass}
 			>
-				{/*{screenTexture && <meshBasicMaterial map={screenTexture} />}*/}
-				{screenMaterial && <primitive object={screenMaterial} attach="material" />}
+				{screenTexture && <meshBasicMaterial map={screenTexture} />}
 			</mesh>
 			<mesh geometry={nodes.Screw.geometry} material={materials.Metal} />
 			<mesh geometry={nodes.Speaker_mesh.geometry} material={materials.Display} />

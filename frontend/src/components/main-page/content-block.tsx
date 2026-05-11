@@ -1,15 +1,18 @@
-import { PropsWithChildren } from 'react'
-import { cn } from '@/helpers/cn'
+import { PropsWithChildren, Ref } from 'react'
+import { cn } from '@/lib/utils'
+import Container from '@/components/layout/container'
 
 interface ContentBlockProps extends PropsWithChildren {
 	idx: number // для стилей
 	title: string
 	description: string
+	mobileRef?: Ref<HTMLDivElement>
+	desktopRef?: Ref<HTMLDivElement>
 }
 
-export function ContentBlock({ idx, title, description }: ContentBlockProps) {
+const ContentBlock = ({ idx, title, description, mobileRef, desktopRef }: ContentBlockProps) => {
 	return (
-		<section>
+		<section ref={mobileRef}>
 			<div className="py-16 md:py-24 lg:py-32 px-4 sm:px-6 lg:px-8 lg:hidden">
 				<div className="w-full">
 					{/* Mobile & Tablet - только текст */}
@@ -20,12 +23,13 @@ export function ContentBlock({ idx, title, description }: ContentBlockProps) {
 				</div>
 			</div>
 			<div
+				ref={desktopRef}
 				className="hidden lg:flex flex-col absolute justify-center items-center text-white h-dvh w-full"
 				style={{
-					marginTop: `${idx * 100}dvh`
+					top: `${idx * 100}dvh`
 				}}
 			>
-				<div className="w-full max-w-7xl flex-1 flex items-center px-4 sm:px-6 lg:px-8">
+				<Container className="w-full flex-1 flex items-center">
 					<div
 						className={cn('max-w-xs xl:max-w-md  space-y-6', {
 							'mr-auto': idx % 2 === 0,
@@ -35,8 +39,11 @@ export function ContentBlock({ idx, title, description }: ContentBlockProps) {
 						<h2 className="text-3xl xl:text-4xl 2xl:text-5xl text-white">{title}</h2>
 						<p className="text-[#ababab] text-base xl:text-lg leading-relaxed">{description}</p>
 					</div>
-				</div>
+				</Container>
 			</div>
 		</section>
 	)
 }
+ContentBlock.displayName = 'ContentBlock'
+
+export default ContentBlock

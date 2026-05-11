@@ -1,17 +1,17 @@
-import { HeartSvg } from '@/app/components/svg'
+import { HeartSvg } from '@/components/svg'
 import { TrainingType } from '@shared/enums'
 import { WorkoutTypesMap } from '@/consts/workout-types'
 import Image from 'next/image'
 import { formatRelativeDate } from '@/helpers/formatRelativeDate'
-import { cn } from '@/helpers/cn'
 import { IGuestPost } from '@/api/posts'
 import { formatDistance } from '@/helpers/formatDistance'
 import { formatTimeFromSecondsCompact } from '@/helpers/formatTime'
 import { PATH_TO_IMAGE } from '@/consts/PATH_TO_FILES'
-import NotFoundPost from '@/app/posts/[slug]/components/NotFoundPost'
-import UserAvatar from '@/app/posts/[slug]/components/UserAvatar'
-import { MapProvider } from '@/app/components/providers/MapProvider'
-import YandexMap from '@/app/components/ui/map/YandexMap'
+import NotFoundPost from '@/app/posts/[slug]/components/not-found-post'
+import UserAvatar from '@/app/posts/[slug]/components/user-avatar'
+import { MapProvider } from '@/components/providers/map-provider'
+import YandexMap from '@/components/ui/map/yandex-map'
+import { cn } from '@/lib/utils'
 
 type LayoutItem = {
 	className: string

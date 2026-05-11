@@ -1,5 +1,4 @@
 'use client'
-
 import React from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 
@@ -7,7 +6,7 @@ const YMapLoader = () => {
 	const dots = [0, 1, 2]
 
 	return (
-		<div className="flex w-full h-full items-center justify-center bg-gray-50 dark:bg-gray-900">
+		<div className="flex w-full h-full items-center justify-center bg-gray-900">
 			<div className="flex space-x-2">
 				<AnimatePresence>
 					{dots.map((i) => (

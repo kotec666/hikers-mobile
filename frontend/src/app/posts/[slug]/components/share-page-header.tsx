@@ -1,9 +1,10 @@
-import { AppleSvg, GooglePlaySvg } from '@/app/components/svg'
+import { AppleSvg, GooglePlaySvg } from '@/components/svg'
 import Image from 'next/image'
 import icon from '@/assets/images/icon-40x40.png'
 import { Routes } from '@/consts/routes'
 import { headers } from 'next/headers'
 import Link from 'next/link'
+import Container from '@/components/layout/container'
 
 enum DeviceType {
 	android = 'android',
@@ -44,7 +45,7 @@ export async function SharePageHeader() {
 
 	return (
 		<header className="bg-[#1a1a1a] border-b border-[#2c2c2c] sticky top-0 z-50">
-			<div className="max-w-7xl mx-auto px-4 py-3 flex items-center justify-between">
+			<Container className="py-3 flex items-center justify-between">
 				<div className="flex items-center gap-3">
 					<div className="min-w-10 w-10 min-h-10 h-10">
 						<Link href="/">
@@ -69,7 +70,7 @@ export async function SharePageHeader() {
 				)}
 				{device === DeviceType.ios && <RedirectComponentAppStore />}
 				{device === DeviceType.android && <RedirectComponentGooglePlay />}
-			</div>
+			</Container>
 		</header>
 	)
 }

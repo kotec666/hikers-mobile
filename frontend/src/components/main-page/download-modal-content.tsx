@@ -1,0 +1,42 @@
+import React from 'react'
+import StoreButtonLg, { StoreButtonType } from '@/components/ui/store-button-lg'
+
+const DownloadModalContent = () => {
+	return (
+		<div className="space-y-8 pb-4">
+			<div className="text-center">
+				<p className="text-[#ababab]">Выберите ваш магазин приложений</p>
+			</div>
+			<div className="grid grid-cols-1 place-items-center sm:place-items-stretch sm:grid-cols-2 gap-4">
+				<div className="flex justify-end">
+					<StoreButtonLg type={StoreButtonType.APP_STORE} />
+				</div>
+				<div className="flex justify-start">
+					<StoreButtonLg type={StoreButtonType.GOOGLE_PLAY} />
+				</div>
+				<div className="flex justify-end">
+					<StoreButtonLg type={StoreButtonType.RUSTORE} />
+				</div>
+				<div className="flex justify-start">
+					<StoreButtonLg type={StoreButtonType.APP_GALLERY} />
+				</div>
+			</div>
+			{/* QR Code */}
+			<div className="flex flex-col items-center space-y-4 pt-4">
+				<p className="text-[#ababab] text-sm">Или отсканируйте QR-код</p>
+				<div className="w-48 h-48 bg-white rounded-2xl p-4 flex items-center justify-center relative">
+					<img
+						src={`https://api.qrserver.com/v1/create-qr-code/?size=180x180&data=${encodeURIComponent(window.location.origin + '/?action=download')}`}
+						alt="QR Code для скачивания приложения"
+						className="w-full h-full object-contain"
+					/>
+				</div>
+				<p className="text-xs text-[#ababab] text-center max-w-50">
+					Сканируйте для быстрого доступа к приложению
+				</p>
+			</div>
+		</div>
+	)
+}
+
+export default DownloadModalContent

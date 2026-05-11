@@ -8,7 +8,7 @@ import {
 	RunningPersonSvg,
 	TrophySvg,
 	WalkingPersonSvg
-} from '@/app/components/svg'
+} from '@/components/svg'
 import { useCallback, useEffect, useMemo, useState } from 'react'
 
 export function BackgroundPattern() {

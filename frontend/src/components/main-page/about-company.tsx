@@ -1,16 +1,18 @@
+import Container from '@/components/layout/container'
+
 export function AboutCompany() {
 	return (
 		<section className="bg-[#46CA53] py-16 md:py-20">
-			<div className="px-4 sm:px-6 lg:px-8 max-w-7xl mx-auto">
+			<Container>
 				<div className="grid md:grid-cols-3 gap-12">
 					{/* Brand & Social */}
 					<div className="space-y-6">
-						<h3 className="text-2xl md:text-3xl font-bold text-[#0d0d0d]">ХАЙКЕРС</h3>
+						<h3 className="text-2xl md:text-3xl font-bold text-black-0d">ХАЙКЕРС</h3>
 						<div className="flex gap-4">
 							{/* Instagram */}
 							<a
 								href="#"
-								className="w-10 h-10 rounded-full bg-[#0d0d0d] flex items-center justify-center hover:bg-[#1a1a1a] transition-colors"
+								className="w-10 h-10 rounded-full bg-black-0d flex items-center justify-center hover:bg-[#1a1a1a] transition-colors"
 								aria-label="Instagram"
 							>
 								<svg
@@ -30,7 +32,7 @@ export function AboutCompany() {
 							{/* Twitter/X */}
 							<a
 								href="#"
-								className="w-10 h-10 rounded-full bg-[#0d0d0d] flex items-center justify-center hover:bg-[#1a1a1a] transition-colors"
+								className="w-10 h-10 rounded-full bg-black-0d flex items-center justify-center hover:bg-[#1a1a1a] transition-colors"
 								aria-label="Twitter"
 							>
 								<svg
@@ -48,7 +50,7 @@ export function AboutCompany() {
 							{/* Facebook */}
 							<a
 								href="#"
-								className="w-10 h-10 rounded-full bg-[#0d0d0d] flex items-center justify-center hover:bg-[#1a1a1a] transition-colors"
+								className="w-10 h-10 rounded-full bg-black-0d flex items-center justify-center hover:bg-[#1a1a1a] transition-colors"
 								aria-label="Facebook"
 							>
 								<svg
@@ -67,10 +69,10 @@ export function AboutCompany() {
 
 					{/* Company */}
 					<div className="space-y-4">
-						<h4 className="text-[#0d0d0d] font-bold">Компания</h4>
+						<h4 className="text-black-0d font-bold">Компания</h4>
 						<ul className="space-y-2 font-medium">
 							<li>
-								<a href="#" className="text-[#0d0d0d]/80 hover:text-[#0d0d0d] transition-colors">
+								<a href="#" className="text-black-0d/80 hover:text-black-0d transition-colors">
 									Описание
 								</a>
 							</li>
@@ -79,22 +81,22 @@ export function AboutCompany() {
 
 					{/* Useful Links */}
 					<div className="space-y-4">
-						<h4 className="text-[#0d0d0d] font-bold">Полезные ссылки</h4>
+						<h4 className="text-black-0d font-bold">Полезные ссылки</h4>
 						<ul className="space-y-2 font-medium">
 							<li>
-								<a href="#" className="text-[#0d0d0d]/80 hover:text-[#0d0d0d] transition-colors">
+								<a href="#" className="text-black-0d/80 hover:text-black-0d transition-colors">
 									Поддержка
 								</a>
 							</li>
 							<li>
-								<a href="#" className="text-[#0d0d0d]/80 hover:text-[#0d0d0d] transition-colors">
+								<a href="#" className="text-black-0d/80 hover:text-black-0d transition-colors">
 									Контакты
 								</a>
 							</li>
 						</ul>
 					</div>
 				</div>
-			</div>
+			</Container>
 		</section>
 	)
 }

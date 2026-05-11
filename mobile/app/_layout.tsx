@@ -9,9 +9,9 @@ import { NotificationProvider } from '@/components/providers/NotificationProvide
 import { GestureHandlerRootView } from 'react-native-gesture-handler'
 import PortalProvider from '@/components/Portal/PortalProvider'
 import { Colors } from '@/constants/Colors'
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import './../global.css'
 
-import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 const queryClient = new QueryClient({
 	defaultOptions: {
 		queries: {

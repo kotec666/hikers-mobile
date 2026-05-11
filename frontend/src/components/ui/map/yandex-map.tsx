@@ -1,18 +1,12 @@
 'use client'
 import React, { useEffect, useRef, useState, forwardRef, useImperativeHandle, memo, useCallback } from 'react'
 import { ITrainingPoint } from '@/api/workout'
-import { cn } from '@/helpers/cn'
-import {
-	StartMarkerSvg,
-	FinishMarkerFlagSvg,
-	PauseMarkerSvg,
-	ResumeMarkerSvg,
-	SvgIconProps
-} from '@/app/components/svg'
+import { StartMarkerSvg, FinishMarkerFlagSvg, PauseMarkerSvg, ResumeMarkerSvg, SvgIconProps } from '@/components/svg'
 import { renderToStaticMarkup } from 'react-dom/server'
-import { useMap } from '@/app/components/providers/MapProvider'
-import YMapLoader from '@/app/components/ui/map/YMapLoader'
+import YMapLoader from '@/components/ui/map/ymap-loader'
 import { YMap as YMapType, YMapFeature as YMapFeatureType, YMapMarker as YMapMarkerType } from '@yandex/ymaps3-types'
+import { useMap } from '@/components/providers/map-provider'
+import { cn } from '@/lib/utils'
 
 function createMarkerElement(Svg: React.FC<SvgIconProps>, color = '#22c55e', size = 32) {
 	const el = document.createElement('div')

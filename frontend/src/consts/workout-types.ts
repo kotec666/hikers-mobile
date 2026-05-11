@@ -1,5 +1,5 @@
 import { TrainingType } from '@shared/enums'
-import { BicyclePersonSvg, RunningPersonSvg, WalkingPersonSvg } from '@/app/components/svg'
+import { BicyclePersonSvg, RunningPersonSvg, WalkingPersonSvg } from '@/components/svg'
 
 export const WorkoutTypesData = [
 	{ type: TrainingType.RUN, name: 'Забег', IconComponent: RunningPersonSvg },
