@@ -81,6 +81,7 @@ export default function Home() {
 		<div>
 			<MainLayout
 				headerProps={{
+					isAnimationLineDisabled: false,
 					sectionRefs
 				}}
 				mainClassName="bg-black-0d"

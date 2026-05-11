@@ -3,7 +3,7 @@ import Container from '@/components/layout/container'
 
 export function Footer() {
 	return (
-		<footer className="bg-black-0d border-t border-[#1a1a1a] py-8">
+		<footer className="bg-black-0d backdrop-blur-md border-t border-[#1a1a1a] py-8">
 			<Container>
 				<div className="flex flex-col sm:flex-row justify-between items-center sm:items-start gap-4">
 					<div className="flex flex-col gap-6">

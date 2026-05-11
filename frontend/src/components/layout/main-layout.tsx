@@ -11,7 +11,7 @@ interface IMainLayoutProps {
 const MainLayout = ({ children, headerProps, mainClassName }: IMainLayoutProps) => {
 	return (
 		<>
-			<Header sectionRefs={headerProps?.sectionRefs} />
+			<Header {...headerProps} />
 			<main className={mainClassName}>{children}</main>
 			<Footer />
 		</>

@@ -7,11 +7,11 @@ import { generateBasicMetadata } from '@/helpers/generateBasicMetadata'
 import { WorkoutTypesMap } from '@/consts/workout-types'
 import { PATH_TO_IMAGE } from '@/consts/PATH_TO_FILES'
 import { Routes } from '@/consts/routes'
-import { SharePageHeader } from '@/app/posts/[slug]/components/share-page-header'
 import RedirectScheme from '@/app/posts/[slug]/components/redirect-scheme'
 import Script from 'next/script'
 import Container from '@/components/layout/container'
 import { env } from '@/consts/env'
+import MainLayout from '@/components/layout/main-layout'
 
 interface PostProps {
 	params: { slug: string }
@@ -86,21 +86,22 @@ const Post = async ({ params }: PostProps) => {
 	}
 
 	return (
-		<>
-			<div className="min-h-screen bg-black-0d relative">
+		<MainLayout mainClassName="flex min-h-screen bg-black-0d relative">
+			<div className="w-full flex items-center">
 				<RedirectScheme scheme="hikers://posts/" postId={postData?.id} />
 				<BackgroundPattern />
-				<SharePageHeader />
 
-				<main className="pt-6 relative z-10">
-					<Container>
-						<WorkoutPost post={postData} />
-					</Container>
-				</main>
+				<div className="flex flex-col gap-6 w-full">
+					<div className="flex relative z-10">
+						<Container>
+							<WorkoutPost post={postData} />
+						</Container>
+					</div>
 
-				<p className="text-center text-gray-500 py-6 text-sm relative z-10">
-					Загрузи приложение, чтобы делиться своими тренировками
-				</p>
+					<p className="text-center text-gray-500 py-6 text-sm relative z-10">
+						Загрузи приложение, чтобы делиться своими тренировками
+					</p>
+				</div>
 			</div>
 			{postData && (
 				<Script
@@ -162,7 +163,7 @@ const Post = async ({ params }: PostProps) => {
 					}}
 				/>
 			)}
-		</>
+		</MainLayout>
 	)
 }
 

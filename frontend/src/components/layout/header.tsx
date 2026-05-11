@@ -3,13 +3,15 @@ import Link from 'next/link'
 import Image from 'next/image'
 import icon from '@/assets/images/icon-40x40.png'
 import { motion, useMotionValue, useMotionValueEvent, useScroll, useSpring, useTransform } from 'framer-motion'
-import { usePathname } from 'next/navigation'
-import { RefObject, useMemo, useState } from 'react'
+import { usePathname, useSearchParams } from 'next/navigation'
+import { RefObject, useCallback, useMemo, useState } from 'react'
 import Container from '@/components/layout/container'
 import { Button } from '@/components/ui/button'
 import { ResponsiveDialog, ResponsiveDialogContent, ResponsiveDialogTrigger } from '@/components/ui/responsive-dialog'
 import DownloadModalContent from '@/components/main-page/download-modal-content'
 import { MobileMenuContent } from '@/components/layout/mobile-menu'
+import useAppendSearchParam from '@/hooks/useAppendSearchParam'
+import { cn } from '@/lib/utils'
 
 const clamp = (value: number, min: number, max: number) => Math.min(Math.max(value, min), max)
 const scrollDistance = 1400
@@ -36,6 +38,7 @@ type SectionItem = {
 }
 
 export interface HeaderProps {
+	isAnimationLineDisabled?: boolean
 	sectionRefs?: {
 		trainings: SectionItem
 		progress: SectionItem
@@ -43,8 +46,15 @@ export interface HeaderProps {
 	}
 }
 
-export function Header(props: HeaderProps) {
+export function Header({ sectionRefs, isAnimationLineDisabled = true }: HeaderProps) {
 	const pathname = usePathname()
+	const searchParams = useSearchParams()
+	const [appendSearchParam] = useAppendSearchParam()
+	const action = searchParams.get('action')
+
+	const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false)
+	const [isDownloadModalOpen, setIsDownloadModalOpen] = useState(action === 'download')
+
 	const { scrollYBoundedProgress } = useBoundedScroll(scrollDistance)
 	const scrollYThrottledProgress = useTransform(scrollYBoundedProgress, [0, 0.25, 1], [0, 0, 1])
 	const { scrollYProgress } = useScroll()
@@ -53,9 +63,6 @@ export function Header(props: HeaderProps) {
 		damping: 30,
 		restDelta: 0.001
 	})
-
-	const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false)
-	const [isDownloadModalOpen, setIsDownloadModalOpen] = useState(false)
 
 	const scrollToSection = (ref: React.RefObject<HTMLDivElement | null>) => {
 		ref.current?.scrollIntoView({
@@ -74,10 +81,20 @@ export function Header(props: HeaderProps) {
 		}
 	}
 
+	const handleOpenDownloadModal = useCallback(() => {
+		setIsDownloadModalOpen(true)
+		appendSearchParam('action', 'download')
+	}, [appendSearchParam])
+
+	const handleCloseDownloadModal = () => {
+		setIsDownloadModalOpen(false)
+		appendSearchParam('action', '')
+	}
+
 	const menuItems = useMemo(() => {
-		if (!props.sectionRefs) return []
-		return Object.values(props.sectionRefs)
-	}, [props.sectionRefs])
+		if (!sectionRefs) return []
+		return Object.values(sectionRefs)
+	}, [sectionRefs])
 
 	const handleMobileMenuClick = (ref: React.RefObject<HTMLDivElement | null>) => {
 		setIsMobileMenuOpen(false)
@@ -86,8 +103,9 @@ export function Header(props: HeaderProps) {
 
 	const handlePressDownloadInMobileMenu = () => {
 		setIsMobileMenuOpen(false)
-		setIsDownloadModalOpen(true)
+		handleOpenDownloadModal()
 	}
+
 	return (
 		<header className="sticky top-0 z-50 backdrop-blur-md border-b border-[#1a1a1a] bg-black-0d/60">
 			<Container>
@@ -119,7 +137,16 @@ export function Header(props: HeaderProps) {
 								{item.title}
 							</button>
 						))}
-						<ResponsiveDialog open={isDownloadModalOpen} onOpenChange={setIsDownloadModalOpen}>
+						<ResponsiveDialog
+							open={isDownloadModalOpen}
+							onOpenChange={(open) => {
+								if (open) {
+									handleOpenDownloadModal()
+								} else {
+									handleCloseDownloadModal()
+								}
+							}}
+						>
 							<ResponsiveDialogTrigger asChild>
 								<Button variant="green" size="xl">
 									Скачать
@@ -162,7 +189,9 @@ export function Header(props: HeaderProps) {
 				</div>
 			</Container>
 			<motion.div
-				className="fixed top-16 lg:top-20 left-0 right-0 bg-white/50 origin-[0%] z-10"
+				className={cn('fixed top-16 lg:top-20 left-0 right-0 bg-white/50 origin-[0%] z-10', {
+					hidden: isAnimationLineDisabled
+				})}
 				style={{
 					scaleX,
 					height: useTransform(scrollYThrottledProgress, [0, 1], [0.3, 1]),

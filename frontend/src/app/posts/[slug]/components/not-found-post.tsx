@@ -37,27 +37,28 @@ const NotFoundPost = () => {
 	}, [cards])
 
 	return (
-		<div className="bg-[#212121] rounded-2xl overflow-hidden max-w-2xl mx-auto p-8 text-center text-gray-400 flex flex-col items-center gap-6 relative h-[400px]">
-			<motion.h2
-				className="text-lg font-medium z-10"
-				initial={{ y: -10, opacity: 0 }}
-				animate={{ y: 0, opacity: 1 }}
-				transition={{ delay: 0.2 }}
-			>
-				Пост не найден
-			</motion.h2>
+		<div className="bg-[#212121] rounded-2xl overflow-hidden max-w-2xl mx-auto p-4 sm:p-8 text-center text-gray-400 flex flex-col items-center relative">
+			<div className="flex flex-col gap-6 mb-15">
+				<motion.h2
+					className="text-lg font-medium z-10"
+					initial={{ y: -10, opacity: 0 }}
+					animate={{ y: 0, opacity: 1 }}
+					transition={{ delay: 0.2 }}
+				>
+					Пост не найден
+				</motion.h2>
+				<motion.p
+					className="text-sm z-10"
+					initial={{ y: 10, opacity: 0 }}
+					animate={{ y: 0, opacity: 1 }}
+					transition={{ delay: 0.3 }}
+				>
+					Этот пост был удалён или ещё не создан
+				</motion.p>
+			</div>
 
-			<motion.p
-				className="text-sm z-10"
-				initial={{ y: 10, opacity: 0 }}
-				animate={{ y: 0, opacity: 1 }}
-				transition={{ delay: 0.3 }}
-			>
-				Этот пост был удалён или ещё не создан
-			</motion.p>
-
-			<div className="relative w-full flex justify-center items-center mt-6 h-[260px]">
-				<ul className="relative w-64 h-40">
+			<div className="relative w-full flex justify-center items-center mt-6">
+				<ul className="relative w-[70vw] max-w-xs aspect-16/10">
 					{cards.map((color, index) => {
 						const isMoving = color === movingCard
 						let yValue = 0
