@@ -1,2 +1,3 @@
-export const screenTextureURLs = ['texture1.png', 'texture2.avif', 'texture3.avif'] as const
+const PREFIX = 'textures/'
+export const screenTextureURLs = [`${PREFIX}texture1.avif`, `${PREFIX}texture2.avif`, `${PREFIX}texture3.avif`] as const
 export type ScreenTextureURL = (typeof screenTextureURLs)[number]

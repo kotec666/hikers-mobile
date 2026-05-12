@@ -18,7 +18,9 @@ export default function useAppendSearchParam() {
 				const query = currentParams.toString()
 				const url = query ? `${pathname}?${query}` : pathname
 
-				router.replace(url)
+				router.replace(url, {
+					scroll: false
+				})
 
 				return Promise.resolve()
 			})

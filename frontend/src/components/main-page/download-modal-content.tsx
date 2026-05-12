@@ -1,5 +1,7 @@
 import React from 'react'
 import StoreButtonLg, { StoreButtonType } from '@/components/ui/store-button-lg'
+import Image from 'next/image'
+import qrCode from '@/assets/images/qr-code.webp'
 
 const DownloadModalContent = () => {
 	return (
@@ -21,15 +23,10 @@ const DownloadModalContent = () => {
 					<StoreButtonLg type={StoreButtonType.APP_GALLERY} />
 				</div>
 			</div>
-			{/* QR Code */}
 			<div className="flex flex-col items-center space-y-4 pt-4">
 				<p className="text-[#ababab] text-sm">Или отсканируйте QR-код</p>
 				<div className="w-48 h-48 bg-white rounded-2xl p-4 flex items-center justify-center relative">
-					<img
-						src={`https://api.qrserver.com/v1/create-qr-code/?size=180x180&data=${encodeURIComponent(window.location.origin + '/?action=download')}`}
-						alt="QR Code для скачивания приложения"
-						className="w-full h-full object-contain"
-					/>
+					<Image src={qrCode} alt="qr код" className="w-full h-full object-contain" draggable="false" />
 				</div>
 				<p className="text-xs text-[#ababab] text-center max-w-50">
 					Сканируйте для быстрого доступа к приложению
