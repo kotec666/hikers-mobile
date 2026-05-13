@@ -71,8 +71,8 @@ const MapComponentColorPick = (props: IProps) => {
 				logoPadding={props.logoPadding}
 				showUserPosition={false}
 				interactiveDisabled={props.interactiveDisabled}
-				tiltGesturesDisabled={true}
-				rotateGesturesDisabled={false}
+				tiltGesturesDisabled
+				rotateGesturesDisabled
 			>
 				<UserLocationMarker
 					key={`user-${activeColor}`}

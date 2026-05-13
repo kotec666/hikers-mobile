@@ -7,7 +7,8 @@ import GoToSectionButton from '@/components/main-page/go-to-section-button'
 import ContentBlock from '@/components/main-page/content-block'
 import { AboutCompany } from '@/components/main-page/about-company'
 import MainLayout from '@/components/layout/main-layout'
-import StoreButtonLg, { StoreButtonType } from '@/components/ui/store-button-lg'
+import { screenTextureURLs } from '@/consts/PhoneScreenTextures'
+import StoreButton, { StoreButtonType } from '@/components/ui/store-button'
 
 // export const metadata: Metadata = generateBasicMetadata({
 // 	title: 'Главная страница',
@@ -35,18 +36,21 @@ export default function Home() {
 		{
 			id: SectionId.TRAININGS,
 			title: 'Персональные тренировки для вас',
+			mobileImg: screenTextureURLs[0],
 			description:
 				'Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam quis nostrud.'
 		},
 		{
 			id: SectionId.PROGRESS,
 			title: 'Отслеживайте свой прогресс',
+			mobileImg: screenTextureURLs[1],
 			description:
 				'Quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore.'
 		},
 		{
 			id: SectionId.COMMUNITY,
 			title: 'Присоединяйтесь к сообществу',
+			mobileImg: screenTextureURLs[2],
 			description:
 				'Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum. Sed ut perspiciatis unde omnis iste natus error.'
 		}
@@ -109,12 +113,11 @@ export default function Home() {
 							labore et dolore magna aliqua.
 						</p>
 
-						{/* Store Buttons */}
 						<div className="flex flex-wrap items-center justify-center gap-4 pt-4">
-							<StoreButtonLg type={StoreButtonType.APP_STORE} />
-							<StoreButtonLg type={StoreButtonType.GOOGLE_PLAY} />
-							<StoreButtonLg type={StoreButtonType.RUSTORE} />
-							<StoreButtonLg type={StoreButtonType.APP_GALLERY} />
+							<StoreButton type="lg" storeType={StoreButtonType.APP_STORE} />
+							<StoreButton type="lg" storeType={StoreButtonType.GOOGLE_PLAY} />
+							<StoreButton type="lg" storeType={StoreButtonType.RUSTORE} />
+							<StoreButton type="lg" storeType={StoreButtonType.APP_GALLERY} />
 						</div>
 					</div>
 					<div className="mt-auto pt-5 w-full flex justify-center z-2">
@@ -125,6 +128,7 @@ export default function Home() {
 					{contentBlocks.map((block, idx) => (
 						<ContentBlock
 							key={block.id}
+							mobileImg={block.mobileImg}
 							mobileRef={sectionRefs[block.id as SectionId].mobileRef}
 							desktopRef={sectionRefs[block.id as SectionId].desktopRef}
 							idx={idx}

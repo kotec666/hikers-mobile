@@ -9,7 +9,7 @@ interface PhoneSceneWrapperProps {
 
 const PhoneSceneWrapper = ({ containerRef }: PhoneSceneWrapperProps) => {
 	return (
-		<Canvas camera={{ position: [0, 0, 5], fov: 4 }}>
+		<Canvas camera={{ position: [0, 0, 5], fov: 3 }}>
 			<PhoneScene containerRef={containerRef} />
 		</Canvas>
 	)

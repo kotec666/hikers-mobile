@@ -1,4 +1,51 @@
 import Container from '@/components/layout/container'
+import { TgSvg, TtSvg, VkSvg } from '@/components/svg'
+import Link from 'next/link'
+import { env } from '@/consts/env'
+
+enum SocialLinkType {
+	VK = 'vk',
+	TT = 'tt',
+	TG = 'tg'
+}
+const SocialLink = ({ type }: { type: SocialLinkType }) => {
+	const getSocialLinkData = () => {
+		switch (type) {
+			case SocialLinkType.VK:
+				return {
+					label: 'вконтакте',
+					link: env.vk_link,
+					svg: <VkSvg />
+				}
+			case SocialLinkType.TT:
+				return {
+					label: 'тикток',
+					link: env.tt_link,
+					svg: <TtSvg />
+				}
+			case SocialLinkType.TG:
+				return {
+					label: 'телеграм',
+					link: env.tg_link,
+					svg: <TgSvg />
+				}
+		}
+	}
+
+	const socialLinkData = getSocialLinkData()
+
+	if (!socialLinkData.link) return null
+	return (
+		<Link
+			href={socialLinkData.link}
+			target="_blank"
+			className="w-10 h-10 rounded-full bg-black-0d flex items-center justify-center hover:bg-[#1a1a1a] transition-colors"
+			aria-label={socialLinkData.label}
+		>
+			{socialLinkData.svg}
+		</Link>
+	)
+}
 
 export function AboutCompany() {
 	return (
@@ -9,61 +56,9 @@ export function AboutCompany() {
 					<div className="space-y-6">
 						<h3 className="text-2xl md:text-3xl font-bold text-black-0d">ХАЙКЕРС</h3>
 						<div className="flex gap-4">
-							{/* Instagram */}
-							<a
-								href="#"
-								className="w-10 h-10 rounded-full bg-black-0d flex items-center justify-center hover:bg-[#1a1a1a] transition-colors"
-								aria-label="Instagram"
-							>
-								<svg
-									width="20"
-									height="20"
-									viewBox="0 0 24 24"
-									fill="none"
-									stroke="#fff"
-									strokeWidth="2"
-								>
-									<rect x="2" y="2" width="20" height="20" rx="5" ry="5" />
-									<path d="M16 11.37A4 4 0 1 1 12.63 8 4 4 0 0 1 16 11.37z" />
-									<line x1="17.5" y1="6.5" x2="17.51" y2="6.5" />
-								</svg>
-							</a>
-
-							{/* Twitter/X */}
-							<a
-								href="#"
-								className="w-10 h-10 rounded-full bg-black-0d flex items-center justify-center hover:bg-[#1a1a1a] transition-colors"
-								aria-label="Twitter"
-							>
-								<svg
-									width="20"
-									height="20"
-									viewBox="0 0 24 24"
-									fill="none"
-									stroke="#fff"
-									strokeWidth="2"
-								>
-									<path d="M23 3a10.9 10.9 0 0 1-3.14 1.53 4.48 4.48 0 0 0-7.86 3v1A10.66 10.66 0 0 1 3 4s-4 9 5 13a11.64 11.64 0 0 1-7 2c9 5 20 0 20-11.5a4.5 4.5 0 0 0-.08-.83A7.72 7.72 0 0 0 23 3z" />
-								</svg>
-							</a>
-
-							{/* Facebook */}
-							<a
-								href="#"
-								className="w-10 h-10 rounded-full bg-black-0d flex items-center justify-center hover:bg-[#1a1a1a] transition-colors"
-								aria-label="Facebook"
-							>
-								<svg
-									width="20"
-									height="20"
-									viewBox="0 0 24 24"
-									fill="none"
-									stroke="#fff"
-									strokeWidth="2"
-								>
-									<path d="M18 2h-3a5 5 0 0 0-5 5v3H7v4h3v8h4v-8h3l1-4h-4V7a1 1 0 0 1 1-1h3z" />
-								</svg>
-							</a>
+							<SocialLink type={SocialLinkType.VK} />
+							<SocialLink type={SocialLinkType.TG} />
+							<SocialLink type={SocialLinkType.TT} />
 						</div>
 					</div>
 

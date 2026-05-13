@@ -1,13 +1,13 @@
 import { Button } from '@/components/ui/button'
-import { RefObject } from 'react'
+import { SectionRef } from '@/components/layout/header'
 
 type MobileMenuContentProps = {
 	menuItems: {
 		title: string
-		mobileRef: RefObject<HTMLDivElement | null>
-		desktopRef: RefObject<HTMLDivElement | null>
+		mobileRef: SectionRef
+		desktopRef: SectionRef
 	}[]
-	onItemClick: (ref: React.RefObject<HTMLDivElement | null>) => void
+	onItemClick: (mobileRef: SectionRef, desktopRef: SectionRef) => void
 	onDownloadPress: () => void
 }
 
@@ -17,7 +17,7 @@ export const MobileMenuContent = ({ menuItems, onItemClick, onDownloadPress }: M
 			{menuItems.map((item) => (
 				<button
 					key={item.title}
-					onClick={() => onItemClick(item.mobileRef)}
+					onClick={() => onItemClick(item.mobileRef, item.desktopRef)}
 					className="text-white hover:text-green-main transition-colors py-3 text-lg text-left"
 				>
 					{item.title}

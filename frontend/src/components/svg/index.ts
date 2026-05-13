@@ -18,5 +18,8 @@ export { default as RustoreSmallSvg } from './store/rustore-svg-s'
 export { default as AppStoreSmallSvg } from './store/app-store-svg-s'
 export { default as GooglePlaySmallSvg } from './store/google-play-svg-s'
 export { default as AppGallerySmallSvg } from './store/app-gallery-svg-s'
+export { default as VkSvg } from './vk-svg'
+export { default as TgSvg } from './tg-svg'
+export { default as TtSvg } from './tt-svg'
 
 export type { SvgIconProps } from './types'

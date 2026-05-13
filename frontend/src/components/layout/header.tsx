@@ -31,10 +31,12 @@ function useBoundedScroll(bounds: number) {
 	return { scrollYBoundedProgress }
 }
 
+export type SectionRef = RefObject<HTMLDivElement | null>
+
 type SectionItem = {
 	title: string
-	mobileRef: RefObject<HTMLDivElement | null>
-	desktopRef: RefObject<HTMLDivElement | null>
+	mobileRef: SectionRef
+	desktopRef: SectionRef
 }
 
 export interface HeaderProps {
@@ -64,10 +66,19 @@ export function Header({ sectionRefs, isAnimationLineDisabled = true }: HeaderPr
 		restDelta: 0.001
 	})
 
-	const scrollToSection = (ref: React.RefObject<HTMLDivElement | null>) => {
-		ref.current?.scrollIntoView({
+	const scrollToSection = (mobileRef: SectionRef, desktopRef: SectionRef) => {
+		let targetRef: SectionRef
+		const isMobile = window.innerWidth <= 1023
+		if (isMobile) {
+			// скролл по мобайлу
+			targetRef = mobileRef
+		} else {
+			// скролл по десктопу
+			targetRef = desktopRef
+		}
+		targetRef.current?.scrollIntoView({
 			behavior: 'smooth',
-			block: 'center'
+			block: isMobile ? 'start' : 'center'
 		})
 	}
 
@@ -96,9 +107,9 @@ export function Header({ sectionRefs, isAnimationLineDisabled = true }: HeaderPr
 		return Object.values(sectionRefs)
 	}, [sectionRefs])
 
-	const handleMobileMenuClick = (ref: React.RefObject<HTMLDivElement | null>) => {
+	const handleMobileMenuClick = (mobileRef: SectionRef, desktopRef: SectionRef) => {
 		setIsMobileMenuOpen(false)
-		return scrollToSection(ref)
+		return scrollToSection(mobileRef, desktopRef)
 	}
 
 	const handlePressDownloadInMobileMenu = () => {
@@ -131,7 +142,7 @@ export function Header({ sectionRefs, isAnimationLineDisabled = true }: HeaderPr
 						{menuItems.map((item) => (
 							<button
 								key={item.title}
-								onClick={() => scrollToSection(item.desktopRef)}
+								onClick={() => scrollToSection(item.mobileRef, item.desktopRef)}
 								className="text-[#ababab] hover:text-white transition-colors cursor-pointer"
 							>
 								{item.title}

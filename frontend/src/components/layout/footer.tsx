@@ -1,5 +1,6 @@
-import { AppGallerySmallSvg, AppStoreSmallSvg, GooglePlaySmallSvg, RustoreSmallSvg } from '@/components/svg'
+import React from 'react'
 import Container from '@/components/layout/container'
+import StoreButton, { StoreButtonType } from '@/components/ui/store-button'
 
 export function Footer() {
 	return (
@@ -19,10 +20,10 @@ export function Footer() {
 							</a>
 						</div>
 						<div className="flex flex-row flex-wrap justify-center gap-3">
-							<AppStoreSmallSvg />
-							<GooglePlaySmallSvg />
-							<RustoreSmallSvg />
-							<AppGallerySmallSvg />
+							<StoreButton type="sm" storeType={StoreButtonType.APP_STORE} />
+							<StoreButton type="sm" storeType={StoreButtonType.GOOGLE_PLAY} />
+							<StoreButton type="sm" storeType={StoreButtonType.RUSTORE} />
+							<StoreButton type="sm" storeType={StoreButtonType.APP_GALLERY} />
 						</div>
 					</div>
 					<div className="text-[#ababab] text-sm">© ХАЙКЕРС</div>

@@ -1,7 +1,7 @@
 import React from 'react'
-import StoreButtonLg, { StoreButtonType } from '@/components/ui/store-button-lg'
 import Image from 'next/image'
 import qrCode from '@/assets/images/qr-code.webp'
+import StoreButton, { StoreButtonType } from '@/components/ui/store-button'
 
 const DownloadModalContent = () => {
 	return (
@@ -11,16 +11,16 @@ const DownloadModalContent = () => {
 			</div>
 			<div className="grid grid-cols-1 place-items-center sm:place-items-stretch sm:grid-cols-2 gap-4">
 				<div className="flex justify-end">
-					<StoreButtonLg type={StoreButtonType.APP_STORE} />
+					<StoreButton type="lg" storeType={StoreButtonType.APP_STORE} />
 				</div>
 				<div className="flex justify-start">
-					<StoreButtonLg type={StoreButtonType.GOOGLE_PLAY} />
+					<StoreButton type="lg" storeType={StoreButtonType.GOOGLE_PLAY} />
 				</div>
 				<div className="flex justify-end">
-					<StoreButtonLg type={StoreButtonType.RUSTORE} />
+					<StoreButton type="lg" storeType={StoreButtonType.RUSTORE} />
 				</div>
 				<div className="flex justify-start">
-					<StoreButtonLg type={StoreButtonType.APP_GALLERY} />
+					<StoreButton type="lg" storeType={StoreButtonType.APP_GALLERY} />
 				</div>
 			</div>
 			<div className="flex flex-col items-center space-y-4 pt-4">

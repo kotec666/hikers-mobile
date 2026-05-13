@@ -1,7 +1,6 @@
 import { AppleSvg, GooglePlaySvg } from '@/components/svg'
 import Image from 'next/image'
 import icon from '@/assets/images/icon-40x40.png'
-import { Routes } from '@/consts/routes'
 import { headers } from 'next/headers'
 import Link from 'next/link'
 import Container from '@/components/layout/container'
@@ -15,7 +14,7 @@ enum DeviceType {
 const RedirectComponentAppStore = () => {
 	return (
 		<a
-			href={Routes.APP_STORE}
+			//	href={Routes.APP_STORE}
 			className="bg-[#2c2c2c] hover:bg-[#3c3c3c] text-nowrap text-white text-xs md:text-base px-4 py-2.5 rounded-full font-medium transition-colors flex items-center gap-2"
 		>
 			<AppleSvg className="text-white" />
@@ -27,7 +26,7 @@ const RedirectComponentAppStore = () => {
 const RedirectComponentGooglePlay = () => {
 	return (
 		<a
-			href={Routes.GOOGLE_PLAY}
+			// href={Routes.GOOGLE_PLAY}
 			className="bg-[#4CAF50] hover:bg-[#45a049] text-nowrap text-white text-xs md:text-base px-4 py-2.5 rounded-full font-medium transition-colors flex items-center gap-2"
 		>
 			<GooglePlaySvg className="text-white" />
