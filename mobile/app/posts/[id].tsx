@@ -1,7 +1,6 @@
 import React, { useCallback, useEffect, useState } from 'react'
 import { View, ScrollView, Dimensions, ActivityIndicator } from 'react-native'
 import { Container } from '@/components/ui/Container'
-import { StatusBar } from 'expo-status-bar'
 import PostListItemHeader from '@/components/ui/Post/PostListItemHeader'
 import HeaderBack from '@/components/ui/HeaderBack'
 import PostBodyWrapper, { PostType } from '@/components/ui/Post/PostBodyWrapper'
@@ -159,7 +158,6 @@ const Post = () => {
 							</View>
 						</ScrollView>
 					</Container>
-					<StatusBar style="light" />
 				</View>
 			</BlurProvider>
 		</Page>

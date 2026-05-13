@@ -1,4 +1,3 @@
-import { StatusBar } from 'expo-status-bar'
 import { ScrollView, Text } from 'react-native'
 import { Container } from '@/components/ui/Container'
 import { fontFamily } from '@/constants/Fonts'
@@ -83,7 +82,6 @@ const DocumentPage = () => {
 					<MockText />
 				</ScrollView>
 			</Container>
-			<StatusBar style="light" />
 		</Page>
 	)
 }

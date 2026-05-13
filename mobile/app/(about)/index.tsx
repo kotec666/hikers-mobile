@@ -1,7 +1,6 @@
 import { Container } from '@/components/ui/Container'
 import HeaderBack from '@/components/ui/HeaderBack'
 import { ScrollView, Linking, View } from 'react-native'
-import { StatusBar } from 'expo-status-bar'
 import Setting from '@/components/Setting'
 import { useSafeNavigation } from '@/hooks/useSafeNavigation'
 import { useToast } from '@/hooks/useToast'
@@ -37,7 +36,6 @@ const AboutPage = () => {
 					</View>
 				</ScrollView>
 			</Container>
-			<StatusBar style="light" />
 		</Page>
 	)
 }

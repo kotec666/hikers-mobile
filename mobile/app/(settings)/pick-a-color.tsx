@@ -11,7 +11,6 @@ import {
 	TouchableWithoutFeedback,
 	Keyboard
 } from 'react-native'
-import { StatusBar } from 'expo-status-bar'
 import { Colors } from '@/constants/Colors'
 import React, { useState } from 'react'
 import { fontFamily } from '@/constants/Fonts'
@@ -182,7 +181,6 @@ const SettingsPickAColorPage = () => {
 					</TouchableWithoutFeedback>
 				</KeyboardAvoidingView>
 			</BlurProvider>
-			<StatusBar style="light" />
 		</Page>
 	)
 }

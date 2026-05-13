@@ -1,7 +1,6 @@
 import { Container } from '@/components/ui/Container'
 import HeaderBack from '@/components/ui/HeaderBack'
 import { ScrollView, View, Text, Pressable, AppState } from 'react-native'
-import { StatusBar } from 'expo-status-bar'
 import { fontFamily } from '@/constants/Fonts'
 import { cn } from '@/helpers/cn'
 import Toggle from '@/components/ui/Toggle/Toggle'
@@ -147,7 +146,6 @@ const SettingsInAppNotificationsPage = () => {
 					</View>
 				</ScrollView>
 			</Container>
-			<StatusBar style="light" />
 		</Page>
 	)
 }

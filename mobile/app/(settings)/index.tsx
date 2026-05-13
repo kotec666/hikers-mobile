@@ -1,7 +1,6 @@
 import { Container } from '@/components/ui/Container'
 import HeaderBack from '@/components/ui/HeaderBack'
 import { ScrollView, View, Text } from 'react-native'
-import { StatusBar } from 'expo-status-bar'
 import Setting from '@/components/Setting'
 import { useSafeNavigation } from '@/hooks/useSafeNavigation'
 import { Colors } from '@/constants/Colors'
@@ -124,7 +123,6 @@ const SettingsPage = () => {
 					</ScrollView>
 				</Container>
 			</BlurProvider>
-			<StatusBar style="light" />
 		</Page>
 	)
 }

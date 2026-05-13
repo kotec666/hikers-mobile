@@ -1,5 +1,4 @@
 import { View } from 'react-native'
-import { StatusBar } from 'expo-status-bar'
 import { Slider } from '@/components/Slider/Slider'
 import { slides } from '@/constants/Slider'
 import { Button } from '@/components/ui/Button'
@@ -36,7 +35,6 @@ const HelloPage = () => {
 						Войти
 					</Button>
 				</Slider>
-				<StatusBar style="light" />
 			</View>
 		</Page>
 	)

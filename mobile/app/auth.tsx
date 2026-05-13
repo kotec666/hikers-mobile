@@ -1,4 +1,3 @@
-import { StatusBar } from 'expo-status-bar'
 import {
 	Keyboard,
 	KeyboardAvoidingView,
@@ -261,7 +260,6 @@ const AuthPage = () => {
 				{/*	email confirmation page*/}
 				{/*</Button>*/}
 			</Container>
-			<StatusBar style="light" />
 		</Page>
 	)
 }
