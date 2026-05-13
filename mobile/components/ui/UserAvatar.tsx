@@ -34,7 +34,7 @@ export function UserAvatar(props: IProps) {
 				})}
 				style={[
 					props.style as StyleProp<ViewStyle>,
-					{ borderRadius: 999, overflow: 'hidden' },
+					{ borderRadius: 999 },
 					props.bordered && { borderWidth: 1, borderColor: 'rgba(255, 255, 255, 0.4)' }
 				]}
 			>
@@ -56,10 +56,13 @@ export function UserAvatar(props: IProps) {
 	}
 	return (
 		<View
-			className={cn('relative h-[50px] w-[50px] justify-center items-center bg-blue-98', props.className)}
+			className={cn(
+				'relative h-[50px] w-[50px] rounded-full justify-center items-center bg-blue-98',
+				props.className
+			)}
 			style={[
 				props.style as StyleProp<ViewStyle>,
-				{ borderRadius: 999, overflow: 'hidden' },
+				{ borderRadius: 999 },
 				props.bordered && { borderWidth: 1, borderColor: 'rgba(255, 255, 255, 0.4)' }
 			]}
 		>

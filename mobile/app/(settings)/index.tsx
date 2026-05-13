@@ -1,4 +1,3 @@
-import { SafeAreaProvider, useSafeAreaInsets } from 'react-native-safe-area-context'
 import { Container } from '@/components/ui/Container'
 import HeaderBack from '@/components/ui/HeaderBack'
 import { ScrollView, View, Text } from 'react-native'
@@ -18,10 +17,10 @@ import { useToast } from '@/hooks/useToast'
 import { useRouter } from 'expo-router'
 import AlertTriangleSvg from '@/components/svg/AlertTriangleSvg'
 import { useDeleteProfileMutation } from '@/queries/my-profile'
+import { Page } from '@/components/ui/Page'
 
 const SettingsPage = () => {
 	const { push } = useSafeNavigation()
-	const insets = useSafeAreaInsets()
 	const { user, logout } = useAuthStore()
 	const toast = useToast()
 	const router = useRouter()
@@ -50,7 +49,7 @@ const SettingsPage = () => {
 	}
 
 	return (
-		<SafeAreaProvider style={{ paddingTop: insets.top, paddingBottom: insets.bottom }}>
+		<Page>
 			<BlurProvider>
 				<Modal
 					isOpen={isDeleteAccountModalOpen}
@@ -85,7 +84,7 @@ const SettingsPage = () => {
 						contentContainerStyle={{
 							flexGrow: 1,
 							justifyContent: 'space-between',
-							paddingBottom: insets.bottom
+							paddingBottom: 30
 						}}
 					>
 						<View className="gap-[16px]">
@@ -126,7 +125,7 @@ const SettingsPage = () => {
 				</Container>
 			</BlurProvider>
 			<StatusBar style="light" />
-		</SafeAreaProvider>
+		</Page>
 	)
 }
 

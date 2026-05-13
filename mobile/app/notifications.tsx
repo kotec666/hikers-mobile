@@ -1,4 +1,3 @@
-import { SafeAreaProvider, useSafeAreaInsets } from 'react-native-safe-area-context'
 import { View, Text, RefreshControl, ActivityIndicator } from 'react-native'
 import { Container } from '@/components/ui/Container'
 import HeaderBack from '@/components/ui/HeaderBack'
@@ -16,10 +15,9 @@ import {
 	useMarkNotificationsAsReadMutation,
 	useNotificationsListQuery
 } from '@/queries/notifications'
+import { Page } from '@/components/ui/Page'
 
 const NotificationsPage = () => {
-	const insets = useSafeAreaInsets()
-
 	const {
 		data: notificationsData = [],
 		fetchNextPage,
@@ -59,7 +57,7 @@ const NotificationsPage = () => {
 	}, [isFetching])
 
 	return (
-		<SafeAreaProvider style={{ paddingTop: insets.top }}>
+		<Page>
 			<View style={{ flex: 1 }}>
 				<Container className="gap-[20px] mt-[20px]">
 					<HeaderBack>Уведомления</HeaderBack>
@@ -101,7 +99,7 @@ const NotificationsPage = () => {
 						keyExtractor={(item) => item.id}
 						contentContainerStyle={{
 							flexGrow: 1,
-							paddingBottom: insets.bottom + 20
+							paddingBottom: 50
 						}}
 						ListFooterComponent={
 							isFetchingNextPage ? (
@@ -114,7 +112,7 @@ const NotificationsPage = () => {
 					/>
 				</View>
 			</View>
-		</SafeAreaProvider>
+		</Page>
 	)
 }
 

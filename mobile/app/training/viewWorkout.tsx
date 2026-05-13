@@ -1,12 +1,4 @@
-import {
-	Keyboard,
-	KeyboardAvoidingView,
-	Platform,
-	ScrollView,
-	Text,
-	TouchableWithoutFeedback,
-	View
-} from 'react-native'
+import { KeyboardAvoidingView, Platform, ScrollView, Text, View } from 'react-native'
 import { Image } from 'expo-image'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
 import { Container } from '@/components/ui/Container'
@@ -55,6 +47,7 @@ import { saveSingleWorkout, WorkoutSource } from '@/helpers/saveUnsavedTraining'
 import { BackButton } from '@/components/ui/HeaderBack'
 import { useCreatePostMutation, usePostByTrainingQuery, usePostQuery, useUpdatePostMutation } from '@/queries/posts'
 import { useExtendedDetailsWorkoutQuery, useFinishWorkoutMutation } from '@/queries/workout'
+import { Page } from '@/components/ui/Page'
 
 type Param = {
 	label: string
@@ -474,59 +467,63 @@ export default function ViewWorkout() {
 				: 'создать'
 
 	return (
-		<BlurProvider>
-			<Modal
-				isOpen={isPhotoModalOpen}
-				handleClose={() => setIsPhotoModalOpen(false)}
-				label="Фото поста"
-				labelSize={16}
-			>
-				<View className="flex-row gap-[10px] justify-between">
-					<ImagePickerButton
-						title="Камера"
-						icon={<CameraSvg />}
-						onPress={() => pickPostImage(ImagePickMode.CAMERA)}
-					/>
-					<ImagePickerButton
-						title="Галерея"
-						icon={<GallerySvg />}
-						onPress={() => pickPostImage(ImagePickMode.GALLERY)}
-					/>
-				</View>
-			</Modal>
-			<Modal
-				isOpen={isExitWithoutCreatePostModal}
-				handleClose={() => setIsExitWithoutCreatePostModal(false)}
-				label="Выйти без создания публикации?"
-				labelSize={16}
-			>
-				<View className="gap-[20px]">
-					<Text className="text-white text-sm" style={{ fontFamily: fontFamily.bold }}>
-						Тренировка сохранена в истории, а пост создать можно будет позже.
-					</Text>
-					<View className="flex-row gap-[10px]">
-						<Button
-							onPress={confirmExitWithoutCreatingPost}
-							variant="white"
-							buttonContainerClassName="flex-1"
-						>
-							Да
-						</Button>
-						<Button
-							onPress={() => setIsExitWithoutCreatePostModal(false)}
-							variant="white"
-							buttonContainerClassName="flex-1"
-						>
-							Нет
-						</Button>
+		<Page edges={['bottom']}>
+			<BlurProvider>
+				<Modal
+					isOpen={isPhotoModalOpen}
+					handleClose={() => setIsPhotoModalOpen(false)}
+					label="Фото поста"
+					labelSize={16}
+				>
+					<View className="flex-row gap-[10px] justify-between">
+						<ImagePickerButton
+							title="Камера"
+							icon={<CameraSvg />}
+							onPress={() => pickPostImage(ImagePickMode.CAMERA)}
+						/>
+						<ImagePickerButton
+							title="Галерея"
+							icon={<GallerySvg />}
+							onPress={() => pickPostImage(ImagePickMode.GALLERY)}
+						/>
 					</View>
-				</View>
-			</Modal>
-			<KeyboardAvoidingView style={{ flex: 1 }} behavior={Platform.OS === 'ios' ? 'padding' : 'height'}>
-				<TouchableWithoutFeedback onPress={Keyboard.dismiss} accessible={false}>
+				</Modal>
+				<Modal
+					isOpen={isExitWithoutCreatePostModal}
+					handleClose={() => setIsExitWithoutCreatePostModal(false)}
+					label="Выйти без создания публикации?"
+					labelSize={16}
+				>
+					<View className="gap-[20px]">
+						<Text className="text-white text-sm" style={{ fontFamily: fontFamily.bold }}>
+							Тренировка сохранена в истории, а пост создать можно будет позже.
+						</Text>
+						<View className="flex-row gap-[10px]">
+							<Button
+								onPress={confirmExitWithoutCreatingPost}
+								variant="white"
+								buttonContainerClassName="flex-1"
+							>
+								Да
+							</Button>
+							<Button
+								onPress={() => setIsExitWithoutCreatePostModal(false)}
+								variant="white"
+								buttonContainerClassName="flex-1"
+							>
+								Нет
+							</Button>
+						</View>
+					</View>
+				</Modal>
+				<KeyboardAvoidingView
+					style={{ flex: 1 }}
+					behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+					keyboardVerticalOffset={30}
+				>
 					<ScrollView
-						style={{ flex: 1, paddingBottom: insets.bottom + 50 }}
-						keyboardShouldPersistTaps="handled"
+						keyboardShouldPersistTaps="never"
+						contentInsetAdjustmentBehavior="automatic"
 						contentContainerStyle={{ flexGrow: 1 }}
 					>
 						<View className="relative" style={{ height: 300 }}>
@@ -564,7 +561,7 @@ export default function ViewWorkout() {
 							</Container>
 						</View>
 
-						<Container className="mt-[20px]" style={{ paddingBottom: insets.bottom + 20 }}>
+						<Container className="mt-[20px]">
 							<View className="gap-[15px]">
 								<View className="bg-black-25 rounded-[25px] p-[15px] gap-[15px]">
 									<Text className="text-base text-white" style={{ fontFamily: fontFamily.bold }}>
@@ -814,8 +811,8 @@ export default function ViewWorkout() {
 							)}
 						</Container>
 					</ScrollView>
-				</TouchableWithoutFeedback>
-			</KeyboardAvoidingView>
-		</BlurProvider>
+				</KeyboardAvoidingView>
+			</BlurProvider>
+		</Page>
 	)
 }

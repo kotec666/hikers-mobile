@@ -1,5 +1,4 @@
 import { View } from 'react-native'
-import { SafeAreaProvider, useSafeAreaInsets } from 'react-native-safe-area-context'
 import { StatusBar } from 'expo-status-bar'
 import { Slider } from '@/components/Slider/Slider'
 import { slides } from '@/constants/Slider'
@@ -9,10 +8,10 @@ import { getIsAccountExist } from '@/store/authStorage'
 import { AUTH_MODE } from '@/app/auth'
 import { useEffect } from 'react'
 import { useAuthStore } from '@/store/authStore'
+import { Page } from '@/components/ui/Page'
 
 const HelloPage = () => {
 	const { isAuthenticated } = useAuthStore()
-	const insets = useSafeAreaInsets()
 	const router = useRouter()
 
 	const handleClickEnter = async () => {
@@ -30,7 +29,7 @@ const HelloPage = () => {
 	}, [isAuthenticated, router])
 
 	return (
-		<SafeAreaProvider style={{ paddingTop: insets.top, paddingBottom: insets.bottom }}>
+		<Page>
 			<View className="flex-1 pb-[40px]">
 				<Slider itemList={slides}>
 					<Button variant="white" onPress={handleClickEnter}>
@@ -39,7 +38,7 @@ const HelloPage = () => {
 				</Slider>
 				<StatusBar style="light" />
 			</View>
-		</SafeAreaProvider>
+		</Page>
 	)
 }
 

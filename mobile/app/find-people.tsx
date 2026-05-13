@@ -1,12 +1,12 @@
 import React from 'react'
 import { FlatList, View } from 'react-native'
-import { SafeAreaProvider, useSafeAreaInsets } from 'react-native-safe-area-context'
 import HeaderBack from '@/components/ui/HeaderBack'
 import { Container } from '@/components/ui/Container'
 import { Button } from '@/components/ui/Button'
 import { Input } from '@/components/ui/Input'
 import PeopleListItem from '@/components/find-people/PeopleListItem'
 import { useSafeNavigation } from '@/hooks/useSafeNavigation'
+import { Page } from '@/components/ui/Page'
 
 export enum FRIEND_STATUS {
 	ADDED = 'added',
@@ -19,7 +19,6 @@ export enum FRIEND_STATUS {
 // import RoundedCheckMark from '@/components/svg/RoundedCheckMark'
 
 const FindPeople = () => {
-	const insets = useSafeAreaInsets()
 	const { push } = useSafeNavigation()
 
 	const data = [
@@ -52,7 +51,7 @@ const FindPeople = () => {
 	]
 
 	return (
-		<SafeAreaProvider style={{ paddingTop: insets.top }}>
+		<Page>
 			<View style={{ flex: 1 }}>
 				<Container className="gap-[20px] mt-[20px] flex-1">
 					<HeaderBack>Совместная тренировка</HeaderBack>
@@ -74,14 +73,14 @@ const FindPeople = () => {
 						keyExtractor={(item) => item.id.toString()}
 						ItemSeparatorComponent={() => <View style={{ height: 15 }} />}
 						contentContainerStyle={{
-							paddingBottom: insets.bottom + 20,
+							paddingBottom: 20,
 							paddingTop: 10
 						}}
 						showsVerticalScrollIndicator={false}
 					/>
 				</Container>
 			</View>
-		</SafeAreaProvider>
+		</Page>
 	)
 }
 

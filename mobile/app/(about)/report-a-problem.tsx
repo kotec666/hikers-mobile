@@ -1,21 +1,20 @@
 import React from 'react'
 import { Container } from '@/components/ui/Container'
 import HeaderBack from '@/components/ui/HeaderBack'
-import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context'
 import { View, Text, Platform, Keyboard, KeyboardAvoidingView, TouchableWithoutFeedback } from 'react-native'
 import { Button } from '@/components/ui/Button'
 import { Input } from '@/components/ui/Input'
 import Checkbox from '@/components/ui/Checkbox'
 import { fontFamily } from '@/constants/Fonts'
+import { Page } from '@/components/ui/Page'
 
 const ReportAProblem = () => {
-	const insets = useSafeAreaInsets()
 	return (
-		<SafeAreaView style={{ flex: 1 }}>
+		<Page>
 			<Container className="flex-1">
 				<KeyboardAvoidingView
 					style={{ flex: 1 }}
-					keyboardVerticalOffset={insets.top + 10}
+					keyboardVerticalOffset={40}
 					behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
 				>
 					<TouchableWithoutFeedback onPress={Keyboard.dismiss} accessible={false}>
@@ -55,7 +54,7 @@ const ReportAProblem = () => {
 					</TouchableWithoutFeedback>
 				</KeyboardAvoidingView>
 			</Container>
-		</SafeAreaView>
+		</Page>
 	)
 }
 

@@ -1,4 +1,3 @@
-import { SafeAreaView } from 'react-native-safe-area-context'
 import { Container } from '@/components/ui/Container'
 import HeaderBack from '@/components/ui/HeaderBack'
 import {
@@ -24,6 +23,7 @@ import { FREE_COLORS } from '@shared/constants'
 import Modal from '@/components/ui/Modal/Modal'
 import { useRouter } from 'expo-router'
 import BlurProvider from '@/components/providers/BlurProvider'
+import { Page } from '@/components/ui/Page'
 
 const { height } = Dimensions.get('screen')
 const MAP_HEIGHT = height / 3
@@ -91,7 +91,7 @@ const SettingsPickAColorPage = () => {
 	const isFreeMode = false
 
 	return (
-		<SafeAreaView style={{ flex: 1 }}>
+		<Page>
 			<BlurProvider>
 				<Modal
 					isOpen={notSavedModal}
@@ -162,9 +162,7 @@ const SettingsPickAColorPage = () => {
 										</ColorPicker>
 									</View>
 								) : (
-									<ScrollView
-									//contentContainerStyle={{ paddingBottom: insets.bottom + 50 }}
-									>
+									<ScrollView>
 										<View className="flex-row flex-wrap gap-[16px]">
 											{Object.values(FREE_COLORS).map((color) => {
 												return (
@@ -185,7 +183,7 @@ const SettingsPickAColorPage = () => {
 				</KeyboardAvoidingView>
 			</BlurProvider>
 			<StatusBar style="light" />
-		</SafeAreaView>
+		</Page>
 	)
 }
 

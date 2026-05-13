@@ -1,4 +1,3 @@
-import { SafeAreaProvider, useSafeAreaInsets } from 'react-native-safe-area-context'
 import { Dimensions, ScrollView, Text, View } from 'react-native'
 import { Container } from '@/components/ui/Container'
 import HeaderBack from '@/components/ui/HeaderBack'
@@ -11,11 +10,11 @@ import AchievementDetailed from '@/components/BottomSheets/AchievementDetailed'
 import BlurProvider from '@/components/providers/BlurProvider'
 import { useLocalSearchParams } from 'expo-router'
 import { useAchievementsQuery } from '@/queries/achievements'
+import { Page } from '@/components/ui/Page'
 
 const { height: screenHeight } = Dimensions.get('screen')
 
 const AchievementsPage = () => {
-	const insets = useSafeAreaInsets()
 	const { id } = useLocalSearchParams<{ id?: string }>()
 
 	const bottomSheetRef = useRef<BottomSheetHandle>(null)
@@ -51,14 +50,14 @@ const AchievementsPage = () => {
 	}
 
 	return (
-		<SafeAreaProvider style={{ paddingTop: insets.top }}>
+		<Page>
 			<BlurProvider>
 				<Container className="gap-[20px] mt-[20px] flex-1">
 					<HeaderBack>Мои достижения</HeaderBack>
 					<ScrollView
 						style={{ flex: 1, width: '100%' }}
 						contentContainerStyle={{
-							paddingBottom: insets.bottom + 20
+							paddingBottom: 50
 						}}
 					>
 						<View className="gap-[10px]">
@@ -101,7 +100,7 @@ const AchievementsPage = () => {
 					{bottomSheetContent}
 				</BottomSheet>
 			</BlurProvider>
-		</SafeAreaProvider>
+		</Page>
 	)
 }
 

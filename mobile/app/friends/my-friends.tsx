@@ -3,7 +3,6 @@ import { View, Text, RefreshControl, ActivityIndicator } from 'react-native'
 import { Container } from '@/components/ui/Container'
 import HeaderBack from '@/components/ui/HeaderBack'
 import PeopleListItem from '@/components/find-people/PeopleListItem'
-import { useSafeAreaInsets } from 'react-native-safe-area-context'
 import { fontFamily } from '@/constants/Fonts'
 import { Button } from '@/components/ui/Button'
 import PeopleRemoveSvg from '@/components/svg/PeopleRemoveSvg'
@@ -16,9 +15,9 @@ import { Colors } from '@/constants/Colors'
 import { useSafeNavigation } from '@/hooks/useSafeNavigation'
 import BlurProvider from '@/components/providers/BlurProvider'
 import { useMyFriendsQuery, useRemoveFriendMutation } from '@/queries/friends'
+import { Page } from '@/components/ui/Page'
 
 const MyFriendsPage = () => {
-	const insets = useSafeAreaInsets()
 	const { push } = useSafeNavigation()
 	const toast = useToast()
 
@@ -94,7 +93,7 @@ const MyFriendsPage = () => {
 	}
 
 	return (
-		<View style={{ paddingTop: insets.top }} className="flex-1">
+		<Page>
 			<BlurProvider>
 				<View style={{ flex: 1 }}>
 					<Modal
@@ -124,7 +123,7 @@ const MyFriendsPage = () => {
 							</View>
 						</View>
 					</Modal>
-					<Container className="gap-[20px] mt-[20px] flex-1" style={{ paddingBottom: insets.bottom + 20 }}>
+					<Container className="gap-[20px] mt-[20px] flex-1" style={{ paddingBottom: 10 }}>
 						<HeaderBack>Друзья</HeaderBack>
 
 						<LegendList
@@ -175,7 +174,7 @@ const MyFriendsPage = () => {
 					</Container>
 				</View>
 			</BlurProvider>
-		</View>
+		</Page>
 	)
 }
 

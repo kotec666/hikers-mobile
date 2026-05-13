@@ -1,6 +1,5 @@
 import React, { useCallback, useEffect, useState } from 'react'
 import { View, ScrollView, Dimensions, ActivityIndicator } from 'react-native'
-import { SafeAreaProvider, useSafeAreaInsets } from 'react-native-safe-area-context'
 import { Container } from '@/components/ui/Container'
 import { StatusBar } from 'expo-status-bar'
 import PostListItemHeader from '@/components/ui/Post/PostListItemHeader'
@@ -23,12 +22,12 @@ import { Colors } from '@/constants/Colors'
 import BlurProvider from '@/components/providers/BlurProvider'
 import { useDeletePostMutation, usePostQuery } from '@/queries/posts'
 import { getFieldsErrors } from '@/helpers/getFieldsErrors'
+import { Page } from '@/components/ui/Page'
 
 const { height } = Dimensions.get('screen')
 const SLIDE_ASPECT_RATIO = height / 3.6
 
 const Post = () => {
-	const insets = useSafeAreaInsets()
 	const toast = useToast()
 	const router = useRouter()
 	const { push } = useSafeNavigation()
@@ -82,7 +81,7 @@ const Post = () => {
 	}
 
 	return (
-		<SafeAreaProvider style={{ paddingTop: insets.top, paddingBottom: insets.bottom }}>
+		<Page>
 			<BlurProvider>
 				<View style={{ flex: 1, alignItems: 'center' }}>
 					<DeletePostModal
@@ -109,7 +108,7 @@ const Post = () => {
 								/>
 							)}
 						</View>
-						<ScrollView style={{ flex: 1, width: '100%' }}>
+						<ScrollView style={{ flex: 1, width: '100%' }} contentContainerStyle={{ paddingBottom: 20 }}>
 							<View className="gap-[15px]">
 								<PostListItemHeader
 									isMyPost={post?.userCreator.id === user?.id}
@@ -163,7 +162,7 @@ const Post = () => {
 					<StatusBar style="light" />
 				</View>
 			</BlurProvider>
-		</SafeAreaProvider>
+		</Page>
 	)
 }
 

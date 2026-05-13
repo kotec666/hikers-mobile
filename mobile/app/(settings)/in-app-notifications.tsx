@@ -1,4 +1,3 @@
-import { SafeAreaProvider, useSafeAreaInsets } from 'react-native-safe-area-context'
 import { Container } from '@/components/ui/Container'
 import HeaderBack from '@/components/ui/HeaderBack'
 import { ScrollView, View, Text, Pressable, AppState } from 'react-native'
@@ -11,6 +10,7 @@ import { NotificationType } from '@shared/enums'
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { useFocusEffect } from 'expo-router'
 import { useNotificationsSettingsQuery, useUpdateNotificationsSettingsMutation } from '@/queries/notifications'
+import { Page } from '@/components/ui/Page'
 
 const InAppNotificationSetting = ({
 	title,
@@ -59,7 +59,6 @@ const InAppNotificationSetting = ({
 }
 
 const SettingsInAppNotificationsPage = () => {
-	const insets = useSafeAreaInsets()
 	const [localSettings, setLocalSettings] = useState<NotificationSettings | null>(null)
 	const localSettingsRef = useRef<NotificationSettings | null>(null)
 	const settingsRef = useRef<NotificationSettings | null>(null)
@@ -112,13 +111,10 @@ const SettingsInAppNotificationsPage = () => {
 	}, [mutate])
 
 	return (
-		<SafeAreaProvider style={{ paddingTop: insets.top, paddingBottom: insets.bottom }}>
+		<Page>
 			<Container className="gap-[20px] flex-1">
 				<HeaderBack>Настройка уведомлений</HeaderBack>
-				<ScrollView
-					style={{ flex: 1, width: '100%' }}
-					contentContainerStyle={{ paddingBottom: insets.bottom + 50 }}
-				>
+				<ScrollView style={{ flex: 1, width: '100%' }} contentContainerStyle={{ paddingBottom: 50 }}>
 					<View className="gap-[16px]">
 						<InAppNotificationSetting
 							title="Добавление в друзья"
@@ -152,7 +148,7 @@ const SettingsInAppNotificationsPage = () => {
 				</ScrollView>
 			</Container>
 			<StatusBar style="light" />
-		</SafeAreaProvider>
+		</Page>
 	)
 }
 

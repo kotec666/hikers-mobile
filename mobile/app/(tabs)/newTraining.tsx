@@ -1,5 +1,4 @@
 import { AppState, Platform } from 'react-native'
-import { SafeAreaProvider, useSafeAreaInsets } from 'react-native-safe-area-context'
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { useToast } from '@/hooks/useToast'
 import WorkoutStarted from '@/components/training/WorkoutStarted'
@@ -40,7 +39,6 @@ import { WorkoutTypesData } from '@/constants/WorkoutTypes'
 import { TrainingType } from '@shared/enums'
 import { useAuthStore } from '@/store/authStore'
 import { VIEWWORKOUT_MODE } from '@/app/training/viewWorkout'
-import { Colors } from '@/constants/Colors'
 import { getFieldsErrors } from '@/helpers/getFieldsErrors'
 import { ERRORS } from '@shared/errors'
 import BlurProvider from '@/components/providers/BlurProvider'
@@ -59,6 +57,7 @@ import {
 import type { PendingWidgetAction } from '@/modules/expo-live-activity'
 import { randomHexColor } from '@/helpers/colors/randomHexColor'
 import { useFinishWorkoutMutation } from '@/queries/workout'
+import { Page } from '@/components/ui/Page'
 // Debugging
 TaskManager.getRegisteredTasksAsync().then((tasks) => {
 	console.log('getRegisteredTasksAsync', tasks)
@@ -81,7 +80,6 @@ const PAUSE_DEBOUNCE_MS = 300
 const INITIAL_MAP_ZOOM = 14
 
 export default function NewTraining() {
-	const insets = useSafeAreaInsets()
 	const toast = useToast()
 	const { user } = useAuthStore()
 	const { setTrainingId, setStartedAt, setType, setPoints, setMetrics } = useWorkoutResultsAfterFinishStore()
@@ -675,7 +673,7 @@ export default function NewTraining() {
 	}, [handleClickEndWorkout, handleCloseEndModal])
 
 	return (
-		<SafeAreaProvider style={{ paddingTop: insets.top, backgroundColor: Colors['black-0d'] }}>
+		<Page edges={['top']}>
 			<BlurProvider>
 				<EndTrainingModal
 					blurDisabled={Platform.OS === 'android'}
@@ -717,6 +715,6 @@ export default function NewTraining() {
 					/>
 				)}
 			</BlurProvider>
-		</SafeAreaProvider>
+		</Page>
 	)
 }

@@ -1,5 +1,4 @@
 import React, { useCallback, useEffect, useState } from 'react'
-import { SafeAreaProvider, useSafeAreaInsets } from 'react-native-safe-area-context'
 import { Container } from '@/components/ui/Container'
 import { Keyboard, TouchableOpacity, TouchableWithoutFeedback, View } from 'react-native'
 import { UserAvatar } from '@/components/ui/UserAvatar'
@@ -22,6 +21,7 @@ import { useSafeNavigation } from '@/hooks/useSafeNavigation'
 import BlurProvider from '@/components/providers/BlurProvider'
 import { lengths } from '@shared/lengths'
 import { useProfileQuery, useUpdateProfileMutation } from '@/queries/my-profile'
+import { Page } from '@/components/ui/Page'
 
 interface IEditProfileFormState {
 	name: string
@@ -32,7 +32,6 @@ interface IEditProfileFormState {
 const FormData = global.FormData
 
 const ProfileEdit = () => {
-	const insets = useSafeAreaInsets()
 	const router = useRouter()
 	const { push } = useSafeNavigation()
 	const { data: profileData, isLoading, isError, error } = useProfileQuery()
@@ -177,7 +176,7 @@ const ProfileEdit = () => {
 	const activitiesToRender = sourceArray.length >= 3 ? sourceArray.slice(0, 3) : []
 
 	return (
-		<SafeAreaProvider style={{ paddingTop: insets.top, paddingBottom: insets.bottom }}>
+		<Page>
 			<BlurProvider>
 				<Modal
 					isOpen={data.avatarModal}
@@ -320,7 +319,7 @@ const ProfileEdit = () => {
 					</TouchableWithoutFeedback>
 				</Container>
 			</BlurProvider>
-		</SafeAreaProvider>
+		</Page>
 	)
 }
 

@@ -6,7 +6,6 @@ import { Button } from '@/components/ui/Button'
 import RedirectAchievementsInfo from '@/components/ui/Profile/RedirectAchievementsInfo'
 import ActivityInfo from '@/components/ui/Profile/ActivityInfo'
 import PostListItem from '@/components/ui/Post/PostListItem'
-import { SafeAreaProvider, useSafeAreaInsets } from 'react-native-safe-area-context'
 import { useLocalSearchParams, useRouter } from 'expo-router'
 import { PATH_TO_IMAGE } from '@/constants/PATH_TO_FILES'
 import { getFieldsErrors } from '@/helpers/getFieldsErrors'
@@ -30,6 +29,7 @@ import {
 	useSendFriendRequestMutation
 } from '@/queries/friends'
 import { useToggleSubscribeMutation } from '@/queries/subscriptions'
+import { Page } from '@/components/ui/Page'
 
 /**
  *
@@ -45,7 +45,6 @@ const friendStatusLabel = {
 }
 
 const UserProfilePage = () => {
-	const insets = useSafeAreaInsets()
 	const toast = useToast()
 	const router = useRouter()
 	const { id } = useLocalSearchParams<{ id: string }>()
@@ -234,164 +233,156 @@ const UserProfilePage = () => {
 	}, [isFetchingPostsNextPage])
 
 	return (
-		<>
-			<SafeAreaProvider style={{ paddingTop: insets.top, paddingBottom: insets.bottom }}>
-				<BlurProvider>
-					<LegendList
-						ref={legendListRef}
-						data={posts}
-						renderItem={renderPostItem}
-						keyExtractor={(item) => item.id}
-						onEndReached={() => {
-							if (hasNextPostsPage && !isFetchingPostsNextPage) {
-								fetchNextPostsPage()
-							}
-						}}
-						onEndReachedThreshold={0.5}
-						ItemSeparatorComponent={() => <View style={{ height: 16 }} />}
-						ListFooterComponent={renderFooter}
-						refreshControl={
-							<RefreshControl
-								refreshing={isProfileFetching || postsIsRefetching}
-								onRefresh={onRefreshAll}
-								tintColor={Colors['green-main']}
-							/>
+		<Page>
+			<BlurProvider>
+				<LegendList
+					ref={legendListRef}
+					data={posts}
+					renderItem={renderPostItem}
+					keyExtractor={(item) => item.id}
+					onEndReached={() => {
+						if (hasNextPostsPage && !isFetchingPostsNextPage) {
+							fetchNextPostsPage()
 						}
-						ListHeaderComponent={
-							<>
-								<Modal
-									isOpen={isDeleteModalOpened}
-									handleClose={handleCloseDeleteModal}
-									label="Вы действительно хотите удалить пользователя из друзей?"
-								>
+					}}
+					onEndReachedThreshold={0.5}
+					ItemSeparatorComponent={() => <View style={{ height: 16 }} />}
+					ListFooterComponent={renderFooter}
+					refreshControl={
+						<RefreshControl
+							refreshing={isProfileFetching || postsIsRefetching}
+							onRefresh={onRefreshAll}
+							tintColor={Colors['green-main']}
+						/>
+					}
+					ListHeaderComponent={
+						<>
+							<Modal
+								isOpen={isDeleteModalOpened}
+								handleClose={handleCloseDeleteModal}
+								label="Вы действительно хотите удалить пользователя из друзей?"
+							>
+								<View className="gap-[20px]">
+									<Text className="text-white text-sm" style={{ fontFamily: fontFamily.bold }}>
+										Это действие нельзя отменить
+									</Text>
+									<View className="flex-row gap-[10px]">
+										<Button
+											onPress={handleDeleteFromFriends}
+											variant="white"
+											buttonContainerClassName="flex-1"
+											isLoading={isRemoveFriendPending}
+										>
+											Да
+										</Button>
+										<Button
+											onPress={handleCloseDeleteModal}
+											variant="white"
+											buttonContainerClassName="flex-1"
+										>
+											Нет
+										</Button>
+									</View>
+								</View>
+							</Modal>
+							<View className="gap-[20px] mb-[16px]">
+								<HeaderBack>Профиль</HeaderBack>
+								<View className="gap-[20px]">
 									<View className="gap-[20px]">
-										<Text className="text-white text-sm" style={{ fontFamily: fontFamily.bold }}>
-											Это действие нельзя отменить
-										</Text>
+										<View className="gap-[16px]">
+											<View className="flex-row justify-between w-full">
+												<AnimatedProfilePicture
+													size={117}
+													bordered
+													imageUrl={`${PATH_TO_IMAGE}${profileData?.user?.avatarFilename}`}
+												/>
+												{/*<MoreOptionsButton*/}
+												{/*	icon={<MoreOptionsSvg />}*/}
+												{/*	params={[*/}
+												{/*		{ label: 'Редактировать профиль', action: () => {} },*/}
+												{/*		{ label: 'Политика конфиденциальности', action: () => {} },*/}
+												{/*		{ label: 'Политика обработки персональных данных', action: () => {} },*/}
+												{/*		{ label: 'Выход', action: () => {} }*/}
+												{/*	]}*/}
+												{/*/>*/}
+											</View>
+											<View>
+												{profileData?.user?.name && (
+													<Text
+														className="text-[19px] text-white"
+														style={{ fontFamily: fontFamily.bold }}
+													>
+														{profileData?.user?.name}
+													</Text>
+												)}
+												{profileData?.user?.username && (
+													<Text
+														className="text-base text-gray-ab"
+														style={{ fontFamily: fontFamily.medium }}
+													>
+														@{profileData?.user?.username}
+													</Text>
+												)}
+											</View>
+										</View>
+										<View className="flex-row justify-between gap-[20px]">
+											<SocialStats
+												label="Подписчики"
+												content={profileData?.subscribers}
+												// hrefTo="/subscribers/my-subscribers"
+											/>
+											<SocialStats
+												label="Друзья"
+												content={profileData?.friends}
+												// hrefTo="/friends/my-friends"
+											/>
+											<SocialStats
+												label="Подписки"
+												content={profileData?.subscriptions}
+												// hrefTo="/subscribers/my-subscriptions"
+											/>
+										</View>
 										<View className="flex-row gap-[10px]">
 											<Button
-												onPress={handleDeleteFromFriends}
-												variant="white"
+												variant={profileData?.isSubscribed ? 'black' : 'white'}
 												buttonContainerClassName="flex-1"
-												isLoading={isRemoveFriendPending}
+												onPress={async () => {
+													if (!profileData?.user?.id) return
+													await handleSubscribe(profileData.user.id, profileData.isSubscribed)
+												}}
+												disabled={isPendingSubscribe}
 											>
-												Да
+												{profileData?.isSubscribed ? 'Отписаться' : 'Подписаться'}
 											</Button>
 											<Button
-												onPress={handleCloseDeleteModal}
-												variant="white"
+												variant={getButtonVariant()}
 												buttonContainerClassName="flex-1"
+												onPress={handleFriendAction}
+												isLoading={isFriendActionPending}
 											>
-												Нет
+												{profileData && friendStatusLabel[profileData?.isFriend]}
 											</Button>
 										</View>
+										<RedirectAchievementsInfo
+											achievements={profileData?.achievements}
+											userId={id}
+										/>
+										<ActivityInfo label="Активности" activities={profileData?.activities || []} />
 									</View>
-								</Modal>
-								<View className="gap-[20px] mb-[16px]">
-									<HeaderBack>Профиль</HeaderBack>
-									<View className="gap-[20px]">
-										<View className="gap-[20px]">
-											<View className="gap-[16px]">
-												<View className="flex-row justify-between w-full">
-													<AnimatedProfilePicture
-														size={117}
-														bordered
-														imageUrl={`${PATH_TO_IMAGE}${profileData?.user?.avatarFilename}`}
-													/>
-													{/*<MoreOptionsButton*/}
-													{/*	icon={<MoreOptionsSvg />}*/}
-													{/*	params={[*/}
-													{/*		{ label: 'Редактировать профиль', action: () => {} },*/}
-													{/*		{ label: 'Политика конфиденциальности', action: () => {} },*/}
-													{/*		{ label: 'Политика обработки персональных данных', action: () => {} },*/}
-													{/*		{ label: 'Выход', action: () => {} }*/}
-													{/*	]}*/}
-													{/*/>*/}
-												</View>
-												<View>
-													{profileData?.user?.name && (
-														<Text
-															className="text-[19px] text-white"
-															style={{ fontFamily: fontFamily.bold }}
-														>
-															{profileData?.user?.name}
-														</Text>
-													)}
-													{profileData?.user?.username && (
-														<Text
-															className="text-base text-gray-ab"
-															style={{ fontFamily: fontFamily.medium }}
-														>
-															@{profileData?.user?.username}
-														</Text>
-													)}
-												</View>
-											</View>
-											<View className="flex-row justify-between gap-[20px]">
-												<SocialStats
-													label="Подписчики"
-													content={profileData?.subscribers}
-													// hrefTo="/subscribers/my-subscribers"
-												/>
-												<SocialStats
-													label="Друзья"
-													content={profileData?.friends}
-													// hrefTo="/friends/my-friends"
-												/>
-												<SocialStats
-													label="Подписки"
-													content={profileData?.subscriptions}
-													// hrefTo="/subscribers/my-subscriptions"
-												/>
-											</View>
-											<View className="flex-row gap-[10px]">
-												<Button
-													variant={profileData?.isSubscribed ? 'black' : 'white'}
-													buttonContainerClassName="flex-1"
-													onPress={async () => {
-														if (!profileData?.user?.id) return
-														await handleSubscribe(
-															profileData.user.id,
-															profileData.isSubscribed
-														)
-													}}
-													disabled={isPendingSubscribe}
-												>
-													{profileData?.isSubscribed ? 'Отписаться' : 'Подписаться'}
-												</Button>
-												<Button
-													variant={getButtonVariant()}
-													buttonContainerClassName="flex-1"
-													onPress={handleFriendAction}
-													isLoading={isFriendActionPending}
-												>
-													{profileData && friendStatusLabel[profileData?.isFriend]}
-												</Button>
-											</View>
-											<RedirectAchievementsInfo
-												achievements={profileData?.achievements}
-												userId={id}
-											/>
-											<ActivityInfo
-												label="Активности"
-												activities={profileData?.activities || []}
-											/>
-										</View>
-									</View>
-									<Text
-										className="text-base text-white border-b-[1px] border-b-black-44 py-[20px]"
-										style={{ fontFamily: fontFamily.bold }}
-									>
-										Лента
-									</Text>
 								</View>
-							</>
-						}
-						contentContainerStyle={{ paddingBottom: 100, paddingHorizontal: 16 }}
-					/>
-				</BlurProvider>
-			</SafeAreaProvider>
-		</>
+								<Text
+									className="text-base text-white border-b-[1px] border-b-black-44 py-[20px]"
+									style={{ fontFamily: fontFamily.bold }}
+								>
+									Лента
+								</Text>
+							</View>
+						</>
+					}
+					contentContainerStyle={{ paddingBottom: 100, paddingHorizontal: 16 }}
+				/>
+			</BlurProvider>
+		</Page>
 	)
 }
 

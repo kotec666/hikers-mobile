@@ -1,4 +1,3 @@
-import { SafeAreaProvider, useSafeAreaInsets } from 'react-native-safe-area-context'
 import { StatusBar } from 'expo-status-bar'
 import {
 	Keyboard,
@@ -27,6 +26,7 @@ import { loginUser, registrationUser } from '@/api/auth'
 import { cn } from '@/helpers/cn'
 import { lengths } from '@shared/lengths'
 import * as Haptics from 'expo-haptics'
+import { Page } from '@/components/ui/Page'
 // import { useSafeNavigation } from '@/hooks/useSafeNavigation'
 
 export enum AUTH_MODE {
@@ -41,7 +41,6 @@ interface IAuthFormState {
 }
 
 const AuthPage = () => {
-	const insets = useSafeAreaInsets()
 	const { mode } = useLocalSearchParams<{ mode: AUTH_MODE }>()
 	// const { push } = useSafeNavigation()
 	const {
@@ -106,7 +105,7 @@ const AuthPage = () => {
 	}
 
 	return (
-		<SafeAreaProvider style={{ paddingTop: insets.top, paddingBottom: insets.bottom }}>
+		<Page>
 			<KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : 'height'} style={styles.container}>
 				<Container className="flex-1 mb-[10px]">
 					<TouchableWithoutFeedback onPress={Keyboard.dismiss}>
@@ -263,7 +262,7 @@ const AuthPage = () => {
 				{/*</Button>*/}
 			</Container>
 			<StatusBar style="light" />
-		</SafeAreaProvider>
+		</Page>
 	)
 }
 

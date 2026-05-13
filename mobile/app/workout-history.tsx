@@ -1,6 +1,5 @@
 import React, { useCallback, useMemo, useRef, useState } from 'react'
 import { View, Text, RefreshControl, ActivityIndicator } from 'react-native'
-import { useSafeAreaInsets } from 'react-native-safe-area-context'
 import HeaderBack from '@/components/ui/HeaderBack'
 import { Container } from '@/components/ui/Container'
 import PeopleRunningSvg from '@/components/svg/PeopleRunningSvg'
@@ -22,6 +21,7 @@ import { cn } from '@/helpers/cn'
 import { useToast } from '@/hooks/useToast'
 import { formatDistance } from '@/helpers/distance'
 import { useWorkoutsQuery } from '@/queries/workout'
+import { Page } from '@/components/ui/Page'
 
 interface WorkoutItem {
 	id: string
@@ -46,7 +46,6 @@ type WorkoutHistoryRow =
 	  } & WorkoutItem)
 
 const WorkoutHistory = () => {
-	const insets = useSafeAreaInsets()
 	const toast = useToast()
 	const listRef = useRef<LegendListRef>(null)
 
@@ -145,8 +144,8 @@ const WorkoutHistory = () => {
 	}
 
 	return (
-		<View style={{ flex: 1, paddingTop: insets.top }}>
-			<Container className="gap-[20px] mt-[20px] flex-1">
+		<Page>
+			<Container className="gap-[20px] flex-1">
 				<HeaderBack>История тренировок</HeaderBack>
 				<Select
 					options={[
@@ -184,7 +183,7 @@ const WorkoutHistory = () => {
 					ListFooterComponent={renderFooter}
 					contentContainerStyle={{
 						flexGrow: 1,
-						paddingBottom: insets.bottom + 20,
+						paddingBottom: 10,
 						paddingTop: 10
 					}}
 					ListHeaderComponent={
@@ -268,7 +267,7 @@ const WorkoutHistory = () => {
 					onEndReachedThreshold={0.4}
 				/>
 			</Container>
-		</View>
+		</Page>
 	)
 }
 

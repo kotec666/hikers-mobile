@@ -1,5 +1,4 @@
 import React, { useCallback, useEffect, useRef } from 'react'
-import { SafeAreaProvider, useSafeAreaInsets } from 'react-native-safe-area-context'
 import { ActivityIndicator, RefreshControl, Text, View } from 'react-native'
 import SettingsSvg from '@/components/svg/SettingsSvg'
 import MoreOptionsButton from '@/components/ui/MoreOptionsButton/MoreOptionsButton'
@@ -23,6 +22,7 @@ import TrainingsEmpty from '@/components/ui/Post/TrainingsEmpty'
 import BlurProvider from '@/components/providers/BlurProvider'
 import { useProfilePostsQuery } from '@/queries/posts'
 import { useProfileQuery } from '@/queries/my-profile'
+import { Page } from '@/components/ui/Page'
 
 /**
  *
@@ -39,9 +39,8 @@ const ALLOWED_ROUTES = {
 type AllowedRoute = (typeof ALLOWED_ROUTES)[keyof typeof ALLOWED_ROUTES]
 
 const Profile = () => {
-	const insets = useSafeAreaInsets()
-	const { push } = useSafeNavigation()
 	const router = useRouter()
+	const { push } = useSafeNavigation()
 	const { user, logout } = useAuthStore()
 	const params = useLocalSearchParams()
 	const legendListRef = useRef<LegendListRef>(null)
@@ -132,119 +131,117 @@ const Profile = () => {
 	}, [postsIsFetching])
 
 	return (
-		<>
-			<SafeAreaProvider style={{ paddingTop: insets.top, backgroundColor: Colors['black-0d'] }}>
-				<BlurProvider>
-					<LegendList
-						ref={legendListRef}
-						data={posts}
-						renderItem={renderPostItem}
-						keyExtractor={(item) => item.id}
-						onEndReached={() => {
-							if (postsHasNextPage && !postsIsFetchingNextPage) {
-								fetchNextPostsPage()
-							}
-						}}
-						onEndReachedThreshold={0.4}
-						ItemSeparatorComponent={() => <View style={{ height: 16 }} />}
-						ListEmptyComponent={renderEmpty}
-						ListFooterComponent={renderFooter}
-						refreshControl={
-							<RefreshControl
-								refreshing={isProfileFetching || postsIsRefetching}
-								onRefresh={onRefreshAll}
-								tintColor={Colors['green-main']}
-							/>
+		<Page>
+			<BlurProvider>
+				<LegendList
+					ref={legendListRef}
+					data={posts}
+					renderItem={renderPostItem}
+					keyExtractor={(item) => item.id}
+					onEndReached={() => {
+						if (postsHasNextPage && !postsIsFetchingNextPage) {
+							fetchNextPostsPage()
 						}
-						ListHeaderComponent={
-							<View className="gap-[20px] mb-[16px]">
-								<View className="gap-[20px]">
-									<View className="gap-[16px]">
-										<View className="flex-row justify-between w-full">
-											<AnimatedProfilePicture
-												size={117}
-												bordered
-												imageUrl={`${PATH_TO_IMAGE}${profileData?.user?.avatarFilename}`}
-											/>
-											<MoreOptionsButton
-												icon={<SettingsSvg />}
-												params={[
-													{
-														label: 'Редактировать профиль',
-														action: () => handleClickRedirect(ALLOWED_ROUTES.EDIT_PROFILE)
-													},
-													{
-														label: 'О приложении',
-														action: () => handleClickRedirect(ALLOWED_ROUTES.ABOUT)
-													},
-													{
-														label: 'Настройки',
-														action: () => handleClickRedirect(ALLOWED_ROUTES.SETTINGS)
-													},
-													{ label: 'Выход', action: handleClickExit }
-												]}
-											/>
-										</View>
-										<View>
-											{profileData?.user?.name && (
-												<Text
-													className="text-[19px] text-white"
-													style={{ fontFamily: fontFamily.bold }}
-												>
-													{profileData?.user?.name}
-												</Text>
-											)}
-											{profileData?.user?.username && (
-												<Text
-													className="text-base text-gray-ab"
-													style={{ fontFamily: fontFamily.medium }}
-												>
-													@{profileData?.user?.username}
-												</Text>
-											)}
-										</View>
-									</View>
-
-									<View className="flex-row justify-between gap-[10px]">
-										<SocialStats
-											label="Подписчики"
-											content={profileData?.subscribers}
-											hrefTo="/subscribers/my-subscribers"
+					}}
+					onEndReachedThreshold={0.4}
+					ItemSeparatorComponent={() => <View style={{ height: 16 }} />}
+					ListEmptyComponent={renderEmpty}
+					ListFooterComponent={renderFooter}
+					refreshControl={
+						<RefreshControl
+							refreshing={isProfileFetching || postsIsRefetching}
+							onRefresh={onRefreshAll}
+							tintColor={Colors['green-main']}
+						/>
+					}
+					ListHeaderComponent={
+						<View className="gap-[20px] mb-[16px]">
+							<View className="gap-[20px]">
+								<View className="gap-[16px]">
+									<View className="flex-row justify-between w-full">
+										<AnimatedProfilePicture
+											size={117}
+											bordered
+											imageUrl={`${PATH_TO_IMAGE}${profileData?.user?.avatarFilename}`}
 										/>
-										<SocialStats
-											label="Друзья"
-											content={profileData?.friends}
-											hrefTo="/friends/my-friends"
-										/>
-										<SocialStats
-											label="Подписки"
-											content={profileData?.subscriptions}
-											hrefTo="/subscribers/my-subscriptions"
+										<MoreOptionsButton
+											icon={<SettingsSvg />}
+											params={[
+												{
+													label: 'Редактировать профиль',
+													action: () => handleClickRedirect(ALLOWED_ROUTES.EDIT_PROFILE)
+												},
+												{
+													label: 'О приложении',
+													action: () => handleClickRedirect(ALLOWED_ROUTES.ABOUT)
+												},
+												{
+													label: 'Настройки',
+													action: () => handleClickRedirect(ALLOWED_ROUTES.SETTINGS)
+												},
+												{ label: 'Выход', action: handleClickExit }
+											]}
 										/>
 									</View>
-									<Button variant="white" onPress={() => push('/workout-history')}>
-										История тренировок
-									</Button>
-									<RedirectAchievementsInfo achievements={profileData?.achievements} isMyProfile />
-									<ActivityInfo label="Активности" activities={profileData?.activities || []} />
+									<View>
+										{profileData?.user?.name && (
+											<Text
+												className="text-[19px] text-white"
+												style={{ fontFamily: fontFamily.bold }}
+											>
+												{profileData?.user?.name}
+											</Text>
+										)}
+										{profileData?.user?.username && (
+											<Text
+												className="text-base text-gray-ab"
+												style={{ fontFamily: fontFamily.medium }}
+											>
+												@{profileData?.user?.username}
+											</Text>
+										)}
+									</View>
 								</View>
-								<Text
-									className="text-base text-white border-b-[1px] border-b-black-44 py-[20px]"
-									style={{ fontFamily: fontFamily.bold }}
-								>
-									Лента
-								</Text>
+
+								<View className="flex-row justify-between gap-[10px]">
+									<SocialStats
+										label="Подписчики"
+										content={profileData?.subscribers}
+										hrefTo="/subscribers/my-subscribers"
+									/>
+									<SocialStats
+										label="Друзья"
+										content={profileData?.friends}
+										hrefTo="/friends/my-friends"
+									/>
+									<SocialStats
+										label="Подписки"
+										content={profileData?.subscriptions}
+										hrefTo="/subscribers/my-subscriptions"
+									/>
+								</View>
+								<Button variant="white" onPress={() => push('/workout-history')}>
+									История тренировок
+								</Button>
+								<RedirectAchievementsInfo achievements={profileData?.achievements} isMyProfile />
+								<ActivityInfo label="Активности" activities={profileData?.activities || []} />
 							</View>
-						}
-						contentContainerStyle={{
-							flexGrow: 1,
-							paddingBottom: insets.bottom,
-							paddingHorizontal: 16
-						}}
-					/>
-				</BlurProvider>
-			</SafeAreaProvider>
-		</>
+							<Text
+								className="text-base text-white border-b-[1px] border-b-black-44 py-[20px]"
+								style={{ fontFamily: fontFamily.bold }}
+							>
+								Лента
+							</Text>
+						</View>
+					}
+					contentContainerStyle={{
+						flexGrow: 1,
+						paddingBottom: 100,
+						paddingHorizontal: 16
+					}}
+				/>
+			</BlurProvider>
+		</Page>
 	)
 }
 

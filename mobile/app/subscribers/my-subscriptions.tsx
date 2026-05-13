@@ -3,7 +3,6 @@ import { View, Text, RefreshControl, ActivityIndicator } from 'react-native'
 import { Container } from '@/components/ui/Container'
 import HeaderBack from '@/components/ui/HeaderBack'
 import PeopleListItem from '@/components/find-people/PeopleListItem'
-import { SafeAreaProvider, useSafeAreaInsets } from 'react-native-safe-area-context'
 import { fontFamily } from '@/constants/Fonts'
 import RoundedMinusSvg from '@/components/svg/RoundedMinusSvg'
 import { ISubscribe } from '@/api/subscribers'
@@ -11,13 +10,12 @@ import { PATH_TO_IMAGE } from '@/constants/PATH_TO_FILES'
 import { LegendList } from '@legendapp/list'
 import { Colors } from '@/constants/Colors'
 import { useMySubscriptionsQuery, useToggleSubscribeMutation } from '@/queries/subscriptions'
+import { Page } from '@/components/ui/Page'
 
 /**
  * Мои подписки, на кого подписан я
  * */
 const MySubscriptionsPage = () => {
-	const insets = useSafeAreaInsets()
-
 	const {
 		data: subscriptions = [],
 		fetchNextPage,
@@ -78,7 +76,7 @@ const MySubscriptionsPage = () => {
 	}
 
 	return (
-		<SafeAreaProvider style={{ paddingTop: insets.top }}>
+		<Page>
 			<View style={{ flex: 1 }}>
 				<Container className="gap-[20px] mt-[20px] flex-1">
 					<HeaderBack>Подписки</HeaderBack>
@@ -103,14 +101,14 @@ const MySubscriptionsPage = () => {
 						ListFooterComponent={renderFooter}
 						ListEmptyComponent={EmptyListComponent}
 						contentContainerStyle={{
-							paddingBottom: insets.bottom + 20,
+							paddingBottom: 50,
 							paddingTop: 10,
 							flex: subscriptions.length === 0 ? 1 : undefined
 						}}
 					/>
 				</Container>
 			</View>
-		</SafeAreaProvider>
+		</Page>
 	)
 }
 

@@ -1,9 +1,9 @@
-import { SafeAreaProvider, useSafeAreaInsets } from 'react-native-safe-area-context'
 import { StatusBar } from 'expo-status-bar'
 import { ScrollView, Text } from 'react-native'
 import { Container } from '@/components/ui/Container'
 import { fontFamily } from '@/constants/Fonts'
 import HeaderBack from '@/components/ui/HeaderBack'
+import { Page } from '@/components/ui/Page'
 
 export const MockText = () => {
 	return (
@@ -75,17 +75,16 @@ export const MockText = () => {
 }
 
 const DocumentPage = () => {
-	const insets = useSafeAreaInsets()
 	return (
-		<SafeAreaProvider style={{ paddingTop: insets.top, paddingBottom: insets.bottom }}>
+		<Page>
 			<Container className="gap-[20px]">
 				<HeaderBack>Просмотр документа</HeaderBack>
-				<ScrollView contentContainerStyle={{ paddingBottom: insets.bottom + 50 }}>
+				<ScrollView contentContainerStyle={{ paddingBottom: 100 }}>
 					<MockText />
 				</ScrollView>
 			</Container>
 			<StatusBar style="light" />
-		</SafeAreaProvider>
+		</Page>
 	)
 }
 

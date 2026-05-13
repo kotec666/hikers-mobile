@@ -10,7 +10,6 @@ import {
 	ActivityIndicator,
 	TextInput
 } from 'react-native'
-import { SafeAreaProvider, useSafeAreaInsets } from 'react-native-safe-area-context'
 import { Input } from '@/components/ui/Input'
 import { Container } from '@/components/ui/Container'
 import { NotificationsButton } from '@/components/ui/Notifications/NotificationsButton'
@@ -32,6 +31,7 @@ import { PATH_TO_IMAGE } from '@/constants/PATH_TO_FILES'
 import { BackButton } from '@/components/ui/HeaderBack'
 import { useFeedPostsQuery } from '@/queries/posts'
 import { useSearchQuery } from '@/queries/search'
+import { Page } from '@/components/ui/Page'
 
 const isUser = (item: IFoundUser | IFoundPost): item is IFoundUser => {
 	return 'username' in item
@@ -42,8 +42,6 @@ const isPost = (item: IFoundUser | IFoundPost): item is IFoundPost => {
 }
 
 const PostsPage = () => {
-	const insets = useSafeAreaInsets()
-
 	const [state, setState] = useState<{
 		isSearchActive: boolean
 		searchMode: SearchType
@@ -197,9 +195,7 @@ const PostsPage = () => {
 
 	if (state.isSearchActive) {
 		return (
-			<SafeAreaProvider
-				style={{ paddingTop: insets.top, paddingBottom: insets.bottom, backgroundColor: Colors['black-0d'] }}
-			>
+			<Page>
 				<View style={{ flex: 1 }}>
 					<Container className="gap-[20px] flex-1">
 						<View className="flex-row justify-center items-center gap-[10px] w-full">
@@ -331,13 +327,13 @@ const PostsPage = () => {
 						</KeyboardAvoidingView>
 					</Container>
 				</View>
-			</SafeAreaProvider>
+			</Page>
 		)
 	}
 
 	// Основная лента постов
 	return (
-		<SafeAreaProvider style={{ paddingTop: insets.top, backgroundColor: Colors['black-0d'] }}>
+		<Page edges={['top']}>
 			<View style={{ flex: 1 }}>
 				<Container className="gap-[20px] flex-1">
 					<View className="flex-row justify-center items-center gap-[10px] w-full">
@@ -379,7 +375,7 @@ const PostsPage = () => {
 								/>
 							}
 							contentContainerStyle={{
-								paddingBottom: insets.bottom + 100,
+								paddingBottom: 130,
 								flexGrow: 1
 							}}
 							showsVerticalScrollIndicator={false}
@@ -387,7 +383,7 @@ const PostsPage = () => {
 					</View>
 				</Container>
 			</View>
-		</SafeAreaProvider>
+		</Page>
 	)
 }
 

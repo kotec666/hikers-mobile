@@ -1,6 +1,5 @@
 import React, { useCallback } from 'react'
 import { View, ActivityIndicator, RefreshControl } from 'react-native'
-import { SafeAreaProvider, useSafeAreaInsets } from 'react-native-safe-area-context'
 import { Container } from '@/components/ui/Container'
 import HeaderBack from '@/components/ui/HeaderBack'
 import PeopleListItem from '@/components/find-people/PeopleListItem'
@@ -14,6 +13,7 @@ import { PATH_TO_IMAGE } from '@/constants/PATH_TO_FILES'
 import { useAuthStore } from '@/store/authStore'
 import { useWorkoutMembersQuery } from '@/queries/workout'
 import { useToggleSubscribeMutation } from '@/queries/subscriptions'
+import { Page } from '@/components/ui/Page'
 
 const MemberItem = ({ item, currentUserId }: { item: ITrainingMember; currentUserId?: string; postId: string }) => {
 	const { mutateAsync: toggleSubscribe, isPending: isPendingSubscribe } = useToggleSubscribeMutation()
@@ -54,7 +54,6 @@ const MemberItem = ({ item, currentUserId }: { item: ITrainingMember; currentUse
 }
 
 const Members = () => {
-	const insets = useSafeAreaInsets()
 	const { id } = useLocalSearchParams<{ id: string }>()
 	const { user } = useAuthStore()
 
@@ -82,7 +81,7 @@ const Members = () => {
 	}
 
 	return (
-		<SafeAreaProvider style={{ paddingTop: insets.top, paddingBottom: insets.bottom }}>
+		<Page>
 			<Container className="gap-[20px] mt-[20px] flex-1">
 				<HeaderBack>Участники тренировки</HeaderBack>
 				<LegendList
@@ -105,12 +104,12 @@ const Members = () => {
 					}
 					ListFooterComponent={renderFooter}
 					contentContainerStyle={{
-						paddingBottom: insets.bottom + 20,
+						paddingBottom: 50,
 						paddingTop: 10
 					}}
 				/>
 			</Container>
-		</SafeAreaProvider>
+		</Page>
 	)
 }
 
