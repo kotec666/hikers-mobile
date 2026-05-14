@@ -1,5 +1,6 @@
 import { MailerService as Mailer } from '@nestjs-modules/mailer';
 import { Injectable } from '@nestjs/common';
+import { EMAIL_CONFIRMATION_CODE_TTL_MS } from '@shared/constants';
 
 @Injectable()
 export class MailerService {
@@ -20,6 +21,7 @@ export class MailerService {
 			template: 'confirmEmail',
 			context: {
 				code,
+				ttlMins: (EMAIL_CONFIRMATION_CODE_TTL_MS / 1000 / 60).toFixed(0),
 			},
 			to,
 			subject,
