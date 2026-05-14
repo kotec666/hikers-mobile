@@ -13,7 +13,7 @@ export class MailerService {
 		});
 	}
 
-	public async sendEmailConfirmationMail(to: string, code: number) {
+	public async sendEmailConfirmationMail(to: string, code: number | string) {
 		const subject = `Заголовок ${Date.now()}`;
 
 		return this.mailer.sendMail({

@@ -15,6 +15,8 @@ import { DatabaseService } from '../database/database.service';
 import { MailerService } from '../mailer/mailer.service';
 import { users } from '../database/schema';
 import { eq } from 'drizzle-orm';
+import { generateNumericCode } from './helpers';
+import { EMAIL_CONFIRMATION_CODE_SIZE } from '@shared/constants';
 
 @Injectable()
 export class AuthService {
@@ -44,7 +46,7 @@ export class AuthService {
 			throw new ConflictException(ERRORS.ALREADY_EXISTS);
 		}
 
-		const code = 12345; // @TODO generateCode(len: CODE_LENGTH_FROM_SHARED_FUCKIN_FUCK)
+		const code = generateNumericCode(EMAIL_CONFIRMATION_CODE_SIZE);
 		// @TODO время жизни кода, закидывать в кеш после отправки
 
 		return this.mailer
@@ -58,7 +60,24 @@ export class AuthService {
 	}
 
 	// eslint-disable-next-line @typescript-eslint/no-unused-vars
-	public async confirmEmail(userId: string, code: number): Promise<CommonDto.BooleanResponse> {
+	public async confirmEmail(userId: string, code: string): Promise<CommonDto.BooleanResponse> {
+		const [user] = await this.db.db
+			.select({
+				id: users.id,
+				email: users.email,
+				emailConfirmedAt: users.emailConfirmedAt,
+			})
+			.from(users)
+			.where(eq(users.id, userId))
+			.limit(1);
+		if (!user) {
+			throw new NotFoundException(ERRORS.NOT_FOUND);
+		}
+		if (user.emailConfirmedAt) {
+			throw new ConflictException(ERRORS.ALREADY_EXISTS);
+		}
+
+		// @TODO доставать код из кэша, сравнивать, кидать ошибку или обновлять поле юзера
 		return { success: true };
 	}
 

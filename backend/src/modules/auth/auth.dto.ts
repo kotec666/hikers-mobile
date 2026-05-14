@@ -7,6 +7,6 @@ export namespace AuthDto {
 		@Length(EMAIL_CONFIRMATION_CODE_SIZE, EMAIL_CONFIRMATION_CODE_SIZE, {
 			message: `_code:${ERRORS.INVALID_LENGTH}`,
 		})
-		code: number;
+		code: string;
 	}
 }
