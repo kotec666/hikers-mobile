@@ -28,12 +28,16 @@ import { ScheduleModule } from '@nestjs/schedule';
 import { MailerModule } from '@nestjs-modules/mailer';
 import { MailerModule as MyMailerModule } from './modules/mailer/mailer.module';
 import { HandlebarsAdapter } from '@nestjs-modules/mailer/adapters/handlebars.adapter';
+import { CacheModule } from '@nestjs/cache-manager';
 
 config({ quiet: true });
 
 @Module({
 	controllers: [AppController],
 	imports: [
+		CacheModule.register({
+			isGlobal: true,
+		}),
 		MailerModule.forRoot({
 			transport: {
 				host: process.env.EMAIL_HOST,

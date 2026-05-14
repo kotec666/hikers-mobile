@@ -1,11 +1,14 @@
 import {
 	BadRequestException,
 	ConflictException,
+	Inject,
 	Injectable,
 	NotFoundException,
 	UnauthorizedException,
 } from '@nestjs/common';
 import { ERRORS } from '@shared/errors';
+import { EMAIL_CONFIRMATION_CODE_SIZE, EMAIL_CONFIRMATION_CODE_TTL_MS } from '@shared/constants';
+import { generateNumericCode } from './helpers';
 import { UserDto } from '../user/user.dto';
 import { CommonDto } from '../../common/dto/common.dto';
 import { TokenDto } from '../token/token.dto';
@@ -15,8 +18,7 @@ import { DatabaseService } from '../database/database.service';
 import { MailerService } from '../mailer/mailer.service';
 import { users } from '../database/schema';
 import { eq } from 'drizzle-orm';
-import { generateNumericCode } from './helpers';
-import { EMAIL_CONFIRMATION_CODE_SIZE } from '@shared/constants';
+import { CACHE_MANAGER, Cache } from '@nestjs/cache-manager';
 
 @Injectable()
 export class AuthService {
@@ -25,10 +27,15 @@ export class AuthService {
 		private readonly userService: UserService,
 		private readonly tokenService: TokenService,
 		private readonly mailer: MailerService,
+		@Inject(CACHE_MANAGER) private cacheManager: Cache,
 	) {}
 
 	public async requestConfirmEmail(userId: string): Promise<CommonDto.BooleanResponse> {
-		// @TODO проверка с кеша по ттл чтобы не спамили
+		// @TODO юзать что-то типо таймаута, вместо жизни кода
+		const existingCode = await this.cacheManager.get<string>(userId);
+		if (existingCode) {
+			throw new ConflictException(ERRORS.ALREADY_EXISTS);
+		}
 
 		const [user] = await this.db.db
 			.select({
@@ -47,7 +54,7 @@ export class AuthService {
 		}
 
 		const code = generateNumericCode(EMAIL_CONFIRMATION_CODE_SIZE);
-		// @TODO время жизни кода, закидывать в кеш после отправки
+		this.cacheManager.set(userId, code, EMAIL_CONFIRMATION_CODE_TTL_MS);
 
 		return this.mailer
 			.sendEmailConfirmationMail(user.email, code)
@@ -59,26 +66,29 @@ export class AuthService {
 			}));
 	}
 
-	// eslint-disable-next-line @typescript-eslint/no-unused-vars
 	public async confirmEmail(userId: string, code: string): Promise<CommonDto.BooleanResponse> {
-		const [user] = await this.db.db
-			.select({
-				id: users.id,
-				email: users.email,
-				emailConfirmedAt: users.emailConfirmedAt,
-			})
-			.from(users)
-			.where(eq(users.id, userId))
-			.limit(1);
-		if (!user) {
+		const cachedCode = await this.cacheManager.get<string>(userId);
+		if (!cachedCode) {
 			throw new NotFoundException(ERRORS.NOT_FOUND);
 		}
-		if (user.emailConfirmedAt) {
-			throw new ConflictException(ERRORS.ALREADY_EXISTS);
+		if (cachedCode !== code) {
+			throw new BadRequestException(ERRORS.BAD_REQUEST);
 		}
 
-		// @TODO доставать код из кэша, сравнивать, кидать ошибку или обновлять поле юзера
-		return { success: true };
+		return this.db.db
+			.update(users)
+			.set({
+				emailConfirmedAt: new Date(),
+			})
+			.where(eq(users.id, userId))
+			.catch(() => ({
+				success: false,
+			}))
+			.then(() => {
+				this.cacheManager.del(userId);
+
+				return { success: true };
+			});
 	}
 
 	public async registration(dto: UserDto.Registration): Promise<TokenDto.TokenResponse & UserDto.Entity> {
