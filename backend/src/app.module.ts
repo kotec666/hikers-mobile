@@ -25,12 +25,26 @@ import { NotificationsModule } from './modules/notifications/notifications.modul
 import { WebsocketsModule } from './modules/websockets/websockets.module';
 import { EventEmitterModule } from '@nestjs/event-emitter';
 import { ScheduleModule } from '@nestjs/schedule';
+import { MailerModule } from '@nestjs-modules/mailer';
+import { AppService } from './app.service';
 
 config({ quiet: true });
 
 @Module({
 	controllers: [AppController],
 	imports: [
+		MailerModule.forRoot({
+			transport: {
+				host: process.env.EMAIL_HOST,
+				port: 465,
+				secure: true,
+				sender: process.env.EMAIL_USERNAME,
+				auth: {
+					user: process.env.EMAIL_USERNAME,
+					pass: process.env.EMAIL_PASSWORD,
+				},
+			},
+		}),
 		ScheduleModule.forRoot({ cronJobs: true }),
 		EventEmitterModule.forRoot({ ignoreErrors: true }),
 		LoggerModule.forRoot({
@@ -93,6 +107,6 @@ config({ quiet: true });
 		NotificationsModule,
 		WebsocketsModule,
 	],
-	providers: [UniqueEmailValidator, FinishedTrainingParticipantValidator],
+	providers: [UniqueEmailValidator, FinishedTrainingParticipantValidator, AppService],
 })
 export class AppModule {}

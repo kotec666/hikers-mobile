@@ -14,6 +14,10 @@ export const defaultEnv = z.object({
 
 	ACCESS_TOKEN_EXPIRATION_TIME: z.string().default('30m'),
 	REFRESH_TOKEN_EXPIRATION_TIME: z.string().default('30d'),
+
+	EMAIL_HOST: z.string(),
+	EMAIL_USERNAME: z.string(),
+	EMAIL_PASSWORD: z.string(),
 });
 
 export type Env = z.infer<typeof defaultEnv>;
