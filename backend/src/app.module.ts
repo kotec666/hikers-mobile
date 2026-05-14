@@ -26,7 +26,8 @@ import { WebsocketsModule } from './modules/websockets/websockets.module';
 import { EventEmitterModule } from '@nestjs/event-emitter';
 import { ScheduleModule } from '@nestjs/schedule';
 import { MailerModule } from '@nestjs-modules/mailer';
-import { AppService } from './app.service';
+import { MailerModule as MyMailerModule } from './modules/mailer/mailer.module';
+// import { HandlebarsAdapter } from '@nestjs-modules/mailer/adapters/handlebars.adapter';
 
 config({ quiet: true });
 
@@ -44,6 +45,16 @@ config({ quiet: true });
 					pass: process.env.EMAIL_PASSWORD,
 				},
 			},
+			defaults: {
+				from: `хайкерс <${process.env.EMAIL_USERNAME}>`,
+			},
+			// template: {
+			// 	dir: process.cwd() + 'modules/mailer/templates/',
+			// 	adapter: new HandlebarsAdapter(),
+			// 	options: {
+			// 		strict: true,
+			// 	},
+			// },
 		}),
 		ScheduleModule.forRoot({ cronJobs: true }),
 		EventEmitterModule.forRoot({ ignoreErrors: true }),
@@ -106,7 +117,8 @@ config({ quiet: true });
 		SerachModule,
 		NotificationsModule,
 		WebsocketsModule,
+		MyMailerModule,
 	],
-	providers: [UniqueEmailValidator, FinishedTrainingParticipantValidator, AppService],
+	providers: [UniqueEmailValidator, FinishedTrainingParticipantValidator],
 })
 export class AppModule {}
