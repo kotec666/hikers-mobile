@@ -13,11 +13,18 @@ export class MailerService {
 		});
 	}
 
-	// @TODO на шаблоны перепись
 	public async sendPasswordRecoveryMail(to: string) {
 		const text = 'Забыл парол? Шя восстановим';
-		const subject = 'Заголовок';
+		const subject = `Заголовок ${Date.now()}`;
 
-		return this.sendMail(to, subject, text);
+		return this.mailer.sendMail({
+			template: 'passwordRecovery',
+			context: {
+				code: '123',
+			},
+			to,
+			subject,
+			text,
+		});
 	}
 }

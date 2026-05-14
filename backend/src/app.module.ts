@@ -27,7 +27,7 @@ import { EventEmitterModule } from '@nestjs/event-emitter';
 import { ScheduleModule } from '@nestjs/schedule';
 import { MailerModule } from '@nestjs-modules/mailer';
 import { MailerModule as MyMailerModule } from './modules/mailer/mailer.module';
-// import { HandlebarsAdapter } from '@nestjs-modules/mailer/adapters/handlebars.adapter';
+import { HandlebarsAdapter } from '@nestjs-modules/mailer/adapters/handlebars.adapter';
 
 config({ quiet: true });
 
@@ -48,13 +48,13 @@ config({ quiet: true });
 			defaults: {
 				from: `хайкерс <${process.env.EMAIL_USERNAME}>`,
 			},
-			// template: {
-			// 	dir: process.cwd() + 'modules/mailer/templates/',
-			// 	adapter: new HandlebarsAdapter(),
-			// 	options: {
-			// 		strict: true,
-			// 	},
-			// },
+			template: {
+				dir: process.cwd() + '/src/modules/mailer/templates/',
+				adapter: new HandlebarsAdapter(),
+				options: {
+					strict: true,
+				},
+			},
 		}),
 		ScheduleModule.forRoot({ cronJobs: true }),
 		EventEmitterModule.forRoot({ ignoreErrors: true }),
