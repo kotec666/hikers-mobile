@@ -13,15 +13,22 @@ import {
 } from '@/api/friends'
 import { INotMyProfile, IProfile } from '@/api/profile'
 import { FriendStatus } from '@shared/enums'
+import { getFieldsErrors } from '@/helpers/getFieldsErrors'
 
 export const useMyFriendsQuery = (limit = 15) =>
 	useInfiniteQuery<IFriend[], Error, IFriend[], typeof QUERY_KEYS.MY_FRIENDS, number>({
 		queryKey: QUERY_KEYS.MY_FRIENDS,
-		queryFn: ({ pageParam }) =>
-			getMyFriendsList({
-				page: pageParam,
-				limit
-			}),
+		queryFn: async ({ pageParam }) => {
+			try {
+				return await getMyFriendsList({
+					page: pageParam,
+					limit
+				})
+			} catch (e) {
+				await getFieldsErrors(e)
+				throw e
+			}
+		},
 		initialPageParam: 1,
 		getNextPageParam: (lastPage, pages) => {
 			if (lastPage.length < limit) return undefined
@@ -33,11 +40,17 @@ export const useMyFriendsQuery = (limit = 15) =>
 export const useMyFriendRequestsQuery = (limit = 15) =>
 	useInfiniteQuery<IInvite[], Error, IInvite[], typeof QUERY_KEYS.MY_FRIEND_REQUESTS, number>({
 		queryKey: QUERY_KEYS.MY_FRIEND_REQUESTS,
-		queryFn: ({ pageParam }) =>
-			getPendingInvitesList({
-				page: pageParam,
-				limit
-			}),
+		queryFn: async ({ pageParam }) => {
+			try {
+				return await getPendingInvitesList({
+					page: pageParam,
+					limit
+				})
+			} catch (e) {
+				await getFieldsErrors(e)
+				throw e
+			}
+		},
 		initialPageParam: 1,
 		getNextPageParam: (lastPage, pages) => {
 			if (lastPage.length < limit) return undefined
@@ -52,7 +65,6 @@ export const useAcceptFriendRequestMutation = () => {
 
 	return useMutation({
 		mutationFn: (userId: string) => acceptFriendRequest(userId),
-
 		onMutate: async (userId) => {
 			await Promise.all([
 				queryClient.cancelQueries({ queryKey: QUERY_KEYS.MY_PROFILE }),

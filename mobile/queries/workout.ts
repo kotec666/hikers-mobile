@@ -9,6 +9,7 @@ import {
 	ITrainingHistoryItem
 } from '@/api/workout'
 import { getTrainingMembersByPostId, ITrainingMember } from '@/api/posts'
+import { getFieldsErrors } from '@/helpers/getFieldsErrors'
 
 export const useWorkoutsQuery = (selectedType: string, limit = 15) =>
 	useInfiniteQuery<
@@ -19,13 +20,19 @@ export const useWorkoutsQuery = (selectedType: string, limit = 15) =>
 		number
 	>({
 		queryKey: [...QUERY_KEYS.WORKOUT_HISTORY, selectedType],
-		queryFn: ({ pageParam }) =>
-			getMyHistoryTrainings({
-				page: pageParam,
-				limit,
-				finished: true,
-				types: selectedType
-			}),
+		queryFn: async ({ pageParam }) => {
+			try {
+				return await getMyHistoryTrainings({
+					page: pageParam,
+					limit,
+					finished: true,
+					types: selectedType
+				})
+			} catch (e) {
+				await getFieldsErrors(e)
+				throw e
+			}
+		},
 		initialPageParam: 1,
 		getNextPageParam: (lastPage, pages) => {
 			if (lastPage.length < limit) return undefined
@@ -37,7 +44,14 @@ export const useWorkoutsQuery = (selectedType: string, limit = 15) =>
 export const useExtendedDetailsWorkoutQuery = (trainingId?: string) =>
 	useQuery<IExtendedTrainingResponse>({
 		queryKey: [...QUERY_KEYS.WORKOUT_DETAILS, trainingId],
-		queryFn: () => getExtendedDetails(trainingId!),
+		queryFn: async () => {
+			try {
+				return await getExtendedDetails(trainingId!)
+			} catch (e) {
+				await getFieldsErrors(e)
+				throw e
+			}
+		},
 		enabled: !!trainingId
 		// retry: 1
 	})
@@ -51,11 +65,17 @@ export const useWorkoutMembersQuery = (postId: string, limit = 15) =>
 		number
 	>({
 		queryKey: [...QUERY_KEYS.WORKOUT_MEMBERS, postId],
-		queryFn: ({ pageParam }) =>
-			getTrainingMembersByPostId(postId, {
-				page: pageParam,
-				limit
-			}),
+		queryFn: async ({ pageParam }) => {
+			try {
+				return await getTrainingMembersByPostId(postId, {
+					page: pageParam,
+					limit
+				})
+			} catch (e) {
+				await getFieldsErrors(e)
+				throw e
+			}
+		},
 		initialPageParam: 1,
 		getNextPageParam: (lastPage, pages) => {
 			if (lastPage.length < limit) return undefined

@@ -4,15 +4,22 @@ import { QUERY_KEYS } from '@/constants/query-keys'
 import { IPost, ITrainingMember } from '@/api/posts'
 import { INotMyProfile, IProfile } from '@/api/profile'
 import { findUserInCacheForSubscription } from '@/queries/query-helpers'
+import { getFieldsErrors } from '@/helpers/getFieldsErrors'
 
 export const useMySubscriptionsQuery = (limit = 15) =>
 	useInfiniteQuery<ISubscribe[], Error, ISubscribe[], typeof QUERY_KEYS.MY_SUBSCRIPTIONS, number>({
 		queryKey: QUERY_KEYS.MY_SUBSCRIPTIONS,
-		queryFn: ({ pageParam }) =>
-			getSubscriptionsList({
-				page: pageParam,
-				limit
-			}),
+		queryFn: async ({ pageParam }) => {
+			try {
+				return await getSubscriptionsList({
+					page: pageParam,
+					limit
+				})
+			} catch (e) {
+				await getFieldsErrors(e)
+				throw e
+			}
+		},
 		initialPageParam: 1,
 		getNextPageParam: (lastPage, pages) => {
 			if (lastPage.length < limit) return undefined

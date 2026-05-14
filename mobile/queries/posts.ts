@@ -13,15 +13,22 @@ import {
 	unlikePostById
 } from '@/api/posts'
 import { QUERY_KEYS } from '@/constants/query-keys'
+import { getFieldsErrors } from '@/helpers/getFieldsErrors'
 
 export const useFeedPostsQuery = (limit = 5) =>
 	useInfiniteQuery<IPost[], Error, IPost[], typeof QUERY_KEYS.POSTS_FEED, number>({
 		queryKey: QUERY_KEYS.POSTS_FEED,
-		queryFn: ({ pageParam }) =>
-			getPostsFeed({
-				page: pageParam,
-				limit
-			}),
+		queryFn: async ({ pageParam }) => {
+			try {
+				return await getPostsFeed({
+					page: pageParam,
+					limit
+				})
+			} catch (e) {
+				await getFieldsErrors(e)
+				throw e
+			}
+		},
 		initialPageParam: 1,
 		getNextPageParam: (lastPage, pages) => {
 			if (lastPage.length < limit) return undefined
@@ -33,11 +40,17 @@ export const useFeedPostsQuery = (limit = 5) =>
 export const useProfilePostsQuery = (limit = 5) =>
 	useInfiniteQuery<IPost[], Error, IPost[], typeof QUERY_KEYS.POSTS_MY_PROFILE, number>({
 		queryKey: QUERY_KEYS.POSTS_MY_PROFILE,
-		queryFn: ({ pageParam }) =>
-			getPostsMy({
-				page: pageParam,
-				limit
-			}),
+		queryFn: async ({ pageParam }) => {
+			try {
+				return await getPostsMy({
+					page: pageParam,
+					limit
+				})
+			} catch (e) {
+				await getFieldsErrors(e)
+				throw e
+			}
+		},
 		initialPageParam: 1,
 		getNextPageParam: (lastPage, pages) => {
 			if (lastPage.length < limit) return undefined
@@ -49,11 +62,17 @@ export const useProfilePostsQuery = (limit = 5) =>
 export const useNotMyProfilePostsQuery = (userId: string, limit = 5) =>
 	useInfiniteQuery<IPost[], Error, IPost[], [...typeof QUERY_KEYS.POSTS_NOT_MY_PROFILE, string], number>({
 		queryKey: [...QUERY_KEYS.POSTS_NOT_MY_PROFILE, userId],
-		queryFn: ({ pageParam }) =>
-			getPostsByUserId(userId, {
-				page: pageParam,
-				limit
-			}),
+		queryFn: async ({ pageParam }) => {
+			try {
+				return await getPostsByUserId(userId, {
+					page: pageParam,
+					limit
+				})
+			} catch (e) {
+				await getFieldsErrors(e)
+				throw e
+			}
+		},
 		initialPageParam: 1,
 		getNextPageParam: (lastPage, pages) => {
 			if (lastPage.length < limit) return undefined
@@ -66,7 +85,14 @@ export const useNotMyProfilePostsQuery = (userId: string, limit = 5) =>
 export const usePostQuery = (postId?: string) =>
 	useQuery<IPost>({
 		queryKey: [...QUERY_KEYS.POST_DETAILS, postId],
-		queryFn: () => getPostById(postId!),
+		queryFn: async () => {
+			try {
+				return await getPostById(postId!)
+			} catch (e) {
+				await getFieldsErrors(e)
+				throw e
+			}
+		},
 		enabled: !!postId
 		// retry: 1
 	})
@@ -74,7 +100,14 @@ export const usePostQuery = (postId?: string) =>
 export const usePostByTrainingQuery = (trainingId?: string) =>
 	useQuery({
 		queryKey: [...QUERY_KEYS.POST_BY_TRAINING, trainingId],
-		queryFn: () => getPostByTrainingId(trainingId!),
+		queryFn: async () => {
+			try {
+				return await getPostByTrainingId(trainingId!)
+			} catch (e) {
+				await getFieldsErrors(e)
+				throw e
+			}
+		},
 		enabled: !!trainingId
 		// retry: 1
 	})

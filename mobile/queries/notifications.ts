@@ -10,15 +10,22 @@ import {
 	markNotificationsAsReadById
 } from '@/api/notifications'
 import { NotificationType } from '@shared/enums'
+import { getFieldsErrors } from '@/helpers/getFieldsErrors'
 
 export const useNotificationsListQuery = (limit = 15) =>
 	useInfiniteQuery<INotification[], Error, INotification[], typeof QUERY_KEYS.NOTIFICATIONS_LIST, number>({
 		queryKey: QUERY_KEYS.NOTIFICATIONS_LIST,
-		queryFn: ({ pageParam }) =>
-			getNotificationsList({
-				page: pageParam,
-				limit
-			}),
+		queryFn: async ({ pageParam }) => {
+			try {
+				return await getNotificationsList({
+					page: pageParam,
+					limit
+				})
+			} catch (e) {
+				await getFieldsErrors(e)
+				throw e
+			}
+		},
 		initialPageParam: 1,
 		getNextPageParam: (lastPage, pages) => {
 			if (lastPage.length < limit) return undefined
@@ -30,13 +37,27 @@ export const useNotificationsListQuery = (limit = 15) =>
 export const useUnreadNotificationsQuery = () =>
 	useQuery<INotificationUnread>({
 		queryKey: QUERY_KEYS.NOTIFICATIONS_UNREAD,
-		queryFn: checkIsUnreadNotificationsExists
+		queryFn: async () => {
+			try {
+				return await checkIsUnreadNotificationsExists()
+			} catch (e) {
+				await getFieldsErrors(e)
+				throw e
+			}
+		}
 	})
 
 export const useNotificationsSettingsQuery = () =>
 	useQuery<NotificationSettings>({
 		queryKey: QUERY_KEYS.NOTIFICATIONS_SETTINGS,
-		queryFn: getNotificationSettings
+		queryFn: async () => {
+			try {
+				return await getNotificationSettings()
+			} catch (e) {
+				await getFieldsErrors(e)
+				throw e
+			}
+		}
 	})
 
 export const useOnNewNotificationMutation = () => {

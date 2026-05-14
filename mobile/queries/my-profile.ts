@@ -2,17 +2,32 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { QUERY_KEYS } from '@/constants/query-keys'
 import { deleteMyAccount, editProfileData, getProfileData, IProfile } from '@/api/profile'
 import { getActivities, IActivity } from '@/api/activities'
+import { getFieldsErrors } from '@/helpers/getFieldsErrors'
 
 export const useProfileQuery = () =>
 	useQuery<IProfile>({
 		queryKey: QUERY_KEYS.MY_PROFILE,
-		queryFn: getProfileData
+		queryFn: async () => {
+			try {
+				return await getProfileData()
+			} catch (e) {
+				await getFieldsErrors(e)
+				throw e
+			}
+		}
 	})
 
 export const useMyActivitiesQuery = () =>
 	useQuery<IActivity[]>({
 		queryKey: QUERY_KEYS.MY_ACTIVITIES,
-		queryFn: getActivities
+		queryFn: async () => {
+			try {
+				return await getActivities()
+			} catch (e) {
+				await getFieldsErrors(e)
+				throw e
+			}
+		}
 	})
 
 export const useUpdateProfileMutation = () => {

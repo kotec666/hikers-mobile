@@ -6,6 +6,7 @@ import {
 	IAchievement,
 	IAchievementsResponse
 } from '@/api/achievements'
+import { getFieldsErrors } from '@/helpers/getFieldsErrors'
 
 type AchievementsVM = {
 	claimed: IAchievement[]
@@ -16,7 +17,14 @@ type AchievementsVM = {
 export const useAchievementsQuery = () =>
 	useQuery<IAchievementsResponse, unknown, AchievementsVM>({
 		queryKey: QUERY_KEYS.MY_ACHIEVEMENTS,
-		queryFn: getAchievements,
+		queryFn: async () => {
+			try {
+				return await getAchievements()
+			} catch (e) {
+				await getFieldsErrors(e)
+				throw e
+			}
+		},
 		select: (data) => ({
 			claimed: data.claimed,
 			unclaimed: data.unclaimed,
@@ -27,5 +35,12 @@ export const useAchievementsQuery = () =>
 export const useUserAchievementsQuery = (userId: string) =>
 	useQuery<IAchievement[]>({
 		queryKey: [...QUERY_KEYS.USER_ACHIEVEMENTS, userId],
-		queryFn: () => getClaimedAchievementsByUserId(userId)
+		queryFn: async () => {
+			try {
+				return await getClaimedAchievementsByUserId(userId)
+			} catch (e) {
+				await getFieldsErrors(e)
+				throw e
+			}
+		}
 	})
