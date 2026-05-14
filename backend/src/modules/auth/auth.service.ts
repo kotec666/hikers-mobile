@@ -1,20 +1,67 @@
-import { BadRequestException, Injectable, NotFoundException, UnauthorizedException } from '@nestjs/common';
+import {
+	BadRequestException,
+	ConflictException,
+	Injectable,
+	NotFoundException,
+	UnauthorizedException,
+} from '@nestjs/common';
+import { ERRORS } from '@shared/errors';
 import { UserDto } from '../user/user.dto';
+import { CommonDto } from '../../common/dto/common.dto';
+import { TokenDto } from '../token/token.dto';
 import { UserService } from '../user/user.service';
 import { TokenService } from '../token/token.service';
-import { TokenDto } from '../token/token.dto';
-import { ERRORS } from '@shared/errors';
+import { DatabaseService } from '../database/database.service';
+import { MailerService } from '../mailer/mailer.service';
+import { users } from '../database/schema';
+import { eq } from 'drizzle-orm';
 
 @Injectable()
 export class AuthService {
 	constructor(
+		private readonly db: DatabaseService,
 		private readonly userService: UserService,
 		private readonly tokenService: TokenService,
+		private readonly mailer: MailerService,
 	) {}
 
-	/** Регистрирует нового пользователя.
-	 * @returns - {@link TokenDto.TokenResponse | access-токен}
-	 */
+	public async requestConfirmEmail(userId: string): Promise<CommonDto.BooleanResponse> {
+		// @TODO проверка с кеша по ттл чтобы не спамили
+
+		const [user] = await this.db.db
+			.select({
+				id: users.id,
+				email: users.email,
+				emailConfirmedAt: users.emailConfirmedAt,
+			})
+			.from(users)
+			.where(eq(users.id, userId))
+			.limit(1);
+		if (!user) {
+			throw new NotFoundException(ERRORS.NOT_FOUND);
+		}
+		if (user.emailConfirmedAt) {
+			throw new ConflictException(ERRORS.ALREADY_EXISTS);
+		}
+
+		const code = 12345; // @TODO generateCode(len: CODE_LENGTH_FROM_SHARED_FUCKIN_FUCK)
+		// @TODO время жизни кода, закидывать в кеш после отправки
+
+		return this.mailer
+			.sendEmailConfirmationMail(user.email, code)
+			.catch(() => ({
+				success: false,
+			}))
+			.then(() => ({
+				success: true,
+			}));
+	}
+
+	// eslint-disable-next-line @typescript-eslint/no-unused-vars
+	public async confirmEmail(userId: string, code: number): Promise<CommonDto.BooleanResponse> {
+		return { success: true };
+	}
+
 	public async registration(dto: UserDto.Registration): Promise<TokenDto.TokenResponse & UserDto.Entity> {
 		try {
 			await this.userService.checkEmailAvailable(dto.email);
@@ -22,7 +69,7 @@ export class AuthService {
 			const user = await this.userService.createUser(dto);
 			const { token } = await this.tokenService.generatePairAndGetAccess(user.id);
 			return { ...user, token };
-		} catch (e) {
+		} catch (e: any) {
 			if (e.message === ERRORS.ALREADY_EXISTS) {
 				throw new BadRequestException(`_email:${ERRORS.ALREADY_EXISTS}`);
 			}
@@ -30,16 +77,13 @@ export class AuthService {
 		}
 	}
 
-	/** Аутентицикация нового пользователя.
-	 * @returns - {@link TokenDto.TokenResponse | access-токен}
-	 */
 	public async login(dto: UserDto.Login): Promise<TokenDto.TokenResponse & UserDto.Entity> {
 		try {
 			const user = await this.userService.getUserByEmailAndPassword(dto);
 			const { token } = await this.tokenService.generateAccessTokenByUserId(user.id);
 
 			return { ...user, token };
-		} catch (e) {
+		} catch (e: any) {
 			if (e.message === ERRORS.NOT_FOUND) {
 				throw new NotFoundException(`_email:${ERRORS.NOT_FOUND}`);
 			}
@@ -53,9 +97,8 @@ export class AuthService {
 
 	/** Перевыдает истекший access-токен.
 	 * @throws - {@link UnauthorizedException} если токен не валидный
-	 * @returns - {@link TokenDto.TokenResponse | свежий access-токен}
 	 */
-	public async refresh(expiredAccessToken: TokenDto.TokenResponse) {
+	public async refresh(expiredAccessToken: TokenDto.TokenResponse): Promise<TokenDto.TokenResponse> {
 		try {
 			return await this.tokenService.refreshAccessToken(expiredAccessToken.token);
 		} catch (e) {
