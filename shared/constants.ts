@@ -31,3 +31,5 @@ export const VALID_VIDEO_MIME_TYPES = [
 	'video/x-ms-wmv',
 	'video/x-m4v',
 ];
+
+export const EMAIL_CONFIRMATION_CODE_SIZE = 5;
