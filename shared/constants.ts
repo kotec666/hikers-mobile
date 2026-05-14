@@ -33,4 +33,5 @@ export const VALID_VIDEO_MIME_TYPES = [
 ];
 
 export const EMAIL_CONFIRMATION_CODE_SIZE = 5;
+export const EMAIL_CONFIRMATION_CODE_RATE_LIMIT_MS = 3 * 60 * 1000; // 3 минуты
 export const EMAIL_CONFIRMATION_CODE_TTL_MS = 10 * 60 * 1000; // 10 минут

@@ -7,7 +7,11 @@ import {
 	UnauthorizedException,
 } from '@nestjs/common';
 import { ERRORS } from '@shared/errors';
-import { EMAIL_CONFIRMATION_CODE_SIZE, EMAIL_CONFIRMATION_CODE_TTL_MS } from '@shared/constants';
+import {
+	EMAIL_CONFIRMATION_CODE_RATE_LIMIT_MS,
+	EMAIL_CONFIRMATION_CODE_SIZE,
+	EMAIL_CONFIRMATION_CODE_TTL_MS,
+} from '@shared/constants';
 import { generateNumericCode } from './helpers';
 import { UserDto } from '../user/user.dto';
 import { CommonDto } from '../../common/dto/common.dto';
@@ -31,10 +35,10 @@ export class AuthService {
 	) {}
 
 	public async requestConfirmEmail(userId: string): Promise<CommonDto.BooleanResponse> {
-		// @TODO юзать что-то типо таймаута, вместо жизни кода
-		const existingCode = await this.cacheManager.get<string>(userId);
-		if (existingCode) {
-			throw new ConflictException(ERRORS.ALREADY_EXISTS);
+		const rateLimitKey = `${userId}:rate_limit`;
+		const rateLimit = await this.cacheManager.get<string>(rateLimitKey);
+		if (rateLimit) {
+			throw new ConflictException(ERRORS.TOO_MANY_REQUESTS);
 		}
 
 		const [user] = await this.db.db
@@ -54,7 +58,8 @@ export class AuthService {
 		}
 
 		const code = generateNumericCode(EMAIL_CONFIRMATION_CODE_SIZE);
-		this.cacheManager.set(userId, code, EMAIL_CONFIRMATION_CODE_TTL_MS);
+		await this.cacheManager.set(userId, code, EMAIL_CONFIRMATION_CODE_TTL_MS);
+		await this.cacheManager.set(rateLimitKey, true, EMAIL_CONFIRMATION_CODE_RATE_LIMIT_MS);
 
 		return this.mailer
 			.sendEmailConfirmationMail(user.email, code)
