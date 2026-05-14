@@ -129,6 +129,7 @@ export function Header({ sectionRefs, isAnimationLineDisabled = true }: HeaderPr
 									alt="На главную страницу"
 									className="w-full h-full object-cover"
 									draggable="false"
+									priority
 								/>
 							</Link>
 						</div>

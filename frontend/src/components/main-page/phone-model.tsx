@@ -77,6 +77,12 @@ interface IModelProps {
 	screenTextureURL: ScreenTextureURL
 }
 
+// Предзагрузка модели и текстур
+useGLTF.preload('/Phone.glb')
+screenTextureURLs.forEach((url) => {
+	useTexture.preload(url)
+})
+
 export const PhoneModel = forwardRef<THREE.Group, IModelProps>(({ screenTextureURL }, ref) => {
 	const { nodes, materials } = useGLTF('/Phone.glb') as unknown as GLTFResult
 
@@ -134,7 +140,7 @@ export const PhoneModel = forwardRef<THREE.Group, IModelProps>(({ screenTextureU
 				scale={1.002}
 				material={screenTexture ? undefined : materials.Glass}
 			>
-				{screenTexture && <meshBasicMaterial map={screenTexture} />}
+				<meshBasicMaterial map={screenTexture} />
 			</mesh>
 			<mesh geometry={nodes.Screw.geometry} material={materials.Metal} />
 			<mesh geometry={nodes.Speaker_mesh.geometry} material={materials.Display} />
@@ -168,5 +174,3 @@ export const PhoneModel = forwardRef<THREE.Group, IModelProps>(({ screenTextureU
 })
 
 PhoneModel.displayName = 'PhoneModel'
-
-useGLTF.preload('/Phone.glb')

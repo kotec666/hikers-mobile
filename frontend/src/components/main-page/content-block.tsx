@@ -37,7 +37,7 @@ const ContentBlock = ({ idx, title, description, mobileImg, mobileRef, desktopRe
 							backgroundSize: '190%',
 							backgroundRepeat: 'no-repeat'
 						}}
-						priority
+						priority={idx === 0}
 					/>
 				</div>
 			</div>

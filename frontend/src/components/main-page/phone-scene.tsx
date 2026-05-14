@@ -1,11 +1,11 @@
 'use client'
+import * as THREE from 'three'
 import React, { Suspense, useRef, useState } from 'react'
 import { useFrame } from '@react-three/fiber'
 import { AdaptiveDpr, AdaptiveEvents, Environment } from '@react-three/drei'
 import { ScreenTextureURL, screenTextureURLs } from '@/consts/PhoneScreenTextures'
 import { useScroll, useTransform } from 'framer-motion'
 import { PhoneModel } from '@/components/main-page/phone-model'
-import * as THREE from 'three'
 import { useMotionValueEvent } from 'framer-motion'
 
 const Lights = () => {
