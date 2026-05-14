@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useState } from 'react'
+import React, { useCallback, useState } from 'react'
 import { Container } from '@/components/ui/Container'
 import { Keyboard, TouchableOpacity, TouchableWithoutFeedback, View } from 'react-native'
 import { UserAvatar } from '@/components/ui/UserAvatar'
@@ -34,7 +34,7 @@ const FormData = global.FormData
 const ProfileEdit = () => {
 	const router = useRouter()
 	const { push } = useSafeNavigation()
-	const { data: profileData, isLoading, isError, error } = useProfileQuery()
+	const { data: profileData, isLoading } = useProfileQuery()
 	const {
 		handleSubmit,
 		control,
@@ -74,14 +74,6 @@ const ProfileEdit = () => {
 		},
 		[setValue]
 	)
-
-	useEffect(() => {
-		if (!isError) return
-
-		getFieldsErrors(error).then((formattedErrors) => {
-			setData((s) => ({ ...s, errors: formattedErrors }))
-		})
-	}, [error, isError])
 
 	const onSubmit = async (formState: IEditProfileFormState) => {
 		setData((s) => ({ ...s, errors: undefined, isSaved: false }))

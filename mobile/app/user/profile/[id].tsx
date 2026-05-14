@@ -8,7 +8,6 @@ import ActivityInfo from '@/components/ui/Profile/ActivityInfo'
 import PostListItem from '@/components/ui/Post/PostListItem'
 import { useLocalSearchParams, useRouter } from 'expo-router'
 import { PATH_TO_IMAGE } from '@/constants/PATH_TO_FILES'
-import { getFieldsErrors } from '@/helpers/getFieldsErrors'
 import Modal from '@/components/ui/Modal/Modal'
 import { FriendStatus } from '@shared/enums'
 import { AnimatedProfilePicture } from '@/components/ui/Profile/AnimatedProfilePicture'
@@ -82,8 +81,6 @@ const UserProfilePage = () => {
 		if (!isError || !error) return
 
 		const handleError = async () => {
-			await getFieldsErrors(error)
-
 			if (router.canGoBack()) {
 				router.back()
 			} else {

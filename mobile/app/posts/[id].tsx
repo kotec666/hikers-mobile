@@ -19,7 +19,6 @@ import { useSafeNavigation } from '@/hooks/useSafeNavigation'
 import { Colors } from '@/constants/Colors'
 import BlurProvider from '@/components/providers/BlurProvider'
 import { useDeletePostMutation, usePostQuery } from '@/queries/posts'
-import { getFieldsErrors } from '@/helpers/getFieldsErrors'
 import { Page } from '@/components/ui/Page'
 
 const { height } = Dimensions.get('screen')
@@ -44,7 +43,6 @@ const Post = () => {
 
 	useEffect(() => {
 		if (!isError) return
-		getFieldsErrors(error)
 		handleClickBack()
 	}, [error, isError, handleClickBack])
 
