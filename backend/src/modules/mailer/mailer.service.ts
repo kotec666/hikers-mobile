@@ -13,8 +13,20 @@ export class MailerService {
 		});
 	}
 
+	public async sendEmailConfirmationMail(to: string, code: number) {
+		const subject = `Заголовок ${Date.now()}`;
+
+		return this.mailer.sendMail({
+			template: 'confirmEmail',
+			context: {
+				code,
+			},
+			to,
+			subject,
+		});
+	}
+
 	public async sendPasswordRecoveryMail(to: string) {
-		const text = 'Забыл парол? Шя восстановим';
 		const subject = `Заголовок ${Date.now()}`;
 
 		return this.mailer.sendMail({
@@ -24,7 +36,6 @@ export class MailerService {
 			},
 			to,
 			subject,
-			text,
 		});
 	}
 }
