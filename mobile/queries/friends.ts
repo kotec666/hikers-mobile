@@ -14,6 +14,7 @@ import {
 import { INotMyProfile, IProfile } from '@/api/profile'
 import { FriendStatus } from '@shared/enums'
 import { getFieldsErrors } from '@/helpers/getFieldsErrors'
+import { useToast } from '@/hooks/useToast'
 
 export const useMyFriendsQuery = (limit = 15) =>
 	useInfiniteQuery<IFriend[], Error, IFriend[], typeof QUERY_KEYS.MY_FRIENDS, number>({
@@ -62,6 +63,7 @@ export const useMyFriendRequestsQuery = (limit = 15) =>
 // Принять заявку в друзья
 export const useAcceptFriendRequestMutation = () => {
 	const queryClient = useQueryClient()
+	const toast = useToast()
 
 	return useMutation({
 		mutationFn: (userId: string) => acceptFriendRequest(userId),
@@ -128,8 +130,11 @@ export const useAcceptFriendRequestMutation = () => {
 
 			return { prevMyProfile, prevUserProfile, prevFriendRequests, prevFriends }
 		},
-
-		onError: (_err, userId, context) => {
+		onSuccess: () => {
+			toast.success('Пользователь добавлен в друзья')
+		},
+		onError: async (e, userId, context) => {
+			await getFieldsErrors(e)
 			if (context?.prevMyProfile) {
 				queryClient.setQueryData(QUERY_KEYS.MY_PROFILE, context.prevMyProfile)
 			}
@@ -149,6 +154,7 @@ export const useAcceptFriendRequestMutation = () => {
 // Удалить из друзей
 export const useRemoveFriendMutation = () => {
 	const queryClient = useQueryClient()
+	const toast = useToast()
 
 	return useMutation({
 		mutationFn: (userId: string) => deleteFriendById(userId),
@@ -195,7 +201,11 @@ export const useRemoveFriendMutation = () => {
 
 			return { prevMyProfile, prevFriends, prevUserProfile }
 		},
-		onError: (_err, userId, context) => {
+		onSuccess: () => {
+			toast.success('Пользователь удалён из списка друзей')
+		},
+		onError: async (e, userId, context) => {
+			await getFieldsErrors(e)
 			if (context?.prevMyProfile) {
 				queryClient.setQueryData(QUERY_KEYS.MY_PROFILE, context.prevMyProfile)
 			}
@@ -212,6 +222,7 @@ export const useRemoveFriendMutation = () => {
 // Отклонить заявку в друзья
 export const useRejectFriendMutation = () => {
 	const queryClient = useQueryClient()
+	const toast = useToast()
 
 	return useMutation({
 		mutationFn: (userId: string) => rejectFriendRequest(userId),
@@ -246,7 +257,11 @@ export const useRejectFriendMutation = () => {
 
 			return { prevFriendRequests, prevUserProfile }
 		},
-		onError: (_err, userId, context) => {
+		onSuccess: () => {
+			toast.success('Заявка отклонена')
+		},
+		onError: async (e, userId, context) => {
+			await getFieldsErrors(e)
 			if (context?.prevFriendRequests) {
 				queryClient.setQueryData(QUERY_KEYS.MY_FRIEND_REQUESTS, context.prevFriendRequests)
 			}
@@ -260,6 +275,7 @@ export const useRejectFriendMutation = () => {
 // Отправить заявку в друзья
 export const useSendFriendRequestMutation = () => {
 	const queryClient = useQueryClient()
+	const toast = useToast()
 
 	return useMutation({
 		mutationFn: (userId: string) => addAsFriend(userId),
@@ -280,7 +296,11 @@ export const useSendFriendRequestMutation = () => {
 
 			return { prevUserProfile }
 		},
-		onError: (_err, userId, context) => {
+		onSuccess: () => {
+			toast.success('Заявка в друзья отправлена')
+		},
+		onError: async (e, userId, context) => {
+			await getFieldsErrors(e)
 			if (context?.prevUserProfile) {
 				queryClient.setQueryData([...QUERY_KEYS.USER_PROFILE, userId], context.prevUserProfile)
 			}
@@ -291,6 +311,7 @@ export const useSendFriendRequestMutation = () => {
 // Отозвать запрос в друзья
 export const useRevokeRequestMutation = () => {
 	const queryClient = useQueryClient()
+	const toast = useToast()
 
 	return useMutation({
 		mutationFn: (userId: string) => revokeFriendInviteByUserId(userId),
@@ -311,8 +332,11 @@ export const useRevokeRequestMutation = () => {
 
 			return { prevUserProfile }
 		},
-
-		onError: (_err, userId, context) => {
+		onSuccess: () => {
+			toast.success('Заявка в друзья отозвана')
+		},
+		onError: async (e, userId, context) => {
+			await getFieldsErrors(e)
 			if (context?.prevUserProfile) {
 				queryClient.setQueryData([...QUERY_KEYS.USER_PROFILE, userId], context.prevUserProfile)
 			}

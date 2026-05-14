@@ -179,9 +179,10 @@ export const useToggleSubscribeMutation = () => {
 				previousWorkoutMembers
 			}
 		},
-		onError: (_err, { userId }, context) => {
+		onError: async (e, { userId }, context) => {
 			// rollback если ошибка
-			console.log('Ошибка при подписке/отписке на/от пользователя', _err)
+			console.log('Ошибка при подписке/отписке на/от пользователя', e)
+			await getFieldsErrors(e)
 			if (!context) return
 
 			queryClient.setQueryData(QUERY_KEYS.POSTS_FEED, context.previousFeed)

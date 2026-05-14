@@ -101,6 +101,7 @@ export const useFinishWorkoutMutation = () => {
 				queryKey: QUERY_KEYS.WORKOUT_HISTORY
 			})
 		}
+		// намеренно без обработки ошибок
 	})
 }
 

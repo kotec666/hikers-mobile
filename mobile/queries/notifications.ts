@@ -11,6 +11,7 @@ import {
 } from '@/api/notifications'
 import { NotificationType } from '@shared/enums'
 import { getFieldsErrors } from '@/helpers/getFieldsErrors'
+import { useToast } from '@/hooks/useToast'
 
 export const useNotificationsListQuery = (limit = 15) =>
 	useInfiniteQuery<INotification[], Error, INotification[], typeof QUERY_KEYS.NOTIFICATIONS_LIST, number>({
@@ -121,8 +122,9 @@ export const useOnNewNotificationMutation = () => {
 				previousUnread
 			}
 		},
-		onError: (_err, _ids, context) => {
+		onError: async (e, _ids, context) => {
 			// rollback если ошибка
+			await getFieldsErrors(e)
 			if (context?.previousNotifications) {
 				queryClient.setQueryData(QUERY_KEYS.NOTIFICATIONS_LIST, context.previousNotifications)
 			}
@@ -135,11 +137,17 @@ export const useOnNewNotificationMutation = () => {
 
 export const useUpdateNotificationsSettingsMutation = () => {
 	const queryClient = useQueryClient()
+	const toast = useToast()
 
 	return useMutation({
 		mutationFn: (updatedData: NotificationSettings) => changeNotificationSettings(updatedData),
-		onSuccess: (_data, updatedData) =>
+		onSuccess: (_data, updatedData) => {
+			toast.success('Настройки уведомлений сохранены')
 			queryClient.setQueryData<NotificationSettings>(QUERY_KEYS.NOTIFICATIONS_SETTINGS, () => updatedData)
+		},
+		onError: async (e, _ids, _context) => {
+			await getFieldsErrors(e)
+		}
 	})
 }
 
@@ -178,17 +186,18 @@ export const useDeleteNotificationsMutation = () => {
 
 			return { previousNotificationsData }
 		},
-		onError: (_err, _ids, context) => {
-			// rollback если ошибка
-			if (context?.previousNotificationsData) {
-				queryClient.setQueryData(QUERY_KEYS.NOTIFICATIONS_LIST, context.previousNotificationsData)
-			}
-		},
 		onSuccess: async () => {
 			// после успеха — обновляем unread
 			await queryClient.invalidateQueries({
 				queryKey: QUERY_KEYS.NOTIFICATIONS_UNREAD
 			})
+		},
+		onError: async (e, _ids, context) => {
+			// rollback если ошибка
+			await getFieldsErrors(e)
+			if (context?.previousNotificationsData) {
+				queryClient.setQueryData(QUERY_KEYS.NOTIFICATIONS_LIST, context.previousNotificationsData)
+			}
 		}
 	})
 }
@@ -223,17 +232,18 @@ export const useMarkNotificationsAsReadMutation = () => {
 
 			return { previousNotificationsData }
 		},
-		onError: (_err, _ids, context) => {
-			// rollback при ошибке
-			if (context?.previousNotificationsData) {
-				queryClient.setQueryData(QUERY_KEYS.NOTIFICATIONS_LIST, context.previousNotificationsData)
-			}
-		},
 		onSuccess: async () => {
 			// синхронизация бейджа (колокольчик)
 			await queryClient.invalidateQueries({
 				queryKey: QUERY_KEYS.NOTIFICATIONS_UNREAD
 			})
+		},
+		onError: async (e, _ids, context) => {
+			// rollback при ошибке
+			await getFieldsErrors(e)
+			if (context?.previousNotificationsData) {
+				queryClient.setQueryData(QUERY_KEYS.NOTIFICATIONS_LIST, context.previousNotificationsData)
+			}
 		}
 	})
 }

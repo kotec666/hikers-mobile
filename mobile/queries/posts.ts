@@ -14,6 +14,7 @@ import {
 } from '@/api/posts'
 import { QUERY_KEYS } from '@/constants/query-keys'
 import { getFieldsErrors } from '@/helpers/getFieldsErrors'
+import { useToast } from '@/hooks/useToast'
 
 export const useFeedPostsQuery = (limit = 5) =>
 	useInfiniteQuery<IPost[], Error, IPost[], typeof QUERY_KEYS.POSTS_FEED, number>({
@@ -114,10 +115,12 @@ export const usePostByTrainingQuery = (trainingId?: string) =>
 
 export const useCreatePostMutation = () => {
 	const queryClient = useQueryClient()
+	const toast = useToast()
 
 	return useMutation({
 		mutationFn: (postData: FormData) => createPost(postData),
 		onSuccess: (newPost) => {
+			toast.success('Пост опубликован')
 			queryClient.setQueryData<IPost>([...QUERY_KEYS.POST_DETAILS, newPost.id], newPost)
 
 			queryClient.setQueryData<InfiniteData<IPost[]>>(QUERY_KEYS.POSTS_MY_PROFILE, (old) => {
@@ -135,10 +138,12 @@ export const useCreatePostMutation = () => {
 
 export const useUpdatePostMutation = () => {
 	const queryClient = useQueryClient()
+	const toast = useToast()
 
 	return useMutation({
 		mutationFn: ({ postId, data }: { postId: string; data: FormData }) => editPostById(postId, data),
 		onSuccess: async (_data, updatedPost) => {
+			toast.success('Пост отредактирован')
 			await queryClient.invalidateQueries({ queryKey: QUERY_KEYS.POSTS_MY_PROFILE })
 			await queryClient.invalidateQueries({ queryKey: [...QUERY_KEYS.POST_DETAILS, updatedPost.postId] })
 		}
@@ -147,6 +152,7 @@ export const useUpdatePostMutation = () => {
 
 export const useDeletePostMutation = () => {
 	const queryClient = useQueryClient()
+	const toast = useToast()
 
 	return useMutation({
 		mutationFn: (postId: string) => deletePostById(postId),
@@ -191,7 +197,11 @@ export const useDeletePostMutation = () => {
 				trainingId
 			}
 		},
-		onError: (_, postId, context) => {
+		onSuccess: () => {
+			toast.success('Пост удалён')
+		},
+		onError: async (e, postId, context) => {
+			await getFieldsErrors(e)
 			if (!context) return
 
 			if (context.prevPostDetails) {
@@ -282,8 +292,9 @@ export const useToggleLikePostMutation = () => {
 		},
 
 		// rollback если ошибка
-		onError: (_err, { postId }, context) => {
-			console.log('Ошибка при like/unlike поста', _err)
+		onError: async (e, { postId }, context) => {
+			console.log('Ошибка при like/unlike поста', e)
+			await getFieldsErrors(e)
 			if (!context) return
 
 			queryClient.setQueryData(QUERY_KEYS.POSTS_FEED, context.previousFeed)

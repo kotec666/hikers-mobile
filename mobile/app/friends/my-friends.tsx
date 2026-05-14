@@ -56,10 +56,7 @@ const MyFriendsPage = () => {
 
 		try {
 			await deleteFriend(deleteUser.id)
-			toast.success('Пользователь удалён из списка друзей')
-			setLoadingId(null)
 		} catch {
-			toast.error('Произошла ошибка, повторите попытку позже')
 		} finally {
 			handleCloseDeleteModal()
 			setLoadingId(null)

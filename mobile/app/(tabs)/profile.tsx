@@ -23,6 +23,7 @@ import BlurProvider from '@/components/providers/BlurProvider'
 import { useProfilePostsQuery } from '@/queries/posts'
 import { useProfileQuery } from '@/queries/my-profile'
 import { Page } from '@/components/ui/Page'
+import { useQueryClient } from '@tanstack/react-query'
 
 /**
  *
@@ -40,6 +41,7 @@ type AllowedRoute = (typeof ALLOWED_ROUTES)[keyof typeof ALLOWED_ROUTES]
 
 const Profile = () => {
 	const router = useRouter()
+	const queryClient = useQueryClient()
 	const { push } = useSafeNavigation()
 	const { user, logout } = useAuthStore()
 	const params = useLocalSearchParams()
@@ -70,6 +72,7 @@ const Profile = () => {
 
 	const handleClickExit = async () => {
 		await logout()
+		queryClient.clear()
 		router.replace('/')
 	}
 

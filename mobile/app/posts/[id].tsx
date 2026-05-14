@@ -14,7 +14,6 @@ import { useLocalSearchParams, useRouter } from 'expo-router'
 import { useAuthStore } from '@/store/authStore'
 import MapComponent from '@/components/map/MapComponent'
 import { adaptLocations } from '@/helpers/adaptPointsToIWorkoutLocationStorageItem'
-import { useToast } from '@/hooks/useToast'
 import { VIEWWORKOUT_MODE } from '@/app/training/viewWorkout'
 import { useSafeNavigation } from '@/hooks/useSafeNavigation'
 import { Colors } from '@/constants/Colors'
@@ -27,7 +26,6 @@ const { height } = Dimensions.get('screen')
 const SLIDE_ASPECT_RATIO = height / 3.6
 
 const Post = () => {
-	const toast = useToast()
 	const router = useRouter()
 	const { push } = useSafeNavigation()
 	const { id } = useLocalSearchParams<{ id: string }>()
@@ -48,7 +46,7 @@ const Post = () => {
 		if (!isError) return
 		getFieldsErrors(error)
 		handleClickBack()
-	}, [isError, error, handleClickBack])
+	}, [error, isError, handleClickBack])
 
 	const handleOpenDeleteModal = () => {
 		return setIsDeleteModalOpen((prevState) => !prevState)
@@ -56,14 +54,9 @@ const Post = () => {
 
 	const { mutateAsync } = useDeletePostMutation()
 	const handleClickDeletePost = async () => {
-		try {
-			const result = await mutateAsync(id)
-			if (result.success) {
-				toast.success('Пост успешно удален')
-				router.back()
-			}
-		} catch {
-			toast.error('Произошла ошибка при удалении поста, попробуйте позже')
+		const result = await mutateAsync(id)
+		if (result.success) {
+			router.back()
 		}
 	}
 

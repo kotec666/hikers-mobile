@@ -6,7 +6,6 @@ import PeopleListItem from '@/components/find-people/PeopleListItem'
 import { fontFamily } from '@/constants/Fonts'
 import RoundedPlusSvg from '@/components/svg/RoundedPlusSvg'
 import RoundedMinusSvg from '@/components/svg/RoundedMinusSvg'
-import { useToast } from '@/hooks/useToast'
 import { PATH_TO_IMAGE } from '@/constants/PATH_TO_FILES'
 import { LegendList } from '@legendapp/list'
 import { Colors } from '@/constants/Colors'
@@ -14,8 +13,6 @@ import { useAcceptFriendRequestMutation, useMyFriendRequestsQuery, useRejectFrie
 import { Page } from '@/components/ui/Page'
 
 const FriendRequestsPage = () => {
-	const toast = useToast()
-
 	const {
 		data: friendRequests = [],
 		fetchNextPage,
@@ -38,13 +35,9 @@ const FriendRequestsPage = () => {
 	const handleAddFriend = async (newFriendId: string) => {
 		if (loadingId) return
 		setLoadingId(newFriendId)
-
 		try {
 			await acceptFriend(newFriendId)
-			toast.success('Пользователь добавлен в друзья')
-			setLoadingId(null)
 		} catch {
-			toast.error('Произошла ошибка, повторите попытку позже')
 		} finally {
 			setLoadingId(null)
 		}
@@ -56,10 +49,7 @@ const FriendRequestsPage = () => {
 
 		try {
 			await rejectFriend(rejectUserId)
-			toast.success('Заявка отклонена')
-			setLoadingId(null)
 		} catch {
-			toast.error('Произошла ошибка, повторите попытку позже')
 		} finally {
 			setLoadingId(null)
 		}

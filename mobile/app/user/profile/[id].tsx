@@ -9,7 +9,6 @@ import PostListItem from '@/components/ui/Post/PostListItem'
 import { useLocalSearchParams, useRouter } from 'expo-router'
 import { PATH_TO_IMAGE } from '@/constants/PATH_TO_FILES'
 import { getFieldsErrors } from '@/helpers/getFieldsErrors'
-import { useToast } from '@/hooks/useToast'
 import Modal from '@/components/ui/Modal/Modal'
 import { FriendStatus } from '@shared/enums'
 import { AnimatedProfilePicture } from '@/components/ui/Profile/AnimatedProfilePicture'
@@ -45,7 +44,6 @@ const friendStatusLabel = {
 }
 
 const UserProfilePage = () => {
-	const toast = useToast()
 	const router = useRouter()
 	const { id } = useLocalSearchParams<{ id: string }>()
 	const legendListRef = useRef<LegendListRef>(null)
@@ -94,7 +92,7 @@ const UserProfilePage = () => {
 		}
 
 		handleError()
-	}, [isError, error, router])
+	}, [error, isError, router])
 
 	const onRefreshAll = useCallback(async () => {
 		await Promise.all([refetchProfile(), postsRefetch()])
@@ -103,10 +101,7 @@ const UserProfilePage = () => {
 	const handleDeleteFromFriends = async () => {
 		try {
 			await removeFriend(id)
-			toast.success('Пользователь удалён из друзей')
-		} catch (e: unknown) {
-			toast.error('Произошла ошибка, повторите попытку позже')
-			await getFieldsErrors(e)
+		} catch {
 		} finally {
 			setIsDeleteModalOpened(false)
 		}
@@ -116,36 +111,9 @@ const UserProfilePage = () => {
 		setIsDeleteModalOpened(false)
 	}
 
-	const handleSendFriendRequest = async () => {
-		try {
-			await sendRequest(id)
-
-			toast.success('Заявка в друзья отправлена')
-		} catch (e: unknown) {
-			toast.error('Произошла ошибка, повторите попытку позже')
-			await getFieldsErrors(e)
-		}
-	}
-
-	const handleRevokeFriendRequest = async () => {
-		try {
-			await revokeRequest(id)
-			toast.success('Заявка в друзья отозвана')
-		} catch (e: unknown) {
-			toast.error('Произошла ошибка, повторите попытку позже')
-			await getFieldsErrors(e)
-		}
-	}
-
-	const handleAcceptFriendRequest = async () => {
-		try {
-			await acceptFriend(id)
-			toast.success('Заявка в друзья принята')
-		} catch (e: unknown) {
-			toast.error('Произошла ошибка, повторите попытку позже')
-			await getFieldsErrors(e)
-		}
-	}
+	const handleSendFriendRequest = async () => await sendRequest(id)
+	const handleRevokeFriendRequest = async () => await revokeRequest(id)
+	const handleAcceptFriendRequest = async () => await acceptFriend(id)
 
 	const handleFriendAction = async () => {
 		if (isFriendActionPending) return

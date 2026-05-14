@@ -313,19 +313,6 @@ export default function ViewWorkout() {
 				}
 				await updatePostMutation({ postId: existPost.id, data: formData })
 			}
-			if (isView) {
-				toast.success('Пост опубликован')
-			}
-			if (isEdit) {
-				toast.success('Пост отредактирован')
-			}
-			if (isFromHistory && !existPost) {
-				toast.success('Пост опубликован')
-			}
-			if (isFromHistory && existPost) {
-				toast.success('Пост отредактирован')
-			}
-
 			return router.replace('/(tabs)/profile')
 		} catch (e: unknown) {
 			const formattedErrors = await getFieldsErrors(e)

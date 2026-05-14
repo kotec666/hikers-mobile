@@ -3,6 +3,7 @@ import { QUERY_KEYS } from '@/constants/query-keys'
 import { deleteMyAccount, editProfileData, getProfileData, IProfile } from '@/api/profile'
 import { getActivities, IActivity } from '@/api/activities'
 import { getFieldsErrors } from '@/helpers/getFieldsErrors'
+import { useToast } from '@/hooks/useToast'
 
 export const useProfileQuery = () =>
 	useQuery<IProfile>({
@@ -43,11 +44,16 @@ export const useUpdateProfileMutation = () => {
 
 export const useDeleteProfileMutation = () => {
 	const queryClient = useQueryClient()
+	const toast = useToast()
 
 	return useMutation({
 		mutationFn: deleteMyAccount,
 		onSuccess: () => {
+			toast.success('Аккаунт успешно удален')
 			queryClient.clear()
+		},
+		onError: async (e) => {
+			await getFieldsErrors(e)
 		}
 	})
 }

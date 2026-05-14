@@ -12,7 +12,6 @@ import BlurProvider from '@/components/providers/BlurProvider'
 import { Button } from '@/components/ui/Button'
 import { removeUserWorkoutStorage } from '@/store/workoutStorage'
 import { useAuthStore } from '@/store/authStore'
-import { useToast } from '@/hooks/useToast'
 import { useRouter } from 'expo-router'
 import AlertTriangleSvg from '@/components/svg/AlertTriangleSvg'
 import { useDeleteProfileMutation } from '@/queries/my-profile'
@@ -21,7 +20,6 @@ import { Page } from '@/components/ui/Page'
 const SettingsPage = () => {
 	const { push } = useSafeNavigation()
 	const { user, logout } = useAuthStore()
-	const toast = useToast()
 	const router = useRouter()
 	const { mutateAsync, isPending } = useDeleteProfileMutation()
 
@@ -36,15 +34,10 @@ const SettingsPage = () => {
 	}
 
 	const handleDeleteAccount = async () => {
-		try {
-			removeUserWorkoutStorage(user?.id)
-			await mutateAsync()
-			await logout()
-			toast.success('Аккаунт успешно удален')
-			router.replace('/')
-		} catch {
-			toast.error('Ошибка при удалении аккаунта')
-		}
+		removeUserWorkoutStorage(user?.id)
+		await mutateAsync()
+		await logout()
+		router.replace('/')
 	}
 
 	return (
