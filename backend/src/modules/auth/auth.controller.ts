@@ -1,4 +1,4 @@
-import { Controller, Res, UnauthorizedException, Req, Body, Post, UseInterceptors } from '@nestjs/common';
+import { Controller, Res, UnauthorizedException, Req, Body, Post, UseInterceptors, Query } from '@nestjs/common';
 import { AuthService } from './auth.service';
 import { UserDto } from '../user/user.dto';
 import { AuthDto } from './auth.dto';
@@ -72,5 +72,32 @@ export class AuthController {
 	@Post('confirm-email')
 	public async confirmEmail(@User() user: UserData, @Body() dto: AuthDto.ConfirmEmail) {
 		return this.authService.confirmEmail(user.id, dto.code);
+	}
+
+	/**
+	 * @tag Auth
+	 * @summary Запросить код восстановления пароля
+	 */
+	@Post('request-password-recovery')
+	public async requestPasswordRecovery(@Query('email') email: string) {
+		return this.authService.requestPasswordRecovery(email);
+	}
+
+	/**
+	 * @tag Auth
+	 * @summary Ввести код восстановления пароля
+	 */
+	@Post('confirm-password-recovery')
+	public async confirmPasswordRecovery(@Body() dto: AuthDto.ConfirmPasswordRecovery) {
+		return this.authService.confirmPasswordCode(dto.email, dto.code);
+	}
+
+	/**
+	 * @tag Auth
+	 * @summary Восстановить парол
+	 */
+	@Post('recover-password')
+	public async recoverPassword(@Body() dto: AuthDto.PasswordRecovery) {
+		return this.authService.recoverPassword(dto);
 	}
 }
