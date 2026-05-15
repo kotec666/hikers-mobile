@@ -34,8 +34,18 @@ export class AuthService {
 		@Inject(CACHE_MANAGER) private cacheManager: Cache,
 	) {}
 
+	private getConfirmationKey(userId: string): string {
+		return `conf:${userId}`;
+	}
+
+	private getConfirmationRateLimitKey(userId: string): string {
+		return `conf:${userId}:rate_limit`;
+	}
+
 	public async requestConfirmEmail(userId: string): Promise<CommonDto.BooleanResponse> {
-		const rateLimitKey = `${userId}:rate_limit`;
+		const cachedCodeKey = this.getConfirmationKey(userId);
+		const rateLimitKey = this.getConfirmationRateLimitKey(userId);
+
 		const rateLimit = await this.cacheManager.get<string>(rateLimitKey);
 		if (rateLimit) {
 			throw new ConflictException(ERRORS.TOO_MANY_REQUESTS);
@@ -58,7 +68,7 @@ export class AuthService {
 		}
 
 		const code = generateNumericCode(EMAIL_CONFIRMATION_CODE_SIZE);
-		await this.cacheManager.set(userId, code, EMAIL_CONFIRMATION_CODE_TTL_MS);
+		await this.cacheManager.set(cachedCodeKey, code, EMAIL_CONFIRMATION_CODE_TTL_MS);
 		await this.cacheManager.set(rateLimitKey, true, EMAIL_CONFIRMATION_CODE_RATE_LIMIT_MS);
 
 		return this.mailer
@@ -72,7 +82,9 @@ export class AuthService {
 	}
 
 	public async confirmEmail(userId: string, code: string): Promise<CommonDto.BooleanResponse> {
-		const cachedCode = await this.cacheManager.get<string>(userId);
+		const cachedCodeKey = this.getConfirmationKey(userId);
+
+		const cachedCode = await this.cacheManager.get<string>(cachedCodeKey);
 		if (!cachedCode) {
 			throw new NotFoundException(ERRORS.NOT_FOUND);
 		}
@@ -90,7 +102,7 @@ export class AuthService {
 				success: false,
 			}))
 			.then(() => {
-				this.cacheManager.del(userId);
+				this.cacheManager.del(cachedCodeKey);
 
 				return { success: true };
 			});
