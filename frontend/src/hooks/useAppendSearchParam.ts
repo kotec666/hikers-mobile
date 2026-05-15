@@ -1,17 +1,16 @@
-import { useRouter, useSearchParams, usePathname } from 'next/navigation'
+import { useRouter, usePathname } from 'next/navigation'
 import { useRef, useCallback } from 'react'
 
 export default function useAppendSearchParam() {
 	const router = useRouter()
 	const pathname = usePathname()
-	const searchParams = useSearchParams()
 
 	const queueRef = useRef(Promise.resolve())
 
 	const updateParams = useCallback(
 		(paramsUpdater: (params: URLSearchParams) => void) => {
 			queueRef.current = queueRef.current.then(() => {
-				const currentParams = new URLSearchParams(searchParams.toString())
+				const currentParams = new URLSearchParams(window.location.search)
 
 				paramsUpdater(currentParams)
 
@@ -25,7 +24,7 @@ export default function useAppendSearchParam() {
 				return Promise.resolve()
 			})
 		},
-		[router, pathname, searchParams]
+		[router, pathname]
 	)
 
 	const appendSearchParam = useCallback(

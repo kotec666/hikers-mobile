@@ -1,11 +1,35 @@
+'use client'
 import React from 'react'
 import { motion, Variants } from 'framer-motion'
+import { SectionId } from '@/app/page'
+import useAppendSearchParam from '@/hooks/useAppendSearchParam'
 
 interface IGoToSectionButtonProps {
-	goToSection?: () => void
+	firstSectionId?: SectionId
 }
 
 const GoToSectionButton = (props: IGoToSectionButtonProps) => {
+	const [appendSearchParam] = useAppendSearchParam()
+
+	const scrollToContentBlock = (sectionId: SectionId) => {
+		const isMobile = window.innerWidth <= 1023
+		const prefix = isMobile ? 'mobile' : 'desktop'
+		const container = document.getElementById(`${prefix}-${sectionId}`)
+		if (!container) return
+
+		container.scrollIntoView({
+			behavior: 'smooth',
+			block: isMobile ? 'start' : 'center'
+		})
+	}
+
+	const pushSectionParam = () => {
+		if (props.firstSectionId) {
+			appendSearchParam('section', props.firstSectionId)
+			scrollToContentBlock(props.firstSectionId)
+		}
+	}
+
 	const firstArrow: Variants = {
 		rest: {
 			y: 0,
@@ -45,7 +69,17 @@ const GoToSectionButton = (props: IGoToSectionButtonProps) => {
 	}
 
 	return (
-		<div className="cursor-pointer" onClick={props?.goToSection}>
+		<motion.div
+			className="cursor-pointer"
+			onClick={pushSectionParam}
+			animate={{ y: [0, 5, 0] }}
+			transition={{
+				duration: 1.2,
+				repeat: Infinity,
+				ease: 'easeInOut',
+				delay: 0.2
+			}}
+		>
 			<motion.svg
 				initial="rest"
 				whileHover="hover"
@@ -76,7 +110,7 @@ const GoToSectionButton = (props: IGoToSectionButtonProps) => {
 					variants={secondArrow}
 				/>
 			</motion.svg>
-		</div>
+		</motion.div>
 	)
 }
 

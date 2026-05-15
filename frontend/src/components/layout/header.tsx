@@ -4,7 +4,7 @@ import Image from 'next/image'
 import icon from '@/assets/images/icon-40x40.png'
 import { motion, useMotionValue, useMotionValueEvent, useScroll, useSpring, useTransform } from 'framer-motion'
 import { usePathname, useSearchParams } from 'next/navigation'
-import { RefObject, useCallback, useMemo, useState } from 'react'
+import { useCallback, useEffect, useState } from 'react'
 import Container from '@/components/layout/container'
 import { Button } from '@/components/ui/button'
 import { ResponsiveDialog, ResponsiveDialogContent, ResponsiveDialogTrigger } from '@/components/ui/responsive-dialog'
@@ -12,6 +12,7 @@ import DownloadModalContent from '@/components/main-page/download-modal-content'
 import { MobileMenuContent } from '@/components/layout/mobile-menu'
 import useAppendSearchParam from '@/hooks/useAppendSearchParam'
 import { cn } from '@/lib/utils'
+import { IContentBlock, SectionId } from '@/app/page'
 
 const clamp = (value: number, min: number, max: number) => Math.min(Math.max(value, min), max)
 const scrollDistance = 1400
@@ -31,24 +32,12 @@ function useBoundedScroll(bounds: number) {
 	return { scrollYBoundedProgress }
 }
 
-export type SectionRef = RefObject<HTMLDivElement | null>
-
-type SectionItem = {
-	title: string
-	mobileRef: SectionRef
-	desktopRef: SectionRef
-}
-
 export interface HeaderProps {
 	isAnimationLineDisabled?: boolean
-	sectionRefs?: {
-		trainings: SectionItem
-		progress: SectionItem
-		community: SectionItem
-	}
+	contentBlocks?: IContentBlock[]
 }
 
-export function Header({ sectionRefs, isAnimationLineDisabled = true }: HeaderProps) {
+export function Header({ contentBlocks, isAnimationLineDisabled = true }: HeaderProps) {
 	const pathname = usePathname()
 	const searchParams = useSearchParams()
 	const [appendSearchParam] = useAppendSearchParam()
@@ -66,21 +55,28 @@ export function Header({ sectionRefs, isAnimationLineDisabled = true }: HeaderPr
 		restDelta: 0.001
 	})
 
-	const scrollToSection = (mobileRef: SectionRef, desktopRef: SectionRef) => {
-		let targetRef: SectionRef
+	const scrollToContentBlock = (sectionId: SectionId) => {
 		const isMobile = window.innerWidth <= 1023
-		if (isMobile) {
-			// скролл по мобайлу
-			targetRef = mobileRef
-		} else {
-			// скролл по десктопу
-			targetRef = desktopRef
-		}
-		targetRef.current?.scrollIntoView({
+		const prefix = isMobile ? 'mobile' : 'desktop'
+		const container = document.getElementById(`${prefix}-${sectionId}`)
+		if (!container) return
+
+		container.scrollIntoView({
 			behavior: 'smooth',
 			block: isMobile ? 'start' : 'center'
 		})
 	}
+
+	const pushSectionParam = (sectionId: SectionId) => {
+		appendSearchParam('section', sectionId)
+		scrollToContentBlock(sectionId)
+	}
+
+	useEffect(() => {
+		const sectionId = searchParams.get('section')
+		if (sectionId) scrollToContentBlock(sectionId as SectionId)
+		// eslint-disable-next-line react-hooks/exhaustive-deps
+	}, [])
 
 	const handleLogoClick = () => {
 		if (pathname === '/') {
@@ -102,14 +98,9 @@ export function Header({ sectionRefs, isAnimationLineDisabled = true }: HeaderPr
 		appendSearchParam('action', '')
 	}
 
-	const menuItems = useMemo(() => {
-		if (!sectionRefs) return []
-		return Object.values(sectionRefs)
-	}, [sectionRefs])
-
-	const handleMobileMenuClick = (mobileRef: SectionRef, desktopRef: SectionRef) => {
+	const handleMobileMenuClick = (sectionId: SectionId) => {
 		setIsMobileMenuOpen(false)
-		return scrollToSection(mobileRef, desktopRef)
+		return pushSectionParam(sectionId)
 	}
 
 	const handlePressDownloadInMobileMenu = () => {
@@ -140,13 +131,13 @@ export function Header({ sectionRefs, isAnimationLineDisabled = true }: HeaderPr
 					</div>
 
 					<nav className="hidden md:flex items-center gap-8">
-						{menuItems.map((item) => (
+						{contentBlocks?.map((item) => (
 							<button
-								key={item.title}
-								onClick={() => scrollToSection(item.mobileRef, item.desktopRef)}
+								key={item.label}
+								onClick={() => pushSectionParam(item.id)}
 								className="text-[#ababab] hover:text-white transition-colors cursor-pointer"
 							>
-								{item.title}
+								{item.label}
 							</button>
 						))}
 						<ResponsiveDialog
@@ -192,7 +183,7 @@ export function Header({ sectionRefs, isAnimationLineDisabled = true }: HeaderPr
 							className="md:max-w-178.5 md:h-192"
 						>
 							<MobileMenuContent
-								menuItems={menuItems}
+								menuItems={contentBlocks}
 								onItemClick={handleMobileMenuClick}
 								onDownloadPress={handlePressDownloadInMobileMenu}
 							/>

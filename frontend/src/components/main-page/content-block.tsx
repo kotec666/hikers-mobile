@@ -1,22 +1,55 @@
-import { PropsWithChildren, Ref } from 'react'
+'use client'
+import { PropsWithChildren, useEffect, useRef } from 'react'
 import { cn } from '@/lib/utils'
 import Container from '@/components/layout/container'
 import Image from 'next/image'
 import phoneFrame from '@/assets/images/phone-frame.png'
 import { ScreenTextureURL } from '@/consts/PhoneScreenTextures'
+import { useMediaQuery } from '@/hooks/use-media-query'
+import useAppendSearchParam from '@/hooks/useAppendSearchParam'
 
 interface ContentBlockProps extends PropsWithChildren {
+	id: string // для автоскролла
 	idx: number // для стилей
 	title: string
 	description: string
 	mobileImg: ScreenTextureURL
-	mobileRef?: Ref<HTMLDivElement>
-	desktopRef?: Ref<HTMLDivElement>
 }
 
-const ContentBlock = ({ idx, title, description, mobileImg, mobileRef, desktopRef }: ContentBlockProps) => {
+const ContentBlock = ({ id, idx, title, description, mobileImg }: ContentBlockProps) => {
+	const [appendSearchParam] = useAppendSearchParam()
+	const mobileSectionRef = useRef<HTMLDivElement | null>(null)
+	const desktopSectionRef = useRef<HTMLDivElement | null>(null)
+	const isDesktop = useMediaQuery('(min-width: 1024px)')
+
+	useEffect(() => {
+		if (!desktopSectionRef.current && !mobileSectionRef.current) return
+
+		const target = isDesktop ? desktopSectionRef.current : mobileSectionRef.current
+
+		if (!target) return
+
+		const observer = new IntersectionObserver(
+			([entry]) => {
+				if (!entry.isIntersecting) return
+				const params = new URLSearchParams(window.location.search)
+				if (params.get('section') === id) return
+				appendSearchParam('section', id)
+			},
+			{
+				threshold: 0.5
+			}
+		)
+
+		observer.observe(target)
+
+		return () => {
+			observer.disconnect()
+		}
+	}, [id, appendSearchParam, isDesktop])
+
 	return (
-		<section ref={mobileRef}>
+		<section id={`mobile-${id}`} ref={mobileSectionRef} className="scroll-mt-5">
 			<div className="flex flex-col gap-10 py-16 md:py-24 lg:py-32 px-4 sm:px-6 lg:px-8 lg:hidden">
 				<div className="w-full">
 					{/* Mobile & Tablet */}
@@ -42,7 +75,8 @@ const ContentBlock = ({ idx, title, description, mobileImg, mobileRef, desktopRe
 				</div>
 			</div>
 			<div
-				ref={desktopRef}
+				ref={desktopSectionRef}
+				id={`desktop-${id}`}
 				className="hidden lg:flex flex-col absolute justify-center items-center text-white h-dvh w-full"
 				style={{
 					top: `${idx * 100}dvh`

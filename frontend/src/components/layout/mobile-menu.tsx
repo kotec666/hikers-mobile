@@ -1,26 +1,22 @@
 import { Button } from '@/components/ui/button'
-import { SectionRef } from '@/components/layout/header'
+import { IContentBlock, SectionId } from '@/app/page'
 
 type MobileMenuContentProps = {
-	menuItems: {
-		title: string
-		mobileRef: SectionRef
-		desktopRef: SectionRef
-	}[]
-	onItemClick: (mobileRef: SectionRef, desktopRef: SectionRef) => void
+	menuItems?: IContentBlock[]
+	onItemClick: (sectionId: SectionId) => void
 	onDownloadPress: () => void
 }
 
 export const MobileMenuContent = ({ menuItems, onItemClick, onDownloadPress }: MobileMenuContentProps) => {
 	return (
 		<nav className="flex flex-col p-6 gap-4">
-			{menuItems.map((item) => (
+			{menuItems?.map((item) => (
 				<button
-					key={item.title}
-					onClick={() => onItemClick(item.mobileRef, item.desktopRef)}
+					key={item.label}
+					onClick={() => onItemClick(item.id)}
 					className="text-white hover:text-green-main transition-colors py-3 text-lg text-left"
 				>
-					{item.title}
+					{item.label}
 				</button>
 			))}
 

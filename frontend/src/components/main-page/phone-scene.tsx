@@ -1,6 +1,6 @@
 'use client'
 import * as THREE from 'three'
-import React, { Suspense, useRef, useState } from 'react'
+import React, { Suspense, useMemo, useRef, useState } from 'react'
 import { useFrame } from '@react-three/fiber'
 import { AdaptiveDpr, AdaptiveEvents, Environment } from '@react-three/drei'
 import { ScreenTextureURL, screenTextureURLs } from '@/consts/PhoneScreenTextures'
@@ -39,13 +39,13 @@ const Lights = () => {
 	)
 }
 
-interface PhoneSceneProps {
-	containerRef: React.RefObject<HTMLDivElement | null>
-}
+const PhoneScene = () => {
+	const phoneSceneContainer = useMemo(() => {
+		return document.getElementById('phone-scene-container')
+	}, [])
 
-const PhoneScene = ({ containerRef }: PhoneSceneProps) => {
 	const { scrollYProgress } = useScroll({
-		target: containerRef,
+		target: { current: phoneSceneContainer },
 		offset: ['start start', 'end end']
 	})
 	const phoneRef = useRef<THREE.Group>(null!)
