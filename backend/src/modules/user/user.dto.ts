@@ -1,4 +1,4 @@
-import { IsEmail, Length } from 'class-validator';
+import { IsBoolean, IsEmail, Length } from 'class-validator';
 import { HasDigit, UniqueEmail } from '@validation/property-decorators';
 import { ERRORS } from '@shared/errors';
 import { lengths } from '@shared/lengths';
@@ -25,5 +25,8 @@ export namespace UserDto {
 		@Length(lengths.user.password.min, lengths.user.password.max, { message: `_password:${ERRORS.INVALID_LENGTH}` })
 		@HasDigit()
 		password: string;
+
+		@IsBoolean({ message: `_termsAccepted:${ERRORS.BAD_REQUEST}` })
+		termsAccepted: boolean;
 	}
 }
