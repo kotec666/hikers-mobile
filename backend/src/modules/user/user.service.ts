@@ -139,6 +139,45 @@ export class UserService {
 		return user;
 	}
 
+	public async changePassword(email: string, newPassword: string, shouldBeDifferent = true): Promise<UserDto.Entity> {
+		const [user] = await this.db.db
+			.select({
+				id: users.id,
+				name: users.name,
+				username: users.username,
+				avatarFilename: users.avatarFilename,
+				password: users.password,
+			})
+			.from(users)
+			.where(eq(users.email, email))
+			.limit(1);
+		if (!user) {
+			throw new NotFoundException(ERRORS.NOT_FOUND);
+		}
+
+		const isPasswordSame = await comparePassword(newPassword, user.password);
+		if (shouldBeDifferent && isPasswordSame) {
+			throw new BadRequestException(ERRORS.SHOULD_BE_DIFFERENT);
+		}
+
+		const hashedPassword = await hashPassword(newPassword);
+
+		const [updatedUser] = await this.db.db
+			.update(users)
+			.set({
+				password: hashedPassword,
+			})
+			.where(eq(users.id, user.id))
+			.returning({
+				id: users.id,
+				name: users.name,
+				username: users.username,
+				avatarFilename: users.avatarFilename,
+			});
+
+		return updatedUser;
+	}
+
 	public async deleteUser(userId: string): Promise<CommonDto.BooleanResponse> {
 		const [user] = await this.db.db
 			.select({
