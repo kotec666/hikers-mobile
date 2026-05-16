@@ -40,8 +40,8 @@ export class ProfileService {
 		};
 	}
 
-	public async getProfile(userId: string): Promise<ProfileDto.Entity> {
-		const user = await this.users.getUser(userId);
+	public async getProfile(userId: string): Promise<ProfileDto.MyEntity> {
+		const user = await this.users.getUserWithEmail(userId);
 
 		const subscribers = await this.subs.getSubscribersCount(userId);
 		const subscriptions = await this.subs.getSubscriptionsCount(userId);

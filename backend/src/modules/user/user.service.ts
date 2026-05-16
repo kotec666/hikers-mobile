@@ -19,7 +19,7 @@ import {
 	users,
 	userSubscribers,
 } from '../database/schema';
-import { and, eq, ilike, ne, or } from 'drizzle-orm';
+import { and, eq, ilike, ne, or, sql } from 'drizzle-orm';
 import { comparePassword, hashPassword } from './user.helpers';
 import { ERRORS } from '@shared/errors';
 import { EventEmitter2 } from '@nestjs/event-emitter';
@@ -265,6 +265,26 @@ export class UserService {
 		await this.db.db.delete(users).where(eq(users.id, userId));
 
 		return { success: true };
+	}
+
+	public async getUserWithEmail(id: string): Promise<UserDto.EntityWithEmail> {
+		const [user] = await this.db.db
+			.select({
+				id: users.id,
+				name: users.name,
+				username: users.username,
+				avatarFilename: users.avatarFilename,
+				email: users.email,
+				isEmailConfirmed: sql<boolean>`${users.emailConfirmedAt}`,
+			})
+			.from(users)
+			.where(eq(users.id, id))
+			.limit(1);
+		if (!user) {
+			throw new NotFoundException(ERRORS.NOT_FOUND);
+		}
+
+		return user;
 	}
 
 	public async getUser(id: string): Promise<UserDto.Entity> {
