@@ -2,15 +2,19 @@ FROM node:24 AS builder
 
 WORKDIR /app
 
-COPY frontend/package.json frontend/yarn.lock ./
+# Копируем файлы зависимостей
+COPY frontend/package.json frontend/yarn.lock ./frontend
+COPY shared/ ./shared/
 
+# Устанавливаем зависимости
+WORKDIR /app/frontend
 RUN yarn install --frozen-lockfile
-RUN npm i -g serve
 
+# Копируем исходники фронтенда
 COPY frontend/ .
 
-COPY shared/ ./src/shared/
-
+# Сборка
 RUN yarn build
 
+# Запуск емае
 CMD [ "yarn", "start" ]
