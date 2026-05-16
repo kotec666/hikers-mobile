@@ -109,7 +109,7 @@ export function Header({ contentBlocks, isAnimationLineDisabled = true }: Header
 	}
 
 	return (
-		<header className="sticky top-0 z-50 backdrop-blur-md border-b border-[#1a1a1a] bg-black-0d/60">
+		<header className="fixed w-full top-0 z-50 backdrop-blur-md border-b border-[#1a1a1a] bg-black-0d/60">
 			<Container>
 				<div className="flex items-center justify-between h-16 lg:h-20">
 					<div className="flex items-center gap-3">
@@ -155,7 +155,7 @@ export function Header({ contentBlocks, isAnimationLineDisabled = true }: Header
 									Скачать
 								</Button>
 							</ResponsiveDialogTrigger>
-							<ResponsiveDialogContent title="Скачать приложение" className="md:max-w-2xl ">
+							<ResponsiveDialogContent title="Скачать приложение" className="md:max-w-2xl">
 								{/* md:max-h-[65vh] */}
 								<DownloadModalContent />
 							</ResponsiveDialogContent>

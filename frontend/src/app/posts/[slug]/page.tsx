@@ -87,13 +87,13 @@ const Post = async ({ params }: PostProps) => {
 
 	return (
 		<MainLayout mainClassName="flex min-h-screen bg-black-0d relative">
-			<div className="w-full flex items-center">
+			<div className="w-full flex items-center mt-6">
 				<RedirectScheme scheme="hikers://posts/" postId={postData?.id} />
 				<BackgroundPattern />
 
-				<div className="flex flex-col gap-6 w-full">
-					<div className="flex relative z-10">
-						<Container>
+				<div className="flex flex-col w-full">
+					<div className="flex relative z-10 w-full">
+						<Container className="w-full max-w-200 mx-auto">
 							<WorkoutPost post={postData} />
 						</Container>
 					</div>

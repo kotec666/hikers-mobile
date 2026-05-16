@@ -9,7 +9,7 @@ const DownloadModalContent = () => {
 			<div className="text-center">
 				<p className="text-[#ababab]">Выберите ваш магазин приложений</p>
 			</div>
-			<div className="grid grid-cols-1 place-items-center sm:place-items-stretch sm:grid-cols-2 gap-4">
+			<div className="grid grid-cols-2 place-items-stretch gap-4">
 				<div className="flex justify-end">
 					<StoreButton type="lg" storeType={StoreButtonType.APP_STORE} />
 				</div>

@@ -63,6 +63,7 @@ export default function Home() {
 					isAnimationLineDisabled: false,
 					contentBlocks
 				}}
+				edges={[]}
 				mainClassName="bg-black-0d"
 			>
 				<HeroSection firstSectionId={contentBlocks[0].id} />

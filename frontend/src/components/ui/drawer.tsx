@@ -54,17 +54,22 @@ function DrawerContent({
 				)}
 				{...props}
 			>
-				<div className="mx-auto mt-4 hidden h-1.5 w-12 shrink-0 rounded-full bg-[#2a2a2a] group-data-[vaul-drawer-direction=bottom]/drawer-content:block mb-4" />
-				{isTitleHidden ? (
-					<VisuallyHidden asChild>
-						<DrawerPrimitive.Title>{title}</DrawerPrimitive.Title>
-					</VisuallyHidden>
-				) : (
-					<DrawerPrimitive.Title className="text-center text-2xl md:text-3xl text-white">
-						{title}
-					</DrawerPrimitive.Title>
-				)}
-				{children}
+				<div className="shrink-0">
+					<div className="mx-auto mt-4 hidden h-1.5 w-12 shrink-0 rounded-full bg-[#2a2a2a] group-data-[vaul-drawer-direction=bottom]/drawer-content:block mb-4" />
+				</div>
+				<div className="min-h-0 flex-1 overflow-y-auto">
+					{isTitleHidden ? (
+						<VisuallyHidden asChild>
+							<DrawerPrimitive.Title>{title}</DrawerPrimitive.Title>
+						</VisuallyHidden>
+					) : (
+						<DrawerPrimitive.Title className="text-center text-2xl md:text-3xl text-white">
+							{title}
+						</DrawerPrimitive.Title>
+					)}
+
+					{children}
+				</div>
 			</DrawerPrimitive.Content>
 		</DrawerPortal>
 	)

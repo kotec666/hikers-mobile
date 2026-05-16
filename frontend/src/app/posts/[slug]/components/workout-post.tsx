@@ -84,7 +84,7 @@ export function WorkoutPost({ post }: WorkoutPostProps) {
 			?.points || []
 
 	return (
-		<div className="bg-[#212121] rounded-2xl overflow-hidden max-w-2xl mx-auto">
+		<div className="bg-[#212121] rounded-2xl overflow-hidden mx-auto">
 			<div className="p-4">
 				<div className="flex items-center gap-3">
 					<UserAvatar bordered iconSize={24} avatarFilename={post?.userCreator.avatarFilename} />

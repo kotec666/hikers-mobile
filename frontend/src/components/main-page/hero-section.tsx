@@ -5,7 +5,7 @@ import { SectionId } from '@/app/page'
 
 const HeroSection = ({ firstSectionId }: { firstSectionId: SectionId }) => {
 	return (
-		<section className="h-[calc(100dvh-4rem)] lg:h-[calc(100dvh-5rem)] py-20 md:pb-15 px-4 sm:px-6 lg:px-8 flex flex-col">
+		<section className="h-dvh py-20 md:pb-15 px-4 sm:px-6 lg:px-8 flex flex-col">
 			<video
 				autoPlay
 				loop
