@@ -30,11 +30,17 @@ jobs:
             - name: '[backend] Run build'
               run: cd backend && yarn build
 
+            - name: '[frontend] Enable Corepack'
+              run: cd frontend && corepack enable
+
+            - name: '[frontend] Activate Yarn'
+              run: cd frontend && corepack prepare yarn@4.14.1 --activate
+
             - name: '[frontend] Install dependencies'
               run: cd frontend && yarn install
 
-            - name: '[frontend] Symlink to shared'
-              run: cd frontend/src && ln -s ../../shared ./shared
+            # - name: '[frontend] Symlink to shared'
+            #   run: cd frontend/src && ln -s ../../shared ./shared
 
             - name: '[frontend] Run lint'
               run: cd frontend && yarn lint
