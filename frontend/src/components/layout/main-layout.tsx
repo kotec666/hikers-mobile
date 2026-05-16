@@ -21,10 +21,13 @@ const MainLayout = ({ children, headerProps, edges = [Edges.top], mainClassName 
 				<Header {...headerProps} />
 			</Suspense>
 			<main
-				className={cn('', {
-					'pt-16 lg:pt-20': edges.includes(Edges.top),
+				className={cn(
+					'',
+					{
+						'pt-16 lg:pt-20': edges.includes(Edges.top)
+					},
 					mainClassName
-				})}
+				)}
 			>
 				{children}
 			</main>
