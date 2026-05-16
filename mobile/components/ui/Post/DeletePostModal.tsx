@@ -12,7 +12,12 @@ interface IProps {
 
 const DeletePostModal = (props: IProps) => {
 	return (
-		<Modal isOpen={props.open} handleClose={props.handleClose} label="Вы действительно хотите удалить пост?">
+		<Modal
+			blurDisabled
+			isOpen={props.open}
+			handleClose={props.handleClose}
+			label="Вы действительно хотите удалить пост?"
+		>
 			<View className="gap-[20px]">
 				<Text className="text-white text-sm" style={{ fontFamily: fontFamily.bold }}>
 					Это действие нельзя отменить

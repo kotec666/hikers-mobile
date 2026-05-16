@@ -21,8 +21,10 @@ const FullscreenMap = ({ visible, onClose, map }: Props) => {
 					interactiveDisabled: false,
 					rounded: 0,
 					logoPosition: { horizontal: 'right', vertical: 'bottom' },
+					logoPadding: { horizontal: 60 },
 					maxContainerHeight: undefined,
-					maxMapHeight: undefined
+					maxMapHeight: undefined,
+					deferInitialRouteRender: false
 				})}
 
 				<CloseFullscreenModeButton insetTop={insets.top} onPress={onClose} />

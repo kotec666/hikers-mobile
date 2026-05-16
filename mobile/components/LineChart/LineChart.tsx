@@ -57,12 +57,11 @@ const buildPaceChartData = (points: IWorkoutLocationStorageItem[]): PacePoint[] 
 		const dt = (cur.relTs - prev.relTs) / 1000
 		if (dt <= 0) continue
 
-		// если предыдущая точка была пауза — время не увеличиваем
+		// Интервал относится к состоянию предыдущей точки; маркер паузы завершает активный участок.
 		if (!prev.paused) {
 			activeTime += dt
 		}
 
-		// точки паузы не отображаем
 		if (cur.paused || prev.paused) continue
 
 		const dist = haversineDistance(

@@ -6,7 +6,7 @@ interface IEditActivitiesStore {
 	setNewActivitiesOrder: (activities: IActivity[]) => void
 }
 
-export const useEditActivitiesStore = create<IEditActivitiesStore>((set, get) => ({
+export const useEditActivitiesStore = create<IEditActivitiesStore>((set) => ({
 	newActivitiesOrder: [],
 	setNewActivitiesOrder: (activities) => {
 		set({
@@ -15,4 +15,4 @@ export const useEditActivitiesStore = create<IEditActivitiesStore>((set, get) =>
 	}
 }))
 
-export const editActivitiesStore = useEditActivitiesStore
+// export const editActivitiesStore = useEditActivitiesStore

@@ -74,6 +74,23 @@ const errorFields: ErrorFields = {
 	[ERRORS.TOO_LARGE]: {
 		field: 'field_name',
 		message: 'Слишком большой размер файла'
+	},
+	[ERRORS.TRAINING_ALREADY_FINISHED]: {
+		field: 'field_name',
+		message: 'Тренировка уже завершена'
+	},
+	[ERRORS.TRAINING_ALREADY_STARTED]: {
+		// , TRAINING_NOT_STARTED
+		field: 'field_name',
+		message: 'Тренировка уже начата'
+	},
+	[ERRORS.TRAINING_NOT_FINISHED]: {
+		field: 'field_name',
+		message: 'Тренировка не завершена'
+	},
+	[ERRORS.TRAINING_NOT_STARTED]: {
+		field: 'field_name',
+		message: 'Тренировка не начата'
 	}
 }
 /* prettier-ignore */
@@ -99,7 +116,7 @@ const personalErrorFields: PersonalErrorFields = {
 		[ERRORS.BAD_REQUEST]: 'Невалидный формат строки активностей'
 	},
 	avatarFilename: {
-		[ERRORS.BAD_REQUEST]: 'Невалидный формат аватара / слишком большой вес' // @TODO добавление проверки веса изображения?
+		[ERRORS.BAD_REQUEST]: 'Невалидный формат аватара'
 	},
 	id: {
 		[ERRORS.MISMATCH]: 'Некорректный id',

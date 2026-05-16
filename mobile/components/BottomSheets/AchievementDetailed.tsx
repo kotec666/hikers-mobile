@@ -1,10 +1,11 @@
 import React from 'react'
-import { Image, Text, View, StyleSheet } from 'react-native'
+import { Text, View, StyleSheet } from 'react-native'
+import { Image } from 'expo-image'
 import { fontFamily } from '@/constants/Fonts'
 import { IAchievement } from '@/api/achievements'
 import { PATH_TO_IMAGE } from '@/constants/PATH_TO_FILES'
-import { hexToRgba } from '@/helpers/hexToRgba'
 import { LinearGradient } from 'expo-linear-gradient'
+import { hexToRgba } from '@/helpers/colors/hexToRgba'
 // import AchievementsMedalSvg from '@/components/svg/AchievementsMedalSvg'
 
 interface IProps {
@@ -48,9 +49,13 @@ const AchievementDetailed = (props: IProps) => {
 						style={[styles.progressVertical, { height: progressPx }]}
 					/>
 					<Image
-						className="w-[43px] h-[43px] z-10"
+						style={{
+							width: 43,
+							height: 43,
+							zIndex: 10
+						}}
 						source={{ uri: `${PATH_TO_IMAGE}${achievement.iconFilename}` }}
-						resizeMode="cover"
+						contentFit="cover"
 					/>
 				</View>
 

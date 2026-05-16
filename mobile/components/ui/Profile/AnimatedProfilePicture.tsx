@@ -1,6 +1,7 @@
 import { BlurView } from 'expo-blur'
+import { Image } from 'expo-image'
 import React, { useCallback, useEffect, useState } from 'react'
-import { Dimensions, Image, Text, TouchableOpacity, View, StyleSheet, StyleProp, ViewStyle } from 'react-native'
+import { Dimensions, Text, TouchableOpacity, View, StyleSheet, StyleProp, ViewStyle, Platform } from 'react-native'
 import { Gesture, GestureDetector } from 'react-native-gesture-handler'
 import Animated, {
 	Extrapolation,
@@ -15,6 +16,7 @@ import Portal from '@/components/Portal/Portal'
 import { scheduleOnRN } from 'react-native-worklets'
 import PeopleSvg from '@/components/svg/PeopleSvg'
 import { cn } from '@/helpers/cn'
+import { useBlurContext } from '@/components/providers/BlurProvider'
 
 const SPRING_CONFIG = { damping: 15, mass: 1, stiffness: 200 }
 const OPEN_HORIZONTAL_PADDING = 24
@@ -50,6 +52,8 @@ const DummyAvatar = ({
 }
 
 export const AnimatedProfilePicture = ({ size = 40, imageUrl, bordered }: Props) => {
+	const blurTargetRef = useBlurContext()
+
 	const [imageError, setImageError] = useState(false)
 
 	useEffect(() => {
@@ -94,7 +98,7 @@ export const AnimatedProfilePicture = ({ size = 40, imageUrl, bordered }: Props)
 		closeButtonOpacity.value = withTiming(0, { duration: 200 })
 
 		scheduleOnRN(() => setIsPortalVisible(false))
-	}, [])
+	}, [backdropOpacity, closeButtonOpacity, isOpen, scale, translateX, translateY])
 
 	/**
 	 * Измерение позиции и запуск анимации
@@ -193,21 +197,28 @@ export const AnimatedProfilePicture = ({ size = 40, imageUrl, bordered }: Props)
 		zIndex: 1001
 	}))
 
+	const renderBackdrop = () => {
+		if (Platform.OS === 'ios') {
+			return <BlurView style={{ flex: 1 }} tint="dark" intensity={10} />
+		}
+
+		return (
+			<BlurView
+				style={{ flex: 1 }}
+				tint="dark"
+				intensity={30}
+				blurTarget={blurTargetRef}
+				blurMethod="dimezisBlurView"
+			/>
+		)
+	}
+
 	return (
 		<View ref={containerRef} style={{ width: size, height: size }}>
 			{isPortalVisible ? (
 				<Portal>
 					<GestureDetector gesture={backdropTapGesture}>
-						<Animated.View style={backdropStyle}>
-							<BlurView intensity={30} tint="dark" style={{ flex: 1 }}>
-								<View
-									style={{
-										flex: 1,
-										backgroundColor: 'rgba(50,50,50,0.1)'
-									}}
-								/>
-							</BlurView>
-						</Animated.View>
+						<Animated.View style={backdropStyle}>{renderBackdrop()}</Animated.View>
 					</GestureDetector>
 
 					<Animated.View style={[styles.closeButton, closeButtonStyle]}>
@@ -231,14 +242,13 @@ export const AnimatedProfilePicture = ({ size = 40, imageUrl, bordered }: Props)
 							{hasImage ? (
 								<Image
 									source={{ uri: imageUrl }}
-									resizeMode="cover"
-									className={cn({
-										'border-[1px] border-white/20': bordered
-									})}
+									contentFit="cover"
 									style={{
 										width: '100%',
 										height: '100%',
-										borderRadius: size / 2
+										borderRadius: size / 2,
+										borderWidth: bordered ? 1 : 0,
+										borderColor: 'rgba(255, 255, 255, 0.2)'
 									}}
 									onError={() => setImageError(true)}
 								/>
@@ -264,14 +274,13 @@ export const AnimatedProfilePicture = ({ size = 40, imageUrl, bordered }: Props)
 						{hasImage ? (
 							<Image
 								source={{ uri: imageUrl }}
-								resizeMode="cover"
-								className={cn({
-									'border-[1px] border-white/20': bordered
-								})}
+								contentFit="cover"
 								style={{
 									width: '100%',
 									height: '100%',
-									borderRadius: size / 2
+									borderRadius: size / 2,
+									borderWidth: bordered ? 1 : 0,
+									borderColor: 'rgba(255, 255, 255, 0.2)'
 								}}
 								onError={() => setImageError(true)}
 							/>
@@ -291,9 +300,9 @@ const styles = StyleSheet.create({
 		zIndex: 1000
 	},
 	closeButtonTouchable: {
-		width: 30,
-		height: 30,
-		borderRadius: 15,
+		width: 40,
+		height: 40,
+		borderRadius: 40 / 2,
 		backgroundColor: 'rgba(0,0,0,0.6)',
 		justifyContent: 'center',
 		alignItems: 'center'

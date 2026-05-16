@@ -4,13 +4,14 @@ import { StyleProp, ViewStyle } from 'react-native'
 import { Colors } from '@/constants/Colors'
 
 interface IProps {
+	color?: string
 	width?: number
 	height?: number
 	style?: StyleProp<ViewStyle>
 }
 
 const StartWithCircleSvg = (props: IProps) => {
-	const { width = 100, height = 100 } = props
+	const { width = 100, height = 100, color = Colors['green-main'] } = props
 
 	const centerX = width / 2
 	const centerY = width / 2
@@ -35,7 +36,7 @@ const StartWithCircleSvg = (props: IProps) => {
 				cy={centerY}
 				r={circleRadius}
 				fill={Colors.white}
-				stroke={Colors['green-main']}
+				stroke={color}
 				strokeWidth={circleRadius - 2}
 			/>
 		</Svg>

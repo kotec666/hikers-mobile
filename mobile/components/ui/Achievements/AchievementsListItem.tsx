@@ -1,10 +1,11 @@
 import React from 'react'
-import { View, Text, StyleSheet, ColorValue, Image, TouchableOpacity } from 'react-native'
+import { View, Text, StyleSheet, ColorValue, TouchableOpacity } from 'react-native'
+import { Image } from 'expo-image'
 import { fontFamily } from '@/constants/Fonts'
 import { LinearGradient } from 'expo-linear-gradient'
 import { cn } from '@/helpers/cn'
-import { hexToRgba } from '@/helpers/hexToRgba'
 import { PATH_TO_IMAGE } from '@/constants/PATH_TO_FILES'
+import { hexToRgba } from '@/helpers/colors/hexToRgba'
 // import AchievementsMedalSvg from '@/components/svg/AchievementsMedalSvg'
 
 interface AchievementsListItemProps {
@@ -59,9 +60,12 @@ const AchievementsListItem = ({
 				<View className="px-[10px] py-[16px] flex-row gap-[6px] items-center">
 					{/*<AchievementsMedalSvg /> @TODO удалить*/}
 					<Image
-						className="w-[20px] h-[20px]"
+						style={{
+							width: 20,
+							height: 20
+						}}
 						source={{ uri: `${PATH_TO_IMAGE}${iconFilename}` }}
-						resizeMode="cover"
+						contentFit="cover"
 					/>
 					<Text className="text-white text-base" style={{ fontFamily: fontFamily.bold }}>
 						{title}

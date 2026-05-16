@@ -30,7 +30,7 @@ const fetcher = baseFetcher.extend({
 		beforeRequest: [
 			async (request) => {
 				if (request.url.includes('auth/refresh')) return
-				request.headers.set('Authorization', `Bearer ${getToken()}`)
+				request.headers.set('Authorization', `Bearer ${await getToken()}`)
 			}
 		],
 		afterResponse: [
@@ -68,7 +68,7 @@ const fetcher = baseFetcher.extend({
 
 					if (!ok) throw new Error('refresh failed')
 
-					const newToken = getToken()
+					const newToken = await getToken()
 
 					processQueue(null, newToken)
 
@@ -78,7 +78,7 @@ const fetcher = baseFetcher.extend({
 					// Обрабатываем очередь с ошибкой
 					processQueue(error, null)
 					// Если обновление токена не удалось, очищаем данные аутентификации
-					removeAuthData()
+					await removeAuthData()
 					// Перенаправляем на страницу логина или показываем ошибку
 					console.error('Token refresh failed:', error)
 					throw error

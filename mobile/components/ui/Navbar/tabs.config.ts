@@ -7,7 +7,7 @@ export const tabsConfig = [
 		id: 'posts',
 		route: 'posts', // для NativeTabs
 		href: '/posts', // для router и pathname
-		label: 'Посты',
+		label: 'Лента',
 		icon: NavBarPostsSvg,
 		nativeIcon: {
 			sf: 'book',

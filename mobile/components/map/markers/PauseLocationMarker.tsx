@@ -5,15 +5,16 @@ import PauseWithCircleSvg from '@/components/svg/PauseWithCircleSvg'
 
 interface Props {
 	position?: Point | null
+	color?: string
 }
 
-const PauseLocationMarker = ({ position }: Props) => {
+const PauseLocationMarker = ({ position, color }: Props) => {
 	if (!position?.lat || !position?.lon) return null
 
 	return (
 		<Marker point={position} zIndex={5}>
 			<View>
-				<PauseWithCircleSvg />
+				<PauseWithCircleSvg color={color} />
 			</View>
 		</Marker>
 	)

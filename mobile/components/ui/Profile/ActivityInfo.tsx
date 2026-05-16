@@ -7,8 +7,8 @@ import { SharedValue, useSharedValue } from 'react-native-reanimated'
 import { CELL_W, CELL_H } from '@/helpers/drag'
 import { cn } from '@/helpers/cn'
 import { IActivity } from '@/api/activities'
-import { UserActivity } from '../../../../shared/enums'
 import { useEditActivitiesStore } from '@/store/editActivitiesStore'
+import { UserActivity } from '@shared/enums'
 
 interface IProps {
 	label?: string
@@ -43,7 +43,7 @@ const ActivityInfo = (props: IProps) => {
 
 	useEffect(() => {
 		positions.value = Object.assign({}, ...props.activities.map((_, index) => ({ [index]: index })))
-	}, [props.activities])
+	}, [positions, props.activities])
 
 	const handleDragEnd = ({ oldOrder, newOrder }: { oldOrder: number; newOrder: number }) => {
 		const next = [...newActivitiesOrder]

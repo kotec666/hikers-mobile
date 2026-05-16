@@ -2,14 +2,16 @@ import React from 'react'
 import { cn } from '@/helpers/cn'
 import { Platform, Text, TouchableOpacity } from 'react-native'
 import { fontFamily } from '@/constants/Fonts'
+import { isLiquidGlassAvailable } from 'expo-glass-effect'
 
 const ImagePickerButton = (props: { onPress: () => void; icon: React.JSX.Element; title: string }) => {
+	const isGlassAvailable = Platform.OS === 'ios' && isLiquidGlassAvailable()
 	return (
 		<TouchableOpacity
 			onPress={props.onPress}
 			className={cn(`items-center justify-center rounded-[8px] py-[15px] gap-2 w-full flex-1`, {
-				'bg-white/20': Platform.OS !== 'ios',
-				'bg-black': Platform.OS === 'ios'
+				'bg-black': Platform.OS === 'ios' && !isGlassAvailable,
+				'bg-white/20': isGlassAvailable || Platform.OS !== 'ios'
 			})}
 		>
 			{props.icon}

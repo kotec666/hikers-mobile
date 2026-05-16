@@ -14,7 +14,7 @@ const SvgComponent = ({ color = '#FFFFFF', opened }: Props) => {
 
 	React.useEffect(() => {
 		progress.value = withTiming(opened ? 0 : 1, { duration: 300 })
-	}, [opened])
+	}, [opened, progress])
 
 	const dashLength = 32
 

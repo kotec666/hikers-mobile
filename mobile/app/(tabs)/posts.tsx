@@ -7,7 +7,8 @@ import {
 	TouchableWithoutFeedback,
 	Keyboard,
 	RefreshControl,
-	ActivityIndicator
+	ActivityIndicator,
+	TextInput
 } from 'react-native'
 import { SafeAreaProvider, useSafeAreaInsets } from 'react-native-safe-area-context'
 import { Input } from '@/components/ui/Input'
@@ -17,27 +18,31 @@ import PostListItem from '@/components/ui/Post/PostListItem'
 import { fontFamily } from '@/constants/Fonts'
 import PeopleListItem from '@/components/find-people/PeopleListItem'
 import { Button } from '@/components/ui/Button'
-import ArrowBackSvg from '@/components/svg/ArrowBackSvg'
 import PostSearchResult from '@/components/ui/Post/PostSearchResult'
 import { LegendList, LegendListRef } from '@legendapp/list'
 import { getPostsFeed, IPost } from '@/api/posts'
 import { Colors } from '@/constants/Colors'
-import { useLocalSearchParams } from 'expo-router'
+import { useFocusEffect, useLocalSearchParams } from 'expo-router'
 import MapComponent from '@/components/map/MapComponent'
 import { adaptLocations } from '@/helpers/adaptPointsToIWorkoutLocationStorageItem'
-import { Motion } from '@legendapp/motion'
 import TrainingsEmpty from '@/components/ui/Post/TrainingsEmpty'
 import { SearchType } from '@/shared/enums'
 import { IFoundPost, IFoundUser, searchByAllItems } from '@/api/search'
 import { PATH_TO_IMAGE } from '@/constants/PATH_TO_FILES'
 import { useInfiniteQuery, useQueryClient } from '@tanstack/react-query'
+import { BackButton } from '@/components/ui/HeaderBack'
 
 const isUser = (item: IFoundUser | IFoundPost): item is IFoundUser => {
-	return 'email' in item
+	return 'username' in item
 }
 
 const isPost = (item: IFoundUser | IFoundPost): item is IFoundPost => {
-	return 'training' in item
+	return 'title' in item
+}
+
+interface IInfinitePosts {
+	pages: IPost[][]
+	pageParams: number[]
 }
 
 const PostsPage = () => {
@@ -67,11 +72,8 @@ const PostsPage = () => {
 		isRefetching: isRefetchingSearch
 	} = useInfiniteQuery({
 		queryKey: ['search', debouncedSearchWord, state.searchMode],
+		enabled: debouncedSearchWord.trim().length >= 2,
 		queryFn: ({ pageParam = 1, signal }) => {
-			if (!debouncedSearchWord || debouncedSearchWord.trim().length < 2) {
-				return Promise.resolve([])
-			}
-
 			return searchByAllItems(
 				{
 					page: pageParam,
@@ -83,9 +85,7 @@ const PostsPage = () => {
 			)
 		},
 		initialPageParam: 1,
-		getNextPageParam: (lastPage, pages) => (lastPage.length === searchLimit ? pages.length + 1 : undefined),
-		enabled: debouncedSearchWord.trim().length >= 2
-		// select: (data) => data.pages.flat()
+		getNextPageParam: (lastPage, pages) => (lastPage.length === searchLimit ? pages.length + 1 : undefined)
 	})
 
 	const searchData = searchDataRaw?.pages.flat() ?? []
@@ -129,7 +129,51 @@ const PostsPage = () => {
 	})
 
 	const legendListRef = useRef<LegendListRef>(null)
-	const params = useLocalSearchParams()
+	const searchInputRef = useRef<TextInput>(null)
+	const params = useLocalSearchParams<{
+		scrollToTop?: string
+		quickAction?: string
+		quickActionAt?: string
+	}>()
+
+	const activateSearch = useCallback(() => {
+		setState((s) => (s.isSearchActive ? s : { ...s, isSearchActive: true }))
+	}, [])
+
+	const dismissSearchKeyboard = useCallback(() => {
+		searchInputRef.current?.blur()
+		Keyboard.dismiss()
+	}, [])
+
+	useFocusEffect(
+		useCallback(() => {
+			return () => {
+				dismissSearchKeyboard()
+			}
+		}, [dismissSearchKeyboard])
+	)
+
+	useEffect(() => {
+		if (!state.isSearchActive) return
+
+		const timeoutId = setTimeout(() => {
+			searchInputRef.current?.focus()
+		}, 0)
+
+		return () => clearTimeout(timeoutId)
+	}, [state.isSearchActive])
+
+	useEffect(() => {
+		if (params.quickAction !== 'search') return
+
+		activateSearch()
+
+		const timeoutId = setTimeout(() => {
+			searchInputRef.current?.focus()
+		}, 0)
+
+		return () => clearTimeout(timeoutId)
+	}, [activateSearch, params.quickAction, params.quickActionAt])
 
 	// Если пользователь кликнет на ту же страницу, то пойдёт скролл вверх. Навбар передаст params при переходе на эту же страницу
 	useEffect(() => {
@@ -140,7 +184,7 @@ const PostsPage = () => {
 
 	const toggleSubscribeCallback = useCallback(
 		(isSubscribed: boolean, authorId?: string) => {
-			queryClient.setQueryData(['posts-feed'], (oldData: any) => {
+			queryClient.setQueryData<IInfinitePosts>(['posts-feed'], (oldData) => {
 				if (!oldData) return oldData
 
 				return {
@@ -227,28 +271,19 @@ const PostsPage = () => {
 				<View style={{ flex: 1 }}>
 					<Container className="gap-[20px] flex-1">
 						<View className="flex-row justify-center items-center gap-[10px] w-full">
-							<Motion.Pressable
+							<BackButton
 								onPress={() => {
 									Keyboard.dismiss()
 									setState((s) => ({ ...s, isSearchActive: false }))
 								}}
-							>
-								<Motion.View
-									className="border-2 relative rounded-full h-[50px] w-[50px] border-black-44 justify-center items-center"
-									whileTap={{ scale: 0.8 }}
-									transition={{
-										type: 'spring',
-										damping: 20,
-										stiffness: 400
-									}}
-								>
-									<ArrowBackSvg height={19} width={19} />
-								</Motion.View>
-							</Motion.Pressable>
+							/>
 							<Input
+								key="posts-search-input"
+								ref={searchInputRef}
+								autoFocus
 								isFind
 								containerClassName="flex-1"
-								onPress={() => setState((s) => ({ ...s, isSearchActive: true }))}
+								onFocus={activateSearch}
 								value={searchWord}
 								onChangeText={setSearchWord}
 								placeholder="Поиск"
@@ -328,11 +363,11 @@ const PostsPage = () => {
 											return <PostSearchResult {...item} />
 										}
 
-										return null
+										console.warn('Unknown item type', item)
+										return <Text className="text-red-500">Unknown item type</Text>
 									}}
 									keyExtractor={(item) => item.id}
 									onEndReached={() => {
-										console.log('onEndReached search')
 										if (hasNextSearchPage && !isFetchingNextSearchPage) {
 											fetchNextSearchPage()
 										}
@@ -370,16 +405,19 @@ const PostsPage = () => {
 
 	// Основная лента постов
 	return (
-		<SafeAreaProvider
-			style={{ paddingTop: insets.top, paddingBottom: insets.bottom, backgroundColor: Colors['black-0d'] }}
-		>
+		<SafeAreaProvider style={{ paddingTop: insets.top, backgroundColor: Colors['black-0d'] }}>
 			<View style={{ flex: 1 }}>
 				<Container className="gap-[20px] flex-1">
 					<View className="flex-row justify-center items-center gap-[10px] w-full">
 						<Input
+							key="posts-search-input"
+							ref={searchInputRef}
 							isFind
 							containerClassName="flex-1"
-							onPress={() => setState((s) => ({ ...s, isSearchActive: true }))}
+							onFocus={activateSearch}
+							onPressIn={activateSearch}
+							value=""
+							onChangeText={setSearchWord}
 							placeholder="Поиск"
 						/>
 						<NotificationsButton />
@@ -409,7 +447,7 @@ const PostsPage = () => {
 								/>
 							}
 							contentContainerStyle={{
-								paddingBottom: 100,
+								paddingBottom: insets.bottom + 100,
 								flexGrow: 1
 							}}
 							showsVerticalScrollIndicator={false}

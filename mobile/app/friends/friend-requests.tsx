@@ -14,6 +14,11 @@ import { LegendList } from '@legendapp/list'
 import { Colors } from '@/constants/Colors'
 import { useInfiniteQuery, useQueryClient } from '@tanstack/react-query'
 
+interface IInfiniteInvites {
+	pages: IInvite[][]
+	pageParams: number[]
+}
+
 const FriendRequestsPage = () => {
 	const insets = useSafeAreaInsets()
 	const toast = useToast()
@@ -57,7 +62,7 @@ const FriendRequestsPage = () => {
 			await acceptFriendRequest(newFriendId)
 			// setItems((prev) => prev.filter((req) => req.user.id !== newFriendId))
 			// await refetch()
-			queryClient.setQueryData(['pendingInvites'], (oldData: any) => {
+			queryClient.setQueryData<IInfiniteInvites>(['pendingInvites'], (oldData) => {
 				if (!oldData) return oldData
 
 				return {
@@ -65,6 +70,8 @@ const FriendRequestsPage = () => {
 					pages: oldData.pages.map((page: IInvite[]) => page.filter((req) => req.user.id !== newFriendId))
 				}
 			})
+			await queryClient.invalidateQueries({ queryKey: ['friendsList'] })
+			await queryClient.invalidateQueries({ queryKey: ['my-profile'] })
 			toast.success('Пользователь добавлен в друзья')
 		} catch {
 			toast.error('Произошла ошибка, повторите попытку позже')
@@ -81,7 +88,7 @@ const FriendRequestsPage = () => {
 			await rejectFriendRequest(rejectUserId)
 			// setItems((prev) => prev.filter((req) => req.user.id !== rejectUserId))
 			// await refetch()
-			queryClient.setQueryData(['pendingInvites'], (oldData: any) => {
+			queryClient.setQueryData<IInfiniteInvites>(['pendingInvites'], (oldData) => {
 				if (!oldData) return oldData
 
 				return {

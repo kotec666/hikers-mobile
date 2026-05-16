@@ -53,7 +53,7 @@ export const useInternetConnectionRef = () => {
 				return
 			}
 
-			checkInternetReachable()
+			return checkInternetReachable()
 		})
 
 		return () => {

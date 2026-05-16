@@ -1,5 +1,5 @@
-import React, { useEffect, useState } from 'react'
-import { View, ScrollView, Dimensions } from 'react-native'
+import React, { useCallback, useEffect, useState } from 'react'
+import { View, ScrollView, Dimensions, ActivityIndicator } from 'react-native'
 import { SafeAreaProvider, useSafeAreaInsets } from 'react-native-safe-area-context'
 import { Container } from '@/components/ui/Container'
 import { StatusBar } from 'expo-status-bar'
@@ -20,6 +20,8 @@ import { adaptLocations } from '@/helpers/adaptPointsToIWorkoutLocationStorageIt
 import { useToast } from '@/hooks/useToast'
 import { VIEWWORKOUT_MODE } from '@/app/training/viewWorkout'
 import { useSafeNavigation } from '@/hooks/useSafeNavigation'
+import { Colors } from '@/constants/Colors'
+import BlurProvider from '@/components/providers/BlurProvider'
 
 const { height } = Dimensions.get('screen')
 const SLIDE_ASPECT_RATIO = height / 3.6
@@ -34,18 +36,30 @@ const Post = () => {
 
 	const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false)
 	const [post, setPost] = useState<IPost | null>(null)
+	const [isPageLoading, setIsPageLoading] = useState<boolean>(false)
+
+	const handleClickBack = useCallback(() => {
+		if (router.canGoBack()) {
+			router.back()
+		} else {
+			router.push('/(tabs)/profile')
+		}
+	}, [router])
 
 	useEffect(() => {
 		;(async () => {
+			setIsPageLoading(true)
 			try {
 				const postData = await getPostById(id)
 				setPost(postData)
 			} catch {
 				toast.info('Ошибка при загрузке поста')
-				router.back()
+				handleClickBack()
+			} finally {
+				setIsPageLoading(false)
 			}
 		})()
-	}, [])
+	}, [handleClickBack, id, toast])
 
 	const handleOpenDeleteModal = () => {
 		return setIsDeleteModalOpen((prevState) => !prevState)
@@ -67,97 +81,99 @@ const Post = () => {
 		(participant) => participant.user.id === post?.userCreator.id
 	)?.metrics
 
-	const handleClickBack = () => {
-		if (router.canGoBack()) {
-			router.back()
-		} else {
-			router.push('/(tabs)/profile')
-		}
+	if (isPageLoading) {
+		return (
+			<View className="flex-1 items-center justify-center">
+				<ActivityIndicator size="large" color={Colors['green-main']} />
+			</View>
+		)
 	}
 
 	return (
 		<SafeAreaProvider style={{ paddingTop: insets.top, paddingBottom: insets.bottom }}>
-			<View style={{ flex: 1, alignItems: 'center' }}>
-				<DeletePostModal
-					open={isDeleteModalOpen}
-					handleClickDeletePost={handleClickDeletePost}
-					handleClose={handleOpenDeleteModal}
-				/>
-				<Container className="gap-[20px]">
-					<View className="flex-row justify-between items-center">
-						<HeaderBack returnCallback={handleClickBack}>Просмотр поста</HeaderBack>
-						{post?.userCreator?.id === user?.id && (
-							<MoreOptionsButton
-								icon={<MoreOptionsSvg />}
-								params={[
-									{
-										label: 'Редактировать',
-										action: () =>
-											push(
-												`/training/viewWorkout?mode=${VIEWWORKOUT_MODE.EDIT}&editPostId=${post?.id}`
-											)
-									},
-									{ label: 'Удалить', action: handleOpenDeleteModal }
-								]}
-							/>
-						)}
-					</View>
-					<ScrollView style={{ flex: 1, width: '100%' }}>
-						<View className="gap-[15px]">
-							<PostListItemHeader
-								isMyPost={post?.userCreator.id === user?.id}
-								subscribeData={{
-									authorId: post?.userCreator.id,
-									isSubscribed: post?.isSubscribed
-								}}
-								avatar={post?.userCreator.avatarFilename}
-								authorId={post?.userCreator.id}
-								authorName={post?.userCreator?.name}
-								createdAt={post?.createdAt}
-								workoutType={post?.training?.type}
-							/>
-							<PostBodyWrapper
-								mode={PostType.POST_ITEM}
-								title={post?.title}
-								description={post?.description}
-								metrics={creatorMetrics}
-								isDetail
-								mapComponent={
-									<MapComponent
-										key={post?.training?.participants?.[0]?.route?.points?.length || 0} // какое-то время points undefined
-										rounded={25}
-										interactiveDisabled
-										minMapHeight={SLIDE_ASPECT_RATIO}
-										maxMapHeight={SLIDE_ASPECT_RATIO}
-										needFinishMarker
-										initialLocations={{
-											current: adaptLocations(
-												post?.training?.participants?.[0]?.route?.points || []
-											)
-										}}
-									/>
-								}
-							/>
-							<MapRoutesSwitchers />
-							<PostListItemSlider images={post?.fileNames} />
-							{post?.isLiked !== undefined &&
-								post?.likesCount !== undefined &&
-								post?.id !== undefined && (
-									<PostListItemBottom
-										postId={post.id}
-										likeData={{
-											isLiked: post.isLiked,
-											likesCount: post.likesCount,
-											postId: post.id
-										}}
-										participants={post?.training.participants}
-									/>
-								)}
+			<BlurProvider>
+				<View style={{ flex: 1, alignItems: 'center' }}>
+					<DeletePostModal
+						open={isDeleteModalOpen}
+						handleClickDeletePost={handleClickDeletePost}
+						handleClose={handleOpenDeleteModal}
+					/>
+					<Container className="gap-[20px]">
+						<View className="flex-row justify-between items-center">
+							<HeaderBack returnCallback={handleClickBack}>Просмотр поста</HeaderBack>
+							{post?.userCreator?.id === user?.id && (
+								<MoreOptionsButton
+									icon={<MoreOptionsSvg />}
+									params={[
+										{
+											label: 'Редактировать',
+											action: () =>
+												push(
+													`/training/viewWorkout?mode=${VIEWWORKOUT_MODE.EDIT}&editPostId=${post?.id}`
+												)
+										},
+										{ label: 'Удалить', action: handleOpenDeleteModal }
+									]}
+								/>
+							)}
 						</View>
-					</ScrollView>
-				</Container>
-				<StatusBar style="light" />
-			</View>
+						<ScrollView style={{ flex: 1, width: '100%' }}>
+							<View className="gap-[15px]">
+								<PostListItemHeader
+									isMyPost={post?.userCreator.id === user?.id}
+									subscribeData={{
+										authorId: post?.userCreator.id,
+										isSubscribed: post?.isSubscribed
+									}}
+									avatar={post?.userCreator.avatarFilename}
+									authorId={post?.userCreator.id}
+									authorName={post?.userCreator?.name}
+									createdAt={post?.createdAt}
+									workoutType={post?.training?.type}
+								/>
+								<PostBodyWrapper
+									mode={PostType.POST_ITEM}
+									title={post?.title}
+									description={post?.description}
+									metrics={creatorMetrics}
+									isDetail
+									mapComponent={
+										<MapComponent
+											key={post?.training?.participants?.[0]?.route?.points?.length || 0} // какое-то время points undefined
+											rounded={25}
+											interactiveDisabled
+											minMapHeight={SLIDE_ASPECT_RATIO}
+											maxMapHeight={SLIDE_ASPECT_RATIO}
+											needFinishMarker
+											initialLocations={{
+												current: adaptLocations(
+													post?.training?.participants?.[0]?.route?.points || []
+												)
+											}}
+										/>
+									}
+								/>
+								<MapRoutesSwitchers />
+								<PostListItemSlider images={post?.fileNames} />
+								{post?.isLiked !== undefined &&
+									post?.likesCount !== undefined &&
+									post?.id !== undefined && (
+										<PostListItemBottom
+											postId={post.id}
+											likeData={{
+												isLiked: post.isLiked,
+												likesCount: post.likesCount,
+												postId: post.id
+											}}
+											participants={post?.training.participants}
+										/>
+									)}
+							</View>
+						</ScrollView>
+					</Container>
+					<StatusBar style="light" />
+				</View>
+			</BlurProvider>
 		</SafeAreaProvider>
 	)
 }

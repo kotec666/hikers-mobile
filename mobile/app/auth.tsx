@@ -27,6 +27,7 @@ import { loginUser, registrationUser } from '@/api/auth'
 import { cn } from '@/helpers/cn'
 import { lengths } from '@shared/lengths'
 import * as Haptics from 'expo-haptics'
+// import { useSafeNavigation } from '@/hooks/useSafeNavigation'
 
 export enum AUTH_MODE {
 	AUTH = 'auth',
@@ -42,6 +43,7 @@ interface IAuthFormState {
 const AuthPage = () => {
 	const insets = useSafeAreaInsets()
 	const { mode } = useLocalSearchParams<{ mode: AUTH_MODE }>()
+	// const { push } = useSafeNavigation()
 	const {
 		handleSubmit,
 		control,
@@ -75,7 +77,7 @@ const AuthPage = () => {
 				const loginData = await loginUser({ email: authFormState.email, password: authFormState.password })
 				const { token, ...restParameters } = loginData
 
-				login(loginData.token, restParameters)
+				await login(loginData.token, restParameters)
 			} catch (e: unknown) {
 				const formattedErrors = await getFieldsErrors(e)
 				setData((s) => ({ ...s, errors: formattedErrors }))
@@ -91,7 +93,7 @@ const AuthPage = () => {
 				const regData = await registrationUser({ email: authFormState.email, password: authFormState.password })
 				const { token, ...restParameters } = regData
 
-				login(regData.token, restParameters)
+				await login(regData.token, restParameters)
 			} catch (e: unknown) {
 				const formattedErrors = await getFieldsErrors(e)
 				setData((s) => ({ ...s, errors: formattedErrors }))
@@ -189,6 +191,14 @@ const AuthPage = () => {
 										/>
 									)}
 								/>
+
+								{data.mode === AUTH_MODE.AUTH && (
+									<LinkCustom
+										href="/(password-restore)/firstStep"
+										text="Забыли пароль?"
+										className="text-blue-3d"
+									/>
+								)}
 							</View>
 						</View>
 					</TouchableWithoutFeedback>
@@ -248,6 +258,9 @@ const AuthPage = () => {
 				<Button variant="white" onPress={handleClickRedirect}>
 					{data.mode === AUTH_MODE.AUTH ? 'Зарегистрироваться' : 'Войти'}
 				</Button>
+				{/*<Button variant="white" onPress={() => push('/mail-confirmation')}>*/}
+				{/*	email confirmation page*/}
+				{/*</Button>*/}
 			</Container>
 			<StatusBar style="light" />
 		</SafeAreaProvider>

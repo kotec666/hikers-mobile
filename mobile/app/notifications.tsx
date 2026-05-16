@@ -1,68 +1,165 @@
 import { SafeAreaProvider, useSafeAreaInsets } from 'react-native-safe-area-context'
-import { FlatList, View, Text } from 'react-native'
+import { View, Text, RefreshControl, ActivityIndicator } from 'react-native'
 import { Container } from '@/components/ui/Container'
 import HeaderBack from '@/components/ui/HeaderBack'
-import React from 'react'
-import PeopleRemoveSvg from '@/components/svg/PeopleRemoveSvg'
-import PeopleAddSvg from '@/components/svg/PeopleAddSvg'
-import FriendRequestSentSvg from '@/components/svg/FriendRequestSentSvg'
+import React, { useCallback } from 'react'
 import { fontFamily } from '@/constants/Fonts'
 import { NotificationListItem } from '@/components/ui/Notifications/NotificationListItem'
 import { Button } from '@/components/ui/Button'
+import SwipeableProvider from '@/components/providers/SwipeableProvider'
+import { LegendList } from '@legendapp/list'
+import { Colors } from '@/constants/Colors'
+import { useInfiniteQuery, useQueryClient } from '@tanstack/react-query'
+import {
+	deleteNotificationsById,
+	getNotificationsList,
+	INotification,
+	markNotificationsAsReadById
+} from '@/api/notifications'
+import { getFieldsErrors } from '@/helpers/getFieldsErrors'
+import { useReadNotificationsOnView } from '@/hooks/useReadNotificationsOnView'
+
+interface IInfiniteNotifications {
+	pages: INotification[][]
+	pageParams: number[]
+}
 
 const NotificationsPage = () => {
 	const insets = useSafeAreaInsets()
+	const queryClient = useQueryClient()
 
-	const data = [
-		{ id: 1, name: 'Стив Джобс first', avatar: true, icon: <PeopleAddSvg /> },
-		{ id: 2, name: 'Джефф Безос', avatar: false, icon: <FriendRequestSentSvg /> },
-		{ id: 3, name: 'Джефф Безос', avatar: false, icon: <FriendRequestSentSvg /> },
-		{ id: 4, name: 'Джефф Безос', avatar: false, icon: <FriendRequestSentSvg /> },
-		{ id: 5, name: 'Джефф Безос', avatar: false, icon: <PeopleRemoveSvg /> },
-		{ id: 6, name: 'Джефф Безос', avatar: false, icon: <PeopleRemoveSvg /> },
-		{ id: 7, name: 'Джефф Безос', avatar: false, icon: <PeopleRemoveSvg /> },
-		{ id: 8, name: 'Джефф Безос', avatar: false, icon: <PeopleRemoveSvg /> },
-		{ id: 9, name: 'Джефф Безос', avatar: false, icon: <PeopleRemoveSvg /> },
-		{ id: 10, name: 'Джефф Безос', avatar: false, icon: <PeopleRemoveSvg /> },
-		{ id: 11, name: 'Джефф Безос', avatar: false, icon: <PeopleRemoveSvg /> },
-		{ id: 12, name: 'Джефф Безос', avatar: false, icon: <PeopleRemoveSvg /> },
-		{ id: 13, name: 'Джефф Безос', avatar: false, icon: <PeopleRemoveSvg /> },
-		{ id: 14, name: 'Джефф Безос', avatar: false, icon: <PeopleRemoveSvg /> },
-		{ id: 15, name: 'Джефф Безос', avatar: false, icon: <PeopleRemoveSvg /> },
-		{ id: 16, name: 'Джефф Безос', avatar: false, icon: <PeopleRemoveSvg /> },
-		{ id: 17, name: 'Джефф Безос', avatar: false, icon: <PeopleRemoveSvg /> },
-		{ id: 18, name: 'Джефф Безос', avatar: false, icon: <PeopleRemoveSvg /> },
-		{ id: 19, name: 'Джефф Безос', avatar: false, icon: <PeopleRemoveSvg /> },
-		{ id: 20, name: 'Джефф Безос last', avatar: false, icon: <PeopleRemoveSvg /> }
-	]
+	const limit = 15
+
+	const {
+		data: notificationsDataRaw,
+		fetchNextPage,
+		hasNextPage,
+		isFetchingNextPage,
+		refetch,
+		isRefetching,
+		isFetching
+	} = useInfiniteQuery({
+		queryKey: ['notifications-page'],
+		queryFn: ({ pageParam = 1 }) => {
+			return getNotificationsList({
+				page: pageParam,
+				limit: limit
+			})
+		},
+		initialPageParam: 1,
+		getNextPageParam: (lastPage, pages) => (lastPage.length === limit ? pages.length + 1 : undefined)
+	})
+
+	const notificationsData = notificationsDataRaw?.pages.flat() ?? []
+
+	const handleDeleteNotification = async (id?: string) => {
+		// id есть - удаление одного
+		// нет - удаление всех
+		try {
+			await deleteNotificationsById({ ids: id ? [id] : [] })
+			queryClient.setQueryData<IInfiniteNotifications>(['notifications-page'], (oldData) => {
+				if (!oldData) return oldData
+
+				// Если id не передан — очистить все уведомления
+				if (!id) {
+					return { ...oldData, pages: oldData.pages.map(() => []) }
+				}
+
+				// Удаляем только указанное уведомление
+				return {
+					...oldData,
+					pages: oldData.pages.map((page) => page.filter((notif) => notif.id !== id))
+				}
+			})
+		} catch (e) {
+			await getFieldsErrors(e)
+		}
+	}
+
+	const readNotificationsByIds = async (ids: string[]) => {
+		try {
+			await markNotificationsAsReadById({
+				ids
+			})
+			// синхронизация с колокольчиком
+			await queryClient.invalidateQueries({ queryKey: ['unread-exists'] })
+		} catch (e) {
+			await getFieldsErrors(e)
+		}
+	}
+
+	const { onViewableItemsChanged } = useReadNotificationsOnView<INotification>(
+		readNotificationsByIds,
+		(item) => item.readedAt !== null
+	)
+
+	const renderEmpty = useCallback(() => {
+		if (isFetching) return null
+
+		return (
+			<View style={{ flex: 1 }} className="items-center justify-center">
+				<Text style={{ fontFamily: fontFamily.regular }} className="text-gray-ab text-base">
+					Уведомления отсутствуют
+				</Text>
+			</View>
+		)
+	}, [isFetching])
 
 	return (
 		<SafeAreaProvider style={{ paddingTop: insets.top }}>
 			<View style={{ flex: 1 }}>
-				<Container className="gap-[20px] mt-[20px] flex-1">
+				<Container className="gap-[20px] mt-[20px]">
 					<HeaderBack>Уведомления</HeaderBack>
-					{!data.length ? null : <Button variant="white">Очистить все уведомления</Button>}
-
-					{!data.length ? (
-						<View style={{ flex: 1 }} className="items-center justify-center">
-							<Text style={{ fontFamily: fontFamily.regular }} className="text-gray-ab text-base">
-								Уведомления отсутствуют
-							</Text>
-						</View>
-					) : (
-						<FlatList
-							data={data}
-							renderItem={({ item }) => <NotificationListItem {...item} />}
-							keyExtractor={(item) => item.id.toString()}
-							ItemSeparatorComponent={() => <View style={{ height: 15 }} />}
-							contentContainerStyle={{
-								paddingBottom: insets.bottom + 20,
-								paddingTop: 10
-							}}
-							showsVerticalScrollIndicator={false}
-						/>
+					{!notificationsData.length || isFetching ? null : (
+						<Button variant="white" onPress={() => handleDeleteNotification()}>
+							Очистить все уведомления
+						</Button>
 					)}
 				</Container>
+				<View className="gap-[20px] mt-[20px] flex-1">
+					<LegendList
+						data={notificationsData}
+						ListEmptyComponent={renderEmpty}
+						onViewableItemsChanged={onViewableItemsChanged}
+						viewabilityConfig={{
+							itemVisiblePercentThreshold: 50
+						}}
+						renderItem={({ item }) => (
+							<SwipeableProvider
+								onSwiped={() => handleDeleteNotification(item.id)}
+								cardBackgroundColor={Colors['black-0d']}
+							>
+								<NotificationListItem notification={item} className="pb-[15px]" />
+							</SwipeableProvider>
+						)}
+						onEndReached={() => {
+							if (hasNextPage && !isFetchingNextPage) {
+								fetchNextPage()
+							}
+						}}
+						refreshControl={
+							<RefreshControl
+								refreshing={isRefetching}
+								onRefresh={refetch}
+								tintColor={Colors['green-main']}
+							/>
+						}
+						onEndReachedThreshold={0.4}
+						keyExtractor={(item) => item.id}
+						contentContainerStyle={{
+							flexGrow: 1,
+							paddingBottom: insets.bottom + 20
+						}}
+						ListFooterComponent={
+							isFetchingNextPage ? (
+								<View style={{ padding: 20 }}>
+									<ActivityIndicator size="small" color={Colors['green-main']} />
+								</View>
+							) : null
+						}
+						showsVerticalScrollIndicator={false}
+					/>
+				</View>
 			</View>
 		</SafeAreaProvider>
 	)

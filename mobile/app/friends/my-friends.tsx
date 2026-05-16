@@ -15,11 +15,13 @@ import { PATH_TO_IMAGE } from '@/constants/PATH_TO_FILES'
 import { LegendList } from '@legendapp/list'
 import { Colors } from '@/constants/Colors'
 import { useSafeNavigation } from '@/hooks/useSafeNavigation'
-import { useInfiniteQuery } from '@tanstack/react-query'
+import { useInfiniteQuery, useQueryClient } from '@tanstack/react-query'
+import BlurProvider from '@/components/providers/BlurProvider'
 
 const MyFriendsPage = () => {
 	const insets = useSafeAreaInsets()
 	const { push } = useSafeNavigation()
+	const queryClient = useQueryClient()
 	const toast = useToast()
 
 	const [deleteUser, setDeleteUser] = useState<IUser | null>(null)
@@ -52,14 +54,9 @@ const MyFriendsPage = () => {
 		},
 
 		select: (data) => data.pages.flat()
-		// select: (data) => ({
-		//         ...data,
-		//         pages: data.pages.flat()
-		//       }),
 	})
 
 	const renderFooter = () => {
-		// if (!loading || refreshing) return null
 		if (!isFetchingNextPage) return null
 
 		return (
@@ -97,6 +94,7 @@ const MyFriendsPage = () => {
 			}
 
 			await deleteFriendById(deleteUser.id)
+			await queryClient.invalidateQueries({ queryKey: ['my-profile'] })
 
 			// setItems((prev) => prev.filter((friend) => friend.user.id !== deleteUser.id))
 			await refetch()
@@ -110,77 +108,89 @@ const MyFriendsPage = () => {
 
 	return (
 		<SafeAreaProvider style={{ paddingTop: insets.top }}>
-			<View style={{ flex: 1 }}>
-				<Modal
-					isOpen={isDeleteModalOpened}
-					handleClose={handleCloseDeleteModal}
-					label="Вы действительно хотите удалить пользователя из друзей?"
-				>
-					<View className="gap-[20px]">
-						<Text className="text-white text-sm" style={{ fontFamily: fontFamily.bold }}>
-							Это действие нельзя отменить
-						</Text>
-						<View className="flex-row gap-[10px]">
-							<Button onPress={handleDeleteFromFriends} variant="white" buttonContainerClassName="flex-1">
-								Да
-							</Button>
-							<Button onPress={handleCloseDeleteModal} variant="white" buttonContainerClassName="flex-1">
-								Нет
-							</Button>
+			<BlurProvider>
+				<View style={{ flex: 1 }}>
+					<Modal
+						isOpen={isDeleteModalOpened}
+						handleClose={handleCloseDeleteModal}
+						label="Вы действительно хотите удалить пользователя из друзей?"
+					>
+						<View className="gap-[20px]">
+							<Text className="text-white text-sm" style={{ fontFamily: fontFamily.bold }}>
+								Это действие нельзя отменить
+							</Text>
+							<View className="flex-row gap-[10px]">
+								<Button
+									onPress={handleDeleteFromFriends}
+									variant="white"
+									buttonContainerClassName="flex-1"
+								>
+									Да
+								</Button>
+								<Button
+									onPress={handleCloseDeleteModal}
+									variant="white"
+									buttonContainerClassName="flex-1"
+								>
+									Нет
+								</Button>
+							</View>
 						</View>
-					</View>
-				</Modal>
-				<Container className="gap-[20px] mt-[20px] flex-1" style={{ paddingBottom: insets.bottom + 20 }}>
-					<HeaderBack>Друзья</HeaderBack>
+					</Modal>
+					<Container className="gap-[20px] mt-[20px] flex-1" style={{ paddingBottom: insets.bottom + 20 }}>
+						<HeaderBack>Друзья</HeaderBack>
 
-					<LegendList
-						data={friends}
-						renderItem={({ item }) => (
-							<PeopleListItem
-								id={item.user.id}
-								name={item.user.name}
-								username={item.user.username}
-								avatar={item.user.avatarFilename ? `${PATH_TO_IMAGE}${item.user.avatarFilename}` : null}
-								icon={{
-									iconSvg: <PeopleRemoveSvg />,
-									iconCb: () => handleOpenDeleteModal(item.user)
-								}}
-							/>
-						)}
-						keyExtractor={(item) => item.user.id}
-						//onEndReached={loadMore}
-						onEndReached={() => {
-							if (hasNextPage && !isFetchingNextPage) {
-								fetchNextPage()
+						<LegendList
+							data={friends}
+							renderItem={({ item }) => (
+								<PeopleListItem
+									id={item.user.id}
+									name={item.user.name}
+									username={item.user.username}
+									avatar={
+										item.user.avatarFilename ? `${PATH_TO_IMAGE}${item.user.avatarFilename}` : null
+									}
+									icon={{
+										iconSvg: <PeopleRemoveSvg />,
+										iconCb: () => handleOpenDeleteModal(item.user)
+									}}
+								/>
+							)}
+							keyExtractor={(item) => item.user.id}
+							//onEndReached={loadMore}
+							onEndReached={() => {
+								if (hasNextPage && !isFetchingNextPage) {
+									fetchNextPage()
+								}
+							}}
+							onEndReachedThreshold={0.5}
+							ItemSeparatorComponent={() => <View style={{ height: 15 }} />}
+							ListEmptyComponent={EmptyListComponent}
+							ListFooterComponent={renderFooter}
+							// refreshControl={
+							// 	<RefreshControl refreshing={refreshing} onRefresh={refresh} tintColor="#22CB5A" />
+							// }
+							refreshControl={
+								<RefreshControl
+									refreshing={isRefetching}
+									onRefresh={refetch}
+									tintColor={Colors['green-main']}
+								/>
 							}
-						}}
-						onEndReachedThreshold={0.5}
-						ItemSeparatorComponent={() => <View style={{ height: 15 }} />}
-						ListEmptyComponent={EmptyListComponent}
-						ListFooterComponent={renderFooter}
-						// refreshControl={
-						// 	<RefreshControl refreshing={refreshing} onRefresh={refresh} tintColor="#22CB5A" />
-						// }
-						refreshControl={
-							<RefreshControl
-								refreshing={isRefetching}
-								onRefresh={refetch}
-								tintColor={Colors['green-main']}
-							/>
-						}
-						contentContainerStyle={{
-							paddingBottom: 0,
-							paddingTop: 10,
-							flexGrow: friends.length === 0 ? 1 : undefined
-						}}
-						showsVerticalScrollIndicator={false}
-					/>
+							contentContainerStyle={{
+								paddingBottom: 0,
+								paddingTop: 10,
+								flexGrow: friends.length === 0 ? 1 : undefined
+							}}
+							showsVerticalScrollIndicator={false}
+						/>
 
-					<Button variant="white" onPress={() => push('/friends/friend-requests')}>
-						Запросы в друзья
-					</Button>
-				</Container>
-			</View>
+						<Button variant="white" onPress={() => push('/friends/friend-requests')}>
+							Запросы в друзья
+						</Button>
+					</Container>
+				</View>
+			</BlurProvider>
 		</SafeAreaProvider>
 	)
 }

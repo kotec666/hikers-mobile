@@ -3,6 +3,7 @@ import { IUser } from '@/store/authStore'
 import { IAchievement } from '@/api/achievements'
 import { IActivity } from '@/api/activities'
 import { FriendStatus } from '@shared/enums'
+import { ISuccess } from '@/api/posts'
 
 export interface IProfileAchievement extends IAchievement {
 	place: null | string
@@ -56,4 +57,9 @@ export const editProfileData = async (data: BodyInit): Promise<IProfile> => {
 			body: data
 		})
 	).json()
+}
+
+// Удаление своего аккаунта
+export const deleteMyAccount = async (): Promise<ISuccess> => {
+	return (await fetcher.delete('user/me')).json()
 }

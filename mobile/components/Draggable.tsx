@@ -8,7 +8,7 @@ import Animated, {
 	withTiming
 } from 'react-native-reanimated'
 import { getOrder, getPosition } from '@/helpers/drag'
-import { runOnJS } from 'react-native-worklets'
+import { scheduleOnRN } from 'react-native-worklets'
 import { PositionsMap } from '@/components/ui/Profile/ActivityInfo'
 
 interface IProps extends PropsWithChildren {
@@ -59,7 +59,7 @@ const Draggable = ({ children, positions, id, onDragEnd }: IProps) => {
 			}
 
 			if (onDragEnd) {
-				runOnJS(onDragEnd)({ id, oldOrder, newOrder })
+				scheduleOnRN(onDragEnd, { id, oldOrder, newOrder })
 			}
 
 			const destination = getPosition(positions.value[id])

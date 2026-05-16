@@ -2,16 +2,30 @@ import React, { forwardRef, useCallback, useImperativeHandle } from 'react'
 import { View, StyleSheet, TouchableWithoutFeedback, Dimensions, Pressable, Platform } from 'react-native'
 import { BottomSheetHandle, BottomSheetProps } from '@/components/ui/BottomSheet/types'
 import Animated, { interpolate, useAnimatedStyle, useSharedValue, withSpring } from 'react-native-reanimated'
-import { useSafeAreaInsets } from 'react-native-safe-area-context'
 import { Gesture, GestureDetector } from 'react-native-gesture-handler'
 import { Colors } from '@/constants/Colors'
 import { BlurView } from 'expo-blur'
 import { scheduleOnRN } from 'react-native-worklets'
+import Portal from '@/components/Portal/Portal'
+import { useBlurContext } from '@/components/providers/BlurProvider'
+import { GlassView, isLiquidGlassAvailable } from 'expo-glass-effect'
 
 const BottomSheet = forwardRef<BottomSheetHandle, BottomSheetProps>(
-	({ activeHeight, backDropColor = 'rgba(0,0,0,0.5)', backgroundColor = 'rgba(0, 0, 0, 1)', children }, ref) => {
-		const safeAreaInsets = useSafeAreaInsets()
+	(
+		{
+			activeHeight,
+			backDropColor = 'rgba(0,0,0,0.5)',
+			backgroundColor = 'rgba(0, 0, 0, 1)',
+			blurDisabled,
+			children
+		},
+		ref
+	) => {
+		// const safeAreaInsets = useSafeAreaInsets()
+		const blurTargetRef = useBlurContext()
 		const { height: screenHeight } = Dimensions.get('screen')
+		const isGlassAvailable = Platform.OS === 'ios' && isLiquidGlassAvailable()
+
 		const closedPositionY = screenHeight
 		const openPositionY = screenHeight - activeHeight
 
@@ -24,25 +38,28 @@ const BottomSheet = forwardRef<BottomSheetHandle, BottomSheetProps>(
 				stiffness: 150,
 				mass: 0.5
 			})
-		}, [])
+		}, [openPositionY, sheetPositionY])
 
-		const closeSheet = useCallback((onFinished?: () => void) => {
-			sheetPositionY.value = withSpring(
-				closedPositionY,
-				{
-					damping: 50,
-					stiffness: 150,
-					mass: 0.5
-				},
-				(finished) => {
-					if (finished) {
-						if (onFinished) {
-							scheduleOnRN(onFinished)
+		const closeSheet = useCallback(
+			(onFinished?: () => void) => {
+				sheetPositionY.value = withSpring(
+					closedPositionY,
+					{
+						damping: 50,
+						stiffness: 150,
+						mass: 0.5
+					},
+					(finished) => {
+						if (finished) {
+							if (onFinished) {
+								scheduleOnRN(onFinished)
+							}
 						}
 					}
-				}
-			)
-		}, [])
+				)
+			},
+			[closedPositionY, sheetPositionY]
+		)
 
 		useImperativeHandle(
 			ref,
@@ -90,56 +107,70 @@ const BottomSheet = forwardRef<BottomSheetHandle, BottomSheetProps>(
 				}
 			})
 
-		const platformStyles =
-			Platform.OS === 'ios'
-				? [
-						styles.container,
-						sheetStyle,
-						{
-							height: activeHeight,
-							paddingBottom: safeAreaInsets.bottom
-						}
-					]
-				: [
-						styles.container,
-						sheetStyle,
-						{
-							height: activeHeight,
-							paddingBottom: safeAreaInsets.bottom,
-							backgroundColor
-						}
-					]
+		const platformStyles = [
+			styles.container,
+			sheetStyle,
+			{
+				height: activeHeight,
+				//paddingBottom: safeAreaInsets.bottom,
+				...(blurDisabled && {
+					backgroundColor
+				})
+			}
+		]
+
+		const renderBackground = () => {
+			if (blurDisabled) return null
+
+			if (isGlassAvailable) {
+				return (
+					<GlassView
+						style={[StyleSheet.absoluteFill, { borderTopLeftRadius: 50, borderTopRightRadius: 50 }]}
+					/>
+				)
+			}
+
+			if (Platform.OS === 'ios') {
+				return <BlurView tint="dark" style={StyleSheet.absoluteFill} intensity={10} />
+			}
+
+			return (
+				<BlurView
+					tint="dark"
+					style={StyleSheet.absoluteFill}
+					intensity={23}
+					blurTarget={blurTargetRef}
+					blurMethod="dimezisBlurView"
+				/>
+			)
+		}
 
 		return (
-			<>
+			<Portal>
 				<TouchableWithoutFeedback onPress={() => closeSheet()}>
 					<Animated.View style={[styles.backdrop, backdropStyle, { backgroundColor: backDropColor }]} />
 				</TouchableWithoutFeedback>
 				<GestureDetector gesture={panGestureHandler}>
 					<Animated.View style={platformStyles}>
-						{Platform.OS === 'ios' && (
-							<BlurView
-								tint="dark"
-								intensity={10}
-								style={[
-									StyleSheet.absoluteFill,
-									{ overflow: 'hidden', backgroundColor: 'transparent' }
-								]}
-							/>
-						)}
-						<Pressable style={styles.lineContainer}>
-							<View style={styles.line} />
-						</Pressable>
-						<View style={styles.contentContainer}>{children}</View>
+						<View
+							style={{
+								flex: 1
+							}}
+						>
+							{renderBackground()}
+							<Pressable style={styles.lineContainer}>
+								<View style={styles.line} />
+							</Pressable>
+							<View style={styles.contentContainer}>{children}</View>
+						</View>
 					</Animated.View>
 				</GestureDetector>
-			</>
+			</Portal>
 		)
 	}
 )
 
 BottomSheet.displayName = 'BottomSheet'
-
 export default BottomSheet
 
 const styles = StyleSheet.create({

@@ -1,4 +1,4 @@
-import React, { useCallback } from 'react'
+import React, { useCallback, useMemo } from 'react'
 import { View, ActivityIndicator, RefreshControl } from 'react-native'
 import { SafeAreaProvider, useSafeAreaInsets } from 'react-native-safe-area-context'
 import { Container } from '@/components/ui/Container'
@@ -21,8 +21,8 @@ const membersQueryKey = (postId: string) => ['training-members', postId] as cons
 const MemberItem = ({
 	item,
 	currentUserId,
-	postId,
 	queryKey
+	// postId,
 	// setMembers
 }: {
 	item: ITrainingMember
@@ -148,7 +148,7 @@ const Members = () => {
 	const toast = useToast()
 	const { id } = useLocalSearchParams<{ id: string }>()
 	const { user } = useAuthStore()
-	const queryKey = membersQueryKey(id)
+	const queryKey = useMemo(() => membersQueryKey(id), [id])
 	const limit = 10
 
 	const {
@@ -190,7 +190,7 @@ const Members = () => {
 				// setMembers={setMembers}
 			/>
 		),
-		[id, user?.id] // setMembers
+		[id, queryKey, user?.id] // setMembers
 	)
 
 	const renderFooter = () => {

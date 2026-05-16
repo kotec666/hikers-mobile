@@ -8,10 +8,11 @@ interface IProps {
 	width?: number
 	height?: number
 	style?: StyleProp<ViewStyle>
+	color?: string
 }
 
 const PauseWithCircleSvg = (props: IProps) => {
-	const { width = 100, height = 100 } = props
+	const { width = 100, height = 100, color = Colors['green-main'] } = props
 
 	const centerX = width / 2
 	const centerY = width / 2
@@ -33,7 +34,7 @@ const PauseWithCircleSvg = (props: IProps) => {
 		>
 			<Circle cx={centerX} cy={centerY} r={circleRadius} fill="white" strokeWidth={0} />
 			<G transform={`translate(${centerX - 7}, ${centerY - 7})`}>
-				<PauseSvg width={14} height={14} color={Colors['green-main']} />
+				<PauseSvg width={14} height={14} color={color} />
 			</G>
 		</Svg>
 	)

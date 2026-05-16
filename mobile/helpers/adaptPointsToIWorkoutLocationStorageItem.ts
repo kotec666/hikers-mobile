@@ -1,7 +1,7 @@
-// Тип-гард для определения типа данных
 import { IWorkoutLocationStorageItem } from '@/store/workoutStorage'
 import { ITrainingPoint } from '@/api/workout'
 
+// Тип-гард для определения типа данных
 const isWorkoutLocationStorageItem = (
 	items: IWorkoutLocationStorageItem[] | ITrainingPoint[]
 ): items is IWorkoutLocationStorageItem[] => {
