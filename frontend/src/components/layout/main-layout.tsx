@@ -1,4 +1,4 @@
-import React from 'react'
+import React, { Suspense } from 'react'
 import { Header, HeaderProps } from '@/components/layout/header'
 import { Footer } from '@/components/layout/footer'
 
@@ -11,7 +11,9 @@ interface IMainLayoutProps {
 const MainLayout = ({ children, headerProps, mainClassName }: IMainLayoutProps) => {
 	return (
 		<>
-			<Header {...headerProps} />
+			<Suspense fallback={null}>
+				<Header {...headerProps} />
+			</Suspense>
 			<main className={mainClassName}>{children}</main>
 			<Footer />
 		</>
