@@ -8,7 +8,7 @@ export interface IFriend {
 }
 
 export interface IInvite {
-	user: IUser
+	user: IUser // тот, кто пригласил в друзья
 	invitedUser: IUser
 }
 
@@ -59,9 +59,4 @@ export const acceptFriendRequest = async (userId: string): Promise<IFriend> => {
 // Отклонить запрос в друзья по id
 export const rejectFriendRequest = async (userId: string): Promise<IInvite> => {
 	return (await fetcher.patch(`friends/invites/reject/${userId}`)).json()
-}
-
-// Отозвать свой запрос в друзья к юзеру по его id
-export const revokeFriendRequestByUserId = async (userId: string): Promise<IInvite> => {
-	return (await fetcher.delete(`/friends/invites/revoke/${userId}`)).json()
 }

@@ -1,25 +1,23 @@
 import { fontFamily } from '@/constants/Fonts'
-import React, { useRef, useState } from 'react'
+import React, { useRef } from 'react'
 import { View, Text, TouchableOpacity, Share, Platform, findNodeHandle } from 'react-native'
 import { UserAvatar } from '@/components/ui/UserAvatar'
 import LikeSvg from '@/components/svg/LikeSvg'
 import ShareSvg from '@/components/svg/ShareSvg'
 import { Colors } from '@/constants/Colors'
-import { IParticipant, likePostById, unlikePostById } from '@/api/posts'
+import { IParticipant } from '@/api/posts'
 import { PATH_TO_IMAGE } from '@/constants/PATH_TO_FILES'
 import { useToast } from '@/hooks/useToast'
-import { useOptimisticToggle } from '@/hooks/useOptimisticToggle'
 import { Motion } from '@legendapp/motion'
 import { useSafeNavigation } from '@/hooks/useSafeNavigation'
+import { useToggleLikePostMutation } from '@/queries/posts'
+import { api } from '@/constants/Variables'
 
 interface IProps {
 	postId?: string
 	participants?: IParticipant[]
-	likeData?: {
-		isLiked: boolean
-		postId: string
-		likesCount: number
-	}
+	isLiked: boolean
+	likesCount: number
 }
 
 const PostListItemBottom = (props: IProps) => {
@@ -27,30 +25,23 @@ const PostListItemBottom = (props: IProps) => {
 	const toast = useToast()
 	const shareButtonRef = useRef(null)
 	const participantsCount = props?.participants?.length || 0
-	const [likesCount, setLikesCount] = useState(props.likeData?.likesCount ?? 0)
 
-	const {
-		value: isLiked,
-		toggle: toggleLike,
-		isLoading: isLoadingLike
-	} = useOptimisticToggle({
-		initialValue: props.likeData?.isLiked ?? false,
-		onEnable: async () => {
-			if (!props.likeData?.postId) throw new Error('Не выбран пост')
-			await likePostById(props.likeData.postId)
-		},
-		onDisable: async () => {
-			if (!props.likeData?.postId) throw new Error('Не выбран пост')
-			await unlikePostById(props.likeData.postId)
-		},
-		onError: () => toast.error('Ошибка, повторите попытку позже'),
-		onSuccess: (val) => {
-			setLikesCount((prev) => prev + (val ? 1 : -1))
+	const { mutate: toggleLike, isPending } = useToggleLikePostMutation()
+
+	const handleLikePress = () => {
+		if (!props.postId) {
+			toast.error('Не выбран пост')
+			return
 		}
-	})
+
+		toggleLike({
+			postId: props.postId,
+			isLiked: props.isLiked
+		})
+	}
 
 	const sharePost = async () => {
-		const url = `${process.env.EXPO_PUBLIC_API_URL}/posts/${props.postId}`
+		const url = `${api}/posts/${props.postId}`
 		const anchor = findNodeHandle(shareButtonRef.current) ?? undefined
 
 		try {
@@ -90,7 +81,6 @@ const PostListItemBottom = (props: IProps) => {
 										key={p.id}
 										style={{
 											marginLeft: index === 0 ? 0 : -10,
-											//zIndex: props?.participants?.length || 1 - index,
 											zIndex: 3 - index,
 											shadowColor: Colors['gray-ab'],
 											shadowOffset: {
@@ -140,7 +130,7 @@ const PostListItemBottom = (props: IProps) => {
 
 			<View className="flex-row gap-[15px]">
 				<View className="flex-row gap-[8px] items-center">
-					<Motion.Pressable onPress={toggleLike} disabled={isLoadingLike}>
+					<Motion.Pressable onPress={handleLikePress} disabled={isPending}>
 						<Motion.View
 							whileTap={{ scale: 0.8 }}
 							transition={{
@@ -149,14 +139,14 @@ const PostListItemBottom = (props: IProps) => {
 								stiffness: 400
 							}}
 						>
-							<LikeSvg isPressed={isLiked} />
+							<LikeSvg isPressed={props.isLiked} />
 						</Motion.View>
 					</Motion.Pressable>
 					<Text
 						className="text-white text-sm"
 						style={{ fontFamily: fontFamily.medium, fontVariant: ['tabular-nums'] }}
 					>
-						{likesCount}
+						{props.likesCount || 0}
 					</Text>
 				</View>
 				<Motion.Pressable onPress={sharePost}>

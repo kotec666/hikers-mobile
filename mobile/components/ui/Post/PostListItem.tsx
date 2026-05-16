@@ -11,6 +11,8 @@ import { IParticipant } from '@/api/posts'
 interface IProps {
 	isMyPost?: boolean
 	postId?: string
+	isLiked: boolean
+	likesCount: number
 	authorId?: string
 	authorName?: string
 	createdAt?: string
@@ -23,13 +25,7 @@ interface IProps {
 		authorId: string
 		isSubscribed?: boolean
 	}
-	likeData?: {
-		isLiked: boolean
-		postId: string
-		likesCount: number
-	}
 	participants?: IParticipant[]
-	onToggleSubscribeCallback?: (isSubscribed: boolean, authorId?: string) => void
 	mapComponent?: React.ReactNode
 	images?: string[]
 	isDetail?: boolean
@@ -49,7 +45,6 @@ const PostListItem = (props: IProps) => {
 				authorName={props.authorName}
 				createdAt={props.createdAt}
 				workoutType={props.workoutType}
-				onToggleSubscribeCallback={props.onToggleSubscribeCallback}
 			/>
 			<PostBodyWrapper
 				mode={PostType.FEED_LIST_ITEM}
@@ -61,7 +56,12 @@ const PostListItem = (props: IProps) => {
 				mapComponent={props.mapComponent}
 				isDetail={props.isDetail}
 			/>
-			<PostListItemBottom postId={props.postId} likeData={props.likeData} participants={props.participants} />
+			<PostListItemBottom
+				postId={props.postId}
+				isLiked={props.isLiked}
+				likesCount={props.likesCount}
+				participants={props.participants}
+			/>
 		</View>
 	)
 }

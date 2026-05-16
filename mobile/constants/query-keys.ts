@@ -1,0 +1,23 @@
+export const QUERY_KEYS = {
+	MY_PROFILE: ['my-profile'],
+	USER_PROFILE: ['user-profile'],
+	MY_ACTIVITIES: ['my-activities'],
+	MY_ACHIEVEMENTS: ['my-achievements'],
+	USER_ACHIEVEMENTS: ['user-achievements'],
+	MY_SUBSCRIBERS: ['my-subscribers'],
+	MY_FRIENDS: ['my-friends'],
+	MY_FRIEND_REQUESTS: ['my-friend-requests'],
+	MY_SUBSCRIPTIONS: ['my-subscriptions'],
+	POSTS_MY_PROFILE: ['posts-my-profile'],
+	POSTS_NOT_MY_PROFILE: ['posts-not-my-profile'],
+	POSTS_FEED: ['posts-feed'],
+	POST_DETAILS: ['post-details'],
+	POST_BY_TRAINING: ['post-by-training'],
+	SEARCH_GLOBAL: ['search-global'],
+	NOTIFICATIONS_SETTINGS: ['notifications-settings'],
+	NOTIFICATIONS_LIST: ['notifications-list'],
+	NOTIFICATIONS_UNREAD: ['notifications-unread'],
+	WORKOUT_HISTORY: ['workout-history'],
+	WORKOUT_MEMBERS: ['workout-members'],
+	WORKOUT_DETAILS: ['workout-details']
+} as const

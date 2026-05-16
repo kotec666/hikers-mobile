@@ -1,7 +1,6 @@
 import React, { useCallback } from 'react'
 import { Container } from '@/components/ui/Container'
 import HeaderBack from '@/components/ui/HeaderBack'
-import { SafeAreaProvider, useSafeAreaInsets } from 'react-native-safe-area-context'
 import { View, Text, Platform, Keyboard, KeyboardAvoidingView, TouchableWithoutFeedback } from 'react-native'
 import { fontFamily } from '@/constants/Fonts'
 import { Button } from '@/components/ui/Button'
@@ -9,9 +8,9 @@ import AlertCircleSvg from '@/components/svg/AlertCircleSvg'
 import MailboxSvg from '@/components/svg/MailboxSvg'
 import { OTPInput } from '@/components/ui/OTP/OTPInput'
 import * as Haptics from 'expo-haptics'
+import { Page } from '@/components/ui/Page'
 
 const MailConfirmation = () => {
-	const insets = useSafeAreaInsets()
 	const [hasError, setHasError] = React.useState(false)
 
 	const onDone = useCallback((code: string) => {
@@ -25,7 +24,7 @@ const MailConfirmation = () => {
 	}
 
 	return (
-		<SafeAreaProvider style={{ paddingTop: insets.top, paddingBottom: insets.bottom }}>
+		<Page>
 			<Container className="flex-1">
 				<KeyboardAvoidingView style={{ flex: 1 }} behavior={Platform.OS === 'ios' ? 'padding' : 'height'}>
 					<TouchableWithoutFeedback onPress={Keyboard.dismiss} accessible={false}>
@@ -84,7 +83,7 @@ const MailConfirmation = () => {
 					</TouchableWithoutFeedback>
 				</KeyboardAvoidingView>
 			</Container>
-		</SafeAreaProvider>
+		</Page>
 	)
 }
 

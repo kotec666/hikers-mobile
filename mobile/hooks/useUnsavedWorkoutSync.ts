@@ -2,6 +2,7 @@ import { useCallback, useRef, useState } from 'react'
 import { useAuthStore } from '@/store/authStore'
 import { getNotSavedWorkouts } from '@/store/workoutStorage'
 import { deleteSingleWorkout, saveSingleWorkout, WorkoutSource } from '@/helpers/saveUnsavedTraining'
+import { useFinishWorkoutMutation } from '@/queries/workout'
 
 type QueueItem = {
 	startedAt: number
@@ -14,8 +15,9 @@ export const useUnsavedWorkoutSync = () => {
 	const { user } = useAuthStore()
 
 	const [notSavedWorkouts, setNotSavedWorkouts] = useState(getNotSavedWorkouts(user?.id))
-
 	const [syncingIds, setSyncingIds] = useState<number[]>([])
+
+	const { mutateAsync: finishWorkout } = useFinishWorkoutMutation()
 
 	const syncQueueRef = useRef<QueueItem[]>([])
 	const isProcessingRef = useRef(false)
@@ -41,7 +43,7 @@ export const useUnsavedWorkoutSync = () => {
 		setSyncingIds((ids) => [...ids, nextWorkout.startedAt])
 
 		try {
-			await saveSingleWorkout(WorkoutSource.UNSAVED, nextWorkout.startedAt, nextWorkout.userId)
+			await saveSingleWorkout(WorkoutSource.UNSAVED, nextWorkout.startedAt, finishWorkout, nextWorkout.userId)
 			refresh()
 			nextWorkout.resolve()
 		} catch (e) {
@@ -57,7 +59,7 @@ export const useUnsavedWorkoutSync = () => {
 				void processQueue()
 			}
 		}
-	}, [refresh])
+	}, [finishWorkout, refresh])
 
 	// const enqueueWorkoutSync = (startedAt: number) => {
 	// 	if (syncQueueRef.current.some((i) => i.startedAt === startedAt) || syncingIds.includes(startedAt)) return

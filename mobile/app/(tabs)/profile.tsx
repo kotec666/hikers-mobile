@@ -1,5 +1,4 @@
 import React, { useCallback, useEffect, useRef } from 'react'
-import { SafeAreaProvider, useSafeAreaInsets } from 'react-native-safe-area-context'
 import { ActivityIndicator, RefreshControl, Text, View } from 'react-native'
 import SettingsSvg from '@/components/svg/SettingsSvg'
 import MoreOptionsButton from '@/components/ui/MoreOptionsButton/MoreOptionsButton'
@@ -11,18 +10,20 @@ import RedirectAchievementsInfo from '@/components/ui/Profile/RedirectAchievemen
 import PostListItem from '@/components/ui/Post/PostListItem'
 import { RelativePathString, useLocalSearchParams, useRouter } from 'expo-router'
 import { useAuthStore } from '@/store/authStore'
-import { getProfileData, IProfile } from '@/api/profile'
 import { PATH_TO_IMAGE } from '@/constants/PATH_TO_FILES'
 import { AnimatedProfilePicture } from '@/components/ui/Profile/AnimatedProfilePicture'
 import { LegendList, LegendListRef } from '@legendapp/list'
-import { getPostsMy, IPost } from '@/api/posts'
+import { IPost } from '@/api/posts'
 import { Colors } from '@/constants/Colors'
 import MapComponent from '@/components/map/MapComponent'
 import { adaptLocations } from '@/helpers/adaptPointsToIWorkoutLocationStorageItem'
 import { useSafeNavigation } from '@/hooks/useSafeNavigation'
-import { useInfiniteQuery, useQuery } from '@tanstack/react-query'
 import TrainingsEmpty from '@/components/ui/Post/TrainingsEmpty'
 import BlurProvider from '@/components/providers/BlurProvider'
+import { useProfilePostsQuery } from '@/queries/posts'
+import { useProfileQuery } from '@/queries/my-profile'
+import { Page } from '@/components/ui/Page'
+import { useQueryClient } from '@tanstack/react-query'
 
 /**
  *
@@ -33,51 +34,32 @@ import BlurProvider from '@/components/providers/BlurProvider'
 const ALLOWED_ROUTES = {
 	EDIT_PROFILE: '/profile/edit' as RelativePathString,
 	ABOUT: '/(about)' as RelativePathString,
-	SETTINGS: '/(settings)' as RelativePathString
+	SETTINGS: '/(settings)' as RelativePathString,
+	TEST_RESULTS_PAGE: '/training/results' as RelativePathString,
+	RESULTS_PAGE: '/training/viewWorkout' as RelativePathString
 } as const satisfies Record<string, RelativePathString>
 
 type AllowedRoute = (typeof ALLOWED_ROUTES)[keyof typeof ALLOWED_ROUTES]
 
 const Profile = () => {
-	const insets = useSafeAreaInsets()
-	const { push } = useSafeNavigation()
 	const router = useRouter()
+	const queryClient = useQueryClient()
+	const { push } = useSafeNavigation()
 	const { user, logout } = useAuthStore()
 	const params = useLocalSearchParams()
 	const legendListRef = useRef<LegendListRef>(null)
 
-	const {
-		data: profileData,
-		isFetching: isProfileFetching,
-		refetch: refetchProfile
-	} = useQuery<IProfile>({
-		queryKey: ['my-profile'],
-		queryFn: () => getProfileData()
-	})
+	const { data: profileData, isFetching: isProfileFetching, refetch: refetchProfile } = useProfileQuery()
 
-	const postsLimit = 5
 	const {
 		data: posts = [],
 		fetchNextPage: fetchNextPostsPage,
-		hasNextPage: hasNextPostsPage,
-		isFetchingNextPage: isFetchingPostsNextPage,
+		hasNextPage: postsHasNextPage,
+		isFetchingNextPage: postsIsFetchingNextPage,
 		refetch: postsRefetch,
 		isRefetching: postsIsRefetching,
-		isFetching: isPostsFetching
-	} = useInfiniteQuery<IPost[], Error, IPost[], ['posts-my-profile'], number>({
-		queryKey: ['posts-my-profile'],
-		queryFn: ({ pageParam }) =>
-			getPostsMy({
-				page: pageParam,
-				limit: postsLimit
-			}),
-		initialPageParam: 1,
-		getNextPageParam: (lastPage, pages) => {
-			if (lastPage.length < postsLimit) return undefined
-			return pages.length + 1
-		},
-		select: (data) => data.pages.flat()
-	})
+		isFetching: postsIsFetching
+	} = useProfilePostsQuery()
 
 	// Если пользователь кликнет на ту же страницу, то пойдёт скролл вверх. Навбар передаст params при переходе на эту же страницу
 	useEffect(() => {
@@ -92,6 +74,7 @@ const Profile = () => {
 
 	const handleClickExit = async () => {
 		await logout()
+		queryClient.clear()
 		router.replace('/')
 	}
 
@@ -118,11 +101,8 @@ const Profile = () => {
 					description={item.description}
 					images={item.fileNames}
 					metrics={userMetrics}
-					likeData={{
-						isLiked: item.isLiked,
-						likesCount: item.likesCount,
-						postId: item.id
-					}}
+					isLiked={item.isLiked}
+					likesCount={item.likesCount}
 					participants={item.training.participants}
 					mapComponent={
 						<MapComponent
@@ -141,134 +121,140 @@ const Profile = () => {
 	// Функция рендеринга индикатора загрузки
 	const renderFooter = useCallback(() => {
 		//if (!loading) return null
-		if (!isFetchingPostsNextPage) return null
+		if (!postsIsFetchingNextPage) return null
 		return (
 			<View style={{ padding: 20 }}>
 				<ActivityIndicator size="small" color={Colors['green-main']} />
 			</View>
 		)
-	}, [isFetchingPostsNextPage]) // loading
+	}, [postsIsFetchingNextPage]) // loading
 
 	const renderEmpty = useCallback(() => {
-		if (isPostsFetching) return null
+		if (postsIsFetching) return null
 
 		return <TrainingsEmpty text="Постов еще не существует, опубликуйте пост после тренировки" />
-	}, [isPostsFetching])
+	}, [postsIsFetching])
 
 	return (
-		<>
-			<SafeAreaProvider style={{ paddingTop: insets.top, backgroundColor: Colors['black-0d'] }}>
-				<BlurProvider>
-					<LegendList
-						ref={legendListRef}
-						data={posts}
-						renderItem={renderPostItem}
-						keyExtractor={(item) => item.id}
-						onEndReached={() => {
-							if (hasNextPostsPage && !isFetchingPostsNextPage) {
-								fetchNextPostsPage()
-							}
-						}}
-						onEndReachedThreshold={0.4}
-						ItemSeparatorComponent={() => <View style={{ height: 16 }} />}
-						ListEmptyComponent={renderEmpty}
-						ListFooterComponent={renderFooter}
-						refreshControl={
-							<RefreshControl
-								refreshing={isProfileFetching || postsIsRefetching}
-								onRefresh={onRefreshAll}
-								tintColor={Colors['green-main']}
-							/>
+		<Page>
+			<BlurProvider>
+				<LegendList
+					ref={legendListRef}
+					data={posts}
+					renderItem={renderPostItem}
+					keyExtractor={(item) => item.id}
+					onEndReached={() => {
+						if (postsHasNextPage && !postsIsFetchingNextPage) {
+							fetchNextPostsPage()
 						}
-						ListHeaderComponent={
-							<View className="gap-[20px] mb-[16px]">
-								<View className="gap-[20px]">
-									<View className="gap-[16px]">
-										<View className="flex-row justify-between w-full">
-											<AnimatedProfilePicture
-												size={117}
-												bordered
-												imageUrl={`${PATH_TO_IMAGE}${profileData?.user?.avatarFilename}`}
-											/>
-											<MoreOptionsButton
-												icon={<SettingsSvg />}
-												params={[
-													{
-														label: 'Редактировать профиль',
-														action: () => handleClickRedirect(ALLOWED_ROUTES.EDIT_PROFILE)
-													},
-													{
-														label: 'О приложении',
-														action: () => handleClickRedirect(ALLOWED_ROUTES.ABOUT)
-													},
-													{
-														label: 'Настройки',
-														action: () => handleClickRedirect(ALLOWED_ROUTES.SETTINGS)
-													},
-													{ label: 'Выход', action: handleClickExit }
-												]}
-											/>
-										</View>
-										<View>
-											{profileData?.user?.name && (
-												<Text
-													className="text-[19px] text-white"
-													style={{ fontFamily: fontFamily.bold }}
-												>
-													{profileData?.user?.name}
-												</Text>
-											)}
-											{profileData?.user?.username && (
-												<Text
-													className="text-base text-gray-ab"
-													style={{ fontFamily: fontFamily.medium }}
-												>
-													@{profileData?.user?.username}
-												</Text>
-											)}
-										</View>
-									</View>
-
-									<View className="flex-row justify-between gap-[10px]">
-										<SocialStats
-											label="Подписчики"
-											content={profileData?.subscribers}
-											hrefTo="/subscribers/my-subscribers"
+					}}
+					onEndReachedThreshold={0.4}
+					ItemSeparatorComponent={() => <View style={{ height: 16 }} />}
+					ListEmptyComponent={renderEmpty}
+					ListFooterComponent={renderFooter}
+					refreshControl={
+						<RefreshControl
+							refreshing={isProfileFetching || postsIsRefetching}
+							onRefresh={onRefreshAll}
+							tintColor={Colors['green-main']}
+						/>
+					}
+					ListHeaderComponent={
+						<View className="gap-[20px] mb-[16px]">
+							<View className="gap-[20px]">
+								<View className="gap-[16px]">
+									<View className="flex-row justify-between w-full">
+										<AnimatedProfilePicture
+											size={117}
+											bordered
+											imageUrl={`${PATH_TO_IMAGE}${profileData?.user?.avatarFilename}`}
 										/>
-										<SocialStats
-											label="Друзья"
-											content={profileData?.friends}
-											hrefTo="/friends/my-friends"
-										/>
-										<SocialStats
-											label="Подписки"
-											content={profileData?.subscriptions}
-											hrefTo="/subscribers/my-subscriptions"
+										<MoreOptionsButton
+											icon={<SettingsSvg />}
+											params={[
+												{
+													label: 'Редактировать профиль',
+													action: () => handleClickRedirect(ALLOWED_ROUTES.EDIT_PROFILE)
+												},
+												{
+													label: 'О приложении',
+													action: () => handleClickRedirect(ALLOWED_ROUTES.ABOUT)
+												},
+												{
+													label: 'Настройки',
+													action: () => handleClickRedirect(ALLOWED_ROUTES.SETTINGS)
+												},
+												{
+													label: 'results page test',
+													action: () => handleClickRedirect(ALLOWED_ROUTES.TEST_RESULTS_PAGE)
+												},
+												{
+													label: 'results page',
+													action: () => handleClickRedirect(ALLOWED_ROUTES.RESULTS_PAGE)
+												},
+												{ label: 'Выход', action: handleClickExit }
+											]}
 										/>
 									</View>
-									<Button variant="white" onPress={() => push('/workout-history')}>
-										История тренировок
-									</Button>
-									<RedirectAchievementsInfo achievements={profileData?.achievements} isMyProfile />
-									<ActivityInfo label="Активности" activities={profileData?.activities || []} />
+									<View>
+										{profileData?.user?.name && (
+											<Text
+												className="text-[19px] text-white"
+												style={{ fontFamily: fontFamily.bold }}
+											>
+												{profileData?.user?.name}
+											</Text>
+										)}
+										{profileData?.user?.username && (
+											<Text
+												className="text-base text-gray-ab"
+												style={{ fontFamily: fontFamily.medium }}
+											>
+												@{profileData?.user?.username}
+											</Text>
+										)}
+									</View>
 								</View>
-								<Text
-									className="text-base text-white border-b-[1px] border-b-black-44 py-[20px]"
-									style={{ fontFamily: fontFamily.bold }}
-								>
-									Лента
-								</Text>
+
+								<View className="flex-row justify-between gap-[10px]">
+									<SocialStats
+										label="Подписчики"
+										content={profileData?.subscribers}
+										hrefTo="/subscribers/my-subscribers"
+									/>
+									<SocialStats
+										label="Друзья"
+										content={profileData?.friends}
+										hrefTo="/friends/my-friends"
+									/>
+									<SocialStats
+										label="Подписки"
+										content={profileData?.subscriptions}
+										hrefTo="/subscribers/my-subscriptions"
+									/>
+								</View>
+								<Button variant="white" onPress={() => push('/workout-history')}>
+									История тренировок
+								</Button>
+								<RedirectAchievementsInfo achievements={profileData?.achievements} isMyProfile />
+								<ActivityInfo label="Активности" activities={profileData?.activities || []} />
 							</View>
-						}
-						contentContainerStyle={{
-							flexGrow: 1,
-							paddingBottom: insets.bottom,
-							paddingHorizontal: 16
-						}}
-					/>
-				</BlurProvider>
-			</SafeAreaProvider>
-		</>
+							<Text
+								className="text-base text-white border-b-[1px] border-b-black-44 py-[20px]"
+								style={{ fontFamily: fontFamily.bold }}
+							>
+								Лента
+							</Text>
+						</View>
+					}
+					contentContainerStyle={{
+						flexGrow: 1,
+						paddingBottom: 100,
+						paddingHorizontal: 16
+					}}
+				/>
+			</BlurProvider>
+		</Page>
 	)
 }
 

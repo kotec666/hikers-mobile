@@ -73,8 +73,8 @@
 			[
 				"expo-location",
 				{
-					"locationAlwaysAndWhenInUsePermission": "Включите определение вашего местоположения для хайкерс в фоновом режиме",
-					"locationWhenInUsePermission": "Включите определение вашего местоположения для хайкерс в активном режиме",
+					"locationWhenInUsePermission": "Используем геолокацию для записи ваших тренировок и маршрутов",
+					"locationAlwaysAndWhenInUsePermission": "Разрешение на фоновую геолокацию позволяет продолжать запись тренировки при заблокированном экране",
 					"isAndroidForegroundServiceEnabled": true,
 					"isAndroidBackgroundLocationEnabled": true,
 					"isIosBackgroundLocationEnabled": true

@@ -1,16 +1,17 @@
 import React from 'react'
-import { WorkoutPost } from '@/app/posts/[slug]/components/WorkoutPost'
-import { BackgroundPattern } from '@/app/posts/[slug]/components/BackgroundPattern'
+import { WorkoutPost } from '@/app/posts/[slug]/components/workout-post'
+import { BackgroundPattern } from '@/app/posts/[slug]/components/background-pattern'
 import { getPostByIdForGuestCached, IGuestPost } from '@/api/posts'
 import { Metadata } from 'next'
 import { generateBasicMetadata } from '@/helpers/generateBasicMetadata'
 import { WorkoutTypesMap } from '@/consts/workout-types'
 import { PATH_TO_IMAGE } from '@/consts/PATH_TO_FILES'
 import { Routes } from '@/consts/routes'
-import { SharePageHeader } from '@/app/posts/[slug]/components/SharePageHeader'
-import RedirectScheme from '@/app/posts/[slug]/components/RedirectScheme'
-import { env } from '@/consts/env'
+import RedirectScheme from '@/app/posts/[slug]/components/redirect-scheme'
 import Script from 'next/script'
+import Container from '@/components/layout/container'
+import { env } from '@/consts/env'
+import MainLayout from '@/components/layout/main-layout'
 
 interface PostProps {
 	params: { slug: string }
@@ -85,19 +86,22 @@ const Post = async ({ params }: PostProps) => {
 	}
 
 	return (
-		<>
-			<div className="min-h-screen bg-[#0d0d0d] relative">
+		<MainLayout mainClassName="flex min-h-screen bg-black-0d relative">
+			<div className="w-full flex items-center">
 				<RedirectScheme scheme="hikers://posts/" postId={postData?.id} />
 				<BackgroundPattern />
-				<SharePageHeader />
 
-				<main className="max-w-7xl mx-auto px-4 pt-6 relative z-10">
-					<WorkoutPost post={postData} />
-				</main>
+				<div className="flex flex-col gap-6 w-full">
+					<div className="flex relative z-10">
+						<Container>
+							<WorkoutPost post={postData} />
+						</Container>
+					</div>
 
-				<p className="text-center text-gray-500 py-6 text-sm relative z-10">
-					Загрузи приложение, чтобы делиться своими тренировками
-				</p>
+					<p className="text-center text-gray-500 py-6 text-sm relative z-10">
+						Загрузи приложение, чтобы делиться своими тренировками
+					</p>
+				</div>
 			</div>
 			{postData && (
 				<Script
@@ -159,7 +163,7 @@ const Post = async ({ params }: PostProps) => {
 					}}
 				/>
 			)}
-		</>
+		</MainLayout>
 	)
 }
 

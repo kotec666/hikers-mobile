@@ -1,7 +1,6 @@
 import React, { useCallback } from 'react'
 import { Container } from '@/components/ui/Container'
 import HeaderBack from '@/components/ui/HeaderBack'
-import { SafeAreaProvider, useSafeAreaInsets } from 'react-native-safe-area-context'
 import { View, Text, Platform, Keyboard, KeyboardAvoidingView, TouchableWithoutFeedback } from 'react-native'
 import { fontFamily } from '@/constants/Fonts'
 import { Button } from '@/components/ui/Button'
@@ -10,9 +9,9 @@ import MailboxSvg from '@/components/svg/MailboxSvg'
 import { OTPInput } from '@/components/ui/OTP/OTPInput'
 import * as Haptics from 'expo-haptics'
 import { useSafeNavigation } from '@/hooks/useSafeNavigation'
+import { Page } from '@/components/ui/Page'
 
 const SecondStepPage = () => {
-	const insets = useSafeAreaInsets()
 	const { push } = useSafeNavigation()
 	const [hasError, setHasError] = React.useState(false)
 
@@ -31,7 +30,7 @@ const SecondStepPage = () => {
 	}
 
 	return (
-		<SafeAreaProvider style={{ paddingTop: insets.top, paddingBottom: insets.bottom }}>
+		<Page>
 			<Container className="flex-1">
 				<KeyboardAvoidingView style={{ flex: 1 }} behavior={Platform.OS === 'ios' ? 'padding' : 'height'}>
 					<TouchableWithoutFeedback onPress={Keyboard.dismiss} accessible={false}>
@@ -92,7 +91,7 @@ const SecondStepPage = () => {
 					</TouchableWithoutFeedback>
 				</KeyboardAvoidingView>
 			</Container>
-		</SafeAreaProvider>
+		</Page>
 	)
 }
 

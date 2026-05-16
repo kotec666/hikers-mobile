@@ -13,7 +13,6 @@ interface IIcon {
 
 interface IProps {
 	id?: string
-	isInternetConnected?: boolean
 	title: string
 	icon?: React.JSX.Element
 	actionIcon?: IIcon | IIcon[]
@@ -64,7 +63,7 @@ const WorkoutHistoryListItem = (props: IProps) => {
 	if (props.isHistoryListItem) {
 		return (
 			<Link
-				href={`/training/viewWorkout?mode=${VIEWWORKOUT_MODE.FROM_HISTORY}&historyTrainingId=${props.id}&connection=${!props.isInternetConnected && 'offline'}`}
+				href={`/training/viewWorkout?mode=${VIEWWORKOUT_MODE.FROM_HISTORY}&historyTrainingId=${props.id}`}
 				className="flex-row items-center justify-between"
 			>
 				<WorkoutHistoryListItemContent {...props} />

@@ -1,8 +1,6 @@
-import { SafeAreaProvider, useSafeAreaInsets } from 'react-native-safe-area-context'
 import { Container } from '@/components/ui/Container'
 import HeaderBack from '@/components/ui/HeaderBack'
 import { ScrollView, View, Text } from 'react-native'
-import { StatusBar } from 'expo-status-bar'
 import Setting from '@/components/Setting'
 import { useSafeNavigation } from '@/hooks/useSafeNavigation'
 import { Colors } from '@/constants/Colors'
@@ -14,17 +12,16 @@ import BlurProvider from '@/components/providers/BlurProvider'
 import { Button } from '@/components/ui/Button'
 import { removeUserWorkoutStorage } from '@/store/workoutStorage'
 import { useAuthStore } from '@/store/authStore'
-import { useToast } from '@/hooks/useToast'
 import { useRouter } from 'expo-router'
-import { deleteMyAccount } from '@/api/profile'
 import AlertTriangleSvg from '@/components/svg/AlertTriangleSvg'
+import { useDeleteProfileMutation } from '@/queries/my-profile'
+import { Page } from '@/components/ui/Page'
 
 const SettingsPage = () => {
 	const { push } = useSafeNavigation()
-	const insets = useSafeAreaInsets()
 	const { user, logout } = useAuthStore()
-	const toast = useToast()
 	const router = useRouter()
+	const { mutateAsync, isPending } = useDeleteProfileMutation()
 
 	const [isDeleteAccountModalOpen, setIsDeleteAccountModalOpen] = React.useState(false)
 
@@ -38,14 +35,13 @@ const SettingsPage = () => {
 
 	const handleDeleteAccount = async () => {
 		removeUserWorkoutStorage(user?.id)
-		await deleteMyAccount()
+		await mutateAsync()
 		await logout()
-		toast.success('Аккаунт успешно удален')
 		router.replace('/')
 	}
 
 	return (
-		<SafeAreaProvider style={{ paddingTop: insets.top, paddingBottom: insets.bottom }}>
+		<Page>
 			<BlurProvider>
 				<Modal
 					isOpen={isDeleteAccountModalOpen}
@@ -62,7 +58,12 @@ const SettingsPage = () => {
 							<Button onPress={closeDeleteAccountModal} variant="white" buttonContainerClassName="flex-1">
 								Отмена
 							</Button>
-							<Button onPress={handleDeleteAccount} variant="white" buttonContainerClassName="flex-1">
+							<Button
+								onPress={handleDeleteAccount}
+								isLoading={isPending}
+								variant="white"
+								buttonContainerClassName="flex-1"
+							>
 								Удалить
 							</Button>
 						</View>
@@ -75,7 +76,7 @@ const SettingsPage = () => {
 						contentContainerStyle={{
 							flexGrow: 1,
 							justifyContent: 'space-between',
-							paddingBottom: insets.bottom
+							paddingBottom: 30
 						}}
 					>
 						<View className="gap-[16px]">
@@ -115,8 +116,7 @@ const SettingsPage = () => {
 					</ScrollView>
 				</Container>
 			</BlurProvider>
-			<StatusBar style="light" />
-		</SafeAreaProvider>
+		</Page>
 	)
 }
 
