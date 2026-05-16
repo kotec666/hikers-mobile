@@ -134,7 +134,7 @@ export class AuthService {
 			});
 
 		if (!shouldConfirm) {
-			throw new BadRequestException(ERRORS.BAD_REQUEST);
+			throw new BadRequestException(`_code:${ERRORS.MISMATCH}`);
 		}
 
 		return { success: true };
@@ -214,7 +214,7 @@ export class AuthService {
 			throw new NotFoundException(ERRORS.NOT_FOUND);
 		}
 		if (cachedCode !== code) {
-			throw new BadRequestException(ERRORS.BAD_REQUEST);
+			throw new BadRequestException(`_code:${ERRORS.MISMATCH}`);
 		}
 
 		return this.db.db
