@@ -1,20 +1,19 @@
 import React from 'react'
 import { Container } from '@/components/ui/Container'
 import HeaderBack from '@/components/ui/HeaderBack'
-import { SafeAreaProvider, useSafeAreaInsets } from 'react-native-safe-area-context'
 import { View, Text, Platform, Keyboard, KeyboardAvoidingView, TouchableWithoutFeedback } from 'react-native'
 import { fontFamily } from '@/constants/Fonts'
 import { Button } from '@/components/ui/Button'
 import AlertCircleSvg from '@/components/svg/AlertCircleSvg'
 import { InputIcon } from '@/components/ui/InputIcon'
 import PasswordSvg from '@/components/svg/PasswordSvg'
+import { Page } from '@/components/ui/Page'
 
 const ThirdStepPage = () => {
-	const insets = useSafeAreaInsets()
 	const [hasError, setHasError] = React.useState(true)
 
 	return (
-		<SafeAreaProvider style={{ paddingTop: insets.top, paddingBottom: insets.bottom }}>
+		<Page>
 			<Container className="flex-1">
 				<KeyboardAvoidingView style={{ flex: 1 }} behavior={Platform.OS === 'ios' ? 'padding' : 'height'}>
 					<TouchableWithoutFeedback onPress={Keyboard.dismiss} accessible={false}>
@@ -128,7 +127,7 @@ const ThirdStepPage = () => {
 					</TouchableWithoutFeedback>
 				</KeyboardAvoidingView>
 			</Container>
-		</SafeAreaProvider>
+		</Page>
 	)
 }
 

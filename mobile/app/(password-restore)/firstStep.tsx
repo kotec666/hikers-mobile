@@ -1,7 +1,6 @@
 import React from 'react'
 import { Container } from '@/components/ui/Container'
 import HeaderBack from '@/components/ui/HeaderBack'
-import { SafeAreaProvider, useSafeAreaInsets } from 'react-native-safe-area-context'
 import { View, Text, Platform, Keyboard, KeyboardAvoidingView, TouchableWithoutFeedback } from 'react-native'
 import { fontFamily } from '@/constants/Fonts'
 import { Button } from '@/components/ui/Button'
@@ -9,9 +8,9 @@ import MailboxSvg from '@/components/svg/MailboxSvg'
 import { InputIcon } from '@/components/ui/InputIcon'
 import EmailSvg from '@/components/svg/EmailSvg'
 import { useSafeNavigation } from '@/hooks/useSafeNavigation'
+import { Page } from '@/components/ui/Page'
 
 const FirstStepPage = () => {
-	const insets = useSafeAreaInsets()
 	const { push } = useSafeNavigation()
 
 	const handlePressButton = () => {
@@ -19,9 +18,7 @@ const FirstStepPage = () => {
 	}
 
 	return (
-		<SafeAreaProvider
-			style={{ paddingTop: insets.top, paddingBottom: insets.bottom, borderWidth: 2, borderColor: 'red' }}
-		>
+		<Page>
 			<Container className="flex-1">
 				<KeyboardAvoidingView style={{ flex: 1 }} behavior={Platform.OS === 'ios' ? 'padding' : 'height'}>
 					<TouchableWithoutFeedback onPress={Keyboard.dismiss} accessible={false}>
@@ -100,7 +97,7 @@ const FirstStepPage = () => {
 					</TouchableWithoutFeedback>
 				</KeyboardAvoidingView>
 			</Container>
-		</SafeAreaProvider>
+		</Page>
 	)
 }
 

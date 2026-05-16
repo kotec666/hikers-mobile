@@ -7,7 +7,7 @@ type Identifiable = {
 }
 
 export const useReadNotificationsOnView = <T extends Identifiable>(
-	readNotificationsByIds: (ids: string[]) => Promise<void>,
+	readNotificationsByIds: (ids: string[]) => void,
 	isRead: (item: T) => boolean
 ) => {
 	const bufferRef = useRef<Set<string>>(new Set())

@@ -1,14 +1,12 @@
-import { SafeAreaProvider, useSafeAreaInsets } from 'react-native-safe-area-context'
 import { Container } from '@/components/ui/Container'
 import HeaderBack from '@/components/ui/HeaderBack'
 import { ScrollView, Linking, View } from 'react-native'
-import { StatusBar } from 'expo-status-bar'
 import Setting from '@/components/Setting'
 import { useSafeNavigation } from '@/hooks/useSafeNavigation'
 import { useToast } from '@/hooks/useToast'
+import { Page } from '@/components/ui/Page'
 
 const AboutPage = () => {
-	const insets = useSafeAreaInsets()
 	const toast = useToast()
 	const { push } = useSafeNavigation()
 
@@ -23,13 +21,10 @@ const AboutPage = () => {
 	}
 
 	return (
-		<SafeAreaProvider style={{ paddingTop: insets.top, paddingBottom: insets.bottom }}>
+		<Page>
 			<Container className="gap-[20px] flex-1">
 				<HeaderBack>О приложении</HeaderBack>
-				<ScrollView
-					style={{ flex: 1, width: '100%' }}
-					contentContainerStyle={{ paddingBottom: insets.bottom + 50 }}
-				>
+				<ScrollView style={{ flex: 1, width: '100%' }} contentContainerStyle={{ paddingBottom: 50 }}>
 					<View className="gap-[16px]">
 						<Setting title="Политика конфиденциальности" onPress={() => push('/document')} />
 						<Setting title="Политика обработки персональных данных" onPress={() => push('/document')} />
@@ -41,8 +36,7 @@ const AboutPage = () => {
 					</View>
 				</ScrollView>
 			</Container>
-			<StatusBar style="light" />
-		</SafeAreaProvider>
+		</Page>
 	)
 }
 

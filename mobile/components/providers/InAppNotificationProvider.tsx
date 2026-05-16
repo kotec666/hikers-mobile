@@ -6,35 +6,15 @@ import { useToast } from '@/hooks/useToast'
 import { handleRedirectOnPageWhenNotificationPressed } from '@/components/ui/Notifications/NotificationListItem'
 import { useSafeNavigation } from '@/hooks/useSafeNavigation'
 import { useAuthStore } from '@/store/authStore'
-import { useQueryClient } from '@tanstack/react-query'
 import { getAuthData } from '@/services/tokenService'
-import { NotificationType } from '@shared/enums'
+import { useOnNewNotificationMutation } from '@/queries/notifications'
 
 const InAppNotificationProvider = () => {
 	const socketRef = useRef<Socket | null>(null)
 	const toast = useToast()
 	const { push } = useSafeNavigation()
 	const { accessTokenExpiration } = useAuthStore()
-	const queryClient = useQueryClient()
-
-	const invalidateByNotificationType = async (notificationType: NotificationType) => {
-		let queryKey: null | string = null
-
-		switch (notificationType) {
-			case NotificationType.FRIEND_INVITE:
-				queryKey = 'pendingInvites'
-				break
-			case NotificationType.TAGGED_IN_POST:
-				break
-			case NotificationType.NEW_ACHIEVEMENT:
-				queryKey = 'my-achievements'
-				break
-			case NotificationType.TRAINING_INVITE:
-				break
-		}
-		if (!queryKey) return null
-		return await queryClient.invalidateQueries({ queryKey: [queryKey] })
-	}
+	const { mutateAsync: onNewNotificationMutation } = useOnNewNotificationMutation()
 
 	useEffect(() => {
 		const setupSocket = async () => {
@@ -55,12 +35,8 @@ const InAppNotificationProvider = () => {
 			// }
 
 			const onNotification = async (socketData: INotification) => {
-				// инвалидируем кэш
-				await Promise.all([
-					queryClient.invalidateQueries({ queryKey: ['unread-exists'] }),
-					queryClient.invalidateQueries({ queryKey: ['notifications-page'] })
-				])
-				await invalidateByNotificationType(socketData.type)
+				// мутация для обновления кэша
+				await onNewNotificationMutation(socketData)
 
 				const redirectLink = handleRedirectOnPageWhenNotificationPressed(
 					socketData.type,

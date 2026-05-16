@@ -3,10 +3,8 @@ import { View, Text, RefreshControl, ActivityIndicator } from 'react-native'
 import { Container } from '@/components/ui/Container'
 import HeaderBack from '@/components/ui/HeaderBack'
 import PeopleListItem from '@/components/find-people/PeopleListItem'
-import { SafeAreaProvider, useSafeAreaInsets } from 'react-native-safe-area-context'
 import { fontFamily } from '@/constants/Fonts'
 import { Button } from '@/components/ui/Button'
-import { deleteFriendById, getMyFriendsList, IFriend } from '@/api/friends'
 import PeopleRemoveSvg from '@/components/svg/PeopleRemoveSvg'
 import Modal from '@/components/ui/Modal/Modal'
 import { useToast } from '@/hooks/useToast'
@@ -15,19 +13,17 @@ import { PATH_TO_IMAGE } from '@/constants/PATH_TO_FILES'
 import { LegendList } from '@legendapp/list'
 import { Colors } from '@/constants/Colors'
 import { useSafeNavigation } from '@/hooks/useSafeNavigation'
-import { useInfiniteQuery, useQueryClient } from '@tanstack/react-query'
 import BlurProvider from '@/components/providers/BlurProvider'
+import { useMyFriendsQuery, useRemoveFriendMutation } from '@/queries/friends'
+import { Page } from '@/components/ui/Page'
 
 const MyFriendsPage = () => {
-	const insets = useSafeAreaInsets()
 	const { push } = useSafeNavigation()
-	const queryClient = useQueryClient()
 	const toast = useToast()
 
 	const [deleteUser, setDeleteUser] = useState<IUser | null>(null)
 	const [isDeleteModalOpened, setIsDeleteModalOpened] = useState(false)
-
-	const limit = 15
+	const [loadingId, setLoadingId] = useState<string | null>(null)
 
 	const {
 		data: friends = [],
@@ -37,33 +33,39 @@ const MyFriendsPage = () => {
 		refetch,
 		isRefetching,
 		isFetching
-	} = useInfiniteQuery<IFriend[], Error, IFriend[], ['friendsList'], number>({
-		queryKey: ['friendsList'],
+	} = useMyFriendsQuery()
 
-		queryFn: ({ pageParam }) =>
-			getMyFriendsList({
-				page: pageParam,
-				limit
-			}),
+	const { mutateAsync: deleteFriend, isPending: isDeleteFriendPending } = useRemoveFriendMutation()
 
-		initialPageParam: 1,
+	const handleOpenDeleteModal = (user: IUser) => {
+		setDeleteUser(user)
+		setIsDeleteModalOpened(true)
+	}
 
-		getNextPageParam: (lastPage, pages) => {
-			if (lastPage.length < limit) return undefined
-			return pages.length + 1
-		},
+	const handleCloseDeleteModal = () => {
+		setDeleteUser(null)
+		setIsDeleteModalOpened(false)
+	}
 
-		select: (data) => data.pages.flat()
-	})
+	const handleDeleteFromFriends = async () => {
+		if (!deleteUser?.id) {
+			return toast.info('Не выбран пользователь для удаления из друзей')
+		}
+		if (loadingId) return
+		setLoadingId(deleteUser.id)
 
-	const renderFooter = () => {
-		if (!isFetchingNextPage) return null
+		try {
+			await deleteFriend(deleteUser.id)
+		} catch {
+		} finally {
+			handleCloseDeleteModal()
+			setLoadingId(null)
+		}
+	}
 
-		return (
-			<View style={{ padding: 20 }}>
-				<ActivityIndicator size="small" color={Colors['green-main']} />
-			</View>
-		)
+	// Функция для определения, загружается ли конкретный друг
+	const isFriendLoading = (friendId: string) => {
+		return isDeleteFriendPending && deleteUser?.id === friendId
 	}
 
 	const EmptyListComponent = () => {
@@ -77,37 +79,18 @@ const MyFriendsPage = () => {
 		)
 	}
 
-	const handleOpenDeleteModal = (user: IUser) => {
-		setDeleteUser(user)
-		setIsDeleteModalOpened(true)
-	}
+	const renderFooter = () => {
+		if (!isFetchingNextPage) return null
 
-	const handleCloseDeleteModal = () => {
-		setDeleteUser(null)
-		setIsDeleteModalOpened(false)
-	}
-
-	const handleDeleteFromFriends = async () => {
-		try {
-			if (!deleteUser?.id) {
-				return toast.info('Не выбран пользователь для удаления из друзей')
-			}
-
-			await deleteFriendById(deleteUser.id)
-			await queryClient.invalidateQueries({ queryKey: ['my-profile'] })
-
-			// setItems((prev) => prev.filter((friend) => friend.user.id !== deleteUser.id))
-			await refetch()
-			toast.success('Пользователь удалён из списка друзей')
-		} catch {
-			toast.error('Произошла ошибка, повторите попытку позже')
-		} finally {
-			handleCloseDeleteModal()
-		}
+		return (
+			<View style={{ padding: 20 }}>
+				<ActivityIndicator size="small" color={Colors['green-main']} />
+			</View>
+		)
 	}
 
 	return (
-		<SafeAreaProvider style={{ paddingTop: insets.top }}>
+		<Page>
 			<BlurProvider>
 				<View style={{ flex: 1 }}>
 					<Modal
@@ -137,7 +120,7 @@ const MyFriendsPage = () => {
 							</View>
 						</View>
 					</Modal>
-					<Container className="gap-[20px] mt-[20px] flex-1" style={{ paddingBottom: insets.bottom + 20 }}>
+					<Container className="gap-[20px] mt-[20px] flex-1" style={{ paddingBottom: 10 }}>
 						<HeaderBack>Друзья</HeaderBack>
 
 						<LegendList
@@ -150,6 +133,7 @@ const MyFriendsPage = () => {
 									avatar={
 										item.user.avatarFilename ? `${PATH_TO_IMAGE}${item.user.avatarFilename}` : null
 									}
+									isIconDisabled={isFriendLoading(item.user.id)}
 									icon={{
 										iconSvg: <PeopleRemoveSvg />,
 										iconCb: () => handleOpenDeleteModal(item.user)
@@ -157,7 +141,6 @@ const MyFriendsPage = () => {
 								/>
 							)}
 							keyExtractor={(item) => item.user.id}
-							//onEndReached={loadMore}
 							onEndReached={() => {
 								if (hasNextPage && !isFetchingNextPage) {
 									fetchNextPage()
@@ -167,9 +150,6 @@ const MyFriendsPage = () => {
 							ItemSeparatorComponent={() => <View style={{ height: 15 }} />}
 							ListEmptyComponent={EmptyListComponent}
 							ListFooterComponent={renderFooter}
-							// refreshControl={
-							// 	<RefreshControl refreshing={refreshing} onRefresh={refresh} tintColor="#22CB5A" />
-							// }
 							refreshControl={
 								<RefreshControl
 									refreshing={isRefetching}
@@ -191,7 +171,7 @@ const MyFriendsPage = () => {
 					</Container>
 				</View>
 			</BlurProvider>
-		</SafeAreaProvider>
+		</Page>
 	)
 }
 

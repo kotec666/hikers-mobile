@@ -1,6 +1,6 @@
 import { Animation, InitialRegion, Point, Yamap, YamapRef } from 'react-native-yamap-plus'
 import React, { forwardRef, useCallback, useEffect, useImperativeHandle, useRef, useState } from 'react'
-import { LayoutChangeEvent, View } from 'react-native'
+import { View } from 'react-native'
 import { IWorkoutLocationStorageItem } from '@/store/workoutStorage'
 import { Colors } from '@/constants/Colors'
 import { debounce } from '@/helpers/debounce'
@@ -178,7 +178,6 @@ const parseLocationsToSegments = (locations: IWorkoutLocationStorageItem[]) => {
 
 const MapComponent = forwardRef<MapComponentHandle, IProps>((props, ref) => {
 	const mapRef = useRef<YamapRef>(null)
-	const [containerHeight, setContainerHeight] = useState(0)
 	const shouldDeferInitialRouteRender = props.deferInitialRouteRender ?? true
 	const [initialRouteData] = useState(() =>
 		shouldDeferInitialRouteRender ? null : parseLocationsToSegments(props.initialLocations?.current || [])
@@ -391,12 +390,6 @@ const MapComponent = forwardRef<MapComponentHandle, IProps>((props, ref) => {
 
 	const updateMapSettingsDebounced = debounce(updateMapSettings, 300)
 
-	const handleContainerLayout = useCallback((event: LayoutChangeEvent) => {
-		const nextHeight = event.nativeEvent.layout.height
-
-		setContainerHeight((height) => (height === nextHeight ? height : nextHeight))
-	}, [])
-
 	useEffect(() => {
 		return () => {
 			if (animationBlockTimerRef.current) {
@@ -424,7 +417,6 @@ const MapComponent = forwardRef<MapComponentHandle, IProps>((props, ref) => {
 	return (
 		<View
 			pointerEvents={props.interactiveDisabled ? 'none' : 'auto'}
-			onLayout={handleContainerLayout}
 			className="flex-1 border-[1px] border-white/20"
 			style={{
 				overflow: 'hidden',
@@ -433,81 +425,79 @@ const MapComponent = forwardRef<MapComponentHandle, IProps>((props, ref) => {
 				maxHeight: props.maxContainerHeight ?? 'auto'
 			}}
 		>
-			{containerHeight > 0 && (
-				<Yamap
-					ref={mapRef}
-					nightMode
-					initialRegion={mapInitialRegionSettingsRef}
-					style={{ flex: 1, maxHeight: props.maxMapHeight, minHeight: props.minMapHeight }}
-					logoPosition={props.logoPosition || { horizontal: 'right', vertical: 'top' }}
-					logoPadding={props.logoPadding}
-					showUserPosition={false}
-					interactiveDisabled={props.interactiveDisabled}
-					tiltGesturesDisabled={true}
-					rotateGesturesDisabled={false}
-					onCameraPositionChange={(e) => {
-						if (['GESTURES', 'UNKNOWN'].includes(e.nativeEvent.reason)) {
-							handleBlockAnimation()
-						}
-					}}
-					onCameraPositionChangeEnd={() => {
-						if (!props.needSaveCenter) return
-						mapRef.current?.getCameraPosition((pos) => {
-							updateMapSettingsDebounced({
-								lat: pos.point.lat,
-								lon: pos.point.lon,
-								zoom: pos.zoom,
-								azimuth: pos.azimuth
-							})
+			<Yamap
+				ref={mapRef}
+				nightMode
+				initialRegion={mapInitialRegionSettingsRef}
+				style={{ flex: 1, maxHeight: props.maxMapHeight, minHeight: props.minMapHeight }}
+				logoPosition={props.logoPosition || { horizontal: 'right', vertical: 'top' }}
+				logoPadding={props.logoPadding}
+				showUserPosition={false}
+				interactiveDisabled={props.interactiveDisabled}
+				tiltGesturesDisabled={true}
+				rotateGesturesDisabled={false}
+				onCameraPositionChange={(e) => {
+					if (['GESTURES', 'UNKNOWN'].includes(e.nativeEvent.reason)) {
+						handleBlockAnimation()
+					}
+				}}
+				onCameraPositionChangeEnd={() => {
+					if (!props.needSaveCenter) return
+					mapRef.current?.getCameraPosition((pos) => {
+						updateMapSettingsDebounced({
+							lat: pos.point.lat,
+							lon: pos.point.lon,
+							zoom: pos.zoom,
+							azimuth: pos.azimuth
 						})
-					}}
-					onMapLoaded={() => {
-						fitInitialRoute(0)
-					}}
-				>
-					{/*<DirectionMarkersDebug center={{ lat: 53.374451, lon: 49.460469 }} />*/}
-					{props.initialMarkerLocation && (
-						<UserLocationMarker
-							ref={props.userLocationMarkerRef}
-							initialPosition={props.initialMarkerLocation}
+					})
+				}}
+				onMapLoaded={() => {
+					fitInitialRoute(0)
+				}}
+			>
+				{/*<DirectionMarkersDebug center={{ lat: 53.374451, lon: 49.460469 }} />*/}
+				{props.initialMarkerLocation && (
+					<UserLocationMarker
+						ref={props.userLocationMarkerRef}
+						initialPosition={props.initialMarkerLocation}
+					/>
+				)}
+
+				{props.initialLocations?.current && props.initialLocations?.current.length >= 1 && (
+					<StartLocationMarker
+						position={{
+							lat: props.initialLocations.current[0].locationObject.coords.latitude,
+							lon: props.initialLocations.current[0].locationObject.coords.longitude
+						}}
+					/>
+				)}
+
+				{/* Render Dynamic Segments */}
+				{segments.map((segment, index) => {
+					const isLast = index === segments.length - 1
+					return (
+						<PolylineCustom
+							key={`poly-${index}`}
+							ref={isLast ? activePolylineRef : undefined} // Only attach ref to the active segment
+							points={segment.points}
+							strokeColor={segment.color}
+							strokeWidth={4}
 						/>
-					)}
+					)
+				})}
 
-					{props.initialLocations?.current && props.initialLocations?.current.length >= 1 && (
-						<StartLocationMarker
-							position={{
-								lat: props.initialLocations.current[0].locationObject.coords.latitude,
-								lon: props.initialLocations.current[0].locationObject.coords.longitude
-							}}
-						/>
-					)}
+				{/* Render Transition Markers */}
+				{transitionMarkers.map((tm) =>
+					tm.type === 'pause' ? (
+						<PauseLocationMarker key={tm.id} position={tm.position} />
+					) : (
+						<ResumeLocationMarker key={tm.id} position={tm.position} />
+					)
+				)}
 
-					{/* Render Dynamic Segments */}
-					{segments.map((segment, index) => {
-						const isLast = index === segments.length - 1
-						return (
-							<PolylineCustom
-								key={`poly-${index}`}
-								ref={isLast ? activePolylineRef : undefined} // Only attach ref to the active segment
-								points={segment.points}
-								strokeColor={segment.color}
-								strokeWidth={4}
-							/>
-						)
-					})}
-
-					{/* Render Transition Markers */}
-					{transitionMarkers.map((tm) =>
-						tm.type === 'pause' ? (
-							<PauseLocationMarker key={tm.id} position={tm.position} />
-						) : (
-							<ResumeLocationMarker key={tm.id} position={tm.position} />
-						)
-					)}
-
-					{props.needFinishMarker && lastPoint && <FinishLocationMarker position={lastPoint} />}
-				</Yamap>
-			)}
+				{props.needFinishMarker && lastPoint && <FinishLocationMarker position={lastPoint} />}
+			</Yamap>
 		</View>
 	)
 })

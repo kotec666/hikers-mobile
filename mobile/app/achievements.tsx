@@ -1,47 +1,26 @@
-import { SafeAreaProvider, useSafeAreaInsets } from 'react-native-safe-area-context'
 import { Dimensions, ScrollView, Text, View } from 'react-native'
 import { Container } from '@/components/ui/Container'
 import HeaderBack from '@/components/ui/HeaderBack'
 import React, { useCallback, useEffect, useRef, useState } from 'react'
 import AchievementsListItem from '@/components/ui/Achievements/AchievementsListItem'
 import { fontFamily } from '@/constants/Fonts'
-import { getAchievements, IAchievement, IAchievementsResponse } from '@/api/achievements'
 import BottomSheet from '@/components/ui/BottomSheet/BottomSheet'
 import { BottomSheetHandle } from '@/components/ui/BottomSheet/types'
 import AchievementDetailed from '@/components/BottomSheets/AchievementDetailed'
 import BlurProvider from '@/components/providers/BlurProvider'
 import { useLocalSearchParams } from 'expo-router'
-import { useQuery } from '@tanstack/react-query'
+import { useAchievementsQuery } from '@/queries/achievements'
+import { Page } from '@/components/ui/Page'
 
 const { height: screenHeight } = Dimensions.get('screen')
 
-type AchievementsVM = {
-	claimed: IAchievement[]
-	unclaimed: IAchievement[]
-	all: IAchievement[]
-}
-
 const AchievementsPage = () => {
-	const insets = useSafeAreaInsets()
 	const { id } = useLocalSearchParams<{ id?: string }>()
 
 	const bottomSheetRef = useRef<BottomSheetHandle>(null)
 	const [bottomSheetContent, setBottomSheetContent] = useState<React.ReactNode>(null)
 
-	const { data = { claimed: [], unclaimed: [], all: [] }, isLoading } = useQuery<
-		IAchievementsResponse,
-		unknown,
-		AchievementsVM
-	>({
-		queryKey: ['my-achievements'],
-		queryFn: getAchievements,
-		select: (data) => ({
-			claimed: data.claimed,
-			unclaimed: data.unclaimed,
-			all: [...data.claimed, ...data.unclaimed]
-		})
-	})
-
+	const { data = { claimed: [], unclaimed: [], all: [] }, isLoading } = useAchievementsQuery()
 	const claimedAchievements = data.claimed
 	const unClaimedAchievements = data.unclaimed
 	const allAchievements = data.all
@@ -71,14 +50,14 @@ const AchievementsPage = () => {
 	}
 
 	return (
-		<SafeAreaProvider style={{ paddingTop: insets.top }}>
+		<Page>
 			<BlurProvider>
 				<Container className="gap-[20px] mt-[20px] flex-1">
 					<HeaderBack>Мои достижения</HeaderBack>
 					<ScrollView
 						style={{ flex: 1, width: '100%' }}
 						contentContainerStyle={{
-							paddingBottom: insets.bottom + 20
+							paddingBottom: 50
 						}}
 					>
 						<View className="gap-[10px]">
@@ -121,7 +100,7 @@ const AchievementsPage = () => {
 					{bottomSheetContent}
 				</BottomSheet>
 			</BlurProvider>
-		</SafeAreaProvider>
+		</Page>
 	)
 }
 

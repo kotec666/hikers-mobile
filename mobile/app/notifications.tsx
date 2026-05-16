@@ -1,4 +1,3 @@
-import { SafeAreaProvider, useSafeAreaInsets } from 'react-native-safe-area-context'
 import { View, Text, RefreshControl, ActivityIndicator } from 'react-native'
 import { Container } from '@/components/ui/Container'
 import HeaderBack from '@/components/ui/HeaderBack'
@@ -9,83 +8,35 @@ import { Button } from '@/components/ui/Button'
 import SwipeableProvider from '@/components/providers/SwipeableProvider'
 import { LegendList } from '@legendapp/list'
 import { Colors } from '@/constants/Colors'
-import { useInfiniteQuery, useQueryClient } from '@tanstack/react-query'
-import {
-	deleteNotificationsById,
-	getNotificationsList,
-	INotification,
-	markNotificationsAsReadById
-} from '@/api/notifications'
-import { getFieldsErrors } from '@/helpers/getFieldsErrors'
+import { INotification } from '@/api/notifications'
 import { useReadNotificationsOnView } from '@/hooks/useReadNotificationsOnView'
-
-interface IInfiniteNotifications {
-	pages: INotification[][]
-	pageParams: number[]
-}
+import {
+	useDeleteNotificationsMutation,
+	useMarkNotificationsAsReadMutation,
+	useNotificationsListQuery
+} from '@/queries/notifications'
+import { Page } from '@/components/ui/Page'
 
 const NotificationsPage = () => {
-	const insets = useSafeAreaInsets()
-	const queryClient = useQueryClient()
-
-	const limit = 15
-
 	const {
-		data: notificationsDataRaw,
+		data: notificationsData = [],
 		fetchNextPage,
 		hasNextPage,
 		isFetchingNextPage,
 		refetch,
 		isRefetching,
 		isFetching
-	} = useInfiniteQuery({
-		queryKey: ['notifications-page'],
-		queryFn: ({ pageParam = 1 }) => {
-			return getNotificationsList({
-				page: pageParam,
-				limit: limit
-			})
-		},
-		initialPageParam: 1,
-		getNextPageParam: (lastPage, pages) => (lastPage.length === limit ? pages.length + 1 : undefined)
-	})
+	} = useNotificationsListQuery()
 
-	const notificationsData = notificationsDataRaw?.pages.flat() ?? []
+	const { mutate: deleteNotifications } = useDeleteNotificationsMutation()
+	const { mutate: markAsRead } = useMarkNotificationsAsReadMutation()
 
 	const handleDeleteNotification = async (id?: string) => {
-		// id есть - удаление одного
-		// нет - удаление всех
-		try {
-			await deleteNotificationsById({ ids: id ? [id] : [] })
-			queryClient.setQueryData<IInfiniteNotifications>(['notifications-page'], (oldData) => {
-				if (!oldData) return oldData
-
-				// Если id не передан — очистить все уведомления
-				if (!id) {
-					return { ...oldData, pages: oldData.pages.map(() => []) }
-				}
-
-				// Удаляем только указанное уведомление
-				return {
-					...oldData,
-					pages: oldData.pages.map((page) => page.filter((notif) => notif.id !== id))
-				}
-			})
-		} catch (e) {
-			await getFieldsErrors(e)
-		}
+		deleteNotifications(id ? [id] : [])
 	}
 
-	const readNotificationsByIds = async (ids: string[]) => {
-		try {
-			await markNotificationsAsReadById({
-				ids
-			})
-			// синхронизация с колокольчиком
-			await queryClient.invalidateQueries({ queryKey: ['unread-exists'] })
-		} catch (e) {
-			await getFieldsErrors(e)
-		}
+	const readNotificationsByIds = (ids: string[]) => {
+		markAsRead(ids)
 	}
 
 	const { onViewableItemsChanged } = useReadNotificationsOnView<INotification>(
@@ -106,7 +57,7 @@ const NotificationsPage = () => {
 	}, [isFetching])
 
 	return (
-		<SafeAreaProvider style={{ paddingTop: insets.top }}>
+		<Page>
 			<View style={{ flex: 1 }}>
 				<Container className="gap-[20px] mt-[20px]">
 					<HeaderBack>Уведомления</HeaderBack>
@@ -148,7 +99,7 @@ const NotificationsPage = () => {
 						keyExtractor={(item) => item.id}
 						contentContainerStyle={{
 							flexGrow: 1,
-							paddingBottom: insets.bottom + 20
+							paddingBottom: 50
 						}}
 						ListFooterComponent={
 							isFetchingNextPage ? (
@@ -161,7 +112,7 @@ const NotificationsPage = () => {
 					/>
 				</View>
 			</View>
-		</SafeAreaProvider>
+		</Page>
 	)
 }
 
