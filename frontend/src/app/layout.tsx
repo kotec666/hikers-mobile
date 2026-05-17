@@ -1,9 +1,9 @@
 import type { Metadata } from 'next'
 import { Geist, Geist_Mono, Inter } from 'next/font/google'
 import './globals.css'
-import { cn } from "@/lib/utils";
+import { cn } from '@/lib/utils'
 
-const inter = Inter({subsets:['latin'],variable:'--font-sans'});
+const inter = Inter({ subsets: ['latin'], variable: '--font-sans' })
 
 const geistSans = Geist({
 	variable: '--font-geist-sans',
@@ -27,7 +27,7 @@ export default function RootLayout({
 	// preconnect(env.api || "")
 	// prefetchDNS(env.api || "")
 	return (
-		<html lang="ru" className={cn("font-sans", inter.variable)}>
+		<html lang="ru" data-scroll-behavior="smooth" className={cn('font-sans', inter.variable)}>
 			<body className={`${geistSans.variable} ${geistMono.variable} antialiased`}>{children}</body>
 		</html>
 	)

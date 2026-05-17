@@ -5,22 +5,24 @@ import { SectionId } from '@/app/page'
 
 const HeroSection = ({ firstSectionId }: { firstSectionId: SectionId }) => {
 	return (
-		<section className="h-dvh py-20 md:pb-15 px-4 sm:px-6 lg:px-8 flex flex-col">
+		<section aria-labelledby="hero-title" className="h-dvh py-20 md:pb-15 px-4 sm:px-6 lg:px-8 flex flex-col">
 			<video
 				autoPlay
 				loop
 				muted
 				playsInline
+				aria-hidden="true"
+				preload="metadata"
 				poster="/images/hikers-poster.avif"
 				className="absolute inset-0 w-full h-full object-cover"
 			>
 				<source src="/video/hikers.webm" type="video/webm" />
 				<source src="/video/hikers.mp4" type="video/mp4" />
 			</video>
-			<div className="absolute inset-0 bg-black/50 z-1" />
+			<div aria-hidden="true" className="absolute inset-0 bg-black/50 z-1" />
 
 			<div className="max-w-4xl mx-auto text-center space-y-8 h-full flex flex-col justify-center items-center z-2">
-				<h1 className="text-4xl md:text-5xl lg:text-6xl xl:text-7xl text-white">
+				<h1 id="hero-title" className="text-4xl md:text-5xl lg:text-6xl xl:text-7xl text-white">
 					Тренируйся умнее с современным подходом
 				</h1>
 				<p className="text-[#ababab] text-lg md:text-xl max-w-2xl mx-auto">

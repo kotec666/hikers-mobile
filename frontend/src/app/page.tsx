@@ -57,19 +57,17 @@ export default function Home() {
 	]
 
 	return (
-		<div>
-			<MainLayout
-				headerProps={{
-					isAnimationLineDisabled: false,
-					contentBlocks
-				}}
-				edges={[]}
-				mainClassName="bg-black-0d"
-			>
-				<HeroSection firstSectionId={contentBlocks[0].id} />
-				<AboutApp contentBlocks={contentBlocks} />
-				<AboutCompany />
-			</MainLayout>
-		</div>
+		<MainLayout
+			headerProps={{
+				isAnimationLineDisabled: false,
+				contentBlocks
+			}}
+			edges={[]}
+			mainClassName="bg-black-0d"
+		>
+			<HeroSection firstSectionId={contentBlocks[0].id} />
+			<AboutApp contentBlocks={contentBlocks} />
+			<AboutCompany />
+		</MainLayout>
 	)
 }

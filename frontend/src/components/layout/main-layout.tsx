@@ -1,7 +1,7 @@
-import React, { Suspense } from 'react'
-import { Header, HeaderProps } from '@/components/layout/header'
+import React from 'react'
 import { Footer } from '@/components/layout/footer'
 import { cn } from '@/lib/utils'
+import { Header, IHeaderProps } from '@/components/layout/header/header'
 
 enum Edges {
 	top = 'top'
@@ -9,7 +9,7 @@ enum Edges {
 
 interface IMainLayoutProps {
 	children: React.ReactNode
-	headerProps?: HeaderProps
+	headerProps?: IHeaderProps
 	mainClassName?: string
 	edges?: Edges[]
 }
@@ -17,9 +17,7 @@ interface IMainLayoutProps {
 const MainLayout = ({ children, headerProps, edges = [Edges.top], mainClassName }: IMainLayoutProps) => {
 	return (
 		<>
-			<Suspense fallback={null}>
-				<Header {...headerProps} />
-			</Suspense>
+			<Header {...headerProps} />
 			<main
 				className={cn(
 					'',

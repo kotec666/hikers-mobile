@@ -2,7 +2,15 @@ import { SvgIconProps } from './types'
 
 const VkSvg = ({ size = 60, color = 'currentColor', ...props }: SvgIconProps) => {
 	return (
-		<svg width={size} height={size} viewBox="0 0 60 60" fill="none" xmlns="http://www.w3.org/2000/svg" {...props}>
+		<svg
+			width={size}
+			height={size}
+			viewBox="0 0 60 60"
+			fill="none"
+			xmlns="http://www.w3.org/2000/svg"
+			aria-hidden="true"
+			{...props}
+		>
 			<title>Вконтакте</title>
 			<g clipPath="url(#clip0_1497_304)">
 				<path

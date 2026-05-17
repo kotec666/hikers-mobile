@@ -66,16 +66,16 @@ const StoreButton = ({ storeType, type }: IStoreButtonProps) => {
 
 	if (!componentData.link) return null
 	return (
-		<Link href={componentData.link} target="_blank" className="block">
+		<Link
+			className="block"
+			title={componentData.title}
+			aria-label={componentData.title}
+			href={componentData.link}
+			target="_blank"
+			rel="noopener noreferrer"
+		>
 			{type === 'lg' ? (
-				<Image
-					title={componentData.title}
-					alt={componentData.title}
-					src={componentData.icon}
-					width={148}
-					height={44}
-					draggable={false}
-				/>
+				<Image src={componentData.icon} alt="" width={148} height={44} draggable={false} />
 			) : (
 				componentData.smallComponent
 			)}

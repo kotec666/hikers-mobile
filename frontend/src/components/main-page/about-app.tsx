@@ -16,7 +16,7 @@ const AboutApp = ({ contentBlocks }: { contentBlocks: IContentBlock[] }) => {
 					description={block.description}
 				/>
 			))}
-			<div className="hidden lg:flex sticky z-10 top-0 h-screen w-full">
+			<div role="presentation" className="hidden lg:flex sticky z-10 top-0 h-screen w-full">
 				<PhoneSceneWrapper />
 			</div>
 		</div>

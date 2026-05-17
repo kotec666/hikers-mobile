@@ -105,7 +105,7 @@ export function WorkoutPost({ post }: WorkoutPostProps) {
 			</div>
 
 			<div className="px-4 pb-3">
-				<h2 className="text-white text-lg font-medium mb-2">{post?.title}</h2>
+				<h1 className="text-white text-lg font-medium mb-2">{post?.title}</h1>
 				<p className="text-gray-300 text-sm wrap-anywhere">{post?.description}</p>
 			</div>
 
