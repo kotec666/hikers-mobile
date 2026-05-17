@@ -108,7 +108,7 @@ const AuthPage = () => {
 			<KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : 'height'} style={styles.container}>
 				<Container className="flex-1 mb-[10px]">
 					<TouchableWithoutFeedback onPress={Keyboard.dismiss}>
-						<View className="flex-grow mt-[20px]">
+						<View className="flex-grow">
 							<Text className="text-white text-xl" style={{ fontFamily: fontFamily.bold }}>
 								{data.mode === AUTH_MODE.AUTH ? 'Авторизация' : 'Регистрация'}
 							</Text>

@@ -70,7 +70,7 @@ const WorkoutStarted = (props: IProps) => {
 			{/*	position="bottom-right"*/}
 			{/*/>*/}
 			<Container>
-				<Text className="my-[20px] text-white text-[20px]" style={{ fontFamily: fontFamily.bold }}>
+				<Text className="mb-[20px] text-white text-[20px]" style={{ fontFamily: fontFamily.bold }}>
 					Тренировка
 				</Text>
 			</Container>

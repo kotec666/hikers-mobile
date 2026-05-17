@@ -52,7 +52,7 @@ const AchievementsPage = () => {
 	return (
 		<Page>
 			<BlurProvider>
-				<Container className="gap-[20px] mt-[20px] flex-1">
+				<Container className="gap-[20px] flex-1">
 					<HeaderBack>Мои достижения</HeaderBack>
 					<ScrollView
 						style={{ flex: 1, width: '100%' }}

@@ -8,10 +8,11 @@ import { AboutCompany } from '@/components/main-page/about-company'
 import { ScreenTextureURL, screenTextureURLs } from '@/consts/PhoneScreenTextures'
 
 export const metadata: Metadata = generateBasicMetadata({
-	title: 'Hikers - мобильное приложение',
+	title: 'Hikers | Приложение для бега, трейлов и хайкинга. Отслеживайте активность, исследуйте маршруты и делитесь достижениями.',
 	description:
-		'Хайкерс это мобильное приложения для тренировок разного типа с современным подходом к тренировкам и здоровью в целом',
-	keywords: 'ключевые, слова, через, запятую, хайкерс, тренировка, hikers, mobile, app, приложение, здоровье, фитнес'
+		'Отслеживайте тренировки, сохраняйте маршруты, анализируйте статистику и делитесь рекордами с сообществом.',
+	keywords:
+		'trail running, трейлраннинг, бег, пробежки, маршруты для бега, статистика пробежек, gps трекер бега, беговое приложение, running app, hiking, outdoor adventures, trail app, тренировки, спорт, беговое сообщество, маршруты, активный отдых, trail runners, бег по пересечённой местности, велозаезд'
 })
 
 export enum SectionId {
@@ -36,7 +37,7 @@ export default function Home() {
 			title: 'Персональные тренировки для вас',
 			mobileImg: screenTextureURLs[0],
 			description:
-				'Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam quis nostrud.'
+				'Записывайте пробежки, сохраняйте маршруты и анализируйте свою активность. Тренируйтесь в своём темпе и становитесь сильнее с каждой пробежкой.'
 		},
 		{
 			id: SectionId.PROGRESS,
@@ -44,15 +45,15 @@ export default function Home() {
 			title: 'Отслеживайте свой прогресс',
 			mobileImg: screenTextureURLs[1],
 			description:
-				'Quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore.'
+				'Фиксируйте дистанции, темп, набор высоты и личные рекорды. Вся статистика и достижения - в одном месте.'
 		},
 		{
 			id: SectionId.COMMUNITY,
 			label: 'Сообщество',
-			title: 'Присоединяйтесь к сообществу',
+			title: 'Присоединяйтесь к сообществу хайкерс',
 			mobileImg: screenTextureURLs[2],
 			description:
-				'Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum. Sed ut perspiciatis unde omnis iste natus error.'
+				'Делитесь рекордами с сообществом, находите единомышленников и вдохновляйтесь новыми маршрутами. Бегать вместе всегда интереснее.'
 		}
 	]
 

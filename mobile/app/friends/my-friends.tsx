@@ -120,7 +120,7 @@ const MyFriendsPage = () => {
 							</View>
 						</View>
 					</Modal>
-					<Container className="gap-[20px] mt-[20px] flex-1" style={{ paddingBottom: 10 }}>
+					<Container className="gap-[20px] flex-1" style={{ paddingBottom: 10 }}>
 						<HeaderBack>Друзья</HeaderBack>
 
 						<LegendList

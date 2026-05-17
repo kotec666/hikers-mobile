@@ -26,8 +26,8 @@ const HeroSection = ({ firstSectionId }: { firstSectionId: SectionId }) => {
 					Тренируйся умнее с современным подходом
 				</h1>
 				<p className="text-[#ababab] text-lg md:text-xl max-w-2xl mx-auto">
-					Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod tempor incididunt ut labore
-					et dolore magna aliqua.
+					Тренируйтесь на природе, отслеживайте активность и сохраняйте каждый маршрут и всё в приложении
+					Hikers. Скачайте и начните фиксировать свои пробежки уже сегодня.
 				</p>
 
 				<div className="flex flex-wrap items-center justify-center gap-4 pt-4">

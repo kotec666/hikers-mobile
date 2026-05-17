@@ -28,7 +28,12 @@ const HelloPage = () => {
 	}, [isAuthenticated, router])
 
 	return (
-		<Page>
+		<Page
+			edges={[]}
+			statusBarProps={{
+				style: 'dark'
+			}}
+		>
 			<View className="flex-1 pb-[40px]">
 				<Slider itemList={slides}>
 					<Button variant="white" onPress={handleClickEnter}>

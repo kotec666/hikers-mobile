@@ -48,6 +48,7 @@ import { BackButton } from '@/components/ui/HeaderBack'
 import { useCreatePostMutation, usePostByTrainingQuery, usePostQuery, useUpdatePostMutation } from '@/queries/posts'
 import { useExtendedDetailsWorkoutQuery, useFinishWorkoutMutation } from '@/queries/workout'
 import { Page } from '@/components/ui/Page'
+import { DEFAULT_PADDING_TOP } from '@/constants/Variables'
 
 type Param = {
 	label: string
@@ -524,7 +525,7 @@ export default function ViewWorkout() {
 							/>
 							<Container
 								className="absolute w-full h-full inset-0 justify-between pb-4"
-								style={{ paddingTop: insets.top + 40 }}
+								style={{ paddingTop: insets.top + DEFAULT_PADDING_TOP }}
 							>
 								<BackButton onPress={handlePressGoBack} />
 								<View className="flex-row w-full justify-between items-center">
