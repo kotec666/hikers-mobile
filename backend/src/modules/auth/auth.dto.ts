@@ -39,5 +39,11 @@ export namespace AuthDto {
 		@Length(lengths.user.password.min, lengths.user.password.max, { message: `_password:${ERRORS.INVALID_LENGTH}` })
 		@HasDigit()
 		password: string;
+
+		@Length(lengths.user.password.min, lengths.user.password.max, {
+			message: `_confirmPassword:${ERRORS.INVALID_LENGTH}`,
+		})
+		@HasDigit()
+		confirmPassword: string;
 	}
 }

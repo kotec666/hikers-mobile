@@ -139,7 +139,12 @@
     ERRORS.INVALID_LENGTH,
     ERRORS.DIGIT_REQUIRED
     ]
-    12.3. code [
+    12.3. confirmPassword: [
+    ERRORS.MISMATCH // Пароли не совпадают
+    ERRORS.INVALID_LENGTH,
+    ERRORS.DIGIT_REQUIRED
+    ]
+    12.4. code [
     ERRORS.INVALID_LENGTH
     ]
 

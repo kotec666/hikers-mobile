@@ -170,6 +170,9 @@ export class AuthService {
 		if (!payload.confirmed || payload.code !== dto.code) {
 			throw new ForbiddenException(ERRORS.FORBIDDEN);
 		}
+		if (dto.password !== dto.confirmPassword) {
+			throw new BadRequestException(`_confirmPassword:${ERRORS.MISMATCH}`);
+		}
 
 		try {
 			await this.userService.changePassword(dto.email, dto.password, true);
