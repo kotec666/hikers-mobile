@@ -58,9 +58,10 @@ const PhoneScene = () => {
 		[0, Math.PI * 2 * 3] // 3 полных оборота (по числу текстур)
 	)
 
-	useFrame(() => {
+	useFrame((_, delta) => {
 		if (!phoneRef.current) return
-		phoneRef.current.rotation.y = rotationY.get()
+
+		phoneRef.current.rotation.y = THREE.MathUtils.damp(phoneRef.current.rotation.y, rotationY.get(), 60, delta)
 	})
 
 	useMotionValueEvent(scrollYProgress, 'change', (latest) => {

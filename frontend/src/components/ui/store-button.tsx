@@ -15,6 +15,7 @@ export enum StoreButtonType {
 interface IStoreButtonProps {
 	storeType: StoreButtonType
 	type: 'lg' | 'sm'
+	shrink?: boolean
 }
 
 const data = {
@@ -44,7 +45,7 @@ const data = {
 	}
 }
 
-const StoreButton = ({ storeType, type }: IStoreButtonProps) => {
+const StoreButton = ({ storeType, type, shrink = true }: IStoreButtonProps) => {
 	const getComponentData = () => {
 		switch (storeType) {
 			case StoreButtonType.APP_STORE:
@@ -66,7 +67,8 @@ const StoreButton = ({ storeType, type }: IStoreButtonProps) => {
 	return (
 		<Link
 			className={cn('block', {
-				'w-37.5 h-12.5 shrink-0': type === 'lg'
+				'w-37.5 h-12.5 shrink-0': type === 'lg' && shrink,
+				'max-w-37.5 h-auto': type === 'lg' && !shrink
 			})}
 			title={componentData.title}
 			aria-label={componentData.title}

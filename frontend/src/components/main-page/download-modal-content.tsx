@@ -11,16 +11,16 @@ const DownloadModalContent = () => {
 			</div>
 			<div className="grid grid-cols-2 place-items-stretch gap-4">
 				<div className="flex justify-end">
-					<StoreButton type="lg" storeType={StoreButtonType.APP_STORE} />
+					<StoreButton type="lg" storeType={StoreButtonType.APP_STORE} shrink={false} />
 				</div>
 				<div className="flex justify-start">
-					<StoreButton type="lg" storeType={StoreButtonType.GOOGLE_PLAY} />
+					<StoreButton type="lg" storeType={StoreButtonType.GOOGLE_PLAY} shrink={false} />
 				</div>
 				<div className="flex justify-end">
-					<StoreButton type="lg" storeType={StoreButtonType.RUSTORE} />
+					<StoreButton type="lg" storeType={StoreButtonType.RUSTORE} shrink={false} />
 				</div>
 				<div className="flex justify-start">
-					<StoreButton type="lg" storeType={StoreButtonType.APP_GALLERY} />
+					<StoreButton type="lg" storeType={StoreButtonType.APP_GALLERY} shrink={false} />
 				</div>
 			</div>
 			<div className="flex flex-col items-center space-y-4 pt-4">
