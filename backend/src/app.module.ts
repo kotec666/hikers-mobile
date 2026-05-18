@@ -25,12 +25,41 @@ import { NotificationsModule } from './modules/notifications/notifications.modul
 import { WebsocketsModule } from './modules/websockets/websockets.module';
 import { EventEmitterModule } from '@nestjs/event-emitter';
 import { ScheduleModule } from '@nestjs/schedule';
+import { MailerModule } from '@nestjs-modules/mailer';
+import { MailerModule as MyMailerModule } from './modules/mailer/mailer.module';
+import { HandlebarsAdapter } from '@nestjs-modules/mailer/adapters/handlebars.adapter';
+import { CacheModule } from '@nestjs/cache-manager';
 
 config({ quiet: true });
 
 @Module({
 	controllers: [AppController],
 	imports: [
+		CacheModule.register({
+			isGlobal: true,
+		}),
+		MailerModule.forRoot({
+			transport: {
+				host: process.env.EMAIL_HOST,
+				port: 465,
+				secure: true,
+				sender: process.env.EMAIL_USERNAME,
+				auth: {
+					user: process.env.EMAIL_USERNAME,
+					pass: process.env.EMAIL_PASSWORD,
+				},
+			},
+			defaults: {
+				from: `хайкерс <${process.env.EMAIL_USERNAME}>`,
+			},
+			template: {
+				dir: process.cwd() + '/src/modules/mailer/templates/',
+				adapter: new HandlebarsAdapter(),
+				options: {
+					strict: true,
+				},
+			},
+		}),
 		ScheduleModule.forRoot({ cronJobs: true }),
 		EventEmitterModule.forRoot({ ignoreErrors: true }),
 		LoggerModule.forRoot({
@@ -92,6 +121,7 @@ config({ quiet: true });
 		SerachModule,
 		NotificationsModule,
 		WebsocketsModule,
+		MyMailerModule,
 	],
 	providers: [UniqueEmailValidator, FinishedTrainingParticipantValidator],
 })

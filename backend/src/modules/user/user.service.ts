@@ -19,7 +19,7 @@ import {
 	users,
 	userSubscribers,
 } from '../database/schema';
-import { and, eq, ilike, ne, or } from 'drizzle-orm';
+import { and, eq, ilike, ne, or, sql } from 'drizzle-orm';
 import { comparePassword, hashPassword } from './user.helpers';
 import { ERRORS } from '@shared/errors';
 import { EventEmitter2 } from '@nestjs/event-emitter';
@@ -41,6 +41,7 @@ export class UserService {
 			.values({
 				email: dto.email,
 				password: hashedPassword,
+				termsAcceptedAt: dto.isTermsAccepted ? new Date() : null,
 			})
 			.returning({
 				id: users.id,
@@ -139,6 +140,45 @@ export class UserService {
 		return user;
 	}
 
+	public async changePassword(email: string, newPassword: string, shouldBeDifferent = true): Promise<UserDto.Entity> {
+		const [user] = await this.db.db
+			.select({
+				id: users.id,
+				name: users.name,
+				username: users.username,
+				avatarFilename: users.avatarFilename,
+				password: users.password,
+			})
+			.from(users)
+			.where(eq(users.email, email))
+			.limit(1);
+		if (!user) {
+			throw new NotFoundException(ERRORS.NOT_FOUND);
+		}
+
+		const isPasswordSame = await comparePassword(newPassword, user.password);
+		if (shouldBeDifferent && isPasswordSame) {
+			throw new BadRequestException(ERRORS.SHOULD_BE_DIFFERENT);
+		}
+
+		const hashedPassword = await hashPassword(newPassword);
+
+		const [updatedUser] = await this.db.db
+			.update(users)
+			.set({
+				password: hashedPassword,
+			})
+			.where(eq(users.id, user.id))
+			.returning({
+				id: users.id,
+				name: users.name,
+				username: users.username,
+				avatarFilename: users.avatarFilename,
+			});
+
+		return updatedUser;
+	}
+
 	public async deleteUser(userId: string): Promise<CommonDto.BooleanResponse> {
 		const [user] = await this.db.db
 			.select({
@@ -226,6 +266,26 @@ export class UserService {
 		await this.db.db.delete(users).where(eq(users.id, userId));
 
 		return { success: true };
+	}
+
+	public async getUserWithEmail(id: string): Promise<UserDto.EntityWithEmail> {
+		const [user] = await this.db.db
+			.select({
+				id: users.id,
+				name: users.name,
+				username: users.username,
+				avatarFilename: users.avatarFilename,
+				email: users.email,
+				isEmailConfirmed: sql<boolean>`${users.emailConfirmedAt}`,
+			})
+			.from(users)
+			.where(eq(users.id, id))
+			.limit(1);
+		if (!user) {
+			throw new NotFoundException(ERRORS.NOT_FOUND);
+		}
+
+		return user;
 	}
 
 	public async getUser(id: string): Promise<UserDto.Entity> {

@@ -95,6 +95,8 @@ export const users = pgTable(
 		username: varchar('username', { length: 63 }).unique(),
 		avatarFilename: varchar('avatar_filename', { length: 255 }).references(() => media.filename),
 		termsAcceptedAt: timestamp('terms_accepted_at'),
+		// @TODO если будет смена почты, то обязательно СБРАСЫВАТЬ это поле!
+		emailConfirmedAt: timestamp('email_confirmed_at'),
 		createdAt: timestamp('created_at').defaultNow().notNull(),
 	},
 	(table) => [

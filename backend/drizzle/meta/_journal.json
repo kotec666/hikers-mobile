@@ -225,6 +225,13 @@
       "when": 1776069254422,
       "tag": "0031_trainings_posts_author_nullable",
       "breakpoints": true
+    },
+    {
+      "idx": 32,
+      "version": "7",
+      "when": 1778761822351,
+      "tag": "0032_add_email_confirmed_field",
+      "breakpoints": true
     }
   ]
 }
