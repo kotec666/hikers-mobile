@@ -19,7 +19,7 @@ export function Header({ contentBlocks, isAnimationLineDisabled }: IHeaderProps)
 				<div className="flex items-center h-16 lg:h-20">
 					<div className="flex items-center gap-3 w-full">
 						<div className="min-w-10 w-10 min-h-10 h-10">
-							<Link href="/">
+							<Link aria-label="Ссылка на главную страницу" href="/">
 								<Image
 									src={icon}
 									alt=""

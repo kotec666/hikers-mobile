@@ -31,6 +31,7 @@ export function Footer() {
 								{links.map((link) => (
 									<li key={link.href}>
 										<Link
+											prefetch={false}
 											target={link.target}
 											rel={link.rel}
 											href={link.href}

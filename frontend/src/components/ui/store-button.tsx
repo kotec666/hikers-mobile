@@ -1,12 +1,9 @@
 import React from 'react'
-import AppStoreSvg from '@/assets/svg/app-store-l.svg'
-import GooglePlaySvg from '@/assets/svg/google-play-l.svg'
-import RustoreSvg from '@/assets/svg/rustore-l.svg'
-import AppGallerySvg from '@/assets/svg/app-gallery-l.svg'
 import Image from 'next/image'
 import { env } from '@/consts/env'
 import Link from 'next/link'
 import { AppGallerySmallSvg, AppStoreSmallSvg, GooglePlaySmallSvg, RustoreSmallSvg } from '@/components/svg'
+import { cn } from '@/lib/utils'
 
 export enum StoreButtonType {
 	APP_STORE = 'APP_STORE',
@@ -20,33 +17,34 @@ interface IStoreButtonProps {
 	type: 'lg' | 'sm'
 }
 
-const StoreButton = ({ storeType, type }: IStoreButtonProps) => {
-	const data = {
-		app_store: {
-			icon: AppStoreSvg,
-			title: 'Скачать приложение хайкерс в App Store',
-			link: env.app_store_link,
-			smallComponent: <AppStoreSmallSvg />
-		},
-		google_play: {
-			icon: GooglePlaySvg,
-			title: 'Скачать приложение хайкерс в Google Play',
-			link: env.google_play_link,
-			smallComponent: <GooglePlaySmallSvg />
-		},
-		rustore: {
-			icon: RustoreSvg,
-			title: 'Скачать приложение хайкерс в RuStore',
-			link: env.rustore_link,
-			smallComponent: <RustoreSmallSvg />
-		},
-		app_gallery: {
-			icon: AppGallerySvg,
-			title: 'Скачать приложение хайкерс в AppGallery',
-			link: env.app_gallery_link,
-			smallComponent: <AppGallerySmallSvg />
-		}
+const data = {
+	app_store: {
+		icon: '/svg/app-store-l.svg',
+		title: 'Скачать приложение хайкерс в App Store',
+		link: env.app_store_link,
+		smallComponent: <AppStoreSmallSvg />
+	},
+	google_play: {
+		icon: '/svg/google-play-l.svg',
+		title: 'Скачать приложение хайкерс в Google Play',
+		link: env.google_play_link,
+		smallComponent: <GooglePlaySmallSvg />
+	},
+	rustore: {
+		icon: '/svg/rustore-l.svg',
+		title: 'Скачать приложение хайкерс в RuStore',
+		link: env.rustore_link,
+		smallComponent: <RustoreSmallSvg />
+	},
+	app_gallery: {
+		icon: '/svg/app-gallery-l.svg',
+		title: 'Скачать приложение хайкерс в AppGallery',
+		link: env.app_gallery_link,
+		smallComponent: <AppGallerySmallSvg />
 	}
+}
+
+const StoreButton = ({ storeType, type }: IStoreButtonProps) => {
 	const getComponentData = () => {
 		switch (storeType) {
 			case StoreButtonType.APP_STORE:
@@ -67,15 +65,25 @@ const StoreButton = ({ storeType, type }: IStoreButtonProps) => {
 	if (!componentData.link) return null
 	return (
 		<Link
-			className="block"
+			className={cn('block', {
+				'w-37.5 h-12.5 shrink-0': type === 'lg'
+			})}
 			title={componentData.title}
 			aria-label={componentData.title}
 			href={componentData.link}
 			target="_blank"
 			rel="noopener noreferrer"
+			prefetch={false}
 		>
 			{type === 'lg' ? (
-				<Image src={componentData.icon} alt="" width={148} height={44} draggable={false} />
+				<Image
+					className="w-full h-full"
+					src={componentData.icon}
+					alt=""
+					width={150}
+					height={50}
+					draggable={false}
+				/>
 			) : (
 				componentData.smallComponent
 			)}

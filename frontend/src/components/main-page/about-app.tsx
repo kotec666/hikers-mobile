@@ -1,7 +1,7 @@
 import React from 'react'
 import { IContentBlock } from '@/app/page'
 import ContentBlock from '@/components/main-page/content-block'
-import PhoneSceneWrapper from '@/components/main-page/phone-scene-wrapper'
+import PhoneSceneLazy from '@/components/main-page/phone-scene-lazy'
 
 const AboutApp = ({ contentBlocks }: { contentBlocks: IContentBlock[] }) => {
 	return (
@@ -17,7 +17,7 @@ const AboutApp = ({ contentBlocks }: { contentBlocks: IContentBlock[] }) => {
 				/>
 			))}
 			<div role="presentation" className="hidden lg:flex sticky z-10 top-0 h-screen w-full">
-				<PhoneSceneWrapper />
+				<PhoneSceneLazy />
 			</div>
 		</div>
 	)

@@ -50,7 +50,6 @@ export const generateBasicMetadata = (meta: IMetaEnter): Metadata => {
 		title: meta.title,
 		description: meta.description,
 		keywords: meta.keywords,
-		manifest: '/manifest.json',
 		// robots: meta.robots || 'index, follow',
 		robots: meta.robots || 'noindex, nofollow',
 		authors: [{ name: 'hikers' }],
