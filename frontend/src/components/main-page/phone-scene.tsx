@@ -58,10 +58,27 @@ const PhoneScene = () => {
 		[0, Math.PI * 2 * 3] // 3 полных оборота (по числу текстур)
 	)
 
+	const isMacOS = useMemo(() => {
+		if (typeof window === 'undefined') return false
+
+		//@ts-expect-error userAgentData почему-то не существует в интерфейсе
+		const platform = navigator.userAgentData?.platform || navigator.userAgent
+
+		return /mac|iphone|ipad|ipod/i.test(platform)
+	}, [])
+
 	useFrame((_, delta) => {
 		if (!phoneRef.current) return
 
-		phoneRef.current.rotation.y = THREE.MathUtils.damp(phoneRef.current.rotation.y, rotationY.get(), 60, delta)
+		if (isMacOS) {
+			phoneRef.current.rotation.y = THREE.MathUtils.lerp(
+				phoneRef.current.rotation.y,
+				rotationY.get(),
+				1 - Math.exp(-8 * delta)
+			)
+		} else {
+			phoneRef.current.rotation.y = rotationY.get()
+		}
 	})
 
 	useMotionValueEvent(scrollYProgress, 'change', (latest) => {

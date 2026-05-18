@@ -4,7 +4,7 @@ import { motion, useMotionValue, useMotionValueEvent, useScroll, useSpring, useT
 import { cn } from '@/lib/utils'
 
 const clamp = (value: number, min: number, max: number) => Math.min(Math.max(value, min), max)
-const scrollDistance = 1400
+const scrollDistance = 0 // 1400
 
 function useBoundedScroll(bounds: number) {
 	const { scrollY } = useScroll()
