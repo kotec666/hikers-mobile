@@ -234,8 +234,8 @@ export class AuthService {
 	}
 
 	public async registration(dto: UserDto.Registration): Promise<TokenDto.TokenResponse & UserDto.Entity> {
-		if (!dto.termsAccepted) {
-			throw new BadRequestException(`_termsAccepted:${ERRORS.BAD_REQUEST}`);
+		if (!dto.isTermsAccepted) {
+			throw new BadRequestException(`_isTermsAccepted:${ERRORS.BAD_REQUEST}`);
 		}
 
 		try {

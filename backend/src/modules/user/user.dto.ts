@@ -35,7 +35,7 @@ export namespace UserDto {
 		@HasDigit()
 		password: string;
 
-		@IsBoolean({ message: `_termsAccepted:${ERRORS.BAD_REQUEST}` })
-		termsAccepted: boolean;
+		@IsBoolean({ message: `_isTermsAccepted:${ERRORS.BAD_REQUEST}` })
+		isTermsAccepted: boolean;
 	}
 }

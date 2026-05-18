@@ -41,6 +41,7 @@ export class UserService {
 			.values({
 				email: dto.email,
 				password: hashedPassword,
+				termsAcceptedAt: dto.isTermsAccepted ? new Date() : null,
 			})
 			.returning({
 				id: users.id,
