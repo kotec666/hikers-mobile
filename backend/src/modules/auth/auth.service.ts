@@ -118,9 +118,18 @@ export class AuthService {
 		if (!payload) {
 			throw new NotFoundException(ERRORS.NOT_FOUND);
 		}
-		if (payload.attempts > MAX_PASSWORD_RECOVERY_ATTEMPTS) {
+		if (payload.attempts >= MAX_PASSWORD_RECOVERY_ATTEMPTS) {
 			const rateLimitKey = this.getPasswordRecoveryRateLimitKey(email);
-			await this.cacheManager.set(rateLimitKey, true, PASSWORD_RECOVERY_CODE_TIMEOUT_MS);
+			const existingLimit = await this.cacheManager.get<number>(rateLimitKey);
+			if (existingLimit) {
+				return {
+					success: false,
+					remainAttempts: 0,
+					waitMs: existingLimit + PASSWORD_RECOVERY_CODE_TIMEOUT_MS - Date.now(),
+				};
+			}
+
+			await this.cacheManager.set(rateLimitKey, Date.now(), PASSWORD_RECOVERY_CODE_TIMEOUT_MS);
 
 			return {
 				success: false,
