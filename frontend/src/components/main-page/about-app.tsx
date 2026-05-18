@@ -4,6 +4,8 @@ import ContentBlock from '@/components/main-page/content-block'
 import PhoneSceneLazy from '@/components/main-page/phone-scene-lazy'
 
 const AboutApp = ({ contentBlocks }: { contentBlocks: IContentBlock[] }) => {
+	// в дев режиме не работает <PhoneSceneLazy />, поэтому нужно использовать <PhoneSceneWrapper />
+	// но если импортировать <PhoneSceneWrapper /> напрямую, то он будет включен в бандл сервера, чего делать не нужно
 	return (
 		<div id="phone-scene-container" className="relative w-full lg:h-[300dvh]">
 			{contentBlocks.map((block, idx) => (
