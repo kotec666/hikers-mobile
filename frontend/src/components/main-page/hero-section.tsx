@@ -34,8 +34,8 @@ const HeroSection = ({ firstSectionId }: { firstSectionId: SectionId }) => {
 			<div aria-hidden="true" className="absolute inset-0 bg-black/50 z-1" />
 
 			<div className="max-w-4xl mx-auto text-center gap-8 h-full flex flex-col justify-center items-center z-2">
-				<h1 id="hero-title" className="text-4xl md:text-5xl lg:text-6xl xl:text-7xl text-white">
-					Тренируйся умнее с современным подходом
+				<h1 id="hero-title" className="text-3xl md:text-4xl lg:text-5xl xl:text-6xl text-white">
+					Hikers - тренируйся умнее с современным подходом.
 				</h1>
 				<p className="text-[#ababab] text-lg md:text-xl max-w-2xl mx-auto leading-relaxed">
 					Тренируйтесь на природе, отслеживайте активность и сохраняйте каждый маршрут и всё в приложении

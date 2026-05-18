@@ -1,6 +1,5 @@
 import Link from 'next/link'
 import Image from 'next/image'
-import icon from '@/assets/images/icon-40x40.png'
 import { IContentBlock } from '@/app/page'
 import Container from '@/components/layout/container'
 import ScrollProgressLine from '@/components/layout/scroll-progress-line'
@@ -21,8 +20,10 @@ export function Header({ contentBlocks, isAnimationLineDisabled }: IHeaderProps)
 						<div className="min-w-10 w-10 min-h-10 h-10">
 							<Link aria-label="Ссылка на главную страницу" href="/">
 								<Image
-									src={icon}
+									src="/images/icon-40x40.png"
 									alt=""
+									width={40}
+									height={40}
 									className="w-full h-full object-cover"
 									draggable="false"
 									priority
