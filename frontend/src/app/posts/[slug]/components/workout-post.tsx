@@ -144,9 +144,10 @@ export function WorkoutPost({ post }: WorkoutPostProps) {
 						return (
 							<div key={idx} className={cn('relative overflow-hidden rounded-xl', item.className)}>
 								<Image
+									fill
 									src={`${PATH_TO_IMAGE}${img}`}
 									alt={`Тренировка ${idx + 1}`}
-									fill
+									loading="eager"
 									className="object-cover"
 								/>
 
