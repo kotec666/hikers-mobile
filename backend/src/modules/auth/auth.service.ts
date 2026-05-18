@@ -16,6 +16,7 @@ import {
 	PASSWORD_RECOVERY_CODE_SIZE,
 	PASSWORD_RECOVERY_CODE_TIMEOUT_MS,
 	PASSWORD_RECOVERY_CODE_TTL_MS,
+	MAX_PASSWORD_RECOVERY_ATTEMPTS,
 } from '@shared/constants';
 import { generateNumericCode } from './helpers';
 import { UserDto } from '../user/user.dto';
@@ -29,8 +30,6 @@ import { users } from '../database/schema';
 import { eq } from 'drizzle-orm';
 import { CACHE_MANAGER, Cache } from '@nestjs/cache-manager';
 import { AuthDto } from './auth.dto';
-
-const MAX_PASSWORD_RECOVERY_ATTEMPTS = 5;
 
 interface IPasswordRecoveryCachePayload {
 	code: string;
@@ -64,13 +63,16 @@ export class AuthService {
 		return `conf:${userId}:rate_limit`;
 	}
 
-	public async requestPasswordRecovery(email: string): Promise<CommonDto.BooleanResponse> {
+	public async requestPasswordRecovery(email: string): Promise<CommonDto.RateLimited<CommonDto.BooleanResponse>> {
 		const cachedCodeKey = this.getPasswordRecoveryKey(email);
 		const rateLimitKey = this.getPasswordRecoveryRateLimitKey(email);
 
-		const rateLimit = await this.cacheManager.get<boolean>(rateLimitKey);
-		if (rateLimit) {
-			throw new ConflictException(ERRORS.TOO_MANY_REQUESTS);
+		const rateLimitSince = await this.cacheManager.get<number>(rateLimitKey);
+		if (rateLimitSince) {
+			return {
+				success: false,
+				waitMs: rateLimitSince + PASSWORD_RECOVERY_CODE_RATE_LIMIT_MS - Date.now(),
+			};
 		}
 
 		const [user] = await this.db.db
@@ -93,19 +95,24 @@ export class AuthService {
 			confirmed: false,
 		};
 		await this.cacheManager.set(cachedCodeKey, payload, PASSWORD_RECOVERY_CODE_TTL_MS);
-		await this.cacheManager.set(rateLimitKey, true, PASSWORD_RECOVERY_CODE_RATE_LIMIT_MS);
+		await this.cacheManager.set(rateLimitKey, Date.now(), PASSWORD_RECOVERY_CODE_RATE_LIMIT_MS);
 
 		return this.mailer
 			.sendPasswordRecoveryMail(user.email, code)
 			.catch(() => ({
 				success: false,
+				waitMs: PASSWORD_RECOVERY_CODE_RATE_LIMIT_MS,
 			}))
 			.then(() => ({
 				success: true,
+				waitMs: PASSWORD_RECOVERY_CODE_RATE_LIMIT_MS,
 			}));
 	}
 
-	public async confirmPasswordCode(email: string, code: string): Promise<CommonDto.BooleanResponse> {
+	public async confirmPasswordCode(
+		email: string,
+		code: string,
+	): Promise<CommonDto.RateLimited<CommonDto.BooleanResponse>> {
 		const cachedCodeKey = this.getPasswordRecoveryKey(email);
 		const payload = await this.cacheManager.get<IPasswordRecoveryCachePayload>(cachedCodeKey);
 		if (!payload) {
@@ -113,9 +120,13 @@ export class AuthService {
 		}
 		if (payload.attempts > MAX_PASSWORD_RECOVERY_ATTEMPTS) {
 			const rateLimitKey = this.getPasswordRecoveryRateLimitKey(email);
-			this.cacheManager.set(rateLimitKey, true, PASSWORD_RECOVERY_CODE_TIMEOUT_MS);
+			await this.cacheManager.set(rateLimitKey, true, PASSWORD_RECOVERY_CODE_TIMEOUT_MS);
 
-			throw new ConflictException(ERRORS.TOO_MANY_REQUESTS);
+			return {
+				success: false,
+				remainAttempts: 0,
+				waitMs: PASSWORD_RECOVERY_CODE_TIMEOUT_MS,
+			};
 		}
 
 		const shouldConfirm = payload.code === code;
@@ -133,11 +144,19 @@ export class AuthService {
 				console.log('Failed to increment password recovery attempts. Reason:', r);
 			});
 
-		if (!shouldConfirm) {
-			throw new BadRequestException(`_code:${ERRORS.MISMATCH}`);
+		if (shouldConfirm) {
+			return {
+				success: true,
+				remainAttempts: MAX_PASSWORD_RECOVERY_ATTEMPTS - (payload.attempts + 1),
+				waitMs: 0,
+			};
+		} else {
+			return {
+				success: false,
+				remainAttempts: MAX_PASSWORD_RECOVERY_ATTEMPTS - (payload.attempts + 1),
+				waitMs: 0,
+			};
 		}
-
-		return { success: true };
 	}
 
 	public async recoverPassword(dto: AuthDto.PasswordRecovery): Promise<CommonDto.BooleanResponse> {
@@ -167,13 +186,16 @@ export class AuthService {
 		return { success: true };
 	}
 
-	public async requestConfirmEmail(userId: string): Promise<CommonDto.BooleanResponse> {
+	public async requestConfirmEmail(userId: string): Promise<CommonDto.RateLimited<CommonDto.BooleanResponse>> {
 		const cachedCodeKey = this.getEmailConfirmationKey(userId);
 		const rateLimitKey = this.getEmailConfirmationRateLimitKey(userId);
 
-		const rateLimit = await this.cacheManager.get<boolean>(rateLimitKey);
-		if (rateLimit) {
-			throw new ConflictException(ERRORS.TOO_MANY_REQUESTS);
+		const rateLimitSince = await this.cacheManager.get<number>(rateLimitKey);
+		if (rateLimitSince) {
+			return {
+				success: false,
+				waitMs: rateLimitSince + EMAIL_CONFIRMATION_CODE_RATE_LIMIT_MS - Date.now(),
+			};
 		}
 
 		const [user] = await this.db.db
@@ -194,15 +216,17 @@ export class AuthService {
 
 		const code = generateNumericCode(EMAIL_CONFIRMATION_CODE_SIZE);
 		await this.cacheManager.set(cachedCodeKey, code, EMAIL_CONFIRMATION_CODE_TTL_MS);
-		await this.cacheManager.set(rateLimitKey, true, EMAIL_CONFIRMATION_CODE_RATE_LIMIT_MS);
+		await this.cacheManager.set(rateLimitKey, Date.now(), EMAIL_CONFIRMATION_CODE_RATE_LIMIT_MS);
 
 		return this.mailer
 			.sendEmailConfirmationMail(user.email, code)
 			.catch(() => ({
 				success: false,
+				waitMs: EMAIL_CONFIRMATION_CODE_RATE_LIMIT_MS,
 			}))
 			.then(() => ({
 				success: true,
+				waitMs: EMAIL_CONFIRMATION_CODE_RATE_LIMIT_MS,
 			}));
 	}
 
