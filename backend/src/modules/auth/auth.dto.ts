@@ -12,6 +12,11 @@ export namespace AuthDto {
 		code: string;
 	}
 
+	export class RequestPasswordRecovery {
+		@IsEmail(undefined, { message: `_email:${ERRORS.INVALID_EMAIL}` })
+		email: string;
+	}
+
 	export class ConfirmPasswordRecovery {
 		@Length(EMAIL_CONFIRMATION_CODE_SIZE, EMAIL_CONFIRMATION_CODE_SIZE, {
 			message: `_code:${ERRORS.INVALID_LENGTH}`,
