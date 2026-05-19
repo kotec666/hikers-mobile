@@ -10,6 +10,7 @@ import { OTPInput } from '@/components/ui/OTP/OTPInput'
 import * as Haptics from 'expo-haptics'
 import { useSafeNavigation } from '@/hooks/useSafeNavigation'
 import { Page } from '@/components/ui/Page'
+import { PASSWORD_RECOVERY_CODE_SIZE } from '@/shared/constants'
 
 const SecondStepPage = () => {
 	const { push } = useSafeNavigation()
@@ -55,7 +56,7 @@ const SecondStepPage = () => {
 										</Text>
 										<OTPInput
 											hasError={hasError}
-											length={5}
+											length={PASSWORD_RECOVERY_CODE_SIZE}
 											onDone={onDone}
 											clearError={handleClearOTPError}
 										/>

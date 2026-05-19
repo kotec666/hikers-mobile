@@ -25,3 +25,25 @@ export const formatTimeFromSecondsCompact = (seconds: number | undefined): strin
 
 	return parts.join(' ') || '0 мин'
 }
+
+// 45000      -> 0:45
+// 65000      -> 1:05
+// 840000     -> 14:00
+// 3661000    -> 01:01:01
+export const formatCountdown = (ms: number) => {
+	const totalSec = Math.floor(ms / 1000)
+
+	const hours = Math.floor(totalSec / 3600)
+	const minutes = Math.floor((totalSec % 3600) / 60)
+	const seconds = totalSec % 60
+
+	if (hours > 0) {
+		return [
+			String(hours).padStart(2, '0'),
+			String(minutes).padStart(2, '0'),
+			String(seconds).padStart(2, '0')
+		].join(':')
+	}
+
+	return [String(minutes), String(seconds).padStart(2, '0')].join(':')
+}

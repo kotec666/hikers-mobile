@@ -91,6 +91,14 @@ const errorFields: ErrorFields = {
 	[ERRORS.TRAINING_NOT_STARTED]: {
 		field: 'field_name',
 		message: 'Тренировка не начата'
+	},
+	[ERRORS.SHOULD_BE_DIFFERENT]: {
+		field: 'field_name',
+		message: 'Значения должны отличаться'
+	},
+	[ERRORS.TOO_MANY_REQUESTS]: {
+		field: 'field_name',
+		message: 'Слишком много попыток'
 	}
 }
 /* prettier-ignore */
@@ -103,12 +111,15 @@ const errorFields: ErrorFields = {
  * */
 
 type PersonalErrorFields = {
-    [key: string]: {
-        [key in ERRORS]?: string;
-    };
-};
+	[key: string]: {
+		[key in ERRORS]?: string
+	}
+}
 
 const personalErrorFields: PersonalErrorFields = {
+	code: {
+		[ERRORS.MISMATCH]: 'Неверный код. Попробуйте снова'
+	},
 	trainingId: {
 		[ERRORS.MISMATCH]: 'Некорректный id тренировки'
 	},

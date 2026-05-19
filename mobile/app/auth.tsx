@@ -21,12 +21,13 @@ import { useLocalSearchParams } from 'expo-router'
 import { Controller, useForm } from 'react-hook-form'
 import { useErrorMessage } from '@/hooks/useErrorMessage'
 import { FieldErrors, getFieldsErrors } from '@/helpers/getFieldsErrors'
-import { loginUser, registrationUser } from '@/api/auth'
+import { loginUser, registrationUser, requestConfirmEmailCode } from '@/api/auth'
 import { cn } from '@/helpers/cn'
 import { lengths } from '@shared/lengths'
 import * as Haptics from 'expo-haptics'
 import { Page } from '@/components/ui/Page'
-// import { useSafeNavigation } from '@/hooks/useSafeNavigation'
+import { useSafeNavigation } from '@/hooks/useSafeNavigation'
+import { createTimer, TimerType } from '@/store/timerStorage'
 
 export enum AUTH_MODE {
 	AUTH = 'auth',
@@ -36,12 +37,12 @@ export enum AUTH_MODE {
 interface IAuthFormState {
 	email: string
 	password: string
-	agree?: boolean
+	agree: boolean
 }
 
 const AuthPage = () => {
 	const { mode } = useLocalSearchParams<{ mode: AUTH_MODE }>()
-	// const { push } = useSafeNavigation()
+	const { push } = useSafeNavigation()
 	const {
 		handleSubmit,
 		control,
@@ -88,10 +89,18 @@ const AuthPage = () => {
 
 		if (data.mode === AUTH_MODE.REGISTRATION) {
 			try {
-				const regData = await registrationUser({ email: authFormState.email, password: authFormState.password })
+				const regData = await registrationUser({
+					email: authFormState.email,
+					password: authFormState.password,
+					isTermsAccepted: authFormState.agree
+				})
 				const { token, ...restParameters } = regData
 
 				await login(regData.token, restParameters)
+				// запрос кода на подтверждение почты
+				await requestConfirmEmailCode()
+				createTimer(TimerType.EMAIL_CONFIRMATION, authFormState.email)
+				push(`/mail-confirmation?email=${authFormState.email}`)
 			} catch (e: unknown) {
 				const formattedErrors = await getFieldsErrors(e)
 				setData((s) => ({ ...s, errors: formattedErrors }))
@@ -256,9 +265,6 @@ const AuthPage = () => {
 				<Button variant="white" onPress={handleClickRedirect}>
 					{data.mode === AUTH_MODE.AUTH ? 'Зарегистрироваться' : 'Войти'}
 				</Button>
-				{/*<Button variant="white" onPress={() => push('/mail-confirmation')}>*/}
-				{/*	email confirmation page*/}
-				{/*</Button>*/}
 			</Container>
 		</Page>
 	)

@@ -116,6 +116,7 @@ export function Button(props: Props & PressableProps) {
 							className="text-sm"
 							style={{
 								fontFamily: fontFamily.bold,
+								fontVariant: ['tabular-nums'],
 								color: textColor
 							}}
 						>

@@ -24,6 +24,7 @@ import { useProfilePostsQuery } from '@/queries/posts'
 import { useProfileQuery } from '@/queries/my-profile'
 import { Page } from '@/components/ui/Page'
 import { useQueryClient } from '@tanstack/react-query'
+import EmailNotConfirmed from '@/components/profile/EmailNotConfirmed'
 
 /**
  *
@@ -50,6 +51,8 @@ const Profile = () => {
 	const legendListRef = useRef<LegendListRef>(null)
 
 	const { data: profileData, isFetching: isProfileFetching, refetch: refetchProfile } = useProfileQuery()
+	const shouldShowEmailConfirmation =
+		!isProfileFetching && Boolean(profileData) && !profileData?.user.isEmailConfirmed
 
 	const {
 		data: posts = [],
@@ -163,6 +166,10 @@ const Profile = () => {
 						<View className="gap-[20px] mb-[16px]">
 							<View className="gap-[20px]">
 								<View className="gap-[16px]">
+									<EmailNotConfirmed
+										isVisible={shouldShowEmailConfirmation}
+										email={profileData?.user?.email}
+									/>
 									<View className="flex-row justify-between w-full">
 										<AnimatedProfilePicture
 											size={117}

@@ -8,6 +8,7 @@ export interface IUser {
 	id: string
 	name: null | string
 	email: string
+	isEmailConfirmed: null | true
 	username: string
 	avatarFilename: null | string
 }
