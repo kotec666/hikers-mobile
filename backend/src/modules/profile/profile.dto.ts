@@ -21,6 +21,17 @@ export namespace ProfileDto {
 		activities: ActivitiyDto.Entity[];
 	};
 
+	export type MyEntity = {
+		user: UserDto.EntityWithEmail;
+		subscribers: number;
+		subscriptions: number;
+		friends: number;
+		isFriend?: FriendStatus;
+		isSubscribed?: boolean;
+		achievements: AchievementDto.Entity[];
+		activities: ActivitiyDto.Entity[];
+	};
+
 	/** Form-Data запрос */
 	export class Edit {
 		@IsOptional()

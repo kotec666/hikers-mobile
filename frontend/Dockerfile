@@ -2,16 +2,17 @@ FROM node:24 AS builder
 
 WORKDIR /app
 
-# Копируем файлы зависимостей
-COPY frontend/package.json frontend/yarn.lock ./frontend
+# Копируем файлы
+COPY frontend/ ./frontend/
 COPY shared/ ./shared/
+
+# Включаем Corepack и активируем Yarn
+RUN corepack enable
+RUN corepack prepare yarn@4.14.1 --activate
 
 # Устанавливаем зависимости
 WORKDIR /app/frontend
 RUN yarn install --frozen-lockfile
-
-# Копируем исходники фронтенда
-COPY frontend/ .
 
 # Сборка
 RUN yarn build

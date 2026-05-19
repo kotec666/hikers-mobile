@@ -1,6 +1,9 @@
-import { Controller, Res, UnauthorizedException, Req, Body, Post } from '@nestjs/common';
+import { Controller, Res, UnauthorizedException, Req, Body, Post, UseInterceptors } from '@nestjs/common';
 import { AuthService } from './auth.service';
 import { UserDto } from '../user/user.dto';
+import { AuthDto } from './auth.dto';
+import { UserInterceptor } from '@interceptors/user.interceptor';
+import { User, UserData } from '@decorators/user.decorator';
 
 @Controller('auth')
 export class AuthController {
@@ -8,8 +11,7 @@ export class AuthController {
 
 	/**
 	 * @tag Auth
-	 * @summary Register user
-	 * @description Creates a new user and returns an access token
+	 * @summary Регистрация
 	 */
 	@Post('registration')
 	public async registration(@Body() dto: UserDto.Registration, @Res({ passthrough: true }) res) {
@@ -21,7 +23,7 @@ export class AuthController {
 
 	/**
 	 * @tag Auth
-	 * @summary Authenticates a user and returns an access token
+	 * @summary Логин
 	 */
 	@Post('login')
 	public async login(@Body() dto: UserDto.Login, @Res({ passthrough: true }) res) {
@@ -33,7 +35,7 @@ export class AuthController {
 
 	/**
 	 * @tag Auth
-	 * @summary Refresh access-token
+	 * @summary Обновить access-token
 	 * @security token
 	 */
 	@Post('refresh')
@@ -48,5 +50,54 @@ export class AuthController {
 
 		res.status(200);
 		return accessToken;
+	}
+
+	/**
+	 * @tag Auth
+	 * @summary Запросить код подтверждения почты
+	 * @security token
+	 */
+	@UseInterceptors(UserInterceptor)
+	@Post('request-confirm-email')
+	public async requestConfirmEmail(@User() user: UserData) {
+		return this.authService.requestConfirmEmail(user.id);
+	}
+
+	/**
+	 * @tag Auth
+	 * @summary Ввести код подтверждения почты
+	 * @security token
+	 */
+	@UseInterceptors(UserInterceptor)
+	@Post('confirm-email')
+	public async confirmEmail(@User() user: UserData, @Body() dto: AuthDto.ConfirmEmail) {
+		return this.authService.confirmEmail(user.id, dto.code);
+	}
+
+	/**
+	 * @tag Auth
+	 * @summary Запросить код восстановления пароля
+	 */
+	@Post('request-password-recovery')
+	public async requestPasswordRecovery(@Body() dto: AuthDto.RequestPasswordRecovery) {
+		return this.authService.requestPasswordRecovery(dto.email);
+	}
+
+	/**
+	 * @tag Auth
+	 * @summary Ввести код восстановления пароля
+	 */
+	@Post('confirm-password-recovery')
+	public async confirmPasswordRecovery(@Body() dto: AuthDto.ConfirmPasswordRecovery) {
+		return this.authService.confirmPasswordCode(dto.email, dto.code);
+	}
+
+	/**
+	 * @tag Auth
+	 * @summary Восстановить парол
+	 */
+	@Post('recover-password')
+	public async recoverPassword(@Body() dto: AuthDto.PasswordRecovery) {
+		return this.authService.recoverPassword(dto);
 	}
 }

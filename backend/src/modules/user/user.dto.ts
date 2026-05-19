@@ -1,4 +1,4 @@
-import { IsEmail, Length } from 'class-validator';
+import { IsBoolean, IsEmail, Length } from 'class-validator';
 import { HasDigit, UniqueEmail } from '@validation/property-decorators';
 import { ERRORS } from '@shared/errors';
 import { lengths } from '@shared/lengths';
@@ -9,6 +9,15 @@ export namespace UserDto {
 		name: string | null;
 		username: string | null;
 		avatarFilename: string | null;
+	};
+
+	export type EntityWithEmail = {
+		id: string;
+		name: string | null;
+		username: string | null;
+		avatarFilename: string | null;
+		email: string | null;
+		isEmailConfirmed: boolean;
 	};
 
 	export type Login = {
@@ -25,5 +34,8 @@ export namespace UserDto {
 		@Length(lengths.user.password.min, lengths.user.password.max, { message: `_password:${ERRORS.INVALID_LENGTH}` })
 		@HasDigit()
 		password: string;
+
+		@IsBoolean({ message: `_isTermsAccepted:${ERRORS.BAD_REQUEST}` })
+		isTermsAccepted: boolean;
 	}
 }
