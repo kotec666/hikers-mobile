@@ -141,6 +141,7 @@ const BottomSheet = forwardRef<BottomSheetHandle, BottomSheetProps>(
 			if (isGlassAvailable) {
 				return (
 					<GlassView
+						colorScheme="dark"
 						style={[StyleSheet.absoluteFill, { borderTopLeftRadius: 50, borderTopRightRadius: 50 }]}
 					/>
 				)
@@ -168,7 +169,7 @@ const BottomSheet = forwardRef<BottomSheetHandle, BottomSheetProps>(
 				</TouchableWithoutFeedback>
 				{onDoneButton && (
 					<Animated.View style={[styles.floatingButton, floatingButtonStyle]}>
-						<Button variant="liquid" onPress={() => closeSheet()}>
+						<Button variant="black" onPress={() => closeSheet()}>
 							Готово
 						</Button>
 					</Animated.View>

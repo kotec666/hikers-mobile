@@ -165,7 +165,7 @@ const BottomSheetResizable = forwardRef<BottomSheetResizableRef, BottomSheetResi
 			if (blurDisabled) return null
 
 			if (isGlassAvailable) {
-				return <GlassView style={[StyleSheet.absoluteFill, { borderRadius: 25 }]} />
+				return <GlassView colorScheme="dark" style={[StyleSheet.absoluteFill, { borderRadius: 25 }]} />
 			}
 
 			if (Platform.OS === 'ios') {

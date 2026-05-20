@@ -29,7 +29,7 @@ const WeightPickerWheel = ({ value = 70, onChange }: WeightPickerWheelProps) => 
 	)
 
 	return (
-		<View className="items-center justify-center">
+		<View className="items-center justify-center overflow-hidden">
 			<VirtualizedWheelPicker
 				data={data}
 				value={value}

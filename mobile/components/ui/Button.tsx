@@ -1,29 +1,13 @@
 import { PropsWithChildren, useRef } from 'react'
 import { cn } from '@/helpers/cn'
 import { fontFamily } from '@/constants/Fonts'
-import {
-	ActivityIndicator,
-	Animated,
-	GestureResponderEvent,
-	PressableProps,
-	Platform,
-	StyleSheet,
-	View
-} from 'react-native'
+import { ActivityIndicator, Animated, GestureResponderEvent, PressableProps } from 'react-native'
 import { Colors } from '@/constants/Colors'
 import { Motion } from '@legendapp/motion'
-import { BlurView } from 'expo-blur'
-import { GlassView, isLiquidGlassAvailable } from 'expo-glass-effect'
 
 const buttonBaseStyles = 'rounded-full w-full flex justify-center items-center flex-row'
 
 const variantColors = {
-	liquid: {
-		from: 'transparent',
-		to: 'transparent',
-		textFrom: Colors.white,
-		textTo: Colors.white
-	},
 	green: {
 		from: Colors['green-20d'],
 		to: Colors['green-main'],
@@ -75,8 +59,6 @@ export function Button(props: Props & PressableProps) {
 
 	const animatedValue = useRef(new Animated.Value(0)).current
 	const colors = variantColors[variant]
-	const isLiquidVariant = variant === 'liquid'
-	const isGlassAvailable = Platform.OS === 'ios' && isLiquidGlassAvailable()
 
 	const btnColor = animatedValue.interpolate({
 		inputRange: [0, 1],
@@ -124,31 +106,11 @@ export function Button(props: Props & PressableProps) {
 			>
 				<Animated.View
 					style={{
-						backgroundColor: isLiquidVariant ? 'transparent' : isLoading ? Colors['gray-92'] : btnColor,
-						height: buttonHeight || 50,
-						overflow: 'hidden'
+						backgroundColor: isLoading ? Colors['gray-92'] : btnColor,
+						height: buttonHeight || 50
 					}}
 					className={cn(buttonBaseStyles, className)}
 				>
-					{isLiquidVariant && (
-						<>
-							{isGlassAvailable ? (
-								<GlassView style={StyleSheet.absoluteFill} />
-							) : Platform.OS === 'ios' ? (
-								<BlurView tint="dark" intensity={20} style={StyleSheet.absoluteFill} />
-							) : (
-								<View
-									style={[
-										StyleSheet.absoluteFill,
-										{
-											backgroundColor: Colors['black-25']
-										}
-									]}
-								/>
-							)}
-						</>
-					)}
-
 					{!isLoading && (
 						<Animated.Text
 							className="text-sm"
@@ -161,7 +123,6 @@ export function Button(props: Props & PressableProps) {
 							{children}
 						</Animated.Text>
 					)}
-
 					{isLoading && <ActivityIndicator size="large" color={Colors.white} />}
 				</Animated.View>
 			</Motion.View>

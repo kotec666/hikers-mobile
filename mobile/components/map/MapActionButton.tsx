@@ -16,7 +16,7 @@ const MapActionButton = memo((props: Props & PressableProps) => {
 		if (Platform.OS !== 'ios') return null
 
 		if (isGlassAvailable) {
-			return <GlassView pointerEvents="none" style={StyleSheet.absoluteFill} />
+			return <GlassView colorScheme="dark" pointerEvents="none" style={StyleSheet.absoluteFill} />
 		}
 
 		return <BlurView pointerEvents="none" tint="dark" intensity={10} style={StyleSheet.absoluteFill} />
