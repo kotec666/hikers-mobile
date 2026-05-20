@@ -1,6 +1,6 @@
-import React, { useCallback, useState } from 'react'
+import React, { useCallback, useRef, useState } from 'react'
 import { Container } from '@/components/ui/Container'
-import { Keyboard, TouchableOpacity, TouchableWithoutFeedback, View } from 'react-native'
+import { Keyboard, Pressable, TouchableOpacity, TouchableWithoutFeedback, View, Text, Dimensions } from 'react-native'
 import { UserAvatar } from '@/components/ui/UserAvatar'
 import { Button } from '@/components/ui/Button'
 import ActivityInfo from '@/components/ui/Profile/ActivityInfo'
@@ -22,13 +22,18 @@ import BlurProvider from '@/components/providers/BlurProvider'
 import { lengths } from '@shared/lengths'
 import { useProfileQuery, useUpdateProfileMutation } from '@/queries/my-profile'
 import { Page } from '@/components/ui/Page'
+import BottomSheet from '@/components/ui/BottomSheet/BottomSheet'
+import { BottomSheetHandle } from '@/components/ui/BottomSheet/types'
+import WeightPickerWheel from '@/components/ui/weight-picker/weight-picker-wheel'
 
 interface IEditProfileFormState {
 	name: string
 	username: string
+	weight: number
 	avatarFilename?: string | null
 }
 
+const { height: SCREEN_HEIGHT } = Dimensions.get('screen')
 const FormData = global.FormData
 
 const ProfileEdit = () => {
@@ -40,14 +45,19 @@ const ProfileEdit = () => {
 		control,
 		setValue,
 		getValues,
+		watch,
 		formState: { isDirty }
 	} = useForm<IEditProfileFormState>({
 		values: {
 			name: profileData?.user?.name || '',
 			username: profileData?.user?.username || '',
+			weight: 70, // profileData?.user?.weight || 70
 			avatarFilename: PATH_TO_IMAGE + profileData?.user?.avatarFilename
 		}
 	})
+	const weight = watch('weight')
+
+	const bottomSheetRef = useRef<BottomSheetHandle>(null)
 	const { ErrorMessages } = useErrorMessage()
 	const toast = useToast()
 	const { setUser } = useAuthStore()
@@ -164,12 +174,34 @@ const ProfileEdit = () => {
 		}
 	}
 
+	const openBottomSheet = useCallback(() => {
+		if (bottomSheetRef.current) {
+			bottomSheetRef.current.openSheet()
+		}
+	}, [])
+
+	const handlePressWeightField = () => {
+		openBottomSheet()
+	}
+
 	const sourceArray = newActivitiesOrder?.length ? newActivitiesOrder : (profileData?.activities ?? [])
 	const activitiesToRender = sourceArray.length >= 3 ? sourceArray.slice(0, 3) : []
 
 	return (
 		<Page>
 			<BlurProvider>
+				<BottomSheet ref={bottomSheetRef} activeHeight={SCREEN_HEIGHT * 0.5} onDoneButton>
+					<View className="px-[16px]">
+						<WeightPickerWheel
+							value={weight}
+							onChange={(value) => {
+								setValue('weight', value, {
+									shouldDirty: true
+								})
+							}}
+						/>
+					</View>
+				</BottomSheet>
 				<Modal
 					isOpen={data.avatarModal}
 					handleClose={handleCloseAvatarModal}
@@ -289,6 +321,12 @@ const ProfileEdit = () => {
 											/>
 										)}
 									/>
+									<Pressable
+										onPress={handlePressWeightField}
+										className="border border-black-44 rounded-full p-[16px]"
+									>
+										<Text className="text-white">Вес {weight} кг</Text>
+									</Pressable>
 								</View>
 							</View>
 							<TouchableOpacity onPress={() => push('/profile/editActivity')}>

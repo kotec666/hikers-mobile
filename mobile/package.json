@@ -23,6 +23,7 @@
 		"@expo/ui": "~55.0.10",
 		"@legendapp/list": "^2.0.16",
 		"@legendapp/motion": "^2.5.3",
+		"@quidone/react-native-wheel-picker": "^1.7.0",
 		"@shopify/react-native-skia": "2.4.18",
 		"@shopify/restyle": "^2.4.5",
 		"@tanstack/react-query": "^5.90.21",
