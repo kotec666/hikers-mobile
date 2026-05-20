@@ -1,17 +1,20 @@
 import React from 'react'
 import { Motion } from '@legendapp/motion'
 import AlertTriangleSvg from '@/components/svg/AlertTriangleSvg'
-import { Text } from 'react-native'
+import { Platform, Text, View } from 'react-native'
 import { fontFamily } from '@/constants/Fonts'
 import { useSafeNavigation } from '@/hooks/useSafeNavigation'
 import { Colors } from '@/constants/Colors'
 import { useToast } from '@/hooks/useToast'
 import { requestConfirmEmailCode } from '@/api/auth'
 import { createTimer, isRateLimited, TimerType } from '@/store/timerStorage'
+import { GlassView, isLiquidGlassAvailable } from 'expo-glass-effect'
 
 const EmailNotConfirmed = ({ isVisible, email }: { isVisible: boolean; email?: string }) => {
 	const toast = useToast()
 	const { push } = useSafeNavigation()
+
+	const isGlassAvailable = Platform.OS === 'ios' && isLiquidGlassAvailable()
 
 	const handlePress = async () => {
 		if (!email) {
@@ -20,15 +23,9 @@ const EmailNotConfirmed = ({ isVisible, email }: { isVisible: boolean; email?: s
 
 		const hasActiveTimer = isRateLimited(TimerType.EMAIL_CONFIRMATION, email)
 
-		// уже есть cooldown
-		// просто открываем экран
-
 		if (hasActiveTimer) {
 			return push(`/mail-confirmation?email=${email}`)
 		}
-
-		// cooldown нет
-		// отправляем новый код
 
 		const requestCodeResult = await requestConfirmEmailCode()
 		createTimer(TimerType.EMAIL_CONFIRMATION, email, requestCodeResult.waitMs)
@@ -36,11 +33,35 @@ const EmailNotConfirmed = ({ isVisible, email }: { isVisible: boolean; email?: s
 		return push(`/mail-confirmation?email=${email}`)
 	}
 
+	const containerStyles = {
+		flexDirection: 'row' as const,
+		alignItems: 'center' as const,
+		gap: 12,
+		borderRadius: 14,
+		padding: 12
+	}
+
+	const fallbackStyles = {
+		...containerStyles,
+		backgroundColor: Colors['black-25'],
+		borderWidth: 1,
+		borderColor: Colors['black-44']
+	}
+
 	if (!isVisible) return null
+
+	const Content = (
+		<>
+			<AlertTriangleSvg color={Colors['yellow-ffc700']} />
+			<Text style={{ fontFamily: fontFamily.medium }} className="text-yellow-ffc700 text-base shrink">
+				Нажмите, чтобы подтвердить почту и завершить настройку аккаунта.
+			</Text>
+		</>
+	)
+
 	return (
 		<Motion.Pressable onPress={handlePress}>
 			<Motion.View
-				className="flex-row items-center gap-[12px] rounded-[14px] bg-black-25 border border-black-44 p-[12px]"
 				whileTap={{ scale: 0.9 }}
 				transition={{
 					type: 'spring',
@@ -48,10 +69,13 @@ const EmailNotConfirmed = ({ isVisible, email }: { isVisible: boolean; email?: s
 					stiffness: 400
 				}}
 			>
-				<AlertTriangleSvg color={Colors['yellow-ffc700']} />
-				<Text style={{ fontFamily: fontFamily.medium }} className="text-yellow-ffc700 text-base shrink">
-					Нажмите, чтобы подтвердить почту и завершить настройку аккаунта.
-				</Text>
+				{isGlassAvailable ? (
+					<GlassView colorScheme="dark" style={containerStyles}>
+						{Content}
+					</GlassView>
+				) : (
+					<View style={fallbackStyles}>{Content}</View>
+				)}
 			</Motion.View>
 		</Motion.Pressable>
 	)
