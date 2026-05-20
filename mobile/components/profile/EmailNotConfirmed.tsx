@@ -30,9 +30,8 @@ const EmailNotConfirmed = ({ isVisible, email }: { isVisible: boolean; email?: s
 		// cooldown нет
 		// отправляем новый код
 
-		await requestConfirmEmailCode()
-
-		createTimer(TimerType.EMAIL_CONFIRMATION, email)
+		const requestCodeResult = await requestConfirmEmailCode()
+		createTimer(TimerType.EMAIL_CONFIRMATION, email, requestCodeResult.waitMs)
 
 		return push(`/mail-confirmation?email=${email}`)
 	}

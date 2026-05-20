@@ -4,8 +4,6 @@ import HeaderBack from '@/components/ui/HeaderBack'
 import { View, Text, Platform, Keyboard, KeyboardAvoidingView, TouchableWithoutFeedback } from 'react-native'
 import { fontFamily } from '@/constants/Fonts'
 import { Button } from '@/components/ui/Button'
-import AlertCircleSvg from '@/components/svg/AlertCircleSvg'
-import MailboxSvg from '@/components/svg/MailboxSvg'
 import { OTPInput } from '@/components/ui/OTP/OTPInput'
 import * as Haptics from 'expo-haptics'
 import { Page } from '@/components/ui/Page'
@@ -18,6 +16,8 @@ import { FieldErrors, getFieldsErrors } from '@/helpers/getFieldsErrors'
 import { useTimerCountdown } from '@/hooks/useTimerCountdown'
 import { createTimer, TimerType } from '@/store/timerStorage'
 import { formatCountdown } from '@/helpers/formatTime'
+import ErrorMessageIcon from '@/components/ErrorMessageIcon'
+import CheckSpam from '@/components/CheckSpam'
 
 const MailConfirmation = () => {
 	const { push, replace } = useSafeNavigation()
@@ -64,9 +64,8 @@ const MailConfirmation = () => {
 
 		handleClearOTPError()
 
-		await requestConfirmEmailCode()
-
-		createTimer(TimerType.EMAIL_CONFIRMATION, email)
+		const requestCodeResult = await requestConfirmEmailCode()
+		createTimer(TimerType.EMAIL_CONFIRMATION, email, requestCodeResult.waitMs)
 	}
 
 	const hasError = useMemo(() => {
@@ -109,17 +108,7 @@ const MailConfirmation = () => {
 									</View>
 								</View>
 								<View className="gap-[24px]">
-									{hasError && (
-										<View className="flex-row items-center gap-[8px]">
-											<AlertCircleSvg />
-											<Text
-												className="text-base text-red-ff4"
-												style={{ fontFamily: fontFamily.medium }}
-											>
-												{errors.code}
-											</Text>
-										</View>
-									)}
+									{hasError && <ErrorMessageIcon errorText={errors.code} />}
 									<Button
 										variant="black"
 										isLoading={isPending}
@@ -130,15 +119,7 @@ const MailConfirmation = () => {
 											? `Отправить код повторно (${formattedTime})`
 											: 'Отправить код повторно'}
 									</Button>
-									<View className="flex-row justify-center items-center gap-[8px]">
-										<MailboxSvg />
-										<Text
-											className="text-base text-gray-9a"
-											style={{ fontFamily: fontFamily.medium }}
-										>
-											Не получили код? Проверьте спам
-										</Text>
-									</View>
+									<CheckSpam />
 								</View>
 							</View>
 						</View>

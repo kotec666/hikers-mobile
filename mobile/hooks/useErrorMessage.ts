@@ -7,6 +7,7 @@ export interface IErrorMessages {
 	email: string
 	isNumber: string
 	notNumber: string
+	passwordsNotEquals: string
 	optionalMin: (count: number) => string
 	optionalMax: (count: number) => string
 	customMessage: (string: string) => string
@@ -31,6 +32,7 @@ export const useErrorMessage = (minCount: number = 1, maxCount: number = 100) =>
 		email: 'Некорректный email',
 		isNumber: 'Поле может содержать только цифры',
 		notNumber: 'Поле может содержать только буквы',
+		passwordsNotEquals: 'Пароли не совпадают',
 		optionalMin: (count: number) => {
 			return `Минимальная длина ` + getParameterNoun(count)
 		},

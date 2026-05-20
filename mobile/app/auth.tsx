@@ -98,8 +98,8 @@ const AuthPage = () => {
 
 				await login(regData.token, restParameters)
 				// запрос кода на подтверждение почты
-				await requestConfirmEmailCode()
-				createTimer(TimerType.EMAIL_CONFIRMATION, authFormState.email)
+				const requestCodeResult = await requestConfirmEmailCode()
+				createTimer(TimerType.EMAIL_CONFIRMATION, authFormState.email, requestCodeResult.waitMs)
 				push(`/mail-confirmation?email=${authFormState.email}`)
 			} catch (e: unknown) {
 				const formattedErrors = await getFieldsErrors(e)

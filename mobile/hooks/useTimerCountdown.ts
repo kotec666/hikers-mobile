@@ -24,13 +24,18 @@ export const useTimerCountdown = (type: TimerType, email?: string): IUseTimerCou
 				return
 			}
 
+			let interval: ReturnType<typeof setInterval> | null = null
+
 			const update = () => {
 				const remaining = getRemainingTime(type, email)
+
+				if (remaining <= 0 && interval) {
+					clearInterval(interval)
+				}
 
 				setState((prev) => {
 					const next = {
 						remainingSeconds: remaining,
-
 						isBlocked: remaining > 0
 					}
 
@@ -44,10 +49,12 @@ export const useTimerCountdown = (type: TimerType, email?: string): IUseTimerCou
 
 			update()
 
-			const interval = setInterval(update, 1000)
+			interval = setInterval(update, 1000)
 
 			return () => {
-				clearInterval(interval)
+				if (interval) {
+					clearInterval(interval)
+				}
 			}
 		}, [type, email])
 	)

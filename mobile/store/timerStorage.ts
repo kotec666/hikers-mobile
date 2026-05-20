@@ -1,10 +1,3 @@
-import {
-	EMAIL_CONFIRMATION_CODE_RATE_LIMIT_MS,
-	MAX_PASSWORD_RECOVERY_ATTEMPTS,
-	PASSWORD_RECOVERY_CODE_RATE_LIMIT_MS,
-	PASSWORD_RECOVERY_CODE_TIMEOUT_MS
-} from '@/shared/constants'
-
 import { addMilliseconds, formatISO, isBefore, parseISO } from 'date-fns'
 
 import { createMMKV } from 'react-native-mmkv'
@@ -30,11 +23,7 @@ interface IBaseTimerInfo {
 }
 
 export type IEmailConfirmationTimer = IBaseTimerInfo
-
-export interface IPasswordRecoveryTimer extends IBaseTimerInfo {
-	attempts: number
-	timeoutExpiresAt?: string
-}
+export type IPasswordRecoveryTimer = IBaseTimerInfo
 
 interface ITimerTypeMap {
 	[TimerType.EMAIL_CONFIRMATION]: IEmailConfirmationTimer
@@ -45,7 +34,6 @@ type TimerCollection<T> = Record<string, T>
 
 interface ITimerStorage {
 	[TimerType.EMAIL_CONFIRMATION]: TimerCollection<IEmailConfirmationTimer>
-
 	[TimerType.PASSWORD_RECOVERY]: TimerCollection<IPasswordRecoveryTimer>
 }
 
@@ -56,22 +44,6 @@ interface ITimerStorage {
 const initialTimerStorage: ITimerStorage = {
 	email_confirmation: {},
 	password_recovery: {}
-}
-
-//
-// CONFIG
-//
-
-const TIMER_CONFIG = {
-	[TimerType.EMAIL_CONFIRMATION]: {
-		rateLimitMs: EMAIL_CONFIRMATION_CODE_RATE_LIMIT_MS
-	},
-
-	[TimerType.PASSWORD_RECOVERY]: {
-		rateLimitMs: PASSWORD_RECOVERY_CODE_RATE_LIMIT_MS,
-		timeoutMs: PASSWORD_RECOVERY_CODE_TIMEOUT_MS,
-		maxAttempts: MAX_PASSWORD_RECOVERY_ATTEMPTS
-	}
 }
 
 //
@@ -112,28 +84,20 @@ export const getTimer = <T extends TimerType>(type: T, email: string): ITimerTyp
 // CREATE TIMER
 //
 
-export const createTimer = (type: TimerType, email: string) => {
-	const storage = getStorage()
-
+const createTimerObject = (ms: number): IBaseTimerInfo => {
 	const currentDate = new Date()
 
-	const config = TIMER_CONFIG[type]
-
-	const baseTimer = {
+	return {
 		startedAt: formatISO(currentDate),
-		expiresAt: formatISO(addMilliseconds(currentDate, config.rateLimitMs))
+		expiresAt: formatISO(addMilliseconds(currentDate, ms))
 	}
+}
 
-	if (type === TimerType.EMAIL_CONFIRMATION) {
-		storage[type][email] = baseTimer
-	}
+export const createTimer = (type: TimerType, email: string, ms: number) => {
+	if (ms <= 0) return
+	const storage = getStorage()
 
-	if (type === TimerType.PASSWORD_RECOVERY) {
-		storage[type][email] = {
-			...baseTimer,
-			attempts: 0
-		}
-	}
+	storage[type][email] = createTimerObject(ms)
 
 	setStorage(storage)
 }
@@ -184,64 +148,6 @@ export const isRateLimited = (type: TimerType, email: string) => {
 	}
 
 	return isBefore(new Date(), parseISO(timer.expiresAt))
-}
-
-//
-// PASSWORD RECOVERY
-//
-
-export const incrementPasswordRecoveryAttempts = (email: string) => {
-	const storage = getStorage()
-
-	const timer = storage.password_recovery[email]
-
-	if (!timer) {
-		return
-	}
-
-	timer.attempts += 1
-
-	const config = TIMER_CONFIG.password_recovery
-
-	if (timer.attempts >= config.maxAttempts) {
-		timer.timeoutExpiresAt = formatISO(addMilliseconds(new Date(), config.timeoutMs))
-	}
-
-	setStorage(storage)
-}
-
-//
-// CHECK RECOVERY BLOCK
-//
-
-export const isPasswordRecoveryBlocked = (email: string) => {
-	const timer = getTimer(TimerType.PASSWORD_RECOVERY, email)
-
-	if (!timer?.timeoutExpiresAt) {
-		return false
-	}
-
-	return isBefore(new Date(), parseISO(timer.timeoutExpiresAt))
-}
-
-//
-// RESET ATTEMPTS
-//
-
-export const resetPasswordRecoveryAttempts = (email: string) => {
-	const storage = getStorage()
-
-	const timer = storage.password_recovery[email]
-
-	if (!timer) {
-		return
-	}
-
-	timer.attempts = 0
-
-	delete timer.timeoutExpiresAt
-
-	setStorage(storage)
 }
 
 //
