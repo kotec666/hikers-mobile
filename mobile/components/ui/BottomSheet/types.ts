@@ -4,7 +4,7 @@ export interface BottomSheetProps {
 	backgroundColor?: string
 	backDropColor?: string
 	blurDisabled?: boolean
-	onDoneButton?: boolean
+	onDone?: () => void
 }
 
 export interface BottomSheetHandle {

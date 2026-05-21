@@ -57,6 +57,7 @@ const ProfileEdit = () => {
 		}
 	})
 	const weight = watch('weight')
+	const [temporaryWeight, setTemporaryWeight] = useState(weight)
 
 	const bottomSheetRef = useRef<BottomSheetHandle>(null)
 	const { ErrorMessages } = useErrorMessage()
@@ -176,10 +177,12 @@ const ProfileEdit = () => {
 	}
 
 	const openBottomSheet = useCallback(() => {
+		setTemporaryWeight(weight)
+
 		if (bottomSheetRef.current) {
 			bottomSheetRef.current.openSheet()
 		}
-	}, [])
+	}, [weight])
 
 	const handlePressWeightField = () => {
 		openBottomSheet()
@@ -204,23 +207,29 @@ const ProfileEdit = () => {
 	return (
 		<Page>
 			<BlurProvider>
-				<BottomSheet ref={bottomSheetRef} activeHeight={SCREEN_HEIGHT * 0.5} onDoneButton>
+				<BottomSheet
+					ref={bottomSheetRef}
+					activeHeight={SCREEN_HEIGHT * 0.5}
+					onDone={() => {
+						setValue('weight', temporaryWeight, {
+							shouldDirty: true
+						})
+
+						bottomSheetRef.current?.closeSheet()
+					}}
+				>
 					<BaseWheelPicker
 						data={weightPickerWheelData}
-						value={weight}
-						onChange={(value) => {
-							setValue('weight', value, {
-								shouldDirty: true
-							})
-						}}
+						value={temporaryWeight}
+						onChange={(value) => setTemporaryWeight(value)}
 						itemHeight={60}
 						overlayHeightMultiplier={0.77}
 						renderItem={({ item, index }) => (
 							<View key={index} className="items-center justify-center h-[60px] w-full">
 								<Text
 									className={cn('text-[28px]', {
-										'text-white font-semibold': weight === item.value,
-										'text-black-5c': weight !== item.value
+										'text-white font-semibold': temporaryWeight === item.value,
+										'text-black-5c': temporaryWeight !== item.value
 									})}
 								>
 									{item.label}

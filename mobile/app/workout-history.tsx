@@ -59,6 +59,7 @@ const WorkoutHistory = () => {
 	const { notSavedWorkouts, syncingIds, enqueueWorkoutSync, deleteWorkout } = useUnsavedWorkoutSync()
 
 	const [selectedType, setSelectedType] = useState<string>('')
+	const [temporarySelectedType, setTemporarySelectedType] = useState<string>('')
 	const [deletedWorkoutIds, setDeletedWorkoutIds] = useState<string[]>([])
 
 	const {
@@ -146,7 +147,7 @@ const WorkoutHistory = () => {
 		}
 	}
 
-	const handleSelectType = async (type: string) => {
+	const handleSelectType = (type: string) => {
 		setSelectedType(type)
 		listRef.current?.scrollToOffset({
 			offset: 0,
@@ -155,10 +156,11 @@ const WorkoutHistory = () => {
 	}
 
 	const openBottomSheet = useCallback(() => {
+		setTemporarySelectedType(selectedType)
 		if (bottomSheetRef.current) {
 			bottomSheetRef.current.openSheet()
 		}
-	}, [])
+	}, [selectedType])
 
 	const workoutTypePickerWheelData = useMemo(() => {
 		return [
@@ -182,18 +184,30 @@ const WorkoutHistory = () => {
 	return (
 		<Page>
 			<BlurProvider>
-				<BottomSheet ref={bottomSheetRef} activeHeight={SCREEN_HEIGHT * 0.5} onDoneButton>
+				<BottomSheet
+					ref={bottomSheetRef}
+					activeHeight={SCREEN_HEIGHT * 0.5}
+					onDone={() => {
+						handleSelectType(temporarySelectedType)
+						bottomSheetRef.current?.closeSheet()
+					}}
+				>
 					<BaseWheelPicker
 						data={workoutTypePickerWheelData}
-						value={selectedType}
-						onChange={(type: string) => handleSelectType(type)}
+						value={temporarySelectedType}
+						onChange={(type: string) => setTemporarySelectedType(type)}
 						itemHeight={70}
 						renderItem={({ item, index }) => {
 							const Icon = item.IconComponent ?? PeopleRunningSvg
+							const isChosen = temporarySelectedType === item.value
 
 							return (
 								<View key={index} className="p-3">
-									<WorkoutHistoryListItem icon={<Icon width={26} height={26} />} title={item.label} />
+									<WorkoutHistoryListItem
+										icon={<Icon width={26} height={26} />}
+										title={item.label}
+										isChosen={isChosen}
+									/>
 								</View>
 							)
 						}}

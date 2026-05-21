@@ -19,7 +19,7 @@ const BottomSheet = forwardRef<BottomSheetHandle, BottomSheetProps>(
 			backgroundColor = 'rgba(0, 0, 0, 1)',
 			blurDisabled,
 			children,
-			onDoneButton = false
+			onDone
 		},
 		ref
 	) => {
@@ -167,9 +167,9 @@ const BottomSheet = forwardRef<BottomSheetHandle, BottomSheetProps>(
 				<TouchableWithoutFeedback onPress={() => closeSheet()}>
 					<Animated.View style={[styles.backdrop, backdropStyle, { backgroundColor: backDropColor }]} />
 				</TouchableWithoutFeedback>
-				{onDoneButton && (
+				{onDone && (
 					<Animated.View style={[styles.floatingButton, floatingButtonStyle]}>
-						<Button variant="black" onPress={() => closeSheet()}>
+						<Button variant="black" onPress={onDone}>
 							Готово
 						</Button>
 					</Animated.View>
