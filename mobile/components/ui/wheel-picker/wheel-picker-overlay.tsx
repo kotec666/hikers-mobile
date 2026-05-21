@@ -4,7 +4,11 @@ import type { RenderOverlayProps } from '@quidone/react-native-wheel-picker'
 
 const { width: SCREEN_WIDTH } = Dimensions.get('screen')
 
-const Overlay = ({ itemHeight }: RenderOverlayProps) => {
+interface WheelPickerOverlayProps extends RenderOverlayProps {
+	heightMultiplier?: number
+}
+
+const WheelPickerOverlay = ({ itemHeight, heightMultiplier = 1 }: WheelPickerOverlayProps) => {
 	return (
 		<View style={styles.overlayContainer} pointerEvents="none">
 			<View
@@ -12,7 +16,7 @@ const Overlay = ({ itemHeight }: RenderOverlayProps) => {
 				style={[
 					styles.selection,
 					{
-						height: itemHeight / 1.3
+						height: itemHeight * heightMultiplier
 					}
 				]}
 			/>
@@ -36,4 +40,4 @@ const styles = StyleSheet.create({
 	}
 })
 
-export default memo(Overlay)
+export default memo(WheelPickerOverlay)

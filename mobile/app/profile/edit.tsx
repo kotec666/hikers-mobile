@@ -1,4 +1,4 @@
-import React, { useCallback, useRef, useState } from 'react'
+import React, { useCallback, useMemo, useRef, useState } from 'react'
 import { Container } from '@/components/ui/Container'
 import { Keyboard, Pressable, TouchableOpacity, TouchableWithoutFeedback, View, Text, Dimensions } from 'react-native'
 import { UserAvatar } from '@/components/ui/UserAvatar'
@@ -24,7 +24,8 @@ import { useProfileQuery, useUpdateProfileMutation } from '@/queries/my-profile'
 import { Page } from '@/components/ui/Page'
 import BottomSheet from '@/components/ui/BottomSheet/BottomSheet'
 import { BottomSheetHandle } from '@/components/ui/BottomSheet/types'
-import WeightPickerWheel from '@/components/ui/weight-picker/weight-picker-wheel'
+import BaseWheelPicker from '@/components/ui/wheel-picker/base-wheel-picker'
+import { cn } from '@/helpers/cn'
 
 interface IEditProfileFormState {
 	name: string
@@ -187,20 +188,46 @@ const ProfileEdit = () => {
 	const sourceArray = newActivitiesOrder?.length ? newActivitiesOrder : (profileData?.activities ?? [])
 	const activitiesToRender = sourceArray.length >= 3 ? sourceArray.slice(0, 3) : []
 
+	const weightPickerWheelData = useMemo(
+		() =>
+			Array.from({ length: 186 }, (_, index) => {
+				const weight = index + 15
+
+				return {
+					value: weight,
+					label: `${weight} кг`
+				}
+			}),
+		[]
+	)
+
 	return (
 		<Page>
 			<BlurProvider>
 				<BottomSheet ref={bottomSheetRef} activeHeight={SCREEN_HEIGHT * 0.5} onDoneButton>
-					<View className="px-[16px]">
-						<WeightPickerWheel
-							value={weight}
-							onChange={(value) => {
-								setValue('weight', value, {
-									shouldDirty: true
-								})
-							}}
-						/>
-					</View>
+					<BaseWheelPicker
+						data={weightPickerWheelData}
+						value={weight}
+						onChange={(value) => {
+							setValue('weight', value, {
+								shouldDirty: true
+							})
+						}}
+						itemHeight={60}
+						overlayHeightMultiplier={0.77}
+						renderItem={({ item, index }) => (
+							<View key={index} className="items-center justify-center h-[60px] w-full">
+								<Text
+									className={cn('text-[28px]', {
+										'text-white font-semibold': weight === item.value,
+										'text-black-5c': weight !== item.value
+									})}
+								>
+									{item.label}
+								</Text>
+							</View>
+						)}
+					/>
 				</BottomSheet>
 				<Modal
 					isOpen={data.avatarModal}
