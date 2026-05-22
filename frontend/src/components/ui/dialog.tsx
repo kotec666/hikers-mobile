@@ -39,18 +39,21 @@ function DialogContent({
 	className,
 	children,
 	title,
+	description,
 	isTitleHidden = false,
+	isDescriptionHidden = false,
 	showCloseButton = true,
 	...props
 }: React.ComponentProps<typeof DialogPrimitive.Content> & {
 	isTitleHidden?: boolean
+	isDescriptionHidden?: boolean
 	showCloseButton?: boolean
+	description?: string
 }) {
 	return (
 		<DialogPortal>
 			<DialogOverlay />
 			<DialogPrimitive.Content
-				aria-describedby={undefined}
 				data-slot="dialog-content"
 				className={cn(
 					'fixed top-1/2 left-1/2 z-50 grid w-full max-w-[calc(100%-2rem)] bg-black-0d -translate-x-1/2 -translate-y-1/2 gap-6 rounded-xl border border-[#2a2a2a] p-8 text-sm text-white ring-1 ring-foreground/10 duration-100 outline-none sm:max-w-md data-open:animate-in data-open:fade-in-0 data-open:zoom-in-95 data-closed:animate-out data-closed:fade-out-0 data-closed:zoom-out-95',
@@ -67,10 +70,18 @@ function DialogContent({
 						{title}
 					</DialogPrimitive.Title>
 				)}
+				{isDescriptionHidden ? (
+					<VisuallyHidden asChild>
+						<DialogDescription className="text-[#ababab] text-center">{description}</DialogDescription>
+					</VisuallyHidden>
+				) : (
+					<DialogDescription className="text-[#ababab] text-center">{description}</DialogDescription>
+				)}
 				{children}
 				{showCloseButton && (
 					<DialogPrimitive.Close data-slot="dialog-close" asChild>
 						<Button
+							aria-label="Закрыть модальное окно"
 							variant="ghost"
 							className="absolute top-4 right-4 hover:bg-[#1a1a1a] transition-colors"
 							size="icon-sm"

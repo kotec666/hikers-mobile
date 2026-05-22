@@ -6,9 +6,6 @@ import StoreButton, { StoreButtonType } from '@/components/ui/store-button'
 const DownloadModalContent = () => {
 	return (
 		<div className="space-y-8 pb-4">
-			<div className="text-center">
-				<p className="text-[#ababab]">Выберите ваш магазин приложений</p>
-			</div>
 			<div className="grid grid-cols-2 place-items-stretch gap-4">
 				<div className="flex justify-end">
 					<StoreButton type="lg" storeType={StoreButtonType.APP_STORE} shrink={false} />

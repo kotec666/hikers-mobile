@@ -58,7 +58,11 @@ const HeaderModals = ({ contentBlocks }: IHeaderModalsProps) => {
 						Скачать
 					</Button>
 				</ResponsiveDialogTrigger>
-				<ResponsiveDialogContent title="Скачать приложение" className="md:max-w-2xl">
+				<ResponsiveDialogContent
+					title="Скачать приложение"
+					className="md:max-w-2xl"
+					description="Выберите ваш магазин приложений"
+				>
 					<DownloadModalContent />
 				</ResponsiveDialogContent>
 			</ResponsiveDialog>
@@ -71,8 +75,10 @@ const HeaderModals = ({ contentBlocks }: IHeaderModalsProps) => {
 				<ResponsiveDialogContent
 					title="Навигация"
 					isTitleHidden
+					isDescriptionHidden
 					showCloseButton={false}
 					className="md:max-w-178.5 md:h-192"
+					description="Навигация по странице"
 				>
 					<MobileMenuContent
 						menuItems={contentBlocks}
