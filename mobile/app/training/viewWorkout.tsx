@@ -494,16 +494,8 @@ export default function ViewWorkout() {
 					</View>
 				</View>
 			</Modal>
-			<KeyboardAvoidingView
-				style={{ flex: 1 }}
-				behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-				keyboardVerticalOffset={30}
-			>
-				<ScrollView
-					keyboardShouldPersistTaps="never"
-					contentInsetAdjustmentBehavior="automatic"
-					contentContainerStyle={{ flexGrow: 1 }}
-				>
+			<KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : 'height'} keyboardVerticalOffset={30}>
+				<ScrollView keyboardShouldPersistTaps="never" contentInsetAdjustmentBehavior="automatic">
 					<View className="relative" style={{ height: 300 }}>
 						<Image
 							style={{
