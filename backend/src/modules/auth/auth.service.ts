@@ -75,6 +75,14 @@ export class AuthService {
 			};
 		}
 
+		const isEmailValid = await this.mailer.isDeliverable(email);
+		if (!isEmailValid) {
+			return {
+				success: false,
+				waitMs: 0,
+			};
+		}
+
 		const [user] = await this.db.db
 			.select({
 				id: users.id,
@@ -224,6 +232,14 @@ export class AuthService {
 		}
 		if (user.emailConfirmedAt) {
 			throw new ConflictException(ERRORS.ALREADY_EXISTS);
+		}
+
+		const isEmailValid = await this.mailer.isDeliverable(user.email);
+		if (!isEmailValid) {
+			return {
+				success: false,
+				waitMs: 0,
+			};
 		}
 
 		const code = generateNumericCode(EMAIL_CONFIRMATION_CODE_SIZE);
