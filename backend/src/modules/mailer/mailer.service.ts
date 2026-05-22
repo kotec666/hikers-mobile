@@ -2,7 +2,7 @@ import { MailerService as Mailer } from '@nestjs-modules/mailer';
 import { BadRequestException, Injectable } from '@nestjs/common';
 import { EMAIL_CONFIRMATION_CODE_TTL_MS, PASSWORD_RECOVERY_CODE_TTL_MS } from '@shared/constants';
 import { ERRORS } from '@shared/errors';
-import dns from 'dns/promises';
+import * as dns from 'dns/promises';
 
 @Injectable()
 export class MailerService {
@@ -11,13 +11,16 @@ export class MailerService {
 	public async isDeliverable(email: string): Promise<boolean> {
 		const domain = email.split('@')[1];
 
+		// Создаём резолвер с явным DNS-сервером
+		const resolver = new dns.Resolver();
+		resolver.setServers(['8.8.8.8', '8.8.4.4']); // Google DNS
+
 		try {
-			const mxRecords = await dns.resolveMx(domain);
-			// If MX records exist, domain can receive email
+			const mxRecords = await resolver.resolveMx(domain);
+			console.log(`MX records for ${domain}:`, mxRecords);
 			return mxRecords && mxRecords.length > 0;
 		} catch (error) {
-			// No MX records found - domain cannot receive email
-			console.log(`Domain ${domain} cannot receive email`);
+			console.error(`DNS error for ${domain}:`, error);
 			return false;
 		}
 	}
