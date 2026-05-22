@@ -1,7 +1,6 @@
 import { MailerService as Mailer } from '@nestjs-modules/mailer';
-import { BadRequestException, Injectable } from '@nestjs/common';
+import { Injectable } from '@nestjs/common';
 import { EMAIL_CONFIRMATION_CODE_TTL_MS, PASSWORD_RECOVERY_CODE_TTL_MS } from '@shared/constants';
-import { ERRORS } from '@shared/errors';
 import * as dns from 'dns/promises';
 
 @Injectable()
@@ -26,11 +25,6 @@ export class MailerService {
 	}
 
 	public async sendMail(to: string, subject: string, text: string) {
-		const isEmailValid = await this.isDeliverable(to);
-		if (!isEmailValid) {
-			throw new BadRequestException(ERRORS.INVALID_EMAIL);
-		}
-
 		return this.mailer.sendMail({
 			to,
 			subject,
@@ -39,11 +33,6 @@ export class MailerService {
 	}
 
 	public async sendEmailConfirmationMail(to: string, code: number | string) {
-		const isEmailValid = await this.isDeliverable(to);
-		if (!isEmailValid) {
-			throw new BadRequestException(ERRORS.INVALID_EMAIL);
-		}
-
 		const subject = `Заголовок ${Date.now()}`;
 
 		return this.mailer.sendMail({
@@ -61,11 +50,6 @@ export class MailerService {
 	}
 
 	public async sendPasswordRecoveryMail(to: string, code: number | string) {
-		const isEmailValid = await this.isDeliverable(to);
-		if (!isEmailValid) {
-			throw new BadRequestException(ERRORS.INVALID_EMAIL);
-		}
-
 		const subject = `Заголовок ${Date.now()}`;
 
 		return this.mailer.sendMail({
