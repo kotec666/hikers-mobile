@@ -36,7 +36,6 @@ const ALLOWED_ROUTES = {
 	EDIT_PROFILE: '/profile/edit' as RelativePathString,
 	ABOUT: '/(about)' as RelativePathString,
 	SETTINGS: '/(settings)' as RelativePathString,
-	TEST_RESULTS_PAGE: '/training/results' as RelativePathString,
 	RESULTS_PAGE: '/training/viewWorkout' as RelativePathString
 } as const satisfies Record<string, RelativePathString>
 
@@ -190,10 +189,6 @@ const Profile = () => {
 												{
 													label: 'Настройки',
 													action: () => handleClickRedirect(ALLOWED_ROUTES.SETTINGS)
-												},
-												{
-													label: 'results page test',
-													action: () => handleClickRedirect(ALLOWED_ROUTES.TEST_RESULTS_PAGE)
 												},
 												{
 													label: 'results page',

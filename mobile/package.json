@@ -25,7 +25,6 @@
 		"@legendapp/motion": "^2.5.3",
 		"@quidone/react-native-wheel-picker": "^1.7.0",
 		"@shopify/react-native-skia": "2.4.18",
-		"@shopify/restyle": "^2.4.5",
 		"@tanstack/react-query": "^5.90.21",
 		"@typescript-eslint/eslint-plugin": "^8.40.0",
 		"@typescript-eslint/parser": "^8.40.0",
