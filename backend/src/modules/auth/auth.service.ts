@@ -228,10 +228,7 @@ export class AuthService {
 
 		const isEmailValid = await this.mailer.isDeliverable(user.email);
 		if (!isEmailValid) {
-			return {
-				success: false,
-				waitMs: 0,
-			};
+			throw new BadRequestException(ERRORS.INVALID_EMAIL);
 		}
 
 		const code = generateNumericCode(EMAIL_CONFIRMATION_CODE_SIZE);
