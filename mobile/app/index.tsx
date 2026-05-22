@@ -8,10 +8,8 @@ import { AUTH_MODE } from '@/app/auth'
 import { useEffect } from 'react'
 import { useAuthStore } from '@/store/authStore'
 import { Page } from '@/components/ui/Page'
-import { useSafeAreaInsets } from 'react-native-safe-area-context'
 
 const HelloPage = () => {
-	const insets = useSafeAreaInsets()
 	const { isAuthenticated } = useAuthStore()
 	const router = useRouter()
 
@@ -31,9 +29,9 @@ const HelloPage = () => {
 
 	return (
 		<Page
-			edges={[]}
+			edges={['bottom']}
 			style={{
-				paddingBottom: insets.bottom + 10
+				paddingBottom: 10
 			}}
 			statusBarProps={{
 				style: 'dark'
