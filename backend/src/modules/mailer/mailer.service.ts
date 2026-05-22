@@ -16,8 +16,7 @@ export class MailerService {
 
 		try {
 			const mxRecords = await resolver.resolveMx(domain);
-			console.log(`MX records for ${domain}:`, mxRecords);
-			return mxRecords && mxRecords.length > 0;
+			return mxRecords && mxRecords.filter((rec) => rec.exchange.length > 0).length > 0;
 		} catch (error) {
 			console.error(`DNS error for ${domain}:`, error);
 			return false;
