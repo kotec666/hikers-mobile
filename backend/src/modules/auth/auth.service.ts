@@ -1,7 +1,9 @@
 import {
+	BadGatewayException,
 	BadRequestException,
 	ConflictException,
 	ForbiddenException,
+	HttpException,
 	Inject,
 	Injectable,
 	NotFoundException,
@@ -69,10 +71,14 @@ export class AuthService {
 
 		const rateLimitSince = await this.cacheManager.get<number>(rateLimitKey);
 		if (rateLimitSince) {
-			return {
-				success: false,
-				waitMs: rateLimitSince + PASSWORD_RECOVERY_CODE_RATE_LIMIT_MS - Date.now(),
-			};
+			throw new HttpException(
+				{
+					statusCode: 429,
+					success: false,
+					waitMs: rateLimitSince + PASSWORD_RECOVERY_CODE_RATE_LIMIT_MS - Date.now(),
+				},
+				429,
+			);
 		}
 
 		const [user] = await this.db.db
@@ -99,10 +105,12 @@ export class AuthService {
 
 		return this.mailer
 			.sendPasswordRecoveryMail(user.email, code)
-			.catch(() => ({
-				success: false,
-				waitMs: PASSWORD_RECOVERY_CODE_RATE_LIMIT_MS,
-			}))
+			.catch(() => {
+				throw new BadGatewayException({
+					success: false,
+					waitMs: PASSWORD_RECOVERY_CODE_RATE_LIMIT_MS,
+				});
+			})
 			.then(() => ({
 				success: true,
 				waitMs: PASSWORD_RECOVERY_CODE_RATE_LIMIT_MS,
@@ -122,20 +130,30 @@ export class AuthService {
 			const rateLimitKey = this.getPasswordRecoveryRateLimitKey(email);
 			const existingLimit = await this.cacheManager.get<number>(rateLimitKey);
 			if (existingLimit) {
-				return {
-					success: false,
-					remainAttempts: 0,
-					waitMs: existingLimit + PASSWORD_RECOVERY_CODE_TIMEOUT_MS - Date.now(),
-				};
+				throw new HttpException(
+					{
+						statusCode: 429,
+						success: false,
+						remainAttempts: 0,
+
+						waitMs: existingLimit + PASSWORD_RECOVERY_CODE_TIMEOUT_MS - Date.now(),
+					},
+					429,
+				);
 			}
 
 			await this.cacheManager.set(rateLimitKey, Date.now(), PASSWORD_RECOVERY_CODE_TIMEOUT_MS);
 
-			return {
-				success: false,
-				remainAttempts: 0,
-				waitMs: PASSWORD_RECOVERY_CODE_TIMEOUT_MS,
-			};
+			throw new HttpException(
+				{
+					statusCode: 429,
+					success: false,
+					remainAttempts: 0,
+
+					waitMs: PASSWORD_RECOVERY_CODE_TIMEOUT_MS,
+				},
+				429,
+			);
 		}
 
 		const shouldConfirm = payload.code === code;
@@ -160,11 +178,11 @@ export class AuthService {
 				waitMs: 0,
 			};
 		} else {
-			return {
+			throw new BadRequestException({
 				success: false,
 				remainAttempts: MAX_PASSWORD_RECOVERY_ATTEMPTS - (payload.attempts + 1),
 				waitMs: 0,
-			};
+			});
 		}
 	}
 
@@ -204,10 +222,14 @@ export class AuthService {
 
 		const rateLimitSince = await this.cacheManager.get<number>(rateLimitKey);
 		if (rateLimitSince) {
-			return {
-				success: false,
-				waitMs: rateLimitSince + EMAIL_CONFIRMATION_CODE_RATE_LIMIT_MS - Date.now(),
-			};
+			throw new HttpException(
+				{
+					statusCode: 429,
+					success: false,
+					waitMs: rateLimitSince + EMAIL_CONFIRMATION_CODE_RATE_LIMIT_MS - Date.now(),
+				},
+				429,
+			);
 		}
 
 		const [user] = await this.db.db
@@ -237,10 +259,12 @@ export class AuthService {
 
 		return this.mailer
 			.sendEmailConfirmationMail(user.email, code)
-			.catch(() => ({
-				success: false,
-				waitMs: EMAIL_CONFIRMATION_CODE_RATE_LIMIT_MS,
-			}))
+			.catch(() => {
+				throw new BadGatewayException({
+					success: false,
+					waitMs: EMAIL_CONFIRMATION_CODE_RATE_LIMIT_MS,
+				});
+			})
 			.then(() => ({
 				success: true,
 				waitMs: EMAIL_CONFIRMATION_CODE_RATE_LIMIT_MS,
@@ -264,9 +288,11 @@ export class AuthService {
 				emailConfirmedAt: new Date(),
 			})
 			.where(eq(users.id, userId))
-			.catch(() => ({
-				success: false,
-			}))
+			.catch(() => {
+				throw new BadGatewayException({
+					success: false,
+				});
+			})
 			.then(() => {
 				this.cacheManager.del(cachedCodeKey);
 
