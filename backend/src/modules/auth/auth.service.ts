@@ -75,14 +75,6 @@ export class AuthService {
 			};
 		}
 
-		const isEmailValid = await this.mailer.isDeliverable(email);
-		if (!isEmailValid) {
-			return {
-				success: false,
-				waitMs: 0,
-			};
-		}
-
 		const [user] = await this.db.db
 			.select({
 				id: users.id,
