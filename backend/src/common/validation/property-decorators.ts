@@ -2,7 +2,7 @@
 import { NotificationType, UserActivity } from '@shared/enums';
 import { ERRORS } from '@shared/errors';
 import { validate } from 'uuid';
-import { FinishedTrainingParticipantValidator, UniqueEmailValidator } from './validators';
+import { FinishedTrainingParticipantValidator, UniqueEmailValidator, ValidEmailDomainValidator } from './validators';
 
 export function IsValidNotificationSettings(validationOptions?: ValidationOptions) {
 	return function (object: object, propertyName: string) {
@@ -120,6 +120,19 @@ export function FinishedTrainingParticipant(validationOptions?: ValidationOption
 			options: validationOptions,
 			async: true,
 			validator: FinishedTrainingParticipantValidator,
+		});
+	};
+}
+
+export function ValidEmailDomain(validationOptions?: ValidationOptions) {
+	return function (object: object, propertyName: string) {
+		registerDecorator({
+			name: 'ValidEmail',
+			target: object.constructor,
+			propertyName: propertyName,
+			options: validationOptions,
+			async: true,
+			validator: ValidEmailDomainValidator,
 		});
 	};
 }
