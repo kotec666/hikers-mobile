@@ -3,7 +3,7 @@ import { Image } from 'expo-image'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
 import { Container } from '@/components/ui/Container'
 import { useLocalSearchParams, useRouter } from 'expo-router'
-import React, { useEffect, useRef, useState } from 'react'
+import React, { useEffect, useMemo, useRef, useState } from 'react'
 import { fontFamily } from '@/constants/Fonts'
 import Parameter from '@/components/training/Parameter'
 import { Button } from '@/components/ui/Button'
@@ -391,13 +391,21 @@ export default function ViewWorkout() {
 
 	const mapLocations = isView ? pointsRef : { current: isEdit ? adaptedLocations : adaptedLocationsFromHistory }
 	const chartPoints = isView ? results.points : isEdit ? adaptedLocations : adaptedLocationsFromHistory
-	const canPublish = isView || isEdit || (isFromHistory && isTrainingAuthor)
-	const canManageExistingImages = isEdit || Boolean(isFromHistory && isTrainingAuthor && existPost)
+
+	const canPublish = useMemo(() => {
+		return isView || isEdit || (isFromHistory && isTrainingAuthor)
+	}, [isEdit, isFromHistory, isTrainingAuthor, isView])
+
+	const canManageExistingImages = useMemo(() => {
+		return isEdit || Boolean(isFromHistory && isTrainingAuthor && existPost)
+	}, [existPost, isEdit, isFromHistory, isTrainingAuthor])
+
 	const currentWorkoutType = isView
 		? results.type?.type
 		: isEdit
 			? existPost?.training?.type
 			: extendedTrainingDetails?.type
+
 	const currentWorkout = isView ? results.type : currentWorkoutType ? WorkoutTypesMap[currentWorkoutType] : null
 	const CurrentWorkoutIcon = currentWorkout?.IconComponent as React.ComponentType<any> | undefined
 	const currentWorkoutImage = getWorkoutResultImage(currentWorkout?.type)
@@ -494,8 +502,8 @@ export default function ViewWorkout() {
 					</View>
 				</View>
 			</Modal>
-			<KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : 'height'} keyboardVerticalOffset={30}>
-				<ScrollView keyboardShouldPersistTaps="never" contentInsetAdjustmentBehavior="automatic">
+			<KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : 'height'}>
+				<ScrollView keyboardShouldPersistTaps="never">
 					<View className="relative" style={{ height: 300 }}>
 						<Image
 							style={{

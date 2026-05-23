@@ -417,10 +417,12 @@ const MapComponent = forwardRef<MapComponentHandle, IProps>((props, ref) => {
 	return (
 		<View
 			pointerEvents={props.interactiveDisabled ? 'none' : 'auto'}
-			className="flex-1 border-[1px] border-white/20"
+			className="border-[1px] border-white/20"
 			style={{
 				overflow: 'hidden',
 				borderRadius: props.rounded || 0,
+				width: '100%',
+				height: '100%',
 				minHeight: props.minMapHeight,
 				maxHeight: props.maxContainerHeight ?? 'auto'
 			}}
