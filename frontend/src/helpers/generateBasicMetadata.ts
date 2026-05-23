@@ -80,6 +80,7 @@ export const generateBasicMetadata = (meta: IMetaEnter): Metadata => {
 		images: [
 			{
 				url: meta.openGraph?.image_url || defaultImage,
+				secureUrl: meta.openGraph?.image_url || defaultImage,
 				width: meta.openGraph?.width || 1200,
 				height: meta.openGraph?.height || 630,
 				alt: meta.title || 'Hikers website'
@@ -112,6 +113,16 @@ export const generateBasicMetadata = (meta: IMetaEnter): Metadata => {
 
 	metadata.other = {
 		...meta.other,
+		'msapplication-TileImage': `${env.web_url}/images/mstile/mstile-144x144.webp`,
+		'msapplication-square70x70logo': `${env.web_url}/images/mstile/mstile-70x70.webp`,
+		'msapplication-square150x150logo': `${env.web_url}/images/mstile/mstile-150x150.webp`,
+		'msapplication-square310x310logo': `${env.web_url}/images/mstile/mstile-310x310.webp`,
+		'msapplication-wide310x150logo': `${env.web_url}/images/mstile/mstile-310x150.webp`,
+		'msapplication-TileColor': '#0d0d0d',
+		'apple-mobile-web-app-status-bar-style': 'white',
+		'theme-color': '#0d0d0d',
+		'mobile-web-app-capable': 'yes',
+		'application-name': 'хайкерс',
 		'twitter:site_name': 'Hikers',
 		'al:ios:app_store_id': '999999999',
 		'al:ios:app_name': 'хайкерс',
