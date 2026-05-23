@@ -64,8 +64,14 @@ const MailConfirmation = () => {
 
 		handleClearOTPError()
 
-		const requestCodeResult = await requestConfirmEmailCode()
-		createTimer(TimerType.EMAIL_CONFIRMATION, email, requestCodeResult.waitMs)
+		try {
+			const requestCodeResult = await requestConfirmEmailCode()
+			createTimer(TimerType.EMAIL_CONFIRMATION, email, requestCodeResult.waitMs)
+		} catch (e) {
+			const formattedErrors = await getFieldsErrors(e)
+			setErrors(formattedErrors)
+			await Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error)
+		}
 	}
 
 	const hasError = useMemo(() => {

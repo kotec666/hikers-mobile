@@ -112,6 +112,7 @@ export const generateBasicMetadata = (meta: IMetaEnter): Metadata => {
 
 	metadata.other = {
 		...meta.other,
+		'twitter:site_name': 'Hikers',
 		'al:ios:app_store_id': '999999999',
 		'al:ios:app_name': 'хайкерс',
 		'al:android:app_name': 'хайкерс',

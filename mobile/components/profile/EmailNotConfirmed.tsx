@@ -9,6 +9,8 @@ import { useToast } from '@/hooks/useToast'
 import { requestConfirmEmailCode } from '@/api/auth'
 import { createTimer, isRateLimited, TimerType } from '@/store/timerStorage'
 import { GlassView, isLiquidGlassAvailable } from 'expo-glass-effect'
+import { getFieldsErrors } from '@/helpers/getFieldsErrors'
+import * as Haptics from 'expo-haptics'
 
 const EmailNotConfirmed = ({ isVisible, email }: { isVisible: boolean; email?: string }) => {
 	const toast = useToast()
@@ -27,10 +29,16 @@ const EmailNotConfirmed = ({ isVisible, email }: { isVisible: boolean; email?: s
 			return push(`/mail-confirmation?email=${email}`)
 		}
 
-		const requestCodeResult = await requestConfirmEmailCode()
-		createTimer(TimerType.EMAIL_CONFIRMATION, email, requestCodeResult.waitMs)
+		try {
+			const requestCodeResult = await requestConfirmEmailCode()
+			createTimer(TimerType.EMAIL_CONFIRMATION, email, requestCodeResult.waitMs)
 
-		return push(`/mail-confirmation?email=${email}`)
+			return push(`/mail-confirmation?email=${email}`)
+		} catch (e) {
+			toast.error('Произошла ошибка')
+			await getFieldsErrors(e)
+			await Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error)
+		}
 	}
 
 	const containerStyles = {
