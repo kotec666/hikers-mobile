@@ -1,5 +1,5 @@
 import { IsBoolean, IsEmail, Length } from 'class-validator';
-import { HasDigit, UniqueEmail } from '@validation/property-decorators';
+import { HasDigit, UniqueEmail, ValidEmailDomain } from '@validation/property-decorators';
 import { ERRORS } from '@shared/errors';
 import { lengths } from '@shared/lengths';
 
@@ -27,6 +27,7 @@ export namespace UserDto {
 
 	export class Registration {
 		@UniqueEmail()
+		@ValidEmailDomain()
 		@IsEmail(undefined, { message: `_email:${ERRORS.INVALID_EMAIL}` })
 		@Length(lengths.user.email.min, lengths.user.email.max, { message: `_email:${ERRORS.INVALID_LENGTH}` })
 		email: string;

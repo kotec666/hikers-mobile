@@ -119,7 +119,10 @@ export class HttpExceptionFilter implements ExceptionFilter {
 
 				return response.status(exceptionStatus).json(error);
 			} else {
-				const message: string = exceptionResponse['message'];
+				const message = exceptionResponse['message'];
+				if (typeof message !== 'string') {
+					return response.status(exception.getStatus()).json(exception.getResponse());
+				}
 
 				const error = {
 					statusCode: exception.getStatus(),

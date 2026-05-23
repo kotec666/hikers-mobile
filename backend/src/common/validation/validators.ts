@@ -4,6 +4,7 @@ import { DatabaseService } from '../../modules/database/database.service';
 import { training, trainingParticipants, users } from '../../modules/database/schema';
 import { and, eq, isNotNull } from 'drizzle-orm';
 import { ERRORS } from '@shared/errors';
+import * as dns from 'dns/promises';
 
 @Injectable()
 @ValidatorConstraint({ async: true })
@@ -37,5 +38,30 @@ export class UniqueEmailValidator implements ValidatorConstraintInterface {
 
 	defaultMessage(args: ValidationArguments): string {
 		return `_${args.property}:${ERRORS.ALREADY_EXISTS}`;
+	}
+}
+
+@ValidatorConstraint({ async: true })
+export class ValidEmailDomainValidator implements ValidatorConstraintInterface {
+	constructor() {}
+
+	async validate(email: string): Promise<boolean> {
+		const domain = email.split('@')[1];
+
+		// Создаём резолвер с явным DNS-сервером
+		const resolver = new dns.Resolver();
+		resolver.setServers(['8.8.8.8', '8.8.4.4']); // Google DNS
+
+		try {
+			const mxRecords = await resolver.resolveMx(domain);
+			return mxRecords && mxRecords.filter((rec) => rec.exchange.length > 0).length > 0;
+		} catch (error) {
+			console.error(`DNS error for ${domain}:`, error);
+			return false;
+		}
+	}
+
+	defaultMessage(args: ValidationArguments): string {
+		return `_${args.property}:${ERRORS.INVALID_EMAIL}`;
 	}
 }

@@ -276,7 +276,7 @@ export class UserService {
 				username: users.username,
 				avatarFilename: users.avatarFilename,
 				email: users.email,
-				isEmailConfirmed: sql<boolean>`${users.emailConfirmedAt}`,
+				isEmailConfirmed: sql<boolean>`${users.emailConfirmedAt} IS NOT NULL`,
 			})
 			.from(users)
 			.where(eq(users.id, id))
