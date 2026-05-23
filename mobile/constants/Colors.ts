@@ -30,6 +30,7 @@ export const Colors = {
 	'green-main': '#22CB5A',
 	'green-20d': '#20DC52',
 	'yellow-main': '#FFC815',
+	'yellow-ffc700': '#FFC700',
 	'yellow-ffd': '#FFD919',
 	'yellow-ddf': '#DDFF3C',
 	'orange-main': '#FF6E00',

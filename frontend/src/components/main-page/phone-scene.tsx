@@ -49,6 +49,7 @@ const PhoneScene = () => {
 		offset: ['start start', 'end end']
 	})
 	const phoneRef = useRef<THREE.Group>(null!)
+	const currentTextureIndex = useRef(0)
 
 	const [screenTextureURL, setScreenTextureURL] = useState<ScreenTextureURL>(screenTextureURLs[0])
 
@@ -58,9 +59,27 @@ const PhoneScene = () => {
 		[0, Math.PI * 2 * 3] // 3 полных оборота (по числу текстур)
 	)
 
-	useFrame(() => {
+	const isMacOS = useMemo(() => {
+		if (typeof window === 'undefined') return false
+
+		//@ts-expect-error userAgentData почему-то не существует в интерфейсе
+		const platform = navigator.userAgentData?.platform || navigator.userAgent
+
+		return /mac|iphone|ipad|ipod/i.test(platform)
+	}, [])
+
+	useFrame((_, delta) => {
 		if (!phoneRef.current) return
-		phoneRef.current.rotation.y = rotationY.get()
+
+		if (isMacOS) {
+			phoneRef.current.rotation.y = THREE.MathUtils.lerp(
+				phoneRef.current.rotation.y,
+				rotationY.get(),
+				1 - Math.exp(-8 * delta)
+			)
+		} else {
+			phoneRef.current.rotation.y = rotationY.get()
+		}
 	})
 
 	useMotionValueEvent(scrollYProgress, 'change', (latest) => {
@@ -72,12 +91,10 @@ const PhoneScene = () => {
 			textureIndex = 2
 		}
 
-		const nextTexture = screenTextureURLs[textureIndex]
-
-		setScreenTextureURL((prev) => {
-			if (prev === nextTexture) return prev
-			return nextTexture
-		})
+		if (currentTextureIndex.current !== textureIndex) {
+			currentTextureIndex.current = textureIndex
+			setScreenTextureURL(screenTextureURLs[textureIndex])
+		}
 	})
 
 	return (

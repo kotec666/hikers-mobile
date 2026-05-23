@@ -1,28 +1,15 @@
-import { Link } from 'expo-router'
-import { StyleSheet, Text, View } from 'react-native'
+import { Text } from 'react-native'
+import { Page } from '@/components/ui/Page'
+import { LinkCustom } from '@/components/ui/LinkCustom'
+import { fontFamily } from '@/constants/Fonts'
 
 export default function NotFoundScreen() {
 	return (
-		<>
-			<View style={styles.container}>
-				<Text>Такой страницы не существует.</Text>
-				<Link href="/(tabs)/profile" style={styles.link}>
-					<Text>Вернуться на главную</Text>
-				</Link>
-			</View>
-		</>
+		<Page>
+			<Text className="text-white text-lg" style={{ fontFamily: fontFamily.medium }}>
+				Такой страницы не существует.
+			</Text>
+			<LinkCustom href="/(tabs)/profile" text="Вернуться в профиль" className="text-blue-3d" />
+		</Page>
 	)
 }
-
-const styles = StyleSheet.create({
-	container: {
-		flex: 1,
-		alignItems: 'center',
-		justifyContent: 'center',
-		padding: 20
-	},
-	link: {
-		marginTop: 15,
-		paddingVertical: 15
-	}
-})

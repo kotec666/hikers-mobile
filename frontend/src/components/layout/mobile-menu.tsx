@@ -1,9 +1,10 @@
 import { Button } from '@/components/ui/button'
-import { IContentBlock, SectionId } from '@/app/page'
+import { IContentBlock } from '@/app/page'
+import Link from 'next/link'
 
 type MobileMenuContentProps = {
 	menuItems?: IContentBlock[]
-	onItemClick: (sectionId: SectionId) => void
+	onItemClick: () => void
 	onDownloadPress: () => void
 }
 
@@ -11,13 +12,14 @@ export const MobileMenuContent = ({ menuItems, onItemClick, onDownloadPress }: M
 	return (
 		<nav className="flex flex-col p-6 gap-4">
 			{menuItems?.map((item) => (
-				<button
+				<Link
 					key={item.label}
-					onClick={() => onItemClick(item.id)}
+					href={`#${item.id}`}
+					onClick={onItemClick}
 					className="text-white hover:text-green-main transition-colors py-3 text-lg text-left"
 				>
 					{item.label}
-				</button>
+				</Link>
 			))}
 
 			<Button onClick={onDownloadPress} variant="green" size="xl" className="w-full">

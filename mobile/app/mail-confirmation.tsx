@@ -1,35 +1,93 @@
-import React, { useCallback } from 'react'
+import React, { useCallback, useMemo, useState } from 'react'
 import { Container } from '@/components/ui/Container'
 import HeaderBack from '@/components/ui/HeaderBack'
 import { View, Text, Platform, Keyboard, KeyboardAvoidingView, TouchableWithoutFeedback } from 'react-native'
 import { fontFamily } from '@/constants/Fonts'
 import { Button } from '@/components/ui/Button'
-import AlertCircleSvg from '@/components/svg/AlertCircleSvg'
-import MailboxSvg from '@/components/svg/MailboxSvg'
 import { OTPInput } from '@/components/ui/OTP/OTPInput'
 import * as Haptics from 'expo-haptics'
 import { Page } from '@/components/ui/Page'
+import { EMAIL_CONFIRMATION_CODE_SIZE } from '@/shared/constants'
+import { useSafeNavigation } from '@/hooks/useSafeNavigation'
+import { useLocalSearchParams, useFocusEffect } from 'expo-router'
+import { requestConfirmEmailCode } from '@/api/auth'
+import { useConfirmEmailMutation } from '@/queries/my-profile'
+import { FieldErrors, getFieldsErrors } from '@/helpers/getFieldsErrors'
+import { useTimerCountdown } from '@/hooks/useTimerCountdown'
+import { createTimer, TimerType } from '@/store/timerStorage'
+import { formatCountdown } from '@/helpers/formatTime'
+import ErrorMessageIcon from '@/components/ErrorMessageIcon'
+import CheckSpam from '@/components/CheckSpam'
 
 const MailConfirmation = () => {
-	const [hasError, setHasError] = React.useState(false)
+	const { push, replace } = useSafeNavigation()
+	const { email } = useLocalSearchParams<{ email?: string }>()
+	const { mutateAsync: confirmEmailMutation, isPending } = useConfirmEmailMutation()
+	const { remainingSeconds, isBlocked } = useTimerCountdown(TimerType.EMAIL_CONFIRMATION, email)
 
-	const onDone = useCallback((code: string) => {
-		console.log(`onDone: ${code}`)
-		Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error)
-		setHasError(true)
-	}, [])
+	const [errors, setErrors] = useState<FieldErrors>({} as FieldErrors)
+
+	useFocusEffect(
+		useCallback(() => {
+			if (!email) {
+				replace('/(tabs)/profile')
+			}
+		}, [email, replace])
+	)
+
+	const onDone = useCallback(
+		async (code: string) => {
+			try {
+				await confirmEmailMutation(code)
+				push('/(tabs)/profile')
+			} catch (e) {
+				const formattedErrors = await getFieldsErrors(e)
+				setErrors(formattedErrors)
+				await Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error)
+			}
+		},
+		[confirmEmailMutation, push]
+	)
 
 	const handleClearOTPError = () => {
-		setHasError(false)
+		setErrors({})
 	}
 
+	const handleResendOTP = async () => {
+		if (!email) {
+			return
+		}
+
+		if (isBlocked) {
+			return
+		}
+
+		handleClearOTPError()
+
+		try {
+			const requestCodeResult = await requestConfirmEmailCode()
+			createTimer(TimerType.EMAIL_CONFIRMATION, email, requestCodeResult.waitMs)
+		} catch (e) {
+			const formattedErrors = await getFieldsErrors(e)
+			setErrors(formattedErrors)
+			await Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error)
+		}
+	}
+
+	const hasError = useMemo(() => {
+		return Boolean(Object.keys(errors).length)
+	}, [errors])
+
+	const formattedTime = formatCountdown(remainingSeconds * 1000)
+
+	if (!email) return null
 	return (
 		<Page>
 			<Container className="flex-1">
 				<KeyboardAvoidingView style={{ flex: 1 }} behavior={Platform.OS === 'ios' ? 'padding' : 'height'}>
 					<TouchableWithoutFeedback onPress={Keyboard.dismiss} accessible={false}>
 						<View className="flex-1">
-							<HeaderBack>Назад</HeaderBack>
+							<HeaderBack returnCallback={() => push('/(tabs)/profile')}>Назад</HeaderBack>
 							<View className="flex-1 justify-center gap-[24px]">
 								<View className="gap-[32px]">
 									<View className="gap-[8px]">
@@ -40,7 +98,7 @@ const MailConfirmation = () => {
 											className="text-base text-gray-9a"
 											style={{ fontFamily: fontFamily.medium }}
 										>
-											Мы отправили код на hikers_app@gmail.com
+											Мы отправили код на {email}
 										</Text>
 									</View>
 									<View className="gap-[12px]">
@@ -49,34 +107,25 @@ const MailConfirmation = () => {
 										</Text>
 										<OTPInput
 											hasError={hasError}
-											length={5}
+											length={EMAIL_CONFIRMATION_CODE_SIZE}
 											onDone={onDone}
 											clearError={handleClearOTPError}
 										/>
 									</View>
 								</View>
 								<View className="gap-[24px]">
-									{hasError && (
-										<View className="flex-row items-center gap-[8px]">
-											<AlertCircleSvg />
-											<Text
-												className="text-base text-red-ff4"
-												style={{ fontFamily: fontFamily.medium }}
-											>
-												Неверный код. Попробуйте снова
-											</Text>
-										</View>
-									)}
-									<Button variant="black">Отправить код повторно (0:59)</Button>
-									<View className="flex-row justify-center items-center gap-[8px]">
-										<MailboxSvg />
-										<Text
-											className="text-base text-gray-9a"
-											style={{ fontFamily: fontFamily.medium }}
-										>
-											Не получили код? Проверьте спам
-										</Text>
-									</View>
+									{hasError && <ErrorMessageIcon errorText={errors.code} />}
+									<Button
+										variant="black"
+										isLoading={isPending}
+										disabled={isBlocked || isPending}
+										onPress={handleResendOTP}
+									>
+										{isBlocked
+											? `Отправить код повторно (${formattedTime})`
+											: 'Отправить код повторно'}
+									</Button>
+									<CheckSpam />
 								</View>
 							</View>
 						</View>

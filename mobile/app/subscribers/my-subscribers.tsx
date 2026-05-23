@@ -60,7 +60,7 @@ const MySubscribersPage = () => {
 
 	return (
 		<Page>
-			<Container className="gap-[20px] mt-[20px] flex-1">
+			<Container className="gap-[20px] flex-1">
 				<HeaderBack>Подписчики</HeaderBack>
 				<LegendList
 					data={subscribers}

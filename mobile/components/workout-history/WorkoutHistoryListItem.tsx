@@ -4,6 +4,7 @@ import { fontFamily } from '@/constants/Fonts'
 import { Colors } from '@/constants/Colors'
 import { Link } from 'expo-router'
 import { VIEWWORKOUT_MODE } from '@/app/training/viewWorkout'
+import { cn } from '@/helpers/cn'
 
 interface IIcon {
 	iconSvg: React.JSX.Element | null
@@ -18,6 +19,7 @@ interface IProps {
 	actionIcon?: IIcon | IIcon[]
 	isLoading?: boolean
 	isHistoryListItem?: boolean
+	isChosen?: boolean
 }
 
 const WorkoutHistoryListItemContent = (props: IProps) => {
@@ -27,7 +29,13 @@ const WorkoutHistoryListItemContent = (props: IProps) => {
 				<View className="w-[50px] h-[50px] rounded-[15px] bg-white items-center justify-center">
 					{props.icon}
 				</View>
-				<Text className="text-gray-ab text-base" style={{ fontFamily: fontFamily.medium }}>
+				<Text
+					className={cn('text-base', {
+						'text-gray-ab': !props.isChosen,
+						'text-white': props.isChosen
+					})}
+					style={{ fontFamily: props.isChosen ? fontFamily.bold : fontFamily.medium }}
+				>
 					{props.title}
 				</Text>
 			</View>

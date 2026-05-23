@@ -66,7 +66,7 @@ const FriendRequestsPage = () => {
 
 	return (
 		<Page>
-			<Container className="gap-[20px] mt-[20px] flex-1">
+			<Container className="gap-[20px] flex-1">
 				<HeaderBack>Запросы в друзья</HeaderBack>
 				<LegendList
 					data={friendRequests}

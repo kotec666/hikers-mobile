@@ -18,7 +18,7 @@ const Popup = ({ children, onClose }: PropsWithChildren<PopupProps>) => {
 	const renderContent = () => {
 		if (isGlassAvailable) {
 			return (
-				<GlassView style={styles.glassView}>
+				<GlassView colorScheme="dark" style={styles.glassView}>
 					<View style={styles.content}>{children}</View>
 				</GlassView>
 			)

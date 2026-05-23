@@ -1,6 +1,6 @@
-import React, { useCallback, useState } from 'react'
+import React, { useCallback, useMemo, useRef, useState } from 'react'
 import { Container } from '@/components/ui/Container'
-import { Keyboard, TouchableOpacity, TouchableWithoutFeedback, View } from 'react-native'
+import { Keyboard, Pressable, TouchableOpacity, TouchableWithoutFeedback, View, Text, Dimensions } from 'react-native'
 import { UserAvatar } from '@/components/ui/UserAvatar'
 import { Button } from '@/components/ui/Button'
 import ActivityInfo from '@/components/ui/Profile/ActivityInfo'
@@ -22,13 +22,19 @@ import BlurProvider from '@/components/providers/BlurProvider'
 import { lengths } from '@shared/lengths'
 import { useProfileQuery, useUpdateProfileMutation } from '@/queries/my-profile'
 import { Page } from '@/components/ui/Page'
+import BottomSheet from '@/components/ui/BottomSheet/BottomSheet'
+import { BottomSheetHandle } from '@/components/ui/BottomSheet/types'
+import BaseWheelPicker from '@/components/ui/wheel-picker/base-wheel-picker'
+import { cn } from '@/helpers/cn'
 
 interface IEditProfileFormState {
 	name: string
 	username: string
+	weight: number
 	avatarFilename?: string | null
 }
 
+const { height: SCREEN_HEIGHT } = Dimensions.get('screen')
 const FormData = global.FormData
 
 const ProfileEdit = () => {
@@ -40,14 +46,20 @@ const ProfileEdit = () => {
 		control,
 		setValue,
 		getValues,
+		watch,
 		formState: { isDirty }
 	} = useForm<IEditProfileFormState>({
 		values: {
 			name: profileData?.user?.name || '',
 			username: profileData?.user?.username || '',
+			weight: 70, // profileData?.user?.weight || 70
 			avatarFilename: PATH_TO_IMAGE + profileData?.user?.avatarFilename
 		}
 	})
+	const weight = watch('weight')
+	const [temporaryWeight, setTemporaryWeight] = useState(weight)
+
+	const bottomSheetRef = useRef<BottomSheetHandle>(null)
 	const { ErrorMessages } = useErrorMessage()
 	const toast = useToast()
 	const { setUser } = useAuthStore()
@@ -164,12 +176,68 @@ const ProfileEdit = () => {
 		}
 	}
 
+	const openBottomSheet = useCallback(() => {
+		setTemporaryWeight(weight)
+
+		if (bottomSheetRef.current) {
+			bottomSheetRef.current.openSheet()
+		}
+	}, [weight])
+
+	const handlePressWeightField = () => {
+		openBottomSheet()
+	}
+
 	const sourceArray = newActivitiesOrder?.length ? newActivitiesOrder : (profileData?.activities ?? [])
 	const activitiesToRender = sourceArray.length >= 3 ? sourceArray.slice(0, 3) : []
+
+	const weightPickerWheelData = useMemo(
+		() =>
+			Array.from({ length: 186 }, (_, index) => {
+				const weight = index + 15
+
+				return {
+					value: weight,
+					label: `${weight} кг`
+				}
+			}),
+		[]
+	)
 
 	return (
 		<Page>
 			<BlurProvider>
+				<BottomSheet
+					ref={bottomSheetRef}
+					activeHeight={SCREEN_HEIGHT * 0.5}
+					onDone={() => {
+						setValue('weight', temporaryWeight, {
+							shouldDirty: true
+						})
+
+						bottomSheetRef.current?.closeSheet()
+					}}
+				>
+					<BaseWheelPicker
+						data={weightPickerWheelData}
+						value={temporaryWeight}
+						onChange={(value) => setTemporaryWeight(value)}
+						itemHeight={60}
+						overlayHeightMultiplier={0.77}
+						renderItem={({ item, index }) => (
+							<View key={index} className="items-center justify-center h-[60px] w-full">
+								<Text
+									className={cn('text-[28px]', {
+										'text-white font-semibold': temporaryWeight === item.value,
+										'text-black-5c': temporaryWeight !== item.value
+									})}
+								>
+									{item.label}
+								</Text>
+							</View>
+						)}
+					/>
+				</BottomSheet>
 				<Modal
 					isOpen={data.avatarModal}
 					handleClose={handleCloseAvatarModal}
@@ -289,6 +357,12 @@ const ProfileEdit = () => {
 											/>
 										)}
 									/>
+									<Pressable
+										onPress={handlePressWeightField}
+										className="border border-black-44 rounded-full p-[16px]"
+									>
+										<Text className="text-white">Вес {weight} кг</Text>
+									</Pressable>
 								</View>
 							</View>
 							<TouchableOpacity onPress={() => push('/profile/editActivity')}>

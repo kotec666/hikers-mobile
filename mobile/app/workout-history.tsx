@@ -1,11 +1,10 @@
 import React, { useCallback, useMemo, useRef, useState } from 'react'
-import { View, Text, RefreshControl, ActivityIndicator } from 'react-native'
+import { View, Text, RefreshControl, ActivityIndicator, Dimensions, Pressable } from 'react-native'
 import HeaderBack from '@/components/ui/HeaderBack'
 import { Container } from '@/components/ui/Container'
 import PeopleRunningSvg from '@/components/svg/PeopleRunningSvg'
 import WorkoutHistoryListItem from '@/components/workout-history/WorkoutHistoryListItem'
 import { fontFamily } from '@/constants/Fonts'
-import { Select } from '@/components/ui/Select'
 import { WorkoutTypesData } from '@/constants/WorkoutTypes'
 import { format } from 'date-fns'
 import { ru } from 'date-fns/locale'
@@ -22,6 +21,11 @@ import { useToast } from '@/hooks/useToast'
 import { formatDistance } from '@/helpers/distance'
 import { useWorkoutsQuery } from '@/queries/workout'
 import { Page } from '@/components/ui/Page'
+import BlurProvider from '@/components/providers/BlurProvider'
+import BottomSheet from '@/components/ui/BottomSheet/BottomSheet'
+import { BottomSheetHandle } from '@/components/ui/BottomSheet/types'
+import ArrowDownSvg from '@/components/svg/ArrowDownSvg'
+import BaseWheelPicker from '@/components/ui/wheel-picker/base-wheel-picker'
 
 interface WorkoutItem {
 	id: string
@@ -45,13 +49,17 @@ type WorkoutHistoryRow =
 			rowType: 'workout'
 	  } & WorkoutItem)
 
+const { height: SCREEN_HEIGHT } = Dimensions.get('screen')
+
 const WorkoutHistory = () => {
 	const toast = useToast()
 	const listRef = useRef<LegendListRef>(null)
+	const bottomSheetRef = useRef<BottomSheetHandle>(null)
 
 	const { notSavedWorkouts, syncingIds, enqueueWorkoutSync, deleteWorkout } = useUnsavedWorkoutSync()
 
 	const [selectedType, setSelectedType] = useState<string>('')
+	const [temporarySelectedType, setTemporarySelectedType] = useState<string>('')
 	const [deletedWorkoutIds, setDeletedWorkoutIds] = useState<string[]>([])
 
 	const {
@@ -59,9 +67,13 @@ const WorkoutHistory = () => {
 		isRefetching,
 		fetchNextPage,
 		refetch,
+		isLoading,
+		isFetching,
 		hasNextPage,
 		isFetchingNextPage
 	} = useWorkoutsQuery(selectedType)
+
+	const isInitialLoading = isLoading || (isFetching && history.length === 0)
 
 	const data: WorkoutItem[] = history
 		.filter((item) => !deletedWorkoutIds.includes(item.id))
@@ -135,7 +147,7 @@ const WorkoutHistory = () => {
 		}
 	}
 
-	const handleSelectType = async (type: string) => {
+	const handleSelectType = (type: string) => {
 		setSelectedType(type)
 		listRef.current?.scrollToOffset({
 			offset: 0,
@@ -143,130 +155,185 @@ const WorkoutHistory = () => {
 		})
 	}
 
+	const openBottomSheet = useCallback(() => {
+		setTemporarySelectedType(selectedType)
+		if (bottomSheetRef.current) {
+			bottomSheetRef.current.openSheet()
+		}
+	}, [selectedType])
+
+	const workoutTypePickerWheelData = useMemo(() => {
+		return [
+			{
+				value: '',
+				label: 'Все',
+				IconComponent: CheckMarkIconSvg
+			},
+			...WorkoutTypesData.map((t) => ({
+				value: t.type,
+				label: t.name,
+				IconComponent: t.IconComponent
+			}))
+		]
+	}, [])
+
+	const workoutTypeLabelMap = useMemo(() => {
+		return Object.fromEntries(workoutTypePickerWheelData.map((item) => [item.value, item.label]))
+	}, [workoutTypePickerWheelData])
+
 	return (
 		<Page>
-			<Container className="gap-[20px] flex-1">
-				<HeaderBack>История тренировок</HeaderBack>
-				<Select
-					options={[
-						{
-							value: '',
-							label: 'Все',
-							IconComponent: CheckMarkIconSvg
-						},
-						...WorkoutTypesData.map((t) => ({
-							value: t.type,
-							label: t.name,
-							IconComponent: t.IconComponent
-						}))
-					]}
-					value={selectedType}
-					onChange={(type: string) => handleSelectType(type)}
-					placeholder="Выберите тип тренировки"
-				/>
-				<LegendList
-					ref={listRef}
-					style={{ flex: 1 }}
-					data={itemsWithHeaders}
-					ListEmptyComponent={
-						!notSavedWorkouts.length ? (
-							<TrainingsEmpty text="К сожалению, тренировок еще не существует" />
-						) : null
-					}
-					refreshControl={
-						<RefreshControl
-							refreshing={isRefetching}
-							onRefresh={refetch}
-							tintColor={Colors['green-main']}
-						/>
-					}
-					ListFooterComponent={renderFooter}
-					contentContainerStyle={{
-						flexGrow: 1,
-						paddingBottom: 10,
-						paddingTop: 10
+			<BlurProvider>
+				<BottomSheet
+					ref={bottomSheetRef}
+					activeHeight={SCREEN_HEIGHT * 0.5}
+					onDone={() => {
+						handleSelectType(temporarySelectedType)
+						bottomSheetRef.current?.closeSheet()
 					}}
-					ListHeaderComponent={
-						<>
-							{notSavedWorkouts?.length > 0 && (
-								<Text
-									className="text-white text-base mb-[15px]"
-									style={{ fontFamily: fontFamily.bold }}
-								>
-									Несохраненные тренировки
-								</Text>
-							)}
-							<View
-								className={cn('', {
-									'gap-[16px]': notSavedWorkouts.length
-								})}
-							>
-								{notSavedWorkouts.map((notSavedWorkout) => {
-									const date = new Date(notSavedWorkout.startedAt)
-									const titleDate = format(date, 'd MMMM, HH:mm', {
-										locale: ru
-									})
-									const title = `${titleDate}${Number.isFinite(notSavedWorkout.distanceMeters) && notSavedWorkout.distanceMeters >= 0 ? `, ${formatDistance(notSavedWorkout.distanceMeters)}` : ''}`
-									const typeData = workoutTypeMap[notSavedWorkout.type]
-									const IconComponent = typeData?.IconComponent ?? PeopleRunningSvg
+				>
+					<BaseWheelPicker
+						data={workoutTypePickerWheelData}
+						value={temporarySelectedType}
+						onChange={(type: string) => setTemporarySelectedType(type)}
+						itemHeight={70}
+						renderItem={({ item, index }) => {
+							const Icon = item.IconComponent ?? PeopleRunningSvg
+							const isChosen = temporarySelectedType === item.value
 
-									const isSyncing = syncingIds.includes(notSavedWorkout.startedAt)
-
-									return (
-										<WorkoutHistoryListItem
-											key={notSavedWorkout.startedAt}
-											title={title}
-											icon={<IconComponent width={26} height={26} />}
-											isLoading={isSyncing}
-											actionIcon={[
-												{
-													iconSvg: <SaveUnsavedTrainingSvg />,
-													iconCb: () => handleSync(notSavedWorkout.startedAt),
-													disabled: isSyncing
-												},
-												{
-													iconSvg: <DeleteTrashSvg />,
-													iconCb: () => handleDelete(notSavedWorkout.startedAt),
-													disabled: isSyncing
-												}
-											]}
-										/>
-									)
-								})}
-							</View>
-						</>
-					}
-					renderItem={({ item }) => (
-						<View>
-							{item.rowType === 'header' ? (
-								<Text
-									className="text-white text-base mt-[15px] mb-[15px]"
-									style={{ fontFamily: fontFamily.bold }}
-								>
-									{item.month.charAt(0).toUpperCase() + item.month.slice(1)}
-								</Text>
-							) : (
-								<SwipeableProvider
-									variant="action"
-									actionWidth={64}
-									bottomSpacing={16}
-									cardBackgroundColor={Colors['black-0d']}
-									onActionPress={() => handleDeleteSavedWorkout(item.id)}
-								>
-									<WorkoutHistoryListItem isHistoryListItem {...item} />
-								</SwipeableProvider>
-							)}
-						</View>
-					)}
-					keyExtractor={(item) => item.id}
-					onEndReached={() => {
-						if (hasNextPage && !isFetchingNextPage) {
-							fetchNextPage()
+							return (
+								<View key={index} className="p-3">
+									<WorkoutHistoryListItem
+										icon={<Icon width={26} height={26} />}
+										title={item.label}
+										isChosen={isChosen}
+									/>
+								</View>
+							)
+						}}
+					/>
+				</BottomSheet>
+				<Container className="gap-[20px] flex-1">
+					<HeaderBack>История тренировок</HeaderBack>
+					<Pressable
+						className="border border-black-44 text-white h-[50px] rounded-full relative flex-row items-center justify-between px-4"
+						onPress={openBottomSheet}
+					>
+						<Text
+							style={{
+								fontFamily: fontFamily.regular
+							}}
+							className="text-sm mr-2 text-white"
+							numberOfLines={1}
+						>
+							{workoutTypeLabelMap[selectedType] ?? 'Все'}
+						</Text>
+						<ArrowDownSvg />
+					</Pressable>
+					<LegendList
+						ref={listRef}
+						style={{ flex: 1 }}
+						data={itemsWithHeaders}
+						ListEmptyComponent={
+							!isInitialLoading && !notSavedWorkouts.length ? (
+								<TrainingsEmpty text="К сожалению, тренировок еще не существует" />
+							) : null
 						}
-					}}
-					onEndReachedThreshold={0.4}
-				/>
-			</Container>
+						refreshControl={
+							<RefreshControl
+								refreshing={isRefetching}
+								onRefresh={refetch}
+								tintColor={Colors['green-main']}
+							/>
+						}
+						ListFooterComponent={renderFooter}
+						contentContainerStyle={{
+							flexGrow: 1,
+							paddingBottom: 10,
+							paddingTop: 10
+						}}
+						ListHeaderComponent={
+							<>
+								{notSavedWorkouts?.length > 0 && (
+									<Text
+										className="text-white text-base mb-[15px]"
+										style={{ fontFamily: fontFamily.bold }}
+									>
+										Несохраненные тренировки
+									</Text>
+								)}
+								<View
+									className={cn('', {
+										'gap-[16px]': notSavedWorkouts.length
+									})}
+								>
+									{notSavedWorkouts.map((notSavedWorkout) => {
+										const date = new Date(notSavedWorkout.startedAt)
+										const titleDate = format(date, 'd MMMM, HH:mm', {
+											locale: ru
+										})
+										const title = `${titleDate}${Number.isFinite(notSavedWorkout.distanceMeters) && notSavedWorkout.distanceMeters >= 0 ? `, ${formatDistance(notSavedWorkout.distanceMeters)}` : ''}`
+										const typeData = workoutTypeMap[notSavedWorkout.type]
+										const IconComponent = typeData?.IconComponent ?? PeopleRunningSvg
+
+										const isSyncing = syncingIds.includes(notSavedWorkout.startedAt)
+
+										return (
+											<WorkoutHistoryListItem
+												key={notSavedWorkout.startedAt}
+												title={title}
+												icon={<IconComponent width={26} height={26} />}
+												isLoading={isSyncing}
+												actionIcon={[
+													{
+														iconSvg: <SaveUnsavedTrainingSvg />,
+														iconCb: () => handleSync(notSavedWorkout.startedAt),
+														disabled: isSyncing
+													},
+													{
+														iconSvg: <DeleteTrashSvg />,
+														iconCb: () => handleDelete(notSavedWorkout.startedAt),
+														disabled: isSyncing
+													}
+												]}
+											/>
+										)
+									})}
+								</View>
+							</>
+						}
+						renderItem={({ item }) => (
+							<View>
+								{item.rowType === 'header' ? (
+									<Text
+										className="text-white text-base mt-[15px] mb-[15px]"
+										style={{ fontFamily: fontFamily.bold }}
+									>
+										{item.month.charAt(0).toUpperCase() + item.month.slice(1)}
+									</Text>
+								) : (
+									<SwipeableProvider
+										variant="action"
+										actionWidth={64}
+										bottomSpacing={16}
+										cardBackgroundColor={Colors['black-0d']}
+										onActionPress={() => handleDeleteSavedWorkout(item.id)}
+									>
+										<WorkoutHistoryListItem isHistoryListItem {...item} />
+									</SwipeableProvider>
+								)}
+							</View>
+						)}
+						keyExtractor={(item) => item.id}
+						onEndReached={() => {
+							if (hasNextPage && !isFetchingNextPage) {
+								fetchNextPage()
+							}
+						}}
+						onEndReachedThreshold={0.4}
+					/>
+				</Container>
+			</BlurProvider>
 		</Page>
 	)
 }

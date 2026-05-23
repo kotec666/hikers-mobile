@@ -39,14 +39,14 @@ const NotFoundPost = () => {
 	return (
 		<div className="bg-[#212121] rounded-2xl overflow-hidden max-w-2xl mx-auto p-4 sm:p-8 text-center text-gray-400 flex flex-col items-center relative">
 			<div className="flex flex-col gap-6 mb-15">
-				<motion.h2
+				<motion.h1
 					className="text-lg font-medium z-10"
 					initial={{ y: -10, opacity: 0 }}
 					animate={{ y: 0, opacity: 1 }}
 					transition={{ delay: 0.2 }}
 				>
 					Пост не найден
-				</motion.h2>
+				</motion.h1>
 				<motion.p
 					className="text-sm z-10"
 					initial={{ y: 10, opacity: 0 }}

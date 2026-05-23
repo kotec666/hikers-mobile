@@ -50,7 +50,6 @@ export const generateBasicMetadata = (meta: IMetaEnter): Metadata => {
 		title: meta.title,
 		description: meta.description,
 		keywords: meta.keywords,
-		manifest: '/manifest.json',
 		// robots: meta.robots || 'index, follow',
 		robots: meta.robots || 'noindex, nofollow',
 		authors: [{ name: 'hikers' }],
@@ -113,6 +112,7 @@ export const generateBasicMetadata = (meta: IMetaEnter): Metadata => {
 
 	metadata.other = {
 		...meta.other,
+		'twitter:site_name': 'Hikers',
 		'al:ios:app_store_id': '999999999',
 		'al:ios:app_name': 'хайкерс',
 		'al:android:app_name': 'хайкерс',

@@ -22,7 +22,7 @@ const CloseCross = (props: { handleClose?: () => void; blurDisabled?: boolean })
 
 		if (isGlassAvailable) {
 			return (
-				<GlassView tintColor="dark" style={styles.glassView}>
+				<GlassView colorScheme="dark" style={styles.glassView}>
 					<View style={styles.closeButton}>
 						<CloseSvg />
 					</View>

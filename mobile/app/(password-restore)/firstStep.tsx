@@ -1,20 +1,57 @@
-import React from 'react'
+import React, { useState } from 'react'
 import { Container } from '@/components/ui/Container'
 import HeaderBack from '@/components/ui/HeaderBack'
 import { View, Text, Platform, Keyboard, KeyboardAvoidingView, TouchableWithoutFeedback } from 'react-native'
 import { fontFamily } from '@/constants/Fonts'
 import { Button } from '@/components/ui/Button'
-import MailboxSvg from '@/components/svg/MailboxSvg'
 import { InputIcon } from '@/components/ui/InputIcon'
 import EmailSvg from '@/components/svg/EmailSvg'
 import { useSafeNavigation } from '@/hooks/useSafeNavigation'
 import { Page } from '@/components/ui/Page'
+import { Controller, useForm } from 'react-hook-form'
+import { useErrorMessage } from '@/hooks/useErrorMessage'
+import { FieldErrors, getFieldsErrors } from '@/helpers/getFieldsErrors'
+import * as Haptics from 'expo-haptics'
+import { lengths } from '@shared/lengths'
+import { requestPasswordRecoveryCode } from '@/api/auth'
+import { createTimer, isRateLimited, TimerType } from '@/store/timerStorage'
+
+interface IRecoveryPasswordFirstStepFormState {
+	email: string
+}
 
 const FirstStepPage = () => {
 	const { push } = useSafeNavigation()
+	const [serverErrors, setServerErrors] = useState<FieldErrors>({} as FieldErrors)
 
-	const handlePressButton = () => {
-		push('/(password-restore)/secondStep')
+	const {
+		handleSubmit,
+		control,
+		formState: { isSubmitting }
+	} = useForm<IRecoveryPasswordFirstStepFormState>()
+	const { ErrorMessages } = useErrorMessage()
+
+	const onSubmit = async (firstRecoveryStepFormState: IRecoveryPasswordFirstStepFormState) => {
+		setServerErrors({})
+
+		const email = firstRecoveryStepFormState.email
+
+		try {
+			const isLimited = isRateLimited(TimerType.PASSWORD_RECOVERY, email)
+
+			// если таймер уже существует —
+			// НЕ шлём новый код
+			if (!isLimited) {
+				const requestCodeResult = await requestPasswordRecoveryCode(email)
+				createTimer(TimerType.PASSWORD_RECOVERY, email, requestCodeResult.waitMs)
+			}
+
+			push(`/(password-restore)/secondStep?email=${email}`)
+		} catch (e: unknown) {
+			const formattedErrors = await getFieldsErrors(e)
+			setServerErrors(formattedErrors)
+			await Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error)
+		}
 	}
 
 	return (
@@ -37,61 +74,49 @@ const FirstStepPage = () => {
 											Мы отправим на неё код для восстановления пароля
 										</Text>
 									</View>
-									{/*<Controller*/}
-									{/*	name="email"*/}
-									{/*	control={control}*/}
-									{/*	rules={{*/}
-									{/*		required: {*/}
-									{/*			value: true,*/}
-									{/*			message: ErrorMessages.required*/}
-									{/*		},*/}
-									{/*		pattern: {*/}
-									{/*			value: /^[a-zA-Z0-9.!#$%&'*+/=?^_`{|}~-]+@[a-zA-Z0-9-]+(?:\.[a-zA-Z0-9-]+)*$/,*/}
-									{/*			message: ErrorMessages.email*/}
-									{/*		},*/}
-									{/*		minLength: {*/}
-									{/*			value: lengths.user.email.min,*/}
-									{/*			message: ErrorMessages.optionalMin(lengths.user.email.min)*/}
-									{/*		},*/}
-									{/*		maxLength: {*/}
-									{/*			value: lengths.user.email.max,*/}
-									{/*			message: ErrorMessages.optionalMax(lengths.user.email.max)*/}
-									{/*		}*/}
-									{/*	}}*/}
-									{/*	render={({ field: { onChange, onBlur, value }, fieldState: { error } }) => (*/}
-									<InputIcon
-										textContentType="emailAddress"
-										keyboardType="email-address"
-										placeholder="Введите email"
-										// error={error?.message || data.errors?.email}
-										svg={
-											<EmailSvg
-												// error={Boolean(error?.message?.length || data.errors?.email)}
-												error={false}
+									<Controller
+										name="email"
+										control={control}
+										rules={{
+											required: {
+												value: true,
+												message: ErrorMessages.required
+											},
+											pattern: {
+												value: /^[a-zA-Z0-9.!#$%&'*+/=?^_`{|}~-]+@[a-zA-Z0-9-]+(?:\.[a-zA-Z0-9-]+)*$/,
+												message: ErrorMessages.email
+											},
+											minLength: {
+												value: lengths.user.email.min,
+												message: ErrorMessages.optionalMin(lengths.user.email.min)
+											},
+											maxLength: {
+												value: lengths.user.email.max,
+												message: ErrorMessages.optionalMax(lengths.user.email.max)
+											}
+										}}
+										render={({ field: { onChange, onBlur, value }, fieldState: { error } }) => (
+											<InputIcon
+												textContentType="emailAddress"
+												keyboardType="email-address"
+												placeholder="Введите email"
+												error={error?.message || serverErrors?.email}
+												svg={
+													<EmailSvg
+														error={Boolean(error?.message?.length || serverErrors?.email)}
+													/>
+												}
+												autoCapitalize="none"
+												onChangeText={(text) => onChange(text.replace(/\s/g, ''))} // Удаляем пробелы
+												value={value}
+												onBlur={onBlur}
 											/>
-										}
-										autoCapitalize="none"
-										// onChangeText={(text) => onChange(text.replace(/\s/g, ''))} // Удаляем пробелы
-										// value={value}
-										// onBlur={onBlur}
+										)}
 									/>
-									{/*	)}*/}
-									{/*/>*/}
 								</View>
-								<View className="gap-[24px]">
-									<Button variant="black" onPress={handlePressButton}>
-										Отправить код повторно (0:59)
-									</Button>
-									<View className="flex-row justify-center items-center gap-[8px]">
-										<MailboxSvg />
-										<Text
-											className="text-base text-gray-9a"
-											style={{ fontFamily: fontFamily.medium }}
-										>
-											Не получили код? Проверьте спам
-										</Text>
-									</View>
-								</View>
+								<Button variant="black" isLoading={isSubmitting} onPress={handleSubmit(onSubmit)}>
+									Отправить код
+								</Button>
 							</View>
 						</View>
 					</TouchableWithoutFeedback>

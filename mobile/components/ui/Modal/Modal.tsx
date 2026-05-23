@@ -30,7 +30,7 @@ const Modal = ({ isOpen, withInput, handleClose, label, labelSize, children, blu
 
 		if (isGlassAvailable) {
 			return (
-				<GlassView style={styles.glassView}>
+				<GlassView colorScheme="dark" style={styles.glassView}>
 					<View style={styles.inner}>
 						{header()}
 						{children}

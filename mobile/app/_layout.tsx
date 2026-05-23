@@ -12,6 +12,7 @@ import { Colors } from '@/constants/Colors'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import './../global.css'
 import { SafeAreaProvider } from 'react-native-safe-area-context'
+import { clearExpiredTimers } from '@/store/timerStorage'
 
 const queryClient = new QueryClient({
 	defaultOptions: {
@@ -135,6 +136,10 @@ export default function RootLayout() {
 	})
 	const { isAuthenticated, checkAuth, isAuthChecked } = useAuthStore()
 	const isReady = loaded && isAuthChecked
+
+	useEffect(() => {
+		clearExpiredTimers() // очистка истекших таймеров для восстановления пароля / подтверждения почты
+	}, [])
 
 	useEffect(() => {
 		void checkAuth()

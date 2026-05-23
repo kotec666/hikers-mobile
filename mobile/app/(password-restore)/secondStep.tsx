@@ -1,34 +1,111 @@
-import React, { useCallback } from 'react'
+import React, { useCallback, useMemo, useState } from 'react'
 import { Container } from '@/components/ui/Container'
 import HeaderBack from '@/components/ui/HeaderBack'
 import { View, Text, Platform, Keyboard, KeyboardAvoidingView, TouchableWithoutFeedback } from 'react-native'
 import { fontFamily } from '@/constants/Fonts'
 import { Button } from '@/components/ui/Button'
-import AlertCircleSvg from '@/components/svg/AlertCircleSvg'
-import MailboxSvg from '@/components/svg/MailboxSvg'
 import { OTPInput } from '@/components/ui/OTP/OTPInput'
 import * as Haptics from 'expo-haptics'
 import { useSafeNavigation } from '@/hooks/useSafeNavigation'
 import { Page } from '@/components/ui/Page'
+import { PASSWORD_RECOVERY_CODE_SIZE } from '@/shared/constants'
+import { FieldErrors, getFieldsErrors } from '@/helpers/getFieldsErrors'
+import { confirmPasswordRecoveryCode, requestPasswordRecoveryCode } from '@/api/auth'
+import ErrorMessageIcon from '@/components/ErrorMessageIcon'
+import CheckSpam from '@/components/CheckSpam'
+import { useFocusEffect, useLocalSearchParams } from 'expo-router'
+import { createTimer, TimerType } from '@/store/timerStorage'
+import { useTimerCountdown } from '@/hooks/useTimerCountdown'
+import { formatCountdown } from '@/helpers/formatTime'
 
 const SecondStepPage = () => {
-	const { push } = useSafeNavigation()
-	const [hasError, setHasError] = React.useState(false)
+	const { push, replace } = useSafeNavigation()
+	const { email } = useLocalSearchParams<{
+		email?: string
+	}>()
+	const { remainingSeconds, isBlocked } = useTimerCountdown(TimerType.PASSWORD_RECOVERY, email)
 
-	const onDone = useCallback((code: string) => {
-		console.log(`onDone: ${code}`)
-		Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error)
-		setHasError(true)
-	}, [])
+	const [errors, setErrors] = useState<FieldErrors>({} as FieldErrors)
+
+	useFocusEffect(
+		useCallback(() => {
+			if (!email) {
+				replace('/(password-restore)/firstStep')
+			}
+		}, [email, replace])
+	)
+
+	const onDone = useCallback(
+		async (code: string) => {
+			try {
+				if (!email) return push('/(password-restore)/firstStep')
+
+				const result = await confirmPasswordRecoveryCode(code, email)
+
+				// код неверный
+				if (!result.success) {
+					const remainAttempts = result.remainAttempts
+
+					if (result.waitMs > 0) {
+						createTimer(TimerType.PASSWORD_RECOVERY, email, result.waitMs)
+
+						setErrors({
+							code: 'Слишком много попыток. Попробуйте позже.'
+						})
+
+						await Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error)
+
+						return
+					}
+
+					const attemptsText =
+						remainAttempts !== null && remainAttempts <= 3
+							? `Неверный код, осталось попыток: ${remainAttempts}`
+							: 'Неверный код.'
+
+					setErrors({
+						code: attemptsText
+					})
+					await Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error)
+					return
+				}
+
+				push(`/(password-restore)/thirdStep?email=${email}&code=${code}`)
+			} catch (e) {
+				const formattedErrors = await getFieldsErrors(e)
+				setErrors(formattedErrors)
+				await Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error)
+			}
+		},
+		[email, push]
+	)
 
 	const handleClearOTPError = () => {
-		setHasError(false)
+		setErrors({})
 	}
 
-	const handlePressButton = () => {
-		push('/(password-restore)/thirdStep')
+	const handleResendOTP = async () => {
+		if (!email) {
+			return
+		}
+
+		if (isBlocked) {
+			return
+		}
+
+		handleClearOTPError()
+
+		const requestCodeResult = await requestPasswordRecoveryCode(email)
+		createTimer(TimerType.PASSWORD_RECOVERY, email, requestCodeResult.waitMs)
 	}
 
+	const hasError = useMemo(() => {
+		return Boolean(Object.keys(errors).length)
+	}, [errors])
+
+	const formattedTime = formatCountdown(remainingSeconds * 1000)
+
+	if (!email) return null
 	return (
 		<Page>
 			<Container className="flex-1">
@@ -46,7 +123,7 @@ const SecondStepPage = () => {
 											className="text-base text-gray-9a"
 											style={{ fontFamily: fontFamily.medium }}
 										>
-											Мы отправили код для восстановления пароля на hikers_app@gmail.com
+											Мы отправили код для восстановления пароля на {email}
 										</Text>
 									</View>
 									<View className="gap-[12px]">
@@ -55,36 +132,20 @@ const SecondStepPage = () => {
 										</Text>
 										<OTPInput
 											hasError={hasError}
-											length={5}
+											length={PASSWORD_RECOVERY_CODE_SIZE}
 											onDone={onDone}
 											clearError={handleClearOTPError}
 										/>
 									</View>
 								</View>
 								<View className="gap-[24px]">
-									{hasError && (
-										<View className="flex-row items-center gap-[8px]">
-											<AlertCircleSvg />
-											<Text
-												className="text-base text-red-ff4"
-												style={{ fontFamily: fontFamily.medium }}
-											>
-												Неверный код. Попробуйте снова
-											</Text>
-										</View>
-									)}
-									<Button variant="black" onPress={handlePressButton}>
-										Отправить код повторно (0:59)
+									{hasError && <ErrorMessageIcon errorText={errors.code} />}
+									<Button variant="black" onPress={handleResendOTP} disabled={isBlocked}>
+										{isBlocked
+											? `Отправить код повторно (${formattedTime})`
+											: 'Отправить код повторно'}
 									</Button>
-									<View className="flex-row justify-center items-center gap-[8px]">
-										<MailboxSvg />
-										<Text
-											className="text-base text-gray-9a"
-											style={{ fontFamily: fontFamily.medium }}
-										>
-											Не получили код? Проверьте спам
-										</Text>
-									</View>
+									<CheckSpam />
 								</View>
 							</View>
 						</View>

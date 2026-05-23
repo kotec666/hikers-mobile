@@ -42,21 +42,14 @@
 [//]: # (   })
 
 [//]: # (   ```)
-1. Для использования lite версии yandex maps в файле `./android/build.gradle` добавьте в ext строку:
-   ```
-   buildscript {
-    ext {
-     useYandexMapsLite = true 
-    }
-   ``` 
-2. Сжатие android проекта осуществляется в `./android/app/build.gradle` следующим образом:
+1. Сжатие android проекта осуществляется в `./android/app/build.gradle` следующим образом:
    ```groovy
         // minifyEnabled enableProguardInReleaseBuilds
            minifyEnabled true
            shrinkResources true
    ```   
 
-3. ~~Создайте~~ `./android/local.properties` и укажите путь к Android SDK (пример для Windows) (сейчас генерируется автоматически с ./scripts/withLocalProperties.js):
+2. ~~Создайте~~ `./android/local.properties` и укажите путь к Android SDK (пример для Windows) (сейчас генерируется автоматически с ./scripts/withLocalProperties.js):
    ```
    sdk.dir=C:\\Users\\alexk\\AppData\\Local\\Android\\Sdk
    ```
@@ -72,14 +65,7 @@
 [//]: # (   Это необходимо для корректной работы таймера тренировки в фоне.)
 
 
-## Подготовка Ios-проекта
-
-1. Для использования lite версии yandex maps в файле `Podfile` добавьте в начало строку:
-   ```
-   + ENV['USE_YANDEX_MAPS_LITE'] = '1'
-   ...
-   ```
-
+## Подготовка Ios-проекта (Не требуется)
 
 ## Общая папка `shared`
 

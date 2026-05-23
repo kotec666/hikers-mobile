@@ -82,7 +82,7 @@ const Members = () => {
 
 	return (
 		<Page>
-			<Container className="gap-[20px] mt-[20px] flex-1">
+			<Container className="gap-[20px] flex-1">
 				<HeaderBack>Участники тренировки</HeaderBack>
 				<LegendList
 					data={members}

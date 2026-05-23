@@ -54,6 +54,8 @@ function ResponsiveDialogContent({
 }: React.ComponentProps<typeof DialogPrimitive.Content | typeof DrawerPrimitive.Content> & {
 	showCloseButton?: boolean
 	isTitleHidden?: boolean
+	isDescriptionHidden?: boolean
+	description?: string
 }) {
 	const isMobile = useMediaQuery('(max-width: 768px)')
 

@@ -84,7 +84,7 @@ export function WorkoutPost({ post }: WorkoutPostProps) {
 			?.points || []
 
 	return (
-		<div className="bg-[#212121] rounded-2xl overflow-hidden max-w-2xl mx-auto">
+		<div className="bg-[#212121] rounded-2xl overflow-hidden mx-auto">
 			<div className="p-4">
 				<div className="flex items-center gap-3">
 					<UserAvatar bordered iconSize={24} avatarFilename={post?.userCreator.avatarFilename} />
@@ -105,7 +105,7 @@ export function WorkoutPost({ post }: WorkoutPostProps) {
 			</div>
 
 			<div className="px-4 pb-3">
-				<h2 className="text-white text-lg font-medium mb-2">{post?.title}</h2>
+				<h1 className="text-white text-lg font-medium mb-2">{post?.title}</h1>
 				<p className="text-gray-300 text-sm wrap-anywhere">{post?.description}</p>
 			</div>
 
@@ -144,9 +144,10 @@ export function WorkoutPost({ post }: WorkoutPostProps) {
 						return (
 							<div key={idx} className={cn('relative overflow-hidden rounded-xl', item.className)}>
 								<Image
+									fill
 									src={`${PATH_TO_IMAGE}${img}`}
 									alt={`Тренировка ${idx + 1}`}
-									fill
+									loading="eager"
 									className="object-cover"
 								/>
 

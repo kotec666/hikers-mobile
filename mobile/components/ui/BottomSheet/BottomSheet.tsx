@@ -9,6 +9,7 @@ import { scheduleOnRN } from 'react-native-worklets'
 import Portal from '@/components/Portal/Portal'
 import { useBlurContext } from '@/components/providers/BlurProvider'
 import { GlassView, isLiquidGlassAvailable } from 'expo-glass-effect'
+import { Button } from '@/components/ui/Button'
 
 const BottomSheet = forwardRef<BottomSheetHandle, BottomSheetProps>(
 	(
@@ -17,7 +18,8 @@ const BottomSheet = forwardRef<BottomSheetHandle, BottomSheetProps>(
 			backDropColor = 'rgba(0,0,0,0.5)',
 			backgroundColor = 'rgba(0, 0, 0, 1)',
 			blurDisabled,
-			children
+			children,
+			onDone
 		},
 		ref
 	) => {
@@ -83,6 +85,20 @@ const BottomSheet = forwardRef<BottomSheetHandle, BottomSheetProps>(
 			}
 		})
 
+		const floatingButtonStyle = useAnimatedStyle(() => {
+			const opacity = interpolate(sheetPositionY.value, [closedPositionY - 50, openPositionY], [0, 1])
+
+			return {
+				top: sheetPositionY.value - 70,
+				opacity,
+				transform: [
+					{
+						translateY: interpolate(sheetPositionY.value, [openPositionY, closedPositionY], [0, 30])
+					}
+				]
+			}
+		})
+
 		const panGestureHandler = Gesture.Pan()
 			.onBegin(() => {
 				gestureStartPositionY.value = sheetPositionY.value
@@ -125,6 +141,7 @@ const BottomSheet = forwardRef<BottomSheetHandle, BottomSheetProps>(
 			if (isGlassAvailable) {
 				return (
 					<GlassView
+						colorScheme="dark"
 						style={[StyleSheet.absoluteFill, { borderTopLeftRadius: 50, borderTopRightRadius: 50 }]}
 					/>
 				)
@@ -150,21 +167,31 @@ const BottomSheet = forwardRef<BottomSheetHandle, BottomSheetProps>(
 				<TouchableWithoutFeedback onPress={() => closeSheet()}>
 					<Animated.View style={[styles.backdrop, backdropStyle, { backgroundColor: backDropColor }]} />
 				</TouchableWithoutFeedback>
-				<GestureDetector gesture={panGestureHandler}>
-					<Animated.View style={platformStyles}>
-						<View
-							style={{
-								flex: 1
-							}}
-						>
-							{renderBackground()}
+				{onDone && (
+					<Animated.View style={[styles.floatingButton, floatingButtonStyle]}>
+						<Button variant="black" onPress={onDone}>
+							Готово
+						</Button>
+					</Animated.View>
+				)}
+
+				<Animated.View style={platformStyles}>
+					<View
+						style={{
+							flex: 1
+						}}
+					>
+						{renderBackground()}
+
+						<GestureDetector gesture={panGestureHandler}>
 							<Pressable style={styles.lineContainer}>
 								<View style={styles.line} />
 							</Pressable>
-							<View style={styles.contentContainer}>{children}</View>
-						</View>
-					</Animated.View>
-				</GestureDetector>
+						</GestureDetector>
+
+						<View style={styles.contentContainer}>{children}</View>
+					</View>
+				</Animated.View>
 			</Portal>
 		)
 	}
@@ -187,6 +214,13 @@ const styles = StyleSheet.create({
 	},
 	contentContainer: {
 		flex: 1
+	},
+	floatingButton: {
+		position: 'absolute',
+		left: 20,
+		right: 20,
+		zIndex: 999,
+		elevation: 999
 	},
 	lineContainer: {
 		height: 20,
