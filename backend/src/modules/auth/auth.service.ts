@@ -162,7 +162,7 @@ export class AuthService {
 				cachedCodeKey,
 				{
 					code: payload.code,
-					attempts: payload.attempts + 1,
+					attempts: shouldConfirm ? payload.attempts : payload.attempts + 1,
 					confirmed: shouldConfirm,
 				},
 				PASSWORD_RECOVERY_CODE_TTL_MS,
@@ -174,7 +174,7 @@ export class AuthService {
 		if (shouldConfirm) {
 			return {
 				success: true,
-				remainAttempts: MAX_PASSWORD_RECOVERY_ATTEMPTS - (payload.attempts + 1),
+				remainAttempts: MAX_PASSWORD_RECOVERY_ATTEMPTS - payload.attempts,
 				waitMs: 0,
 			};
 		} else {
@@ -245,7 +245,7 @@ export class AuthService {
 			throw new NotFoundException(ERRORS.NOT_FOUND);
 		}
 		if (user.emailConfirmedAt) {
-			throw new ConflictException(ERRORS.ALREADY_EXISTS);
+			throw new ConflictException(ERRORS.EMAIL_ALREADY_CONFIRMED);
 		}
 
 		const isEmailValid = await this.mailer.isDeliverable(user.email);
