@@ -24,9 +24,10 @@ const errorFields: ErrorFields = {
 	},
 	[ERRORS.INVALID_EMAIL]: {
 		field: 'email',
-		message: 'Такой email некорректен'
+		message: 'Некорректный email'
 	},
 	[ERRORS.ALREADY_EXISTS]: { field: 'email', message: 'Такой email уже зарегистрирован' },
+	[ERRORS.EMAIL_ALREADY_CONFIRMED]: { field: 'email', message: 'email уже подтвержден' },
 	[ERRORS.NOT_FOUND]: {
 		field: 'field_name',
 		message: 'Не найдено'
@@ -157,7 +158,8 @@ const personalErrorFields: PersonalErrorFields = {
 	email: {
 		[ERRORS.NOT_FOUND]: 'Такой email не зарегистрирован',
 		[ERRORS.INVALID_EMAIL]: 'Некорректный email',
-		[ERRORS.ALREADY_EXISTS]: 'Такой email уже зарегистрирован'
+		[ERRORS.ALREADY_EXISTS]: 'Такой email уже зарегистрирован',
+		[ERRORS.EMAIL_ALREADY_CONFIRMED]: 'Этот email уже подтвержден'
 	},
 	password: {
 		[ERRORS.DIGIT_REQUIRED]: 'Пароль должен содержать цифры',

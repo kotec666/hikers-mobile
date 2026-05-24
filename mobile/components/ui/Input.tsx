@@ -26,11 +26,12 @@ export const Input = forwardRef<TextInput, Props>(function Input(props, ref) {
 					error
 						? { borderColor: Colors['red-8b'], color: Colors['red-ff'], backgroundColor: Colors['red-55'] }
 						: { borderColor: Colors['black-44'], color: 'white', backgroundColor: 'transparent' },
-					isFind ? { paddingRight: 42 } : { paddingRight: 15 },
-					restProps.multiline ? { height: 200, paddingVertical: 15, textAlignVertical: 'top' } : {}
+					isFind ? { paddingRight: 42 } : { paddingRight: 16 },
+					restProps.multiline ? { height: 200, paddingVertical: 16, textAlignVertical: 'top' } : {},
+					{ paddingLeft: 16 }
 				]}
 				className={cn(
-					'border-[1px] relative placeholder:text-gray-ab placeholder:text-[15px]',
+					'border relative placeholder:text-gray-ab placeholder:text-[15px]',
 					{
 						'text-red-ff bg-red-55': error,
 						'text-white bg-black-25': !error,
@@ -59,7 +60,6 @@ const styles = StyleSheet.create({
 	input: {
 		position: 'relative',
 		fontFamily: fontFamily.regular,
-		paddingLeft: 15,
 		fontSize: 14,
 		textDecorationColor: 'white'
 	}

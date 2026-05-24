@@ -203,6 +203,7 @@ const PostsPage = () => {
 								onPress={() => {
 									Keyboard.dismiss()
 									setState((s) => ({ ...s, isSearchActive: false }))
+									setSearchWord('')
 								}}
 							/>
 							<Input
