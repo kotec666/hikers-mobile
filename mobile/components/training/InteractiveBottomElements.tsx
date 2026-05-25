@@ -4,7 +4,6 @@ import { cn } from '@/helpers/cn'
 import ActionButton from '@/components/training/ActionButton'
 import PlaySvg from '@/components/svg/PlaySvg'
 import PauseSvg from '@/components/svg/PauseSvg'
-import PeopleListSvg from '@/components/svg/PeopleListSvg'
 import SwitchMapMode from '@/components/svg/SwitchMapMode'
 import { Button } from '@/components/ui/Button'
 
@@ -29,9 +28,9 @@ const InteractiveBottomElements = (props: IProps) => {
 				<ActionButton onClickAction={props.handleClickPause}>
 					{props.isPaused ? <PlaySvg /> : <PauseSvg />}
 				</ActionButton>
-				<ActionButton onClickAction={props.handleClickPeopleList} isPressed={!props.peopleListHidden}>
-					<PeopleListSvg color={props.peopleListHidden ? '#000' : '#fff'} />
-				</ActionButton>
+				{/*<ActionButton onClickAction={props.handleClickPeopleList} isPressed={!props.peopleListHidden}>*/}
+				{/*	<PeopleListSvg color={props.peopleListHidden ? '#000' : '#fff'} />*/}
+				{/*</ActionButton>*/}
 				<ActionButton onClickAction={props.handleClickSwitchViewMode} isPressed={!props.mapViewHidden}>
 					<SwitchMapMode color={props.mapViewHidden ? '#000' : '#fff'} />
 				</ActionButton>

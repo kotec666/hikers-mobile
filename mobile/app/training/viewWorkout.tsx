@@ -594,7 +594,7 @@ export default function ViewWorkout() {
 								</View>
 							)}
 						</View>
-						<View className="mt-[20px] gap-[15px]">
+						<View className="mt-[20px] gap-[15px] hidden">
 							<Text className="text-white text-base" style={{ fontFamily: fontFamily.bold }}>
 								Участники
 							</Text>

@@ -75,7 +75,7 @@ const PostListItemBottom = (props: IProps) => {
 			>
 				<View className="flex-row items-center gap-[15px]">
 					<View className="flex-row">
-						{Boolean(props?.participants?.length)
+						{participantsCount > 1
 							? props.participants?.slice(-3)?.map((p, index) => (
 									<View
 										key={p.id}
@@ -108,11 +108,11 @@ const PostListItemBottom = (props: IProps) => {
 					</View>
 
 					<View className="flex-row gap-[5px]">
-						<Text className="text-blue-3d text-sm" style={{ fontFamily: fontFamily.medium }}>
-							{props.participants?.[0].user.name}
-						</Text>
 						{participantsCount > 1 && (
 							<>
+								<Text className="text-blue-3d text-sm" style={{ fontFamily: fontFamily.medium }}>
+									{props.participants?.[0].user.name}
+								</Text>
 								<Text className="text-gray-ab text-sm" style={{ fontFamily: fontFamily.medium }}>
 									и ещё
 								</Text>

@@ -6,7 +6,6 @@ import HeaderBack from '@/components/ui/HeaderBack'
 import PostBodyWrapper, { PostType } from '@/components/ui/Post/PostBodyWrapper'
 import PostListItemBottom from '@/components/ui/Post/PostListItemBottom'
 import PostListItemSlider from '@/components/ui/Post/PostListItemSlider'
-import MapRoutesSwitchers from '@/components/ui/Post/MapRoutesSwitchers'
 import DeletePostModal from '@/components/ui/Post/DeletePostModal'
 import MoreOptionsSvg from '@/components/svg/MoreOptionsSvg'
 import MoreOptionsButton from '@/components/ui/MoreOptionsButton/MoreOptionsButton'
@@ -134,7 +133,7 @@ const Post = () => {
 										/>
 									}
 								/>
-								<MapRoutesSwitchers />
+								{/*<MapRoutesSwitchers />*/}
 								<PostListItemSlider images={post?.fileNames} />
 								{post?.isLiked !== undefined &&
 									post?.likesCount !== undefined &&

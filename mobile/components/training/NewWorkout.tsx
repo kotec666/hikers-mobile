@@ -265,9 +265,10 @@ const NewWorkout = memo(
 						{props.chosenWorkout && renderIcon(props.chosenWorkout.IconComponent, '#fff')}
 					</MapActionButton>
 					<StartButton onPress={() => props.handleClickStart(false)}>Начать</StartButton>
-					<MapActionButton onPress={() => router.navigate('/find-people')}>
+					<MapActionButton onPress={() => router.navigate('/find-people')} className="hidden">
 						<PeopleAddSvg />
 					</MapActionButton>
+					<View pointerEvents="none" className="w-[58px] h-[58px]" />
 				</View>
 				<AllGeolocationPermissions
 					ref={props.permissionsRef}
