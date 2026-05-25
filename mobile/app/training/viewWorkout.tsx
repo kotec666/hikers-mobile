@@ -640,7 +640,7 @@ export default function ViewWorkout() {
 										}}
 										render={({ field: { onChange, onBlur, value }, fieldState: { error } }) => (
 											<Input
-												className="rounded-[4px]"
+												className="rounded-[8px]"
 												placeholder="Введите заголовок"
 												error={error?.message || state.errors?.title}
 												onChangeText={onChange}

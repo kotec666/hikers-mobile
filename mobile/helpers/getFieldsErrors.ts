@@ -199,6 +199,43 @@ type ErrorObject = {
 
 export type FieldErrors = Record<string, string | boolean>
 
+const isParsedErrorObject = (value: unknown): value is ErrorObject | ErrorObjectArr => {
+	if (!value || typeof value !== 'object') {
+		return false
+	}
+
+	// у HTTPError есть response
+	// у уже распарсенной ошибки response нет
+	if ('response' in value) {
+		return false
+	}
+
+	if (!('message' in value)) {
+		return false
+	}
+
+	if (!('statusCode' in value)) {
+		return false
+	}
+
+	const message = (value as any).message
+
+	// message: string
+	if (typeof message === 'string') {
+		return true
+	}
+
+	// message: [{ property, message }]
+	if (
+		Array.isArray(message) &&
+		message.every((item) => item && typeof item === 'object' && 'property' in item && Array.isArray(item.message))
+	) {
+		return true
+	}
+
+	return false
+}
+
 export const getFieldsErrors = async (e: unknown): Promise<FieldErrors> => {
 	const { showNotification } = useNotificationStore.getState()
 
@@ -218,9 +255,23 @@ export const getFieldsErrors = async (e: unknown): Promise<FieldErrors> => {
 		}
 	}
 
-	if (typeof e === 'object' && e !== null && 'response' in e) {
-		const response = (e as any).response
-		const errorObject: ErrorObject | ErrorObjectArr = await response.json().catch(() => null)
+	if (typeof e === 'object' && e !== null) {
+		let errorObject: ErrorObject | ErrorObjectArr | null = null
+
+		// уже распарсенный объект
+		if (isParsedErrorObject(e)) {
+			errorObject = e
+		}
+
+		// fetch error
+		else if ('response' in e) {
+			const response = (e as any).response
+			if (response?.json) {
+				errorObject = await response.json().catch(() => null)
+			} else {
+				console.log('В response не содержится json метод')
+			}
+		}
 
 		const errors: { [key: string]: string | boolean } = {}
 
@@ -234,8 +285,8 @@ export const getFieldsErrors = async (e: unknown): Promise<FieldErrors> => {
 			}
 		}
 
-		if (Array.isArray(errorObject.message)) {
-			errorObject.message.forEach((error) => {
+		if (Array.isArray(errorObject?.message)) {
+			errorObject?.message.forEach((error) => {
 				const errorKey = Object.keys(errorFields).find(
 					(key) => ERRORS[key as keyof typeof ERRORS] === error.message[0]
 				)

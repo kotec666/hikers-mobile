@@ -18,6 +18,16 @@ import { createTimer, TimerType } from '@/store/timerStorage'
 import { useTimerCountdown } from '@/hooks/useTimerCountdown'
 import { formatCountdown } from '@/helpers/formatTime'
 
+const isWrongCodeError = (
+	data: any
+): data is {
+	remainAttempts: number | null
+	success: boolean
+	waitMs: number
+} => {
+	return data && typeof data === 'object' && 'remainAttempts' in data && 'success' in data && 'waitMs' in data
+}
+
 const SecondStepPage = () => {
 	const { push, replace } = useSafeNavigation()
 	const { email } = useLocalSearchParams<{
@@ -40,40 +50,52 @@ const SecondStepPage = () => {
 			try {
 				if (!email) return push('/(password-restore)/firstStep')
 
-				const result = await confirmPasswordRecoveryCode(code, email)
+				await confirmPasswordRecoveryCode(code, email)
+				push(`/(password-restore)/thirdStep?email=${email}&code=${code}`)
+			} catch (e) {
+				try {
+					const errorData = await e.response?.json()
 
-				// код неверный
-				if (!result.success) {
-					const remainAttempts = result.remainAttempts
+					// код неверный
+					if (isWrongCodeError(errorData)) {
+						const remainAttempts = errorData.remainAttempts
 
-					if (result.waitMs > 0) {
-						createTimer(TimerType.PASSWORD_RECOVERY, email, result.waitMs)
+						if (errorData.waitMs > 0) {
+							if (email) {
+								createTimer(TimerType.PASSWORD_RECOVERY, email, errorData.waitMs)
+							}
+
+							setErrors({
+								code: 'Слишком много попыток. Попробуйте позже.'
+							})
+
+							await Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error)
+
+							return
+						}
+
+						const attemptsText =
+							remainAttempts !== null && remainAttempts <= 3
+								? `Неверный код, осталось попыток: ${remainAttempts}`
+								: 'Неверный код.'
 
 						setErrors({
-							code: 'Слишком много попыток. Попробуйте позже.'
+							code: attemptsText
 						})
-
 						await Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error)
-
 						return
 					}
 
-					const attemptsText =
-						remainAttempts !== null && remainAttempts <= 3
-							? `Неверный код, осталось попыток: ${remainAttempts}`
-							: 'Неверный код.'
-
-					setErrors({
-						code: attemptsText
-					})
-					await Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error)
-					return
+					// все остальные ошибки
+					const formattedErrors = await getFieldsErrors(errorData ?? e)
+					setErrors(formattedErrors)
+				} catch (parseError) {
+					// если вообще не удалось распарсить response
+					console.log('parseError', parseError)
+					const formattedErrors = await getFieldsErrors(e)
+					setErrors(formattedErrors)
 				}
 
-				push(`/(password-restore)/thirdStep?email=${email}&code=${code}`)
-			} catch (e) {
-				const formattedErrors = await getFieldsErrors(e)
-				setErrors(formattedErrors)
 				await Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error)
 			}
 		},
@@ -95,8 +117,15 @@ const SecondStepPage = () => {
 
 		handleClearOTPError()
 
-		const requestCodeResult = await requestPasswordRecoveryCode(email)
-		createTimer(TimerType.PASSWORD_RECOVERY, email, requestCodeResult.waitMs)
+		try {
+			const requestCodeResult = await requestPasswordRecoveryCode(email)
+			createTimer(TimerType.PASSWORD_RECOVERY, email, requestCodeResult.waitMs)
+		} catch (e) {
+			console.log('Ошибка при запросе нового кода', e)
+			const formattedErrors = await getFieldsErrors(e)
+			setErrors(formattedErrors)
+			await Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error)
+		}
 	}
 
 	const hasError = useMemo(() => {

@@ -36,7 +36,7 @@ export const Input = forwardRef<TextInput, Props>(function Input(props, ref) {
 						'text-red-ff bg-red-55': error,
 						'text-white bg-black-25': !error,
 						'h-[50px] rounded-full': !restProps.multiline,
-						'rounded-[4px]': restProps.multiline
+						'rounded-[8px]': restProps.multiline
 					},
 					className
 				)}
