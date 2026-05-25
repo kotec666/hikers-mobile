@@ -51,6 +51,24 @@ const SocialLink = ({ type }: { type: SocialLinkType }) => {
 }
 
 export function AboutCompany() {
+	const companyLinks = [
+		{
+			label: 'Описание',
+			href: '/company-description'
+		}
+	]
+
+	const usefulLinks = [
+		{
+			label: 'Поддержка',
+			href: '/support'
+		},
+		{
+			label: 'Контакты',
+			href: '/contacts'
+		}
+	]
+
 	return (
 		<section className="bg-[#46CA53] py-16 md:py-20">
 			<Container>
@@ -71,28 +89,32 @@ export function AboutCompany() {
 					<div className="space-y-4">
 						<h4 className="text-black-0d font-bold">Компания</h4>
 						<ul className="space-y-2 font-medium">
-							<li>
-								<a href="#" className="text-black-0d/80 hover:text-black-0d transition-colors">
-									Описание
-								</a>
-							</li>
+							{companyLinks.map((companyLink) => (
+								<li key={companyLink.label}>
+									<Link
+										href={companyLink.href}
+										className="text-black-0d/80 hover:text-black-0d transition-colors"
+									>
+										{companyLink.label}
+									</Link>
+								</li>
+							))}
 						</ul>
 					</div>
 
-					{/* Useful Links */}
 					<div className="space-y-4">
 						<h4 className="text-black-0d font-bold">Полезные ссылки</h4>
 						<ul className="space-y-2 font-medium">
-							<li>
-								<a href="#" className="text-black-0d/80 hover:text-black-0d transition-colors">
-									Поддержка
-								</a>
-							</li>
-							<li>
-								<a href="#" className="text-black-0d/80 hover:text-black-0d transition-colors">
-									Контакты
-								</a>
-							</li>
+							{usefulLinks.map((usefulLink) => (
+								<li key={usefulLink.label}>
+									<Link
+										href={usefulLink.href}
+										className="text-black-0d/80 hover:text-black-0d transition-colors"
+									>
+										{usefulLink.label}
+									</Link>
+								</li>
+							))}
 						</ul>
 					</div>
 				</div>
