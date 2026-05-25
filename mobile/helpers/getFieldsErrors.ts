@@ -91,6 +91,14 @@ const errorFields: ErrorFields = {
 	[ERRORS.TRAINING_NOT_STARTED]: {
 		field: 'field_name',
 		message: 'Тренировка не начата'
+	},
+	[ERRORS.SHOULD_BE_DIFFERENT]: {
+		field: 'field_name',
+		message: 'Значения должны отличаться'
+	},
+	[ERRORS.TOO_MANY_REQUESTS]: {
+		field: 'field_name',
+		message: 'Слишком много попыток'
 	}
 }
 /* prettier-ignore */
@@ -103,12 +111,15 @@ const errorFields: ErrorFields = {
  * */
 
 type PersonalErrorFields = {
-    [key: string]: {
-        [key in ERRORS]?: string;
-    };
-};
+	[key: string]: {
+		[key in ERRORS]?: string
+	}
+}
 
 const personalErrorFields: PersonalErrorFields = {
+	code: {
+		[ERRORS.MISMATCH]: 'Неверный код.'
+	},
 	trainingId: {
 		[ERRORS.MISMATCH]: 'Некорректный id тренировки'
 	},
@@ -149,8 +160,13 @@ const personalErrorFields: PersonalErrorFields = {
 		[ERRORS.ALREADY_EXISTS]: 'Такой email уже зарегистрирован'
 	},
 	password: {
-		[ERRORS.DIGIT_REQUIRED]: 'Поле должно содержать цифры',
-		[ERRORS.MISMATCH]: 'Неверный пароль'
+		[ERRORS.DIGIT_REQUIRED]: 'Пароль должен содержать цифры',
+		[ERRORS.MISMATCH]: 'Неверный пароль',
+		[ERRORS.SHOULD_BE_DIFFERENT]: 'Пароль должен отличаться от старого'
+	},
+	confirmPassword: {
+		[ERRORS.MISMATCH]: 'Пароли не совпадают',
+		[ERRORS.DIGIT_REQUIRED]: 'Пароль должен содержать цифры'
 	},
 	username: {
 		[ERRORS.ALREADY_EXISTS]: 'Такой логин уже используется'

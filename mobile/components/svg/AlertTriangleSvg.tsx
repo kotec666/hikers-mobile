@@ -2,13 +2,14 @@ import Svg, { Path } from 'react-native-svg'
 
 interface IProps {
 	size?: number
+	color?: string
 }
 
-const SvgComponent = ({ size = 22 }: IProps) => {
+const SvgComponent = ({ size = 22, color = '#fff' }: IProps) => {
 	return (
 		<Svg width={size} height={size} fill="none" viewBox="0 0 22 22">
 			<Path
-				stroke="#fff"
+				stroke={color}
 				strokeLinecap="round"
 				strokeLinejoin="round"
 				strokeWidth={2}

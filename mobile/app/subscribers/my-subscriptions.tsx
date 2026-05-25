@@ -78,7 +78,7 @@ const MySubscriptionsPage = () => {
 	return (
 		<Page>
 			<View style={{ flex: 1 }}>
-				<Container className="gap-[20px] mt-[20px] flex-1">
+				<Container className="gap-[20px] flex-1">
 					<HeaderBack>Подписки</HeaderBack>
 					<LegendList
 						data={subscriptions}

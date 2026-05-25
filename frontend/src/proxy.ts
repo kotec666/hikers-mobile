@@ -68,6 +68,7 @@ export function proxy(request: NextRequest) {
 		"'self'",
 		`'nonce-${nonce}'`,
 		isDev ? "'unsafe-eval'" : '',
+		"'wasm-unsafe-eval'",
 		"'strict-dynamic'",
 		`${protocol}//${host}`
 	]

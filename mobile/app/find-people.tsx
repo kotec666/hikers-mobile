@@ -53,7 +53,7 @@ const FindPeople = () => {
 	return (
 		<Page>
 			<View style={{ flex: 1 }}>
-				<Container className="gap-[20px] mt-[20px] flex-1">
+				<Container className="gap-[20px] flex-1">
 					<HeaderBack>Совместная тренировка</HeaderBack>
 
 					<View className="flex-row gap-[10px]">

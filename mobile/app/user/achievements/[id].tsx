@@ -38,7 +38,7 @@ const UserAchievementsPage = () => {
 	return (
 		<Page>
 			<BlurProvider>
-				<Container className="gap-[20px] mt-[20px] flex-1">
+				<Container className="gap-[20px] flex-1">
 					<HeaderBack>Достижения</HeaderBack>
 					<ScrollView style={{ flex: 1, width: '100%' }} contentContainerStyle={{ paddingBottom: 50 }}>
 						<View className="gap-[10px]">

@@ -20,7 +20,8 @@ const nextConfig: NextConfig = {
 	// },
 	experimental: {
 		externalDir: true,
-		optimizeCss: true
+		optimizeCss: true,
+		optimizePackageImports: ['date-fns', 'lucide-react', 'framer-motion']
 	}
 }
 

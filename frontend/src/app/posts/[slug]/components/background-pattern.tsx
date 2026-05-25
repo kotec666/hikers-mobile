@@ -50,7 +50,7 @@ export function BackgroundPattern() {
 
 	if (!mounted) return null
 	return (
-		<div className="fixed inset-0 pointer-events-none overflow-hidden opacity-[0.02]">
+		<div className="absolute inset-0 pointer-events-none overflow-hidden opacity-[0.02]">
 			<div className="absolute inset-0 grid grid-cols-12 gap-8 p-8">
 				{items.map(({ rotation, scale, index }) => {
 					const Icon = icons[index % icons.length]

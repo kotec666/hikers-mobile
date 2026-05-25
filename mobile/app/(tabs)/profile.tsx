@@ -24,6 +24,7 @@ import { useProfilePostsQuery } from '@/queries/posts'
 import { useProfileQuery } from '@/queries/my-profile'
 import { Page } from '@/components/ui/Page'
 import { useQueryClient } from '@tanstack/react-query'
+import EmailNotConfirmed from '@/components/profile/EmailNotConfirmed'
 
 /**
  *
@@ -35,7 +36,6 @@ const ALLOWED_ROUTES = {
 	EDIT_PROFILE: '/profile/edit' as RelativePathString,
 	ABOUT: '/(about)' as RelativePathString,
 	SETTINGS: '/(settings)' as RelativePathString,
-	TEST_RESULTS_PAGE: '/training/results' as RelativePathString,
 	RESULTS_PAGE: '/training/viewWorkout' as RelativePathString
 } as const satisfies Record<string, RelativePathString>
 
@@ -50,6 +50,8 @@ const Profile = () => {
 	const legendListRef = useRef<LegendListRef>(null)
 
 	const { data: profileData, isFetching: isProfileFetching, refetch: refetchProfile } = useProfileQuery()
+	const shouldShowEmailConfirmation =
+		!isProfileFetching && Boolean(profileData) && !profileData?.user.isEmailConfirmed
 
 	const {
 		data: posts = [],
@@ -163,6 +165,10 @@ const Profile = () => {
 						<View className="gap-[20px] mb-[16px]">
 							<View className="gap-[20px]">
 								<View className="gap-[16px]">
+									<EmailNotConfirmed
+										isVisible={shouldShowEmailConfirmation}
+										email={profileData?.user?.email}
+									/>
 									<View className="flex-row justify-between w-full">
 										<AnimatedProfilePicture
 											size={117}
@@ -183,10 +189,6 @@ const Profile = () => {
 												{
 													label: 'Настройки',
 													action: () => handleClickRedirect(ALLOWED_ROUTES.SETTINGS)
-												},
-												{
-													label: 'results page test',
-													action: () => handleClickRedirect(ALLOWED_ROUTES.TEST_RESULTS_PAGE)
 												},
 												{
 													label: 'results page',

@@ -19,6 +19,7 @@ export const loginUser = async (data: {
 export const registrationUser = async (data: {
 	email: string
 	password: string
+	isTermsAccepted: boolean
 }): Promise<
 	IUser & {
 		token: string
@@ -27,6 +28,74 @@ export const registrationUser = async (data: {
 	return (
 		await fetcher.post('auth/registration', {
 			json: data
+		})
+	).json()
+}
+
+// Запросить код подтверждения почты
+export const requestConfirmEmailCode = async (): Promise<{
+	success: boolean
+	waitMs: number
+}> => {
+	return (await fetcher.post('auth/request-confirm-email')).json()
+}
+
+// Ввести код подтверждения почты
+export const confirmEmailCode = async (
+	code: string
+): Promise<{
+	success: boolean
+}> => {
+	return (
+		await fetcher.post('auth/confirm-email', {
+			json: { code }
+		})
+	).json()
+}
+
+// Запросить код восстановления пароля
+export const requestPasswordRecoveryCode = async (
+	email: string
+): Promise<{
+	success: boolean
+	remainAttempts: number
+	waitMs: number
+}> => {
+	return (
+		await fetcher.post('auth/request-password-recovery', {
+			json: { email }
+		})
+	).json()
+}
+
+// Ввести код восстановления пароля
+export const confirmPasswordRecoveryCode = async (
+	code: string,
+	email: string
+): Promise<{
+	success: boolean
+	remainAttempts: number
+	waitMs: number
+}> => {
+	return (
+		await fetcher.post('auth/confirm-password-recovery', {
+			json: { code, email }
+		})
+	).json()
+}
+
+// Восстановить пароль
+export const recoverPassword = async (
+	code: string,
+	email: string,
+	password: string,
+	confirmPassword: string
+): Promise<{
+	success: boolean
+}> => {
+	return (
+		await fetcher.post('auth/recover-password', {
+			json: { code, email, password, confirmPassword }
 		})
 	).json()
 }

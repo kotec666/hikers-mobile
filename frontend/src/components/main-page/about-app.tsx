@@ -1,9 +1,11 @@
 import React from 'react'
 import { IContentBlock } from '@/app/page'
 import ContentBlock from '@/components/main-page/content-block'
-import PhoneSceneWrapper from '@/components/main-page/phone-scene-wrapper'
+import PhoneSceneLazy from '@/components/main-page/phone-scene-lazy'
 
 const AboutApp = ({ contentBlocks }: { contentBlocks: IContentBlock[] }) => {
+	// в дев режиме не работает <PhoneSceneLazy />, поэтому нужно использовать <PhoneSceneWrapper />
+	// но если импортировать <PhoneSceneWrapper /> напрямую, то он будет включен в бандл сервера, чего делать не нужно
 	return (
 		<div id="phone-scene-container" className="relative w-full lg:h-[300dvh]">
 			{contentBlocks.map((block, idx) => (
@@ -16,8 +18,8 @@ const AboutApp = ({ contentBlocks }: { contentBlocks: IContentBlock[] }) => {
 					description={block.description}
 				/>
 			))}
-			<div className="hidden lg:flex sticky z-10 top-0 h-screen w-full">
-				<PhoneSceneWrapper />
+			<div role="presentation" className="hidden lg:flex sticky z-10 top-0 h-screen w-full">
+				<PhoneSceneLazy />
 			</div>
 		</div>
 	)

@@ -5,6 +5,7 @@
 	"scripts": {
 		"dev": "next dev",
 		"build": "next build",
+		"build:analyzer": "next experimental-analyze",
 		"start": "next start -p 4173",
 		"lint": "yarn run eslint",
 		"format": "prettier --write \"src/**/*.{ts,tsx}\" --ignore-path src/shared/*"

@@ -26,7 +26,7 @@ export interface INotMyProfile extends IProfile {
 
 // Получение данных своего профиля
 export const getProfileData = async (): Promise<IProfile> => {
-	return (await fetcher.get(`profile`)).json()
+	return (await fetcher.get('profile')).json()
 }
 
 // Получение данных чужого профиля

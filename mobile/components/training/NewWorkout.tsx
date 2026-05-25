@@ -241,8 +241,8 @@ const NewWorkout = memo(
 
 		return (
 			<>
-				<Container>
-					<HeaderBack className="my-[20px]">Новая тренировка</HeaderBack>
+				<Container className="mb-[20px]">
+					<HeaderBack>Новая тренировка</HeaderBack>
 				</Container>
 				<MapComponentSegments
 					ref={props.mapComponentRef}

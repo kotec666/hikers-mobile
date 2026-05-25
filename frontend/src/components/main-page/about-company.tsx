@@ -36,14 +36,17 @@ const SocialLink = ({ type }: { type: SocialLinkType }) => {
 
 	if (!socialLinkData.link) return null
 	return (
-		<Link
-			href={socialLinkData.link}
-			target="_blank"
-			className="w-10 h-10 rounded-full bg-black-0d flex items-center justify-center hover:bg-[#1a1a1a] transition-colors"
-			aria-label={socialLinkData.label}
-		>
-			{socialLinkData.svg}
-		</Link>
+		<li>
+			<Link
+				href={socialLinkData.link}
+				rel="noopener noreferrer"
+				target="_blank"
+				className="w-10 h-10 rounded-full bg-black-0d flex items-center justify-center hover:bg-[#1a1a1a] transition-colors"
+				aria-label={socialLinkData.label}
+			>
+				{socialLinkData.svg}
+			</Link>
+		</li>
 	)
 }
 
@@ -55,11 +58,13 @@ export function AboutCompany() {
 					{/* Brand & Social */}
 					<div className="space-y-6">
 						<h3 className="text-2xl md:text-3xl font-bold text-black-0d">ХАЙКЕРС</h3>
-						<div className="flex gap-4">
-							<SocialLink type={SocialLinkType.VK} />
-							<SocialLink type={SocialLinkType.TG} />
-							<SocialLink type={SocialLinkType.TT} />
-						</div>
+						<nav aria-label="Социальные сети">
+							<ul className="flex gap-4">
+								<SocialLink type={SocialLinkType.VK} />
+								<SocialLink type={SocialLinkType.TG} />
+								<SocialLink type={SocialLinkType.TT} />
+							</ul>
+						</nav>
 					</div>
 
 					{/* Company */}
