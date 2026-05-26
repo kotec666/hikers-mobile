@@ -68,3 +68,5 @@ export const InputIcon = forwardRef<TextInput, InputProps>((props, ref) => {
 		</View>
 	)
 })
+
+InputIcon.displayName = 'InputIcon'
