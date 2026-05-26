@@ -1,7 +1,7 @@
 import React, { useCallback, useState } from 'react'
 import { Container } from '@/components/ui/Container'
 import HeaderBack from '@/components/ui/HeaderBack'
-import { View, Text, Platform, Keyboard, KeyboardAvoidingView, TouchableWithoutFeedback } from 'react-native'
+import { View, Text, Keyboard, Pressable } from 'react-native'
 import { fontFamily } from '@/constants/Fonts'
 import { Button } from '@/components/ui/Button'
 import { InputIcon } from '@/components/ui/InputIcon'
@@ -17,6 +17,9 @@ import { useToast } from '@/hooks/useToast'
 import { lengths } from '@shared/lengths'
 import { useFocusEffect, useLocalSearchParams } from 'expo-router'
 import { removeTimer, TimerType } from '@/store/timerStorage'
+import { KeyboardGestureArea } from 'react-native-keyboard-controller'
+import Animated from 'react-native-reanimated'
+import { useKeyboardAnimation } from '@/hooks/useKeyboardAnimation'
 
 interface IRecoveryPasswordThirdStepFormState {
 	password: string
@@ -32,6 +35,8 @@ const ThirdStepPage = () => {
 	}>()
 
 	const [serverErrors, setServerErrors] = useState<FieldErrors>({} as FieldErrors)
+
+	const { animatedKeyboardStyle } = useKeyboardAnimation()
 
 	useFocusEffect(
 		useCallback(() => {
@@ -76,12 +81,12 @@ const ThirdStepPage = () => {
 	if (!email || !code) return null
 	return (
 		<Page>
-			<Container className="flex-1">
-				<KeyboardAvoidingView style={{ flex: 1 }} behavior={Platform.OS === 'ios' ? 'padding' : 'height'}>
-					<TouchableWithoutFeedback onPress={Keyboard.dismiss} accessible={false}>
-						<View className="flex-1">
+			<KeyboardGestureArea enableSwipeToDismiss showOnSwipeUp interpolator="linear" style={{ flex: 1 }}>
+				<Pressable onPress={Keyboard.dismiss} style={{ flex: 1 }} accessible={false}>
+					<Container className="flex-1">
+						<View className="flex-1 items-start">
 							<HeaderBack>Назад</HeaderBack>
-							<View className="flex-1 justify-center gap-[24px]">
+							<Animated.View style={animatedKeyboardStyle} className="flex-1 justify-center gap-[24px]">
 								<View className="gap-[32px]">
 									<View className="gap-[8px]">
 										<Text className="text-2xl text-white" style={{ fontFamily: fontFamily.medium }}>
@@ -181,11 +186,11 @@ const ThirdStepPage = () => {
 								<Button variant="black" isLoading={isSubmitting} onPress={handleSubmit(onSubmit)}>
 									Сохранить новый пароль
 								</Button>
-							</View>
+							</Animated.View>
 						</View>
-					</TouchableWithoutFeedback>
-				</KeyboardAvoidingView>
-			</Container>
+					</Container>
+				</Pressable>
+			</KeyboardGestureArea>
 		</Page>
 	)
 }

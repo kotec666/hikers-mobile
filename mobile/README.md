@@ -19,7 +19,7 @@
    yarn build
    ```
 
-## Подготовка Android-проекта
+## Подготовка Android-проекта (Не требуется)
 
 [//]: # (В app.json добавить "android.permission.FOREGROUND_SERVICE_HEALTH" в разделе android.permissions)
 [//]: # (В app.json в expo-build-properties.android добавьте:)
@@ -42,7 +42,7 @@
 [//]: # (   })
 
 [//]: # (   ```)
-1. Сжатие android проекта осуществляется в `./android/app/build.gradle` следующим образом:
+1. ~~Сжатие~~ android проекта осуществляется в `./android/app/build.gradle` следующим образом:
    ```groovy
         // minifyEnabled enableProguardInReleaseBuilds
            minifyEnabled true

@@ -1,4 +1,4 @@
-import { KeyboardAvoidingView, Platform, ScrollView, Text, View } from 'react-native'
+import { Text, View } from 'react-native'
 import { Image } from 'expo-image'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
 import { Container } from '@/components/ui/Container'
@@ -47,6 +47,7 @@ import { useCreatePostMutation, usePostByTrainingQuery, usePostQuery, useUpdateP
 import { useExtendedDetailsWorkoutQuery, useFinishWorkoutMutation } from '@/queries/workout'
 import { Page } from '@/components/ui/Page'
 import { DEFAULT_PADDING_TOP } from '@/constants/Variables'
+import { KeyboardAwareScrollView } from 'react-native-keyboard-controller'
 
 type Param = {
 	label: string
@@ -502,219 +503,197 @@ export default function ViewWorkout() {
 					</View>
 				</View>
 			</Modal>
-			<KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : 'height'}>
-				<ScrollView keyboardShouldPersistTaps="never">
-					<View className="relative" style={{ height: 300 }}>
-						<Image
-							style={{
-								width: '100%',
-								height: '100%'
-							}}
-							source={currentWorkoutImage}
-							contentFit="cover"
-						/>
-						<Container
-							className="absolute w-full h-full inset-0 justify-between pb-4"
-							style={{ paddingTop: insets.top + DEFAULT_PADDING_TOP }}
-						>
-							<BackButton onPress={handlePressGoBack} />
-							<View className="flex-row w-full justify-between items-center">
-								<View className="flex-row items-center gap-[10px]">
-									<View className="bg-white rounded-xl items-center justify-center w-[40px] h-[40px]">
-										{CurrentWorkoutIcon ? (
-											<CurrentWorkoutIcon color="#000" width={21} height={21} />
-										) : null}
-									</View>
-									<Text className="text-white text-[23px]" style={{ fontFamily: fontFamily.bold }}>
-										{distanceText}
+			<KeyboardAwareScrollView>
+				<View className="relative" style={{ height: 300 }}>
+					<Image
+						style={{
+							width: '100%',
+							height: '100%'
+						}}
+						source={currentWorkoutImage}
+						contentFit="cover"
+					/>
+					<Container
+						className="absolute w-full h-full inset-0 justify-between pb-4"
+						style={{ paddingTop: insets.top + DEFAULT_PADDING_TOP }}
+					>
+						<BackButton onPress={handlePressGoBack} />
+						<View className="flex-row w-full justify-between items-center">
+							<View className="flex-row items-center gap-[10px]">
+								<View className="bg-white rounded-xl items-center justify-center w-[40px] h-[40px]">
+									{CurrentWorkoutIcon ? (
+										<CurrentWorkoutIcon color="#000" width={21} height={21} />
+									) : null}
+								</View>
+								<Text className="text-white text-[23px]" style={{ fontFamily: fontFamily.bold }}>
+									{distanceText}
+								</Text>
+							</View>
+							<Text className="text-white text-[13px]" style={{ fontFamily: fontFamily.medium }}>
+								{dateText}
+							</Text>
+						</View>
+					</Container>
+				</View>
+
+				<Container className="mt-[20px]">
+					<View className="gap-[15px]">
+						<View className="bg-black-25 rounded-[25px] p-[15px] gap-[15px]">
+							<Text className="text-base text-white" style={{ fontFamily: fontFamily.bold }}>
+								Сведения о тренировке
+							</Text>
+							<View className="w-full flex-row justify-between">
+								<View className="gap-[15px]">
+									{leftParams.map((p) => (
+										<Parameter key={p.label} label={p.label} value={p.value} />
+									))}
+								</View>
+
+								<View className="gap-[15px]">
+									{rightParams.map((p) => (
+										<Parameter key={p.label} label={p.label} value={p.value} />
+									))}
+								</View>
+							</View>
+						</View>
+
+						<View className="flex-row gap-[10px]">
+							<Button
+								onPress={() => setState((s) => ({ ...s, switchChartView: 'map' }))}
+								buttonContainerClassName="flex-col flex-1"
+								variant={state.switchChartView === 'map' ? 'white' : 'black'}
+							>
+								Карта
+							</Button>
+							<Button
+								onPress={() => setState((s) => ({ ...s, switchChartView: 'chart' }))}
+								buttonContainerClassName="flex-col flex-1"
+								variant={state.switchChartView === 'chart' ? 'white' : 'black'}
+							>
+								График
+							</Button>
+						</View>
+						{state.switchChartView === 'map' && (
+							<MapComponent
+								deferInitialRouteRender
+								minMapHeight={320}
+								maxContainerHeight={320}
+								rounded={25}
+								needFinishMarker
+								initialLocations={mapLocations}
+							/>
+						)}
+						{state.switchChartView === 'chart' && (
+							<View className="rounded-[25px] p-[15px] items-center justify-center bg-black-25 h-[320px]">
+								<View className="w-full pb-[15px]">
+									<Text className="text-base text-white" style={{ fontFamily: fontFamily.bold }}>
+										График темпа
 									</Text>
 								</View>
-								<Text className="text-white text-[13px]" style={{ fontFamily: fontFamily.medium }}>
-									{dateText}
-								</Text>
+								<LineChart points={chartPoints} />
 							</View>
-						</Container>
+						)}
 					</View>
-
-					<Container className="mt-[20px]">
+					<View className="mt-[20px] gap-[15px] hidden">
+						<Text className="text-white text-base" style={{ fontFamily: fontFamily.bold }}>
+							Участники
+						</Text>
 						<View className="gap-[15px]">
-							<View className="bg-black-25 rounded-[25px] p-[15px] gap-[15px]">
-								<Text className="text-base text-white" style={{ fontFamily: fontFamily.bold }}>
-									Сведения о тренировке
-								</Text>
-								<View className="w-full flex-row justify-between">
-									<View className="gap-[15px]">
-										{leftParams.map((p) => (
-											<Parameter key={p.label} label={p.label} value={p.value} />
-										))}
-									</View>
-
-									<View className="gap-[15px]">
-										{rightParams.map((p) => (
-											<Parameter key={p.label} label={p.label} value={p.value} />
-										))}
-									</View>
-								</View>
-							</View>
-
-							<View className="flex-row gap-[10px]">
-								<Button
-									onPress={() => setState((s) => ({ ...s, switchChartView: 'map' }))}
-									buttonContainerClassName="flex-col flex-1"
-									variant={state.switchChartView === 'map' ? 'white' : 'black'}
-								>
-									Карта
-								</Button>
-								<Button
-									onPress={() => setState((s) => ({ ...s, switchChartView: 'chart' }))}
-									buttonContainerClassName="flex-col flex-1"
-									variant={state.switchChartView === 'chart' ? 'white' : 'black'}
-								>
-									График
-								</Button>
-							</View>
-							{state.switchChartView === 'map' && (
-								<MapComponent
-									deferInitialRouteRender
-									minMapHeight={320}
-									maxContainerHeight={320}
-									rounded={25}
-									needFinishMarker
-									initialLocations={mapLocations}
+							{data.map((user) => (
+								<PeopleListItem
+									key={user.id}
+									id={user.id}
+									username={user.username}
+									name={user.name}
+									avatar={user.avatar}
+									icon={{
+										iconSvg: <EyeSvg color={Colors['green-main']} opened={true} />,
+										//iconCb: () => handleUnsubscribe(item.user.id)
+										iconCb: () => {}
+									}}
 								/>
-							)}
-							{state.switchChartView === 'chart' && (
-								<View className="rounded-[25px] p-[15px] items-center justify-center bg-black-25 h-[320px]">
-									<View className="w-full pb-[15px]">
-										<Text className="text-base text-white" style={{ fontFamily: fontFamily.bold }}>
-											График темпа
-										</Text>
-									</View>
-									<LineChart points={chartPoints} />
-								</View>
-							)}
+							))}
 						</View>
-						<View className="mt-[20px] gap-[15px] hidden">
+					</View>
+					{canPublish ? (
+						<View className="mt-[20px] gap-[15px]">
 							<Text className="text-white text-base" style={{ fontFamily: fontFamily.bold }}>
-								Участники
+								{getTitleText()}
 							</Text>
-							<View className="gap-[15px]">
-								{data.map((user) => (
-									<PeopleListItem
-										key={user.id}
-										id={user.id}
-										username={user.username}
-										name={user.name}
-										avatar={user.avatar}
-										icon={{
-											iconSvg: <EyeSvg color={Colors['green-main']} opened={true} />,
-											//iconCb: () => handleUnsubscribe(item.user.id)
-											iconCb: () => {}
-										}}
-									/>
-								))}
-							</View>
-						</View>
-						{canPublish ? (
-							<View className="mt-[20px] gap-[15px]">
-								<Text className="text-white text-base" style={{ fontFamily: fontFamily.bold }}>
-									{getTitleText()}
-								</Text>
-								<View className="gap-[10px]">
-									<Controller
-										name="title"
-										control={control}
-										rules={{
-											required: {
-												value: true,
-												message: ErrorMessages.required
-											},
-											minLength: {
-												value: lengths.post.title.min,
-												message: ErrorMessages.optionalMin(lengths.post.title.min)
-											},
-											maxLength: {
-												value: lengths.post.title.max,
-												message: ErrorMessages.optionalMax(lengths.post.title.max)
-											}
-										}}
-										render={({ field: { onChange, onBlur, value }, fieldState: { error } }) => (
-											<Input
-												className="rounded-[8px]"
-												placeholder="Введите заголовок"
-												error={error?.message || state.errors?.title}
-												onChangeText={onChange}
-												value={value}
-												onBlur={onBlur}
-											/>
-										)}
-									/>
-									<Controller
-										name="description"
-										control={control}
-										rules={{
-											minLength: {
-												value: lengths.post.description.min,
-												message: ErrorMessages.optionalMin(lengths.post.description.min)
-											},
-											maxLength: {
-												value: lengths.post.description.max,
-												message: ErrorMessages.optionalMax(lengths.post.description.max)
-											}
-										}}
-										render={({ field: { onChange, onBlur, value }, fieldState: { error } }) => {
-											const currentLength = value?.length || 0
-											const maxLength = lengths.post.description.max
+							<View className="gap-[10px]">
+								<Controller
+									name="title"
+									control={control}
+									rules={{
+										required: {
+											value: true,
+											message: ErrorMessages.required
+										},
+										minLength: {
+											value: lengths.post.title.min,
+											message: ErrorMessages.optionalMin(lengths.post.title.min)
+										},
+										maxLength: {
+											value: lengths.post.title.max,
+											message: ErrorMessages.optionalMax(lengths.post.title.max)
+										}
+									}}
+									render={({ field: { onChange, onBlur, value }, fieldState: { error } }) => (
+										<Input
+											className="rounded-[8px]"
+											placeholder="Введите заголовок"
+											error={error?.message || state.errors?.title}
+											onChangeText={onChange}
+											value={value}
+											onBlur={onBlur}
+										/>
+									)}
+								/>
+								<Controller
+									name="description"
+									control={control}
+									rules={{
+										minLength: {
+											value: lengths.post.description.min,
+											message: ErrorMessages.optionalMin(lengths.post.description.min)
+										},
+										maxLength: {
+											value: lengths.post.description.max,
+											message: ErrorMessages.optionalMax(lengths.post.description.max)
+										}
+									}}
+									render={({ field: { onChange, onBlur, value }, fieldState: { error } }) => {
+										const currentLength = value?.length || 0
+										const maxLength = lengths.post.description.max
 
-											return (
-												<View className="gap-[6px]">
-													<Input
-														multiline
-														placeholder="Введите описание"
-														error={error?.message || state.errors?.description}
-														onChangeText={onChange}
-														value={value}
-														onBlur={onBlur}
-													/>
-													<View className="items-end">
-														<CharacterCounter
-															valueLength={currentLength}
-															maxLength={maxLength}
-														/>
-													</View>
-												</View>
-											)
-										}}
-									/>
-								</View>
-								<View className="flex-row flex-wrap -mx-[7.5px] gap-y-[15px] mt-[10px]">
-									{canManageExistingImages &&
-										Boolean(existingImages.length) &&
-										existingImages.map((fileName) => (
-											<View key={fileName} className="w-1/2 px-[7.5px] relative">
-												<Image
-													source={{ uri: `${PATH_TO_IMAGE}${fileName}` }}
-													style={{
-														width: '100%',
-														aspectRatio: 1,
-														borderRadius: 15,
-														borderWidth: 1,
-														borderColor: 'rgba(255, 255, 255, 0.2)',
-														overflow: 'hidden'
-													}}
-													contentFit="cover"
+										return (
+											<View className="gap-[6px]">
+												<Input
+													multiline
+													placeholder="Введите описание"
+													error={error?.message || state.errors?.description}
+													onChangeText={onChange}
+													value={value}
+													onBlur={onBlur}
 												/>
-												<View className="absolute right-[12px] top-[12px] rounded-full w-[28px] h-[28px] bg-black/40 items-center justify-center">
-													<CloseCross
-														handleClose={() => handleDeleteExistingImage(fileName)}
+												<View className="items-end">
+													<CharacterCounter
+														valueLength={currentLength}
+														maxLength={maxLength}
 													/>
 												</View>
 											</View>
-										))}
-									{postImages.map((uri, index) => (
-										<View key={uri} className="w-1/2 px-[7.5px] relative">
+										)
+									}}
+								/>
+							</View>
+							<View className="flex-row flex-wrap -mx-[7.5px] gap-y-[15px] mt-[10px]">
+								{canManageExistingImages &&
+									Boolean(existingImages.length) &&
+									existingImages.map((fileName) => (
+										<View key={fileName} className="w-1/2 px-[7.5px] relative">
 											<Image
-												source={{ uri }}
+												source={{ uri: `${PATH_TO_IMAGE}${fileName}` }}
 												style={{
 													width: '100%',
 													aspectRatio: 1,
@@ -726,37 +705,55 @@ export default function ViewWorkout() {
 												contentFit="cover"
 											/>
 											<View className="absolute right-[12px] top-[12px] rounded-full w-[28px] h-[28px] bg-black/40 items-center justify-center">
-												<CloseCross handleClose={() => handleDeletePostImage(index)} />
+												<CloseCross handleClose={() => handleDeleteExistingImage(fileName)} />
 											</View>
 										</View>
 									))}
-								</View>
-								<View className="gap-[10px] mt-[15px]">
-									<Button variant="white" onPress={() => setIsPhotoModalOpen(true)}>
-										Добавить фото
-									</Button>
-									<Button
-										variant="green"
-										onPress={handleSubmit(onSubmit)}
-										isLoading={isPendingCreate || isPendingUpdate}
-									>
-										{getSubmitButtonText()}
-									</Button>
-								</View>
+								{postImages.map((uri, index) => (
+									<View key={uri} className="w-1/2 px-[7.5px] relative">
+										<Image
+											source={{ uri }}
+											style={{
+												width: '100%',
+												aspectRatio: 1,
+												borderRadius: 15,
+												borderWidth: 1,
+												borderColor: 'rgba(255, 255, 255, 0.2)',
+												overflow: 'hidden'
+											}}
+											contentFit="cover"
+										/>
+										<View className="absolute right-[12px] top-[12px] rounded-full w-[28px] h-[28px] bg-black/40 items-center justify-center">
+											<CloseCross handleClose={() => handleDeletePostImage(index)} />
+										</View>
+									</View>
+								))}
 							</View>
-						) : (
-							<View className="mt-[15px]">
-								<Text
-									style={{ fontFamily: fontFamily.medium }}
-									className="text-gray-ab text-base text-center"
+							<View className="gap-[10px] mt-[15px]">
+								<Button variant="white" onPress={() => setIsPhotoModalOpen(true)}>
+									Добавить фото
+								</Button>
+								<Button
+									variant="green"
+									onPress={handleSubmit(onSubmit)}
+									isLoading={isPendingCreate || isPendingUpdate}
 								>
-									Опубликовать пост может только создатель тренировки
-								</Text>
+									{getSubmitButtonText()}
+								</Button>
 							</View>
-						)}
-					</Container>
-				</ScrollView>
-			</KeyboardAvoidingView>
+						</View>
+					) : (
+						<View className="mt-[15px]">
+							<Text
+								style={{ fontFamily: fontFamily.medium }}
+								className="text-gray-ab text-base text-center"
+							>
+								Опубликовать пост может только создатель тренировки
+							</Text>
+						</View>
+					)}
+				</Container>
+			</KeyboardAwareScrollView>
 		</Page>
 	)
 }

@@ -1,15 +1,5 @@
 import React, { useCallback, useEffect, useRef, useState } from 'react'
-import {
-	View,
-	Text,
-	Platform,
-	KeyboardAvoidingView,
-	TouchableWithoutFeedback,
-	Keyboard,
-	RefreshControl,
-	ActivityIndicator,
-	TextInput
-} from 'react-native'
+import { View, Text, Keyboard, RefreshControl, ActivityIndicator, TextInput } from 'react-native'
 import { Input } from '@/components/ui/Input'
 import { Container } from '@/components/ui/Container'
 import { NotificationsButton } from '@/components/ui/Notifications/NotificationsButton'
@@ -32,6 +22,7 @@ import { BackButton } from '@/components/ui/HeaderBack'
 import { useFeedPostsQuery } from '@/queries/posts'
 import { useSearchQuery } from '@/queries/search'
 import { Page } from '@/components/ui/Page'
+import { KeyboardAvoidingView } from 'react-native-keyboard-controller'
 
 const isUser = (item: IFoundUser | IFoundPost): item is IFoundUser => {
 	return 'username' in item
@@ -221,44 +212,35 @@ const PostsPage = () => {
 						</View>
 
 						<KeyboardAvoidingView
-							behavior={Platform.OS === 'ios' ? 'position' : 'height'}
 							style={{ flex: 1 }}
-							keyboardVerticalOffset={Platform.OS === 'ios' ? 90 : 0}
+							// behavior={Platform.OS === 'ios' ? 'position' : 'height'}
+							// keyboardVerticalOffset={Platform.OS === 'ios' ? 90 : 0}
 						>
 							<View style={{ flex: 1 }}>
-								<TouchableWithoutFeedback onPress={Keyboard.dismiss}>
-									<View>
-										<View className="flex-row gap-[10px] mb-4">
-											<Button
-												onPress={() =>
-													setState((s) => ({ ...s, searchMode: SearchType.USERS }))
-												}
-												variant={state.searchMode === SearchType.USERS ? 'white' : 'black'}
-												className="w-min px-[30px]"
-												buttonContainerClassName="flex-1"
-											>
-												Люди
-											</Button>
-											<Button
-												onPress={() =>
-													setState((s) => ({ ...s, searchMode: SearchType.POSTS }))
-												}
-												variant={state.searchMode === SearchType.POSTS ? 'white' : 'black'}
-												className="w-min px-[30px]"
-												buttonContainerClassName="flex-1"
-											>
-												Посты
-											</Button>
-										</View>
-
-										<Text
-											className="text-white text-base mb-3"
-											style={{ fontFamily: fontFamily.bold }}
+								<View>
+									<View className="flex-row gap-[10px] mb-4">
+										<Button
+											onPress={() => setState((s) => ({ ...s, searchMode: SearchType.USERS }))}
+											variant={state.searchMode === SearchType.USERS ? 'white' : 'black'}
+											className="w-min px-[30px]"
+											buttonContainerClassName="flex-1"
 										>
-											{state.searchMode === SearchType.USERS ? 'Люди' : 'Посты'}
-										</Text>
+											Люди
+										</Button>
+										<Button
+											onPress={() => setState((s) => ({ ...s, searchMode: SearchType.POSTS }))}
+											variant={state.searchMode === SearchType.POSTS ? 'white' : 'black'}
+											className="w-min px-[30px]"
+											buttonContainerClassName="flex-1"
+										>
+											Посты
+										</Button>
 									</View>
-								</TouchableWithoutFeedback>
+
+									<Text className="text-white text-base mb-3" style={{ fontFamily: fontFamily.bold }}>
+										{state.searchMode === SearchType.USERS ? 'Люди' : 'Посты'}
+									</Text>
+								</View>
 								<LegendList
 									// key={`${state.searchMode}`}
 									data={searchData}
