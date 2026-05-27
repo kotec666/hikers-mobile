@@ -19,6 +19,7 @@ import { OnEvent } from '@nestjs/event-emitter';
 import { Event } from '@events/constants';
 import { getActivityByTrainingType } from '../activities/helpers';
 import { Cron, CronExpression } from '@nestjs/schedule';
+import { AVERAGE_STRIDE_LENGTH } from './achievements.constants';
 
 @Injectable()
 export class AchievementsService {
@@ -106,7 +107,10 @@ export class AchievementsService {
 		for (const activity of activities.values()) {
 			// Получаем все ачивки, у которых type как у активности из трени
 			const achivs = await this.db.db
-				.select()
+				.select({
+					id: achievements.id,
+					measuringUnit: achievements.measuringUnit,
+				})
 				.from(achievements)
 				.where(and(eq(achievements.type, activity), isNotNull(achievements.measuringUnit)));
 
@@ -121,8 +125,6 @@ export class AchievementsService {
 						switch (activity) {
 							case UserActivity.STEPS: {
 								if (unit === MeasuringUnit.COUNT) {
-									const AVERAGE_STRIDE_LENGTH = 0.75;
-
 									if (participant.metrics.distanceM) {
 										progressToAdd = Math.trunc(
 											participant.metrics.distanceM / AVERAGE_STRIDE_LENGTH,

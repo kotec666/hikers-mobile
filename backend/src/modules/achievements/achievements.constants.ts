@@ -1,0 +1,1 @@
+export const AVERAGE_STRIDE_LENGTH = 0.75;
