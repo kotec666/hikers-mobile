@@ -58,8 +58,10 @@ export class ActivitiesService {
 			}
 
 			const activity = getActivityByTrainingType(participant.type);
-			if (!activity) continue;
-			activities.add(activity);
+
+			if (activity) {
+				activities.add(activity);
+			}
 
 			for (const activity of activities.values()) {
 				let goalToAdd = 0;
