@@ -1,5 +1,5 @@
 import React, { useEffect, useState, useCallback, useRef } from 'react'
-import { ActivityIndicator, RefreshControl, Text, View } from 'react-native'
+import { ActivityIndicator, Platform, RefreshControl, Text, View } from 'react-native'
 import { fontFamily } from '@/constants/Fonts'
 import SocialStats from '@/components/ui/Profile/SocialStats'
 import { Button } from '@/components/ui/Button'
@@ -29,6 +29,7 @@ import {
 import { useToggleSubscribeMutation } from '@/queries/subscriptions'
 import { Page } from '@/components/ui/Page'
 import { refetchAndHaptics } from '@/helpers/refetchAndHaptics'
+import { useSafeAreaInsets } from 'react-native-safe-area-context'
 
 /**
  *
@@ -47,6 +48,7 @@ const UserProfilePage = () => {
 	const router = useRouter()
 	const { id } = useLocalSearchParams<{ id: string }>()
 	const legendListRef = useRef<LegendListRef>(null)
+	const insets = useSafeAreaInsets()
 
 	const [isDeleteModalOpened, setIsDeleteModalOpened] = useState<boolean>(false)
 
@@ -199,7 +201,7 @@ const UserProfilePage = () => {
 	}, [isFetchingPostsNextPage])
 
 	return (
-		<Page>
+		<Page edges={['top']}>
 			<BlurProvider>
 				<LegendList
 					ref={legendListRef}
@@ -345,7 +347,10 @@ const UserProfilePage = () => {
 							</View>
 						</>
 					}
-					contentContainerStyle={{ paddingBottom: 100, paddingHorizontal: 16 }}
+					contentContainerStyle={{
+						paddingBottom: insets.bottom + Platform.OS === 'android' ? 100 : 40,
+						paddingHorizontal: 16
+					}}
 				/>
 			</BlurProvider>
 		</Page>

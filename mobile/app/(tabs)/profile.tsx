@@ -1,5 +1,5 @@
 import React, { useCallback, useEffect, useRef } from 'react'
-import { ActivityIndicator, RefreshControl, Text, View } from 'react-native'
+import { ActivityIndicator, Platform, RefreshControl, Text, View } from 'react-native'
 import SettingsSvg from '@/components/svg/SettingsSvg'
 import MoreOptionsButton from '@/components/ui/MoreOptionsButton/MoreOptionsButton'
 import { fontFamily } from '@/constants/Fonts'
@@ -254,7 +254,7 @@ const Profile = () => {
 					}
 					contentContainerStyle={{
 						flexGrow: 1,
-						paddingBottom: insets.bottom + 100,
+						paddingBottom: insets.bottom + Platform.OS === 'android' ? 100 : 40,
 						paddingHorizontal: 16
 					}}
 				/>

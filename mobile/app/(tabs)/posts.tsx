@@ -1,5 +1,5 @@
 import React, { useCallback, useEffect, useRef, useState } from 'react'
-import { View, Text, Keyboard, RefreshControl, ActivityIndicator, TextInput } from 'react-native'
+import { View, Text, Keyboard, RefreshControl, ActivityIndicator, TextInput, Platform } from 'react-native'
 import { Input } from '@/components/ui/Input'
 import { Container } from '@/components/ui/Container'
 import { NotificationsButton } from '@/components/ui/Notifications/NotificationsButton'
@@ -24,6 +24,7 @@ import { useSearchQuery } from '@/queries/search'
 import { Page } from '@/components/ui/Page'
 import { KeyboardAvoidingView } from 'react-native-keyboard-controller'
 import { refetchAndHaptics } from '@/helpers/refetchAndHaptics'
+import { useSafeAreaInsets } from 'react-native-safe-area-context'
 
 const isUser = (item: IFoundUser | IFoundPost): item is IFoundUser => {
 	return 'username' in item
@@ -34,6 +35,7 @@ const isPost = (item: IFoundUser | IFoundPost): item is IFoundPost => {
 }
 
 const PostsPage = () => {
+	const insets = useSafeAreaInsets()
 	const [state, setState] = useState<{
 		isSearchActive: boolean
 		searchMode: SearchType
@@ -302,7 +304,7 @@ const PostsPage = () => {
 									}
 									contentContainerStyle={{
 										flexGrow: 1,
-										paddingBottom: 100,
+										paddingBottom: insets.bottom + Platform.OS === 'android' ? 100 : 40,
 										paddingTop: 10
 									}}
 									showsVerticalScrollIndicator={false}
@@ -359,7 +361,7 @@ const PostsPage = () => {
 								/>
 							}
 							contentContainerStyle={{
-								paddingBottom: 130,
+								paddingBottom: insets.bottom + Platform.OS === 'android' ? 100 : 40,
 								flexGrow: 1
 							}}
 							showsVerticalScrollIndicator={false}
