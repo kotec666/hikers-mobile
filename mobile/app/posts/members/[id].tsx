@@ -14,6 +14,7 @@ import { useAuthStore } from '@/store/authStore'
 import { useWorkoutMembersQuery } from '@/queries/workout'
 import { useToggleSubscribeMutation } from '@/queries/subscriptions'
 import { Page } from '@/components/ui/Page'
+import { refetchAndHaptics } from '@/helpers/refetchAndHaptics'
 
 const MemberItem = ({ item, currentUserId }: { item: ITrainingMember; currentUserId?: string; postId: string }) => {
 	const { mutateAsync: toggleSubscribe, isPending: isPendingSubscribe } = useToggleSubscribeMutation()
@@ -98,7 +99,7 @@ const Members = () => {
 					refreshControl={
 						<RefreshControl
 							refreshing={isRefetching}
-							onRefresh={refetch}
+							onRefresh={() => refetchAndHaptics(refetch)}
 							tintColor={Colors['green-main']}
 						/>
 					}

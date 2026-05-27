@@ -1,4 +1,4 @@
-import { Text, View } from 'react-native'
+import { Text, TextInput, View } from 'react-native'
 import { Image } from 'expo-image'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
 import { Container } from '@/components/ui/Container'
@@ -174,6 +174,7 @@ export default function ViewWorkout() {
 
 	const results = useWorkoutResultsAfterFinishStore((state) => state)
 	const pointsRef = useRef(results.points || [])
+	const descriptionRef = useRef<TextInput>(null)
 	const [isPhotoModalOpen, setIsPhotoModalOpen] = useState(false)
 	const [isExitWithoutCreatePostModal, setIsExitWithoutCreatePostModal] = useState(false)
 	const [deletedImages, setDeletedImages] = useState<string[]>([]) // только для редактирования
@@ -646,6 +647,10 @@ export default function ViewWorkout() {
 											onChangeText={onChange}
 											value={value}
 											onBlur={onBlur}
+											returnKeyType="next"
+											returnKeyLabel="Далее"
+											submitBehavior="submit"
+											onSubmitEditing={() => descriptionRef.current?.focus()}
 										/>
 									)}
 								/>
@@ -669,6 +674,7 @@ export default function ViewWorkout() {
 										return (
 											<View className="gap-[6px]">
 												<Input
+													ref={descriptionRef}
 													multiline
 													placeholder="Введите описание"
 													error={error?.message || state.errors?.description}

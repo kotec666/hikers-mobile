@@ -28,6 +28,7 @@ import {
 } from '@/queries/friends'
 import { useToggleSubscribeMutation } from '@/queries/subscriptions'
 import { Page } from '@/components/ui/Page'
+import { refetchAndHaptics } from '@/helpers/refetchAndHaptics'
 
 /**
  *
@@ -216,7 +217,7 @@ const UserProfilePage = () => {
 					refreshControl={
 						<RefreshControl
 							refreshing={isProfileFetching || postsIsRefetching}
-							onRefresh={onRefreshAll}
+							onRefresh={() => refetchAndHaptics(onRefreshAll)}
 							tintColor={Colors['green-main']}
 						/>
 					}

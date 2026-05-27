@@ -78,7 +78,7 @@ const SettingsPickAColorPage = () => {
 		currentColor.value = color.rgb
 	}
 
-	const isFreeMode = true
+	const isFreeMode = false
 
 	return (
 		<Page>
@@ -213,11 +213,11 @@ export const colorPickerStyle = StyleSheet.create({
 	inputStyle: {
 		color: '#fff',
 		paddingVertical: 2,
-		borderColor: 'rgb(255 255 255 / 0.5)',
+		borderColor: 'rgba(255 255 255 / 0.5)',
 		fontSize: 12,
 		marginLeft: 5
 	},
 	inputTitleStyle: {
-		color: 'rgb(255 255 255 / 0.5)'
+		color: 'rgba(255 255 255 / 0.5)'
 	}
 })

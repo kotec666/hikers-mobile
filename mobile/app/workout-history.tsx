@@ -26,6 +26,7 @@ import BottomSheet from '@/components/ui/BottomSheet/BottomSheet'
 import { BottomSheetHandle } from '@/components/ui/BottomSheet/types'
 import ArrowDownSvg from '@/components/svg/ArrowDownSvg'
 import BaseWheelPicker from '@/components/ui/wheel-picker/base-wheel-picker'
+import { refetchAndHaptics } from '@/helpers/refetchAndHaptics'
 
 interface WorkoutItem {
 	id: string
@@ -242,7 +243,7 @@ const WorkoutHistory = () => {
 						refreshControl={
 							<RefreshControl
 								refreshing={isRefetching}
-								onRefresh={refetch}
+								onRefresh={() => refetchAndHaptics(refetch)}
 								tintColor={Colors['green-main']}
 							/>
 						}

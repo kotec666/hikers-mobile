@@ -23,6 +23,7 @@ import { useFeedPostsQuery } from '@/queries/posts'
 import { useSearchQuery } from '@/queries/search'
 import { Page } from '@/components/ui/Page'
 import { KeyboardAvoidingView } from 'react-native-keyboard-controller'
+import { refetchAndHaptics } from '@/helpers/refetchAndHaptics'
 
 const isUser = (item: IFoundUser | IFoundPost): item is IFoundUser => {
 	return 'username' in item
@@ -186,7 +187,7 @@ const PostsPage = () => {
 
 	if (state.isSearchActive) {
 		return (
-			<Page>
+			<Page edges={['top']}>
 				<View style={{ flex: 1 }}>
 					<Container className="gap-[20px] flex-1">
 						<View className="flex-row justify-center items-center gap-[10px] w-full">
@@ -286,7 +287,7 @@ const PostsPage = () => {
 									refreshControl={
 										<RefreshControl
 											refreshing={isRefetchingSearch}
-											onRefresh={refetchSearch}
+											onRefresh={() => refetchAndHaptics(refetchSearch)}
 											tintColor={Colors['green-main']}
 										/>
 									}
@@ -353,7 +354,7 @@ const PostsPage = () => {
 							refreshControl={
 								<RefreshControl
 									refreshing={isRefetching}
-									onRefresh={refetch}
+									onRefresh={() => refetchAndHaptics(refetch)}
 									tintColor={Colors['green-main']}
 								/>
 							}

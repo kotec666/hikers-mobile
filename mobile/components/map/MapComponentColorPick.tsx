@@ -1,6 +1,6 @@
 import { Yamap } from 'react-native-yamap-plus'
 import React from 'react'
-import { View } from 'react-native'
+import { Platform, View } from 'react-native'
 import PauseLocationMarker from '@/components/map/markers/PauseLocationMarker'
 import ResumeLocationMarker from '@/components/map/markers/ResumeLocationMarker'
 import StartLocationMarker from '@/components/map/markers/StartLocationMarker'
@@ -52,6 +52,7 @@ const getSegmentColor = (isPaused: boolean, userColor: string) => {
 
 const MapComponentColorPick = (props: IProps) => {
 	const activeColor = props.activeColor ?? 'rgb(0, 200, 100, 1)'
+	const isIOS = Platform.OS === 'ios'
 	return (
 		<View
 			pointerEvents={props.interactiveDisabled ? 'none' : 'auto'}
@@ -86,7 +87,7 @@ const MapComponentColorPick = (props: IProps) => {
 					points={[firstPoint, secondPoint]}
 					strokeColor={getSegmentColor(false, activeColor)}
 					strokeWidth={4}
-					outlineWidth={2}
+					outlineWidth={isIOS ? 0 : 2}
 					outlineColor="transparent"
 				/>
 				<PolylineCustom
@@ -94,7 +95,7 @@ const MapComponentColorPick = (props: IProps) => {
 					points={[secondPoint, thirdPoint]}
 					strokeColor={getSegmentColor(true, activeColor)}
 					strokeWidth={4}
-					outlineWidth={2}
+					outlineWidth={isIOS ? 0 : 2}
 					outlineColor="transparent"
 				/>
 				<PolylineCustom
@@ -102,7 +103,7 @@ const MapComponentColorPick = (props: IProps) => {
 					points={[thirdPoint, fourthPoint]}
 					strokeColor={getSegmentColor(true, activeColor)}
 					strokeWidth={4}
-					outlineWidth={2}
+					outlineWidth={isIOS ? 0 : 2}
 					outlineColor="transparent"
 				/>
 				<PolylineCustom
@@ -110,7 +111,7 @@ const MapComponentColorPick = (props: IProps) => {
 					points={[fifthPoint, sixthPoint]}
 					strokeColor={getSegmentColor(false, activeColor)}
 					strokeWidth={4}
-					outlineWidth={2}
+					outlineWidth={isIOS ? 0 : 2}
 					outlineColor="transparent"
 				/>
 				<PauseLocationMarker key={`pause-1-${activeColor}`} position={secondPoint} color={activeColor} />

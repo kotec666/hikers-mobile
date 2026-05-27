@@ -72,7 +72,7 @@ const WorkoutHistoryListItem = (props: IProps) => {
 		return (
 			<Link
 				href={`/training/viewWorkout?mode=${VIEWWORKOUT_MODE.FROM_HISTORY}&historyTrainingId=${props.id}`}
-				className="flex-row items-center justify-between"
+				className="flex-row items-center justify-between pt-2"
 			>
 				<WorkoutHistoryListItemContent {...props} />
 			</Link>

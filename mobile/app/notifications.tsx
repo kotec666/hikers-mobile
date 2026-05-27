@@ -16,6 +16,7 @@ import {
 	useNotificationsListQuery
 } from '@/queries/notifications'
 import { Page } from '@/components/ui/Page'
+import { refetchAndHaptics } from '@/helpers/refetchAndHaptics'
 
 const NotificationsPage = () => {
 	const {
@@ -91,7 +92,7 @@ const NotificationsPage = () => {
 						refreshControl={
 							<RefreshControl
 								refreshing={isRefetching}
-								onRefresh={refetch}
+								onRefresh={() => refetchAndHaptics(refetch)}
 								tintColor={Colors['green-main']}
 							/>
 						}

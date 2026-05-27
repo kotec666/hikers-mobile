@@ -25,6 +25,7 @@ import { useProfileQuery } from '@/queries/my-profile'
 import { Page } from '@/components/ui/Page'
 import { useQueryClient } from '@tanstack/react-query'
 import EmailNotConfirmed from '@/components/profile/EmailNotConfirmed'
+import { refetchAndHaptics } from '@/helpers/refetchAndHaptics'
 
 /**
  *
@@ -138,7 +139,7 @@ const Profile = () => {
 	}, [postsIsFetching])
 
 	return (
-		<Page>
+		<Page edges={['top']}>
 			<BlurProvider>
 				<LegendList
 					ref={legendListRef}
@@ -157,7 +158,7 @@ const Profile = () => {
 					refreshControl={
 						<RefreshControl
 							refreshing={isProfileFetching || postsIsRefetching}
-							onRefresh={onRefreshAll}
+							onRefresh={() => refetchAndHaptics(onRefreshAll)}
 							tintColor={Colors['green-main']}
 						/>
 					}

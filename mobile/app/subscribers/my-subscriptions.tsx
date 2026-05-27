@@ -11,6 +11,7 @@ import { LegendList } from '@legendapp/list'
 import { Colors } from '@/constants/Colors'
 import { useMySubscriptionsQuery, useToggleSubscribeMutation } from '@/queries/subscriptions'
 import { Page } from '@/components/ui/Page'
+import { refetchAndHaptics } from '@/helpers/refetchAndHaptics'
 
 /**
  * Мои подписки, на кого подписан я
@@ -94,7 +95,7 @@ const MySubscriptionsPage = () => {
 						refreshControl={
 							<RefreshControl
 								refreshing={isRefetching}
-								onRefresh={refetch}
+								onRefresh={() => refetchAndHaptics(refetch)}
 								tintColor={Colors['green-main']}
 							/>
 						}

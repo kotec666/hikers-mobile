@@ -179,7 +179,13 @@ const AuthPage = () => {
 										returnKeyType="next"
 										returnKeyLabel="Далее"
 										submitBehavior="submit"
-										onSubmitEditing={() => loginRef.current?.focus()}
+										onSubmitEditing={() => {
+											if (isAuth) {
+												return passwordRef.current?.focus()
+											} else {
+												return loginRef.current?.focus()
+											}
+										}}
 									/>
 								)}
 							/>

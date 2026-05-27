@@ -1,7 +1,7 @@
 import React from 'react'
 import { Container } from '@/components/ui/Container'
 import HeaderBack from '@/components/ui/HeaderBack'
-import { View, Text, Keyboard, Pressable } from 'react-native'
+import { View, Text, Keyboard, Pressable, Platform } from 'react-native'
 import { Button } from '@/components/ui/Button'
 import { Input } from '@/components/ui/Input'
 import Checkbox from '@/components/ui/Checkbox'
@@ -13,7 +13,11 @@ const ReportAProblem = () => {
 	return (
 		<Page>
 			<Container className="flex-1">
-				<KeyboardAvoidingView style={{ flex: 1 }} keyboardVerticalOffset={60} behavior="padding">
+				<KeyboardAvoidingView
+					style={{ flex: 1 }}
+					keyboardVerticalOffset={Platform.OS === 'android' ? 60 : 80}
+					behavior="padding"
+				>
 					<Pressable onPress={Keyboard.dismiss} accessible={false} style={{ flex: 1 }}>
 						<View className="flex-1">
 							<HeaderBack>Сообщить о проблеме</HeaderBack>

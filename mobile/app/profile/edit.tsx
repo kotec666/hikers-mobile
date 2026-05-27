@@ -1,6 +1,6 @@
 import React, { useCallback, useMemo, useRef, useState } from 'react'
 import { Container } from '@/components/ui/Container'
-import { Keyboard, Pressable, TouchableOpacity, View, Text, Dimensions } from 'react-native'
+import { Keyboard, Pressable, TouchableOpacity, View, Text, Dimensions, TextInput } from 'react-native'
 import { UserAvatar } from '@/components/ui/UserAvatar'
 import { Button } from '@/components/ui/Button'
 import ActivityInfo from '@/components/ui/Profile/ActivityInfo'
@@ -59,6 +59,8 @@ const ProfileEdit = () => {
 	})
 	const weight = watch('weight')
 	const [temporaryWeight, setTemporaryWeight] = useState(weight)
+
+	const usernameRef = useRef<TextInput>(null)
 
 	const bottomSheetRef = useRef<BottomSheetHandle>(null)
 	const { ErrorMessages } = useErrorMessage()
@@ -321,6 +323,10 @@ const ProfileEdit = () => {
 												onChangeText={onChange}
 												value={value}
 												onBlur={onBlur}
+												returnKeyType="next"
+												returnKeyLabel="Далее"
+												submitBehavior="submit"
+												onSubmitEditing={() => usernameRef.current?.focus()}
 											/>
 										)}
 									/>
@@ -349,9 +355,11 @@ const ProfileEdit = () => {
 										}}
 										render={({ field: { onChange, onBlur, value }, fieldState: { error } }) => (
 											<Input
-												textContentType="nickname"
+												ref={usernameRef}
+												textContentType="username"
+												autoComplete="username"
 												keyboardType="default"
-												placeholder="examplenickname194"
+												placeholder="Введите логин"
 												error={error?.message || data.errors?.username}
 												autoCapitalize="none"
 												onChangeText={onChange}
