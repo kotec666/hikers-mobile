@@ -26,6 +26,7 @@ import { Page } from '@/components/ui/Page'
 import { useQueryClient } from '@tanstack/react-query'
 import EmailNotConfirmed from '@/components/profile/EmailNotConfirmed'
 import { refetchAndHaptics } from '@/helpers/refetchAndHaptics'
+import { useSafeAreaInsets } from 'react-native-safe-area-context'
 
 /**
  *
@@ -45,6 +46,7 @@ type AllowedRoute = (typeof ALLOWED_ROUTES)[keyof typeof ALLOWED_ROUTES]
 const Profile = () => {
 	const router = useRouter()
 	const queryClient = useQueryClient()
+	const insets = useSafeAreaInsets()
 	const { push } = useSafeNavigation()
 	const { user, logout } = useAuthStore()
 	const params = useLocalSearchParams()
@@ -252,7 +254,7 @@ const Profile = () => {
 					}
 					contentContainerStyle={{
 						flexGrow: 1,
-						paddingBottom: 100,
+						paddingBottom: insets.bottom + 100,
 						paddingHorizontal: 16
 					}}
 				/>
