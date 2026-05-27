@@ -816,6 +816,7 @@ export class TrainingsService {
 						prevPoint = participant.route.points[i - 1];
 						if (!prevPoint.paused) {
 							distanceM += point.distance;
+							continue;
 						}
 					}
 
