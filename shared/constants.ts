@@ -72,3 +72,6 @@ export const PASSWORD_RECOVERY_CODE_SIZE = 5;
 export const PASSWORD_RECOVERY_CODE_TIMEOUT_MS = 10 * 60 * 1000; // 10 мин. Таймаут после нескольих неверных попыток
 export const PASSWORD_RECOVERY_CODE_RATE_LIMIT_MS = 1 * 60 * 1000; // 1 мин
 export const PASSWORD_RECOVERY_CODE_TTL_MS = 30 * 60 * 1000; // 30 мин
+
+/** Средняя длина шага в метрах */
+export const AVERAGE_STRIDE_LENGTH = 0.75;
