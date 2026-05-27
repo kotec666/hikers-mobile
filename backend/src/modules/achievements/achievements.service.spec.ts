@@ -2,13 +2,10 @@ import { Test, TestingModule } from '@nestjs/testing';
 import { AchievementsService } from './achievements.service';
 import { DatabaseService } from '../database/database.service';
 import { NotificationsService } from '../notifications/notifications.service';
-import { achievements, training, trainingMetrics, trainingParticipants } from '../database/schema';
-import { eq, and, isNotNull } from 'drizzle-orm';
-import { Event } from '@events/constants';
 import { EventEmitter2 } from '@nestjs/event-emitter';
 import { MeasuringUnit, TrainingType, UserActivity } from '@shared/enums';
 import { getActivityByTrainingType } from '../activities/helpers';
-import { AVERAGE_STRIDE_LENGTH } from './achievements.constants';
+import { AVERAGE_STRIDE_LENGTH } from '@shared/constants';
 
 // Mock the helpers
 jest.mock('../activities/helpers', () => ({

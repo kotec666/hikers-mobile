@@ -1,6 +1,12 @@
-﻿import { Injectable, NotFoundException } from '@nestjs/common';
+﻿import { OnEvent } from '@nestjs/event-emitter';
+import { Injectable, NotFoundException } from '@nestjs/common';
+import { Cron, CronExpression } from '@nestjs/schedule';
+import { eq, sql, and, isNotNull, isNull, gte, count } from 'drizzle-orm';
+import { MeasuringUnit, NotificationType, TrainingType, UserActivity } from '@shared/enums';
+import { AVERAGE_STRIDE_LENGTH } from '@shared/constants';
+import { ERRORS } from '@shared/errors';
+import { Event } from '@events/constants';
 import { DatabaseService } from '../database/database.service';
-import { AchievementDto } from './achievements.dto';
 import {
 	achievements,
 	training,
@@ -9,17 +15,11 @@ import {
 	userAchievements,
 	users,
 } from '../database/schema';
-import { eq, sql, and, isNotNull, isNull, gte, count } from 'drizzle-orm';
 import { asc, desc } from '../database/extensions';
 import { NotificationsService } from '../notifications/notifications.service';
-import { CommonDto } from '../../common/dto/common.dto';
-import { ERRORS } from '@shared/errors';
-import { MeasuringUnit, NotificationType, TrainingType, UserActivity } from '@shared/enums';
-import { OnEvent } from '@nestjs/event-emitter';
-import { Event } from '@events/constants';
 import { getActivityByTrainingType } from '../activities/helpers';
-import { Cron, CronExpression } from '@nestjs/schedule';
-import { AVERAGE_STRIDE_LENGTH } from './achievements.constants';
+import { AchievementDto } from './achievements.dto';
+import { CommonDto } from '../../common/dto/common.dto';
 
 @Injectable()
 export class AchievementsService {
