@@ -43,7 +43,7 @@
 		"class-validator": "^0.14.2",
 		"concurrently": "^9.1.2",
 		"dotenv": "^17.2.3",
-		"drizzle-orm": "^0.43.1",
+		"drizzle-orm": "0.45.2",
 		"drizzle-seed": "^0.3.1",
 		"jsonwebtoken": "^9.0.0",
 		"multer": "^2.0.2",
