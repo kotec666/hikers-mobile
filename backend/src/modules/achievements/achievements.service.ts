@@ -96,7 +96,7 @@ export class AchievementsService {
 			activities.add(UserActivity.STEPS);
 		}
 		if (trainingType === TrainingType.WALK) {
-			activities.add(UserActivity.RUN);
+			activities.add(UserActivity.TRACK);
 		}
 
 		const activity = getActivityByTrainingType(trainingType);
