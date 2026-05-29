@@ -23,7 +23,6 @@ import { useFocusEffect, useRouter } from 'expo-router'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
 import { TrainingType } from '@shared/enums'
 import { UserLocationMarkerHandle } from '@/components/map/markers/UserLocationMarker/YaMapUserLocationMarker'
-import { Point } from 'react-native-yamap-plus'
 import { BottomSheetHandle } from '@/components/ui/BottomSheet/types'
 import BottomSheet from '@/components/ui/BottomSheet/BottomSheet'
 import UnsavedTrainings from '@/components/BottomSheets/UnsavedTrainings'
@@ -36,7 +35,8 @@ import { useUnsavedWorkoutSync } from '@/hooks/useUnsavedWorkoutSync'
 import NotFinishedWorkout from '@/components/BottomSheets/NotFinishedWorkout'
 import { deleteNotFinishedTraining } from '@/api/workout'
 import MapComponentSegments, { MapComponentSegmentsHandle } from '@/components/map/MapComponentSegments'
-import MapComponentSegmentsiOS from '@/components/map/MapComponentSegmentsiOS'
+import RNMapWorkout from '@/components/map/RNMapWorkout'
+import { IPoint } from '@/types/interfaces'
 
 export interface IWorkoutModeElement {
 	name: string
@@ -45,7 +45,7 @@ export interface IWorkoutModeElement {
 }
 
 interface IProps {
-	initialMarkerLocation?: Point | null
+	initialMarkerLocation?: IPoint | null
 	chosenWorkout: IWorkoutModeElement | null
 	handleChangeWorkout: (workoutType: TrainingType) => void
 	handleClickStart: (afterReboot: boolean) => void
@@ -54,7 +54,7 @@ interface IProps {
 	permissionsRef: React.RefObject<AllGeolocationPermissionsHandle | null>
 	mapComponentRef: React.RefObject<MapComponentSegmentsHandle | null>
 	userLocationMarkerRef: React.RefObject<UserLocationMarkerHandle | null>
-	latestUserMarkerLocationRef?: RefObject<Point | null>
+	latestUserMarkerLocationRef?: RefObject<IPoint | null>
 }
 
 const { height: SCREEN_HEIGHT } = Dimensions.get('screen')
@@ -245,7 +245,7 @@ const NewWorkout = memo(
 				<Container className="mb-[20px]">
 					<HeaderBack>Новая тренировка</HeaderBack>
 				</Container>
-				<MapComponentSegmentsiOS />
+				<RNMapWorkout />
 				{/*<MapComponentSegments*/}
 				{/*	ref={props.mapComponentRef}*/}
 				{/*	userLocationMarkerRef={props.userLocationMarkerRef}*/}

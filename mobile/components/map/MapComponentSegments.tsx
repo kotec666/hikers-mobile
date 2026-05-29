@@ -12,6 +12,7 @@ import { PolylineComponentInstanceRef, PolylineCustom } from '@/components/map/P
 import UserLocationMarker, {
 	UserLocationMarkerHandle
 } from '@/components/map/markers/UserLocationMarker/YaMapUserLocationMarker'
+// import { useWorkoutPath } from '@/hooks/useWorkoutPath'
 
 interface IProps {
 	maxMapHeight?: number
@@ -47,6 +48,16 @@ const MapComponentSegments = forwardRef<MapComponentSegmentsHandle, IProps>((pro
 	const isAnimationBlockedRef = useRef<boolean>(false)
 	const animationBlockTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
 	const mapInitialRegionSettingsRef = useRef<InitialRegion>(getYaMapSettings())
+
+	// @TODO
+	// const { segmentsRef, transitionMarkersRef, updatePath } = useWorkoutPath<PolylineComponentInstanceRef>({
+	// 	createPolylineRef: () => React.createRef<PolylineComponentInstanceRef>(),
+	// 	onNativeUpdate: (segment, points) => {
+	// 		segment.polylineRef.current?.setNativeProps({
+	// 			points
+	// 		})
+	// 	}
+	// })
 
 	// Используем useState только для триггера рендера при добавлении НОВЫХ сегментов
 	const [, setForceRender] = useState(0)
@@ -238,7 +249,8 @@ const MapComponentSegments = forwardRef<MapComponentSegmentsHandle, IProps>((pro
 		}, durationInMS)
 	}, [])
 
-	const updateMapSettingsDebounced = debounce(updateYaMapSettings, 300)
+	// const updateMapSettingsDebounced = debounce(updateYaMapSettings, 300)
+	const updateMapSettingsDebounced = useMemo(() => debounce(updateYaMapSettings, 300), [])
 
 	useEffect(() => {
 		return () => {
