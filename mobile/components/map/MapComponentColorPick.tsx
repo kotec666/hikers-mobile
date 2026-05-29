@@ -1,12 +1,12 @@
 import { Yamap } from 'react-native-yamap-plus'
 import React from 'react'
 import { Platform, View } from 'react-native'
-import PauseLocationMarker from '@/components/map/markers/PauseLocationMarker'
-import ResumeLocationMarker from '@/components/map/markers/ResumeLocationMarker'
-import StartLocationMarker from '@/components/map/markers/StartLocationMarker'
-import FinishLocationMarker from '@/components/map/markers/FinishLocationMarker'
+import PauseLocationMarker from '@/components/map/markers/PauseLocationMarker/YaMapPauseLocationMarker'
+import ResumeLocationMarker from '@/components/map/markers/ResumeLocationMarker/YaMapResumeLocationMarker'
+import StartLocationMarker from '@/components/map/markers/StartLocationMarker/YaMapStartLocationMarker'
+import FinishLocationMarker from '@/components/map/markers/FinishLocationMarker/YaMapFinishLocationMarker'
 import { PolylineCustom } from '@/components/map/PolylineCustom'
-import UserLocationMarker from '@/components/map/markers/UserLocationMarker/UserLocationMarker'
+import UserLocationMarker from '@/components/map/markers/UserLocationMarker/YaMapUserLocationMarker'
 import { adjustRgbaOpacity } from '@/helpers/colors/adjustRgbaOpacity'
 
 interface IProps {

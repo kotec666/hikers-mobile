@@ -25,7 +25,7 @@ import { debounce } from '@/helpers/debounce'
 import { throttle } from '@/helpers/throttle'
 import { initializeBackgroundLocationTask, isTrackingLocation, startTracking } from '@/hooks/track-location/track'
 import { useLocationData, useLocationTracking } from '@/hooks/track-location'
-import { updateMapSettings } from '@/store/mapStorage'
+import { updateYaMapSettings } from '@/store/yaMapStorage'
 import { deleteNotFinishedTraining, deleteNotFinishedTrainingById, startTraining } from '@/api/workout'
 import { isWorkoutTooShort } from '@/helpers/isWorkoutTooShort'
 import { useInternetConnectionRef } from '@/hooks/useInternetConnectionRef'
@@ -463,7 +463,7 @@ export default function NewTraining() {
 		setInitialMarkerLocationState({ lat, lon })
 		if (mapComponentRef.current) {
 			mapComponentRef.current.setMapCenter({ lat, lon }, 0.5, INITIAL_MAP_ZOOM)
-			updateMapSettings({
+			updateYaMapSettings({
 				lat: lat,
 				lon: lon,
 				zoom: INITIAL_MAP_ZOOM

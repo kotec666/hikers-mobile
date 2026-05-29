@@ -22,9 +22,8 @@ import WorkoutType from '@/components/WorkoutType'
 import { useFocusEffect, useRouter } from 'expo-router'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
 import { TrainingType } from '@shared/enums'
-import { UserLocationMarkerHandle } from '@/components/map/markers/UserLocationMarker/UserLocationMarker'
+import { UserLocationMarkerHandle } from '@/components/map/markers/UserLocationMarker/YaMapUserLocationMarker'
 import { Point } from 'react-native-yamap-plus'
-import MapComponentSegments, { MapComponentSegmentsHandle } from '@/components/map/MapComponentSegments'
 import { BottomSheetHandle } from '@/components/ui/BottomSheet/types'
 import BottomSheet from '@/components/ui/BottomSheet/BottomSheet'
 import UnsavedTrainings from '@/components/BottomSheets/UnsavedTrainings'
@@ -36,6 +35,8 @@ import UnsavedTrainingsDetails from '@/components/BottomSheets/UnsavedTrainingsD
 import { useUnsavedWorkoutSync } from '@/hooks/useUnsavedWorkoutSync'
 import NotFinishedWorkout from '@/components/BottomSheets/NotFinishedWorkout'
 import { deleteNotFinishedTraining } from '@/api/workout'
+import MapComponentSegments, { MapComponentSegmentsHandle } from '@/components/map/MapComponentSegments'
+import MapComponentSegmentsiOS from '@/components/map/MapComponentSegmentsiOS'
 
 export interface IWorkoutModeElement {
 	name: string
@@ -244,14 +245,15 @@ const NewWorkout = memo(
 				<Container className="mb-[20px]">
 					<HeaderBack>Новая тренировка</HeaderBack>
 				</Container>
-				<MapComponentSegments
-					ref={props.mapComponentRef}
-					userLocationMarkerRef={props.userLocationMarkerRef}
-					latestUserMarkerLocationRef={props.latestUserMarkerLocationRef}
-					initialMarkerLocation={props.initialMarkerLocation}
-					maxMapHeight={WINDOW_HEIGHT}
-					maxContainerHeight={WINDOW_HEIGHT}
-				/>
+				<MapComponentSegmentsiOS />
+				{/*<MapComponentSegments*/}
+				{/*	ref={props.mapComponentRef}*/}
+				{/*	userLocationMarkerRef={props.userLocationMarkerRef}*/}
+				{/*	latestUserMarkerLocationRef={props.latestUserMarkerLocationRef}*/}
+				{/*	initialMarkerLocation={props.initialMarkerLocation}*/}
+				{/*	maxMapHeight={WINDOW_HEIGHT}*/}
+				{/*	maxContainerHeight={WINDOW_HEIGHT}*/}
+				{/*/>*/}
 				<View
 					style={{
 						bottom: insets.bottom + 35,

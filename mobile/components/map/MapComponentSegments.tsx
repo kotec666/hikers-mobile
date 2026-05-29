@@ -4,14 +4,14 @@ import { View } from 'react-native'
 import { IWorkoutLocationStorageItem } from '@/store/workoutStorage'
 import { Colors } from '@/constants/Colors'
 import { debounce } from '@/helpers/debounce'
-import PauseLocationMarker from '@/components/map/markers/PauseLocationMarker'
-import ResumeLocationMarker from '@/components/map/markers/ResumeLocationMarker'
-import StartLocationMarker from '@/components/map/markers/StartLocationMarker'
-import { getMapSettings, updateMapSettings } from '@/store/mapStorage'
+import PauseLocationMarker from '@/components/map/markers/PauseLocationMarker/YaMapPauseLocationMarker'
+import ResumeLocationMarker from '@/components/map/markers/ResumeLocationMarker/YaMapResumeLocationMarker'
+import StartLocationMarker from '@/components/map/markers/StartLocationMarker/YaMapStartLocationMarker'
+import { getYaMapSettings, updateYaMapSettings } from '@/store/yaMapStorage'
 import { PolylineComponentInstanceRef, PolylineCustom } from '@/components/map/PolylineCustom'
 import UserLocationMarker, {
 	UserLocationMarkerHandle
-} from '@/components/map/markers/UserLocationMarker/UserLocationMarker'
+} from '@/components/map/markers/UserLocationMarker/YaMapUserLocationMarker'
 
 interface IProps {
 	maxMapHeight?: number
@@ -46,7 +46,7 @@ const MapComponentSegments = forwardRef<MapComponentSegmentsHandle, IProps>((pro
 	const mapRef = useRef<YamapRef>(null)
 	const isAnimationBlockedRef = useRef<boolean>(false)
 	const animationBlockTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
-	const mapInitialRegionSettingsRef = useRef<InitialRegion>(getMapSettings())
+	const mapInitialRegionSettingsRef = useRef<InitialRegion>(getYaMapSettings())
 
 	// Используем useState только для триггера рендера при добавлении НОВЫХ сегментов
 	const [, setForceRender] = useState(0)
@@ -224,6 +224,7 @@ const MapComponentSegments = forwardRef<MapComponentSegmentsHandle, IProps>((pro
 		})
 	}
 
+	// @TODO перепроверить durationInMS или в секундах и мб сделать версию без таймера
 	const handleBlockAnimation = useCallback((durationInMS: number = 2000) => {
 		if (animationBlockTimerRef.current) {
 			clearTimeout(animationBlockTimerRef.current)
@@ -237,7 +238,7 @@ const MapComponentSegments = forwardRef<MapComponentSegmentsHandle, IProps>((pro
 		}, durationInMS)
 	}, [])
 
-	const updateMapSettingsDebounced = debounce(updateMapSettings, 300)
+	const updateMapSettingsDebounced = debounce(updateYaMapSettings, 300)
 
 	useEffect(() => {
 		return () => {

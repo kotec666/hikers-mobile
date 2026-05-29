@@ -2,7 +2,7 @@ import React, { forwardRef, useImperativeHandle, useRef, useCallback, useEffect 
 import { Marker, MarkerRef, Point } from 'react-native-yamap-plus'
 import { View } from 'react-native'
 import UserWithCircleSvg from '@/components/svg/UserWithCircleSvg'
-import AccuracyCircle, { AccuracyCircleHandle } from '@/components/map/markers/UserLocationMarker/AccuracyCircle'
+import AccuracyCircle, { AccuracyCircleHandle } from '@/components/map/markers/UserLocationMarker/YaMapAccuracyCircle'
 
 interface IProps {
 	initialPosition?: Point | null

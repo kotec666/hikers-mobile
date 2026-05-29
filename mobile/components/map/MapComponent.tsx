@@ -4,16 +4,16 @@ import { View } from 'react-native'
 import { IWorkoutLocationStorageItem } from '@/store/workoutStorage'
 import { Colors } from '@/constants/Colors'
 import { debounce } from '@/helpers/debounce'
-import PauseLocationMarker from '@/components/map/markers/PauseLocationMarker'
-import ResumeLocationMarker from '@/components/map/markers/ResumeLocationMarker'
-import StartLocationMarker from '@/components/map/markers/StartLocationMarker'
-import FinishLocationMarker from '@/components/map/markers/FinishLocationMarker'
-import { getMapSettings, updateMapSettings } from '@/store/mapStorage'
+import PauseLocationMarker from '@/components/map/markers/PauseLocationMarker/YaMapPauseLocationMarker'
+import ResumeLocationMarker from '@/components/map/markers/ResumeLocationMarker/YaMapResumeLocationMarker'
+import StartLocationMarker from '@/components/map/markers/StartLocationMarker/YaMapStartLocationMarker'
+import FinishLocationMarker from '@/components/map/markers/FinishLocationMarker/YaMapFinishLocationMarker'
+import { getYaMapSettings, updateYaMapSettings } from '@/store/yaMapStorage'
 import { PolylineComponentInstanceRef, PolylineCustom } from '@/components/map/PolylineCustom'
 import { PolylineNativeProps } from 'react-native-yamap-plus/src/spec/PolylineNativeComponent'
 import UserLocationMarker, {
 	UserLocationMarkerHandle
-} from '@/components/map/markers/UserLocationMarker/UserLocationMarker'
+} from '@/components/map/markers/UserLocationMarker/YaMapUserLocationMarker'
 
 interface IProps {
 	needSaveCenter?: boolean
@@ -208,7 +208,7 @@ const MapComponent = forwardRef<MapComponentHandle, IProps>((props, ref) => {
 	const isAnimationBlockedRef = useRef<boolean>(false)
 	const animationBlockTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
 	const mapInitialRegionSettingsRef = useRef<InitialRegion>(
-		getRouteInitialRegion(initialRoutePoints, getMapSettings())
+		getRouteInitialRegion(initialRoutePoints, getYaMapSettings())
 	).current
 
 	// Initialize from props (History load)
@@ -388,7 +388,7 @@ const MapComponent = forwardRef<MapComponentHandle, IProps>((props, ref) => {
 		}, durationInMS)
 	}, [])
 
-	const updateMapSettingsDebounced = debounce(updateMapSettings, 300)
+	const updateMapSettingsDebounced = debounce(updateYaMapSettings, 300)
 
 	useEffect(() => {
 		return () => {
