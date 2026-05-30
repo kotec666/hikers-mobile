@@ -81,7 +81,7 @@ const RNMapWorkout = forwardRef<RNMapWorkoutHandle, IProps>((props, ref) => {
 		const cameraPosition = await mapRef.current.getCamera()
 		const newCameraPosition = {
 			...cameraPosition,
-			altitude: zoomInMeters ?? 500, // аналог zoom (в метрах)
+			altitude: zoomInMeters, //  ?? 500 аналог zoom (в метрах)
 			center: { latitude: center.lat, longitude: center.lon }
 		}
 		if (animationType === RNMapAnimationType.SMOOTH) {
