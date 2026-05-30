@@ -1,15 +1,16 @@
 ﻿import { Injectable, NotFoundException } from '@nestjs/common';
-import { DatabaseService } from '../database/database.service';
-import { ActivitiyDto } from './activities.dto';
-import { training, trainingMetrics, trainingParticipants, userActivities } from '../database/schema';
+import { OnEvent } from '@nestjs/event-emitter';
 import { and, eq, sql } from 'drizzle-orm';
 import { MeasuringUnit, TrainingType, UserActivity } from '@shared/enums';
-import { asc } from '../database/extensions';
-import { OnEvent } from '@nestjs/event-emitter';
-import { Event } from '@events/constants';
+import { AVERAGE_STRIDE_LENGTH } from '@shared/constants';
 import { ERRORS } from '@shared/errors';
-import { CommonDto } from '../../common/dto/common.dto';
+import { Event } from '@events/constants';
 import { getActivityByTrainingType, getDefaultMeasuringUnitByActivity } from './helpers';
+import { training, trainingMetrics, trainingParticipants, userActivities } from '../database/schema';
+import { DatabaseService } from '../database/database.service';
+import { asc } from '../database/extensions';
+import { CommonDto } from '../../common/dto/common.dto';
+import { ActivitiyDto } from './activities.dto';
 
 @Injectable()
 export class ActivitiesService {
@@ -52,10 +53,15 @@ export class ActivitiesService {
 			) {
 				activities.add(UserActivity.STEPS);
 			}
+			if (participant.type === TrainingType.WALK) {
+				activities.add(UserActivity.TRACK);
+			}
 
 			const activity = getActivityByTrainingType(participant.type);
-			if (!activity) continue;
-			activities.add(activity);
+
+			if (activity) {
+				activities.add(activity);
+			}
 
 			for (const activity of activities.values()) {
 				let goalToAdd = 0;
@@ -64,8 +70,6 @@ export class ActivitiesService {
 				switch (activity) {
 					case UserActivity.STEPS: {
 						if (unit === MeasuringUnit.COUNT) {
-							const AVERAGE_STRIDE_LENGTH = 0.75;
-
 							if (participant.metrics.distanceM) {
 								goalToAdd = Math.trunc(participant.metrics.distanceM / AVERAGE_STRIDE_LENGTH);
 							}

@@ -1,4 +1,4 @@
-import { IsEmail, Length } from 'class-validator';
+import { IsEmail, IsString, Length } from 'class-validator';
 import { ERRORS } from '@shared/errors';
 import { EMAIL_CONFIRMATION_CODE_SIZE } from '@shared/constants';
 import { lengths } from '@shared/lengths';
@@ -41,6 +41,7 @@ export namespace AuthDto {
 		@HasDigit()
 		password: string;
 
+		@IsString({ message: `_confirmPassword:${ERRORS.BAD_REQUEST}` })
 		confirmPassword: string;
 	}
 }

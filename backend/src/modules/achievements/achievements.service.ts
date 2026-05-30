@@ -1,6 +1,12 @@
-﻿import { Injectable, NotFoundException } from '@nestjs/common';
+﻿import { OnEvent } from '@nestjs/event-emitter';
+import { Injectable, NotFoundException } from '@nestjs/common';
+import { Cron, CronExpression } from '@nestjs/schedule';
+import { eq, sql, and, isNotNull, isNull, gte, count } from 'drizzle-orm';
+import { MeasuringUnit, NotificationType, TrainingType, UserActivity } from '@shared/enums';
+import { AVERAGE_STRIDE_LENGTH } from '@shared/constants';
+import { ERRORS } from '@shared/errors';
+import { Event } from '@events/constants';
 import { DatabaseService } from '../database/database.service';
-import { AchievementDto } from './achievements.dto';
 import {
 	achievements,
 	training,
@@ -9,16 +15,11 @@ import {
 	userAchievements,
 	users,
 } from '../database/schema';
-import { eq, sql, and, isNotNull, isNull, gte, count } from 'drizzle-orm';
 import { asc, desc } from '../database/extensions';
 import { NotificationsService } from '../notifications/notifications.service';
-import { CommonDto } from '../../common/dto/common.dto';
-import { ERRORS } from '@shared/errors';
-import { MeasuringUnit, NotificationType, TrainingType, UserActivity } from '@shared/enums';
-import { OnEvent } from '@nestjs/event-emitter';
-import { Event } from '@events/constants';
 import { getActivityByTrainingType } from '../activities/helpers';
-import { Cron, CronExpression } from '@nestjs/schedule';
+import { AchievementDto } from './achievements.dto';
+import { CommonDto } from '../../common/dto/common.dto';
 
 @Injectable()
 export class AchievementsService {
@@ -95,7 +96,7 @@ export class AchievementsService {
 			activities.add(UserActivity.STEPS);
 		}
 		if (trainingType === TrainingType.WALK) {
-			activities.add(UserActivity.RUN);
+			activities.add(UserActivity.TRACK);
 		}
 
 		const activity = getActivityByTrainingType(trainingType);
@@ -106,7 +107,10 @@ export class AchievementsService {
 		for (const activity of activities.values()) {
 			// Получаем все ачивки, у которых type как у активности из трени
 			const achivs = await this.db.db
-				.select()
+				.select({
+					id: achievements.id,
+					measuringUnit: achievements.measuringUnit,
+				})
 				.from(achievements)
 				.where(and(eq(achievements.type, activity), isNotNull(achievements.measuringUnit)));
 
@@ -121,8 +125,6 @@ export class AchievementsService {
 						switch (activity) {
 							case UserActivity.STEPS: {
 								if (unit === MeasuringUnit.COUNT) {
-									const AVERAGE_STRIDE_LENGTH = 0.75;
-
 									if (participant.metrics.distanceM) {
 										progressToAdd = Math.trunc(
 											participant.metrics.distanceM / AVERAGE_STRIDE_LENGTH,
