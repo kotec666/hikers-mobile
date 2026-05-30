@@ -816,6 +816,7 @@ export class TrainingsService {
 						prevPoint = participant.route.points[i - 1];
 						if (!prevPoint.paused) {
 							distanceM += point.distance;
+							continue;
 						}
 					}
 
@@ -833,12 +834,12 @@ export class TrainingsService {
 			allTimeMs = participant.route.points[participant.route.points.length - 1].rel_ts;
 		}
 
-		const distanceKmh = round(distanceM / 1000, 2);
+		const distanceKm = round(distanceM / 1000, 2);
 
 		const activeTimeMs = Math.max(allTimeMs - pausedTimeMs, 0);
 		const timeSec = round(activeTimeMs / 1000);
 
-		const avgTempoSecondsPerKm = distanceKmh === 0 ? 0 : round(timeSec / distanceKmh);
+		const avgTempoSecondsPerKm = distanceKm === 0 ? 0 : round(timeSec / (distanceM / 1000));
 		const avgSpeedMPerSec = timeSec === 0 ? 0 : round(distanceM / timeSec);
 
 		const kkcal = calculateCalories(activeTimeMs, distanceM, type);
