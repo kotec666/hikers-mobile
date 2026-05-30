@@ -1,6 +1,6 @@
 import { Animation, InitialRegion, Point, Yamap, YamapRef } from 'react-native-yamap-plus'
 import React, { forwardRef, useCallback, useImperativeHandle, useMemo, useRef } from 'react'
-import { View } from 'react-native'
+import { View, StyleSheet } from 'react-native'
 import { IWorkoutLocationStorageItem } from '@/store/workoutStorage'
 import { debounce } from '@/helpers/debounce'
 import YaMapPauseLocationMarker from '@/components/map/markers/PauseLocationMarker/YaMapPauseLocationMarker'
@@ -14,23 +14,21 @@ import YaMapUserLocationMarker, {
 import { useWorkoutPath } from '@/hooks/useWorkoutPath'
 
 interface IProps {
-	maxMapHeight?: number
-	maxContainerHeight?: number
-	minMapHeight?: number
 	rounded?: number
+	maxContainerHeight?: number
 	initialMarkerLocation?: Point | null
 	userLocationMarkerRef?: React.RefObject<YaMapUserLocationMarkerHandle | null>
 	latestUserMarkerLocationRef?: React.RefObject<Point | null> | undefined
 	initialLocations?: IWorkoutLocationStorageItem[]
 }
 
-export interface YaMapComponentSegmentsHandle {
+export interface YaMapWorkoutHandle {
 	setMapCenter: (center: Point | null, durationInSeconds?: number, zoom?: number, animationType?: Animation) => void
 	fitAllMarkers: (durationInSeconds?: number) => void
 	updatePath: (newItem: IWorkoutLocationStorageItem[]) => void
 }
 
-const MapComponentSegments = forwardRef<YaMapComponentSegmentsHandle, IProps>((props, ref) => {
+const YaMapWorkout = forwardRef<YaMapWorkoutHandle, IProps>((props, ref) => {
 	const mapRef = useRef<YamapRef>(null)
 	const isAnimationBlockedRef = useRef<boolean>(false)
 	const mapInitialRegionSettingsRef = useRef<InitialRegion>(getYaMapSettings())
@@ -102,9 +100,6 @@ const MapComponentSegments = forwardRef<YaMapComponentSegmentsHandle, IProps>((p
 		return null
 	}, [props.initialLocations])
 
-	const shouldRenderMap =
-		(!!props.maxMapHeight && props.maxMapHeight > 0) || (!!props.maxContainerHeight && props.maxContainerHeight > 0)
-
 	const markerPosition = props.latestUserMarkerLocationRef?.current || props.initialMarkerLocation
 
 	return (
@@ -116,76 +111,72 @@ const MapComponentSegments = forwardRef<YaMapComponentSegmentsHandle, IProps>((p
 				maxHeight: props.maxContainerHeight ?? 'auto'
 			}}
 		>
-			{shouldRenderMap && (
-				<Yamap
-					ref={mapRef}
-					nightMode
-					initialRegion={mapInitialRegionSettingsRef.current}
-					style={{ flex: 1, maxHeight: props.maxMapHeight, minHeight: props.minMapHeight }}
-					logoPosition={{ horizontal: 'right', vertical: 'top' }}
-					showUserPosition={false}
-					tiltGesturesDisabled={true}
-					rotateGesturesDisabled={false}
-					onCameraPositionChange={() => {
-						if (isAnimationBlockedRef.current) return
-						handleBlockAnimation(true)
-						// if (['GESTURES', 'UNKNOWN'].includes(e.nativeEvent.reason)) {
-						// 	handleBlockAnimation()
-						// }
-					}}
-					onCameraPositionChangeEnd={() => {
-						handleBlockAnimation(false)
-						mapRef.current?.getCameraPosition((pos) => {
-							const newSettings = {
-								lat: pos.point.lat,
-								lon: pos.point.lon,
-								zoom: pos.zoom,
-								azimuth: pos.azimuth
-							}
-							updateMapSettingsDebounced(newSettings)
-							mapInitialRegionSettingsRef.current = {
-								...mapInitialRegionSettingsRef.current,
-								...newSettings
-							}
-						})
-					}}
-				>
-					<YaMapUserLocationMarker ref={props.userLocationMarkerRef} initialPosition={markerPosition} />
+			<Yamap
+				ref={mapRef}
+				nightMode
+				initialRegion={mapInitialRegionSettingsRef.current}
+				style={StyleSheet.absoluteFill}
+				logoPosition={{ horizontal: 'right', vertical: 'top' }}
+				showUserPosition={false}
+				tiltGesturesDisabled={true}
+				rotateGesturesDisabled={false}
+				onCameraPositionChange={() => {
+					if (isAnimationBlockedRef.current) return
+					handleBlockAnimation(true)
+					// if (['GESTURES', 'UNKNOWN'].includes(e.nativeEvent.reason)) {
+					// 	handleBlockAnimation()
+					// }
+				}}
+				onCameraPositionChangeEnd={() => {
+					handleBlockAnimation(false)
+					mapRef.current?.getCameraPosition((pos) => {
+						const newSettings = {
+							lat: pos.point.lat,
+							lon: pos.point.lon,
+							zoom: pos.zoom,
+							azimuth: pos.azimuth
+						}
+						updateMapSettingsDebounced(newSettings)
+						mapInitialRegionSettingsRef.current = {
+							...mapInitialRegionSettingsRef.current,
+							...newSettings
+						}
+					})
+				}}
+			>
+				<YaMapUserLocationMarker ref={props.userLocationMarkerRef} initialPosition={markerPosition} />
 
-					{startPosition && <YaMapStartLocationMarker position={startPosition} />}
+				{startPosition && <YaMapStartLocationMarker position={startPosition} />}
 
-					{segmentsRef.current.map((seg, idx) => (
-						<PolylineCustom
-							key={idx}
-							ref={seg.polylineRef}
-							points={seg.points}
-							strokeColor={seg.color}
-							strokeWidth={4}
-						/>
-					))}
+				{segmentsRef.current.map((seg, idx) => (
+					<PolylineCustom
+						key={idx}
+						ref={seg.polylineRef}
+						points={seg.points}
+						strokeColor={seg.color}
+						strokeWidth={4}
+					/>
+				))}
 
-					{transitionMarkersRef.current.map((tm) =>
-						tm.type === 'pause' ? (
-							<YaMapPauseLocationMarker key={tm.id} position={tm.position} />
-						) : (
-							<YaMapResumeLocationMarker key={tm.id} position={tm.position} />
-						)
-					)}
+				{transitionMarkersRef.current.map((tm) =>
+					tm.type === 'pause' ? (
+						<YaMapPauseLocationMarker key={tm.id} position={tm.position} />
+					) : (
+						<YaMapResumeLocationMarker key={tm.id} position={tm.position} />
+					)
+				)}
 
-					{/*<YaMapFinishLocationMarker position={{ lat: 53.374451, lon: 49.660469 }} />*/}
-				</Yamap>
-			)}
+				{/*<YaMapFinishLocationMarker position={{ lat: 53.374451, lon: 49.660469 }} />*/}
+			</Yamap>
 		</View>
 	)
 })
 
-MapComponentSegments.displayName = 'MapComponentSegments'
+YaMapWorkout.displayName = 'YaMapWorkout'
 
-export default React.memo(MapComponentSegments, (prev, next) => {
+export default React.memo(YaMapWorkout, (prev, next) => {
 	const layoutPropsEqual =
 		prev.maxContainerHeight === next.maxContainerHeight &&
-		prev.maxMapHeight === next.maxMapHeight &&
-		prev.minMapHeight === next.minMapHeight &&
 		prev.rounded === next.rounded &&
 		prev.initialMarkerLocation === next.initialMarkerLocation &&
 		prev.userLocationMarkerRef === next.userLocationMarkerRef &&

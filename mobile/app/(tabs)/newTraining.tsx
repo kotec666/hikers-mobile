@@ -58,6 +58,8 @@ import type { PendingWidgetAction } from '@/modules/expo-live-activity'
 import { randomHexColor } from '@/helpers/colors/randomHexColor'
 import { useFinishWorkoutMutation } from '@/queries/workout'
 import { Page } from '@/components/ui/Page'
+import { RNMapAnimationType } from '@/components/map/RNMapWorkout'
+import { updateRNMapSettings } from '@/store/rnMapStorage'
 // Debugging
 TaskManager.getRegisteredTasksAsync().then((tasks) => {
 	console.log('getRegisteredTasksAsync', tasks)
@@ -77,11 +79,13 @@ initializeBackgroundLocationTask(promise)
 
 const HEADING_THROTTLE_MS = 750
 const PAUSE_DEBOUNCE_MS = 300
-const INITIAL_MAP_ZOOM = 14
+const YA_MAP_INITIAL_MAP_ZOOM = 14
+const RN_MAP_INITIAL_MAP_ZOOM = 500
 
 export default function NewTraining() {
 	const toast = useToast()
 	const { user } = useAuthStore()
+	const isIOS = Platform.OS === 'ios'
 	const { setTrainingId, setStartedAt, setType, setPoints, setMetrics } = useWorkoutResultsAfterFinishStore()
 
 	const router = useRouter()
@@ -115,6 +119,8 @@ export default function NewTraining() {
 	const tracking = useLocationTracking()
 
 	const {
+		rnMapComponentRef,
+		rnMapUserLocationMarkerRef,
 		yaMapComponentRef,
 		yaMapUserLocationMarkerRef,
 		latestUserMarkerLocationRef,
@@ -242,10 +248,13 @@ export default function NewTraining() {
 	const throttledHeadingUpdate = useMemo(
 		() =>
 			throttle((data: Location.LocationHeadingObject) => {
-				yaMapUserLocationMarkerRef.current?.setMarkerHeading(data.trueHeading ?? data.magHeading)
-				// setHeadingDebug(data.trueHeading ?? data.magHeading)
+				if (isIOS) {
+					rnMapUserLocationMarkerRef.current?.setMarkerHeading(data.trueHeading ?? data.magHeading)
+				} else {
+					yaMapUserLocationMarkerRef.current?.setMarkerHeading(data.trueHeading ?? data.magHeading)
+				}
 			}, HEADING_THROTTLE_MS),
-		[yaMapUserLocationMarkerRef]
+		[yaMapUserLocationMarkerRef, rnMapUserLocationMarkerRef, isIOS]
 	)
 
 	const startHeadingTracking = useCallback(async () => {
@@ -275,16 +284,31 @@ export default function NewTraining() {
 					console.log('[active-tracking] received active location: ', location)
 					const { latitude: lat, longitude: lon, accuracy } = location.coords
 					saveInitialMarkerLocation({ lat, lon })
-					yaMapComponentRef.current?.setMapCenter({ lat, lon })
-					yaMapUserLocationMarkerRef.current?.setMarkerPosition({ lat, lon })
+					if (isIOS) {
+						rnMapComponentRef.current?.setMapCenter({ center: { lat, lon } })
+						rnMapUserLocationMarkerRef.current?.setMarkerPosition({ lat, lon })
+						rnMapUserLocationMarkerRef.current?.setAccuracy(accuracy)
+					} else {
+						yaMapComponentRef.current?.setMapCenter({ lat, lon })
+						yaMapUserLocationMarkerRef.current?.setMarkerPosition({ lat, lon })
+						yaMapUserLocationMarkerRef.current?.setAccuracy(accuracy)
+					}
+
 					latestUserMarkerLocationRef.current = { lat, lon }
-					yaMapUserLocationMarkerRef.current?.setAccuracy(accuracy)
 				}
 			)
 		} catch (e) {
 			console.log('[active-tracking] error:', e)
 		}
-	}, [latestUserMarkerLocationRef, yaMapComponentRef, saveInitialMarkerLocation, yaMapUserLocationMarkerRef])
+	}, [
+		latestUserMarkerLocationRef,
+		yaMapComponentRef,
+		yaMapUserLocationMarkerRef,
+		rnMapComponentRef,
+		rnMapUserLocationMarkerRef,
+		saveInitialMarkerLocation,
+		isIOS
+	])
 
 	const stopActiveTracking = useCallback(() => {
 		if (activeLocationSubscriptionRef.current) {
@@ -461,20 +485,54 @@ export default function NewTraining() {
 		} = locationObject
 
 		setInitialMarkerLocationState({ lat, lon })
-		if (yaMapComponentRef.current) {
-			yaMapComponentRef.current.setMapCenter({ lat, lon }, 0.5, INITIAL_MAP_ZOOM)
-			updateYaMapSettings({
-				lat: lat,
-				lon: lon,
-				zoom: INITIAL_MAP_ZOOM
-			})
+		if (isIOS) {
+			if (rnMapComponentRef.current) {
+				rnMapComponentRef.current.setMapCenter({
+					center: { lat, lon },
+					animationType: RNMapAnimationType.LINEAR,
+					zoomInMeters: 500
+				})
+				updateRNMapSettings({
+					center: {
+						latitude: lat,
+						longitude: lon
+					},
+					altitude: RN_MAP_INITIAL_MAP_ZOOM
+				})
+			}
+		} else {
+			if (yaMapComponentRef.current) {
+				yaMapComponentRef.current.setMapCenter({ lat, lon }, 0.5, YA_MAP_INITIAL_MAP_ZOOM)
+				updateYaMapSettings({
+					lat: lat,
+					lon: lon,
+					zoom: YA_MAP_INITIAL_MAP_ZOOM
+				})
+			}
 		}
-		if (yaMapUserLocationMarkerRef.current) {
-			yaMapUserLocationMarkerRef.current.setAccuracy(accuracy)
-			yaMapUserLocationMarkerRef.current.setMarkerHeading(heading)
-			yaMapUserLocationMarkerRef.current.setMarkerPosition({ lat, lon })
+
+		if (isIOS) {
+			if (rnMapUserLocationMarkerRef.current) {
+				rnMapUserLocationMarkerRef.current.setAccuracy(accuracy)
+				rnMapUserLocationMarkerRef.current.setMarkerHeading(heading)
+				rnMapUserLocationMarkerRef.current.setMarkerPosition({ lat, lon })
+			}
+		} else {
+			if (yaMapUserLocationMarkerRef.current) {
+				yaMapUserLocationMarkerRef.current.setAccuracy(accuracy)
+				yaMapUserLocationMarkerRef.current.setMarkerHeading(heading)
+				yaMapUserLocationMarkerRef.current.setMarkerPosition({ lat, lon })
+			}
 		}
-	}, [getFastUserPosition, yaMapComponentRef, setInitialMarkerLocationState, yaMapUserLocationMarkerRef])
+	}, [
+		getFastUserPosition,
+		setInitialMarkerLocationState,
+		yaMapComponentRef,
+		yaMapUserLocationMarkerRef,
+		rnMapComponentRef,
+		rnMapUserLocationMarkerRef,
+		isIOS
+	])
 
 	const allPermissionsGrantedCallback = useCallback(async () => {
 		// Если висит флаг ожидания старта - запускаем тренировку автоматически
@@ -688,6 +746,9 @@ export default function NewTraining() {
 						workoutType={chosenWorkout.type}
 						isPaused={isPaused}
 						yaMapComponentRef={yaMapComponentRef}
+						yaMapUserLocationMarkerRef={yaMapUserLocationMarkerRef}
+						rnMapComponentRef={rnMapComponentRef}
+						rnMapUserLocationMarkerRef={rnMapUserLocationMarkerRef}
 						metricAvgSpeedRef={metricAvgSpeedRef}
 						metricSpeedRef={metricSpeedRef}
 						metricDistanceRef={metricDistanceRef}
@@ -695,14 +756,16 @@ export default function NewTraining() {
 						metricHeightRef={metricHeightRef}
 						accumulatedDistanceRef={accumulatedDistanceRef} // Для темпа
 						initialLocationsState={initialLocationsState}
-						yaMapUserLocationMarkerRef={yaMapUserLocationMarkerRef}
 						initialMarkerLocation={initialMarkerLocationState}
 						latestUserMarkerLocationRef={latestUserMarkerLocationRef}
 					/>
 				) : (
 					<NewWorkout
 						ref={toggleBottomSheetOnNewWorkoutRef}
+						yaMapComponentRef={yaMapComponentRef}
 						yaMapUserLocationMarkerRef={yaMapUserLocationMarkerRef}
+						rnMapComponentRef={rnMapComponentRef}
+						rnMapUserLocationMarkerRef={rnMapUserLocationMarkerRef}
 						initialMarkerLocation={initialMarkerLocationState}
 						latestUserMarkerLocationRef={latestUserMarkerLocationRef}
 						allPermsGranted={allPermissionsGrantedCallback}
@@ -711,7 +774,6 @@ export default function NewTraining() {
 						chosenWorkout={chosenWorkout}
 						WorkoutTypesData={WorkoutTypesData}
 						permissionsRef={permissionsRef}
-						yaMapComponentRef={yaMapComponentRef}
 					/>
 				)}
 			</BlurProvider>

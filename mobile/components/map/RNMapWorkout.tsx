@@ -13,17 +13,22 @@ import { IPoint } from '@/types/interfaces'
 import RNMapsUserLocationMarker, {
 	RNMapsUserLocationMarkerHandle
 } from '@/components/map/markers/UserLocationMarker/RNMapsUserLocationMarker'
+import RNSegmentPolyline from '@/components/map/polyline/RNSegmentPolyline'
 
-export enum MapAnimationType {
+export enum RNMapAnimationType {
 	SMOOTH = 'smooth',
 	LINEAR = 'linear'
 }
 
 type PolylineRef = React.ComponentRef<typeof Polyline>
 
-export interface MapComponentSegmentsHandle {
+export interface RNMapWorkoutHandle {
 	fitAllMarkers: () => void
-	setMapCenter: (center: IPoint | null, zoomInMeters?: number, animationType?: MapAnimationType) => void
+	setMapCenter: (newCenter: {
+		center: IPoint | null
+		zoomInMeters?: number
+		animationType?: RNMapAnimationType
+	}) => void
 	updatePath: (newItem: IWorkoutLocationStorageItem[]) => void
 }
 
@@ -42,7 +47,7 @@ interface IProps {
 const DEFAULT_APPLE_LOGO_POSITION = { top: 2, right: 48, bottom: 0, left: 0 }
 const DEFAULT_APPLE_LEGAL_POSITION = { top: 17, right: 10, bottom: 0, left: 0 }
 
-const RNMapWorkout = forwardRef<MapComponentSegmentsHandle, IProps>((props, ref) => {
+const RNMapWorkout = forwardRef<RNMapWorkoutHandle, IProps>((props, ref) => {
 	const mapRef = useRef<MapView | null>(null)
 	const isAnimationBlockedRef = useRef<boolean>(false)
 	const mapInitialCameraSettingsRef = useRef<Camera>(getRNMapSettings())
@@ -67,7 +72,7 @@ const RNMapWorkout = forwardRef<MapComponentSegmentsHandle, IProps>((props, ref)
 	const changeMapCenter = async (
 		center: IPoint | null,
 		zoomInMeters?: number,
-		animationType: MapAnimationType = MapAnimationType.SMOOTH
+		animationType: RNMapAnimationType = RNMapAnimationType.SMOOTH
 	) => {
 		if (isAnimationBlockedRef.current) return
 		if (!center) return
@@ -79,7 +84,7 @@ const RNMapWorkout = forwardRef<MapComponentSegmentsHandle, IProps>((props, ref)
 			altitude: zoomInMeters ?? 500, // аналог zoom (в метрах)
 			center: { latitude: center.lat, longitude: center.lon }
 		}
-		if (animationType === MapAnimationType.SMOOTH) {
+		if (animationType === RNMapAnimationType.SMOOTH) {
 			return mapRef.current.animateCamera(newCameraPosition)
 		} else {
 			return mapRef.current.setCamera(newCameraPosition)
@@ -93,7 +98,7 @@ const RNMapWorkout = forwardRef<MapComponentSegmentsHandle, IProps>((props, ref)
 
 	useImperativeHandle(ref, () => ({
 		fitAllMarkers,
-		setMapCenter: (center, zoomInMeters, animationType) => changeMapCenter(center, zoomInMeters, animationType),
+		setMapCenter: (newCenter) => changeMapCenter(newCenter.center, newCenter.zoomInMeters, newCenter.animationType),
 		updatePath: (newItems) => updatePath(newItems)
 	}))
 
@@ -160,13 +165,7 @@ const RNMapWorkout = forwardRef<MapComponentSegmentsHandle, IProps>((props, ref)
 				{startPosition && <RNMapsStartLocationMarker position={startPosition} />}
 
 				{segmentsRef.current.map((seg, idx) => (
-					<Polyline
-						key={idx}
-						ref={seg.polylineRef}
-						strokeWidth={4}
-						strokeColor={seg.color}
-						coordinates={seg.points.map((p) => ({ latitude: p.lat, longitude: p.lon }))}
-					/>
+					<RNSegmentPolyline key={idx} polylineRef={seg.polylineRef} color={seg.color} points={seg.points} />
 				))}
 
 				{transitionMarkersRef.current.map((tm) =>

@@ -458,7 +458,6 @@ const MapComponent = forwardRef<MapComponentHandle, IProps>((props, ref) => {
 					fitInitialRoute(0)
 				}}
 			>
-				{/*<DirectionMarkersDebug center={{ lat: 53.374451, lon: 49.460469 }} />*/}
 				{props.initialMarkerLocation && (
 					<YaMapUserLocationMarker
 						ref={props.userLocationMarkerRef}
