@@ -1,23 +1,23 @@
 import React from 'react'
 import { Marker, Point } from 'react-native-yamap-plus'
 import { View } from 'react-native'
-import ResumeWithCircleSvg from '@/components/svg/ResumeWithCircleSvg'
+import FinishWithCircleSvg from '@/components/svg/FinishWithCircleSvg'
 
 interface Props {
 	position?: Point | null
 	color?: string
 }
 
-const ResumeLocationMarker = ({ position, color }: Props) => {
+const YaMapFinishLocationMarker = ({ position, color }: Props) => {
 	if (!position?.lat || !position?.lon) return null
 
 	return (
-		<Marker point={position} zIndex={5}>
+		<Marker point={position} zIndex={6}>
 			<View>
-				<ResumeWithCircleSvg color={color} />
+				<FinishWithCircleSvg color={color} />
 			</View>
 		</Marker>
 	)
 }
 
-export default ResumeLocationMarker
+export default YaMapFinishLocationMarker

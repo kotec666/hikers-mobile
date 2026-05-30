@@ -1,25 +1,24 @@
 import React, { forwardRef, useImperativeHandle, useCallback, useRef } from 'react'
-import { Point } from 'react-native-yamap-plus'
-import { CircleComponentInstanceRef, CircleCustom } from '@/components/map/CircleCustom'
-import { CircleNativeProps } from 'react-native-yamap-plus/src/spec/CircleNativeComponent'
-import { processColorsToNative } from 'react-native-yamap-plus/src/utils'
 import { setRgbaOpacity } from '@/helpers/colors/setRgbaOpacity'
+import { Circle } from 'react-native-maps'
+import { IPoint } from '@/types/interfaces'
 
 interface IProps {
-	initialPosition: Point
+	initialPosition: IPoint
 	color?: string
 	debugAccuracyM?: number
 }
 
-export interface AccuracyCircleHandle {
-	setCircleCenter: (center: Point | null) => void
+export interface RNMapsAccuracyCircleHandle {
+	setCircleCenter: (center: IPoint | null) => void
 	hideCircle: (hidden: boolean) => void
 	setAccuracy: (accuracy: number | null) => void
 }
 
-const AccuracyCircle = forwardRef<AccuracyCircleHandle, IProps>((props, ref) => {
+type CircleRef = React.ComponentRef<typeof Circle>
+const RNMapsAccuracyCircle = forwardRef<RNMapsAccuracyCircleHandle, IProps>((props, ref) => {
 	const initialPoint = useRef(props.initialPosition).current
-	const circleRef = useRef<CircleComponentInstanceRef | null>(null)
+	const circleRef = useRef<CircleRef | null>(null)
 	const radiusRef = useRef(0)
 	const opacityRef = useRef(0.2)
 
@@ -30,9 +29,7 @@ const AccuracyCircle = forwardRef<AccuracyCircleHandle, IProps>((props, ref) => 
 			const baseColor = props.color ?? 'rgb(0, 200, 100)'
 			const fillColor = setRgbaOpacity(baseColor, opacityRef.current)
 
-			const nativeProps = processColorsToNative({ fillColor }, ['fillColor']) as Partial<CircleNativeProps>
-
-			circleRef.current?.setNativeProps(nativeProps)
+			circleRef.current?.setNativeProps({ fillColor })
 		},
 		[props.color]
 	)
@@ -45,8 +42,11 @@ const AccuracyCircle = forwardRef<AccuracyCircleHandle, IProps>((props, ref) => 
 			}
 
 			circleRef.current?.setNativeProps({
-				center
-			} as Partial<CircleNativeProps>)
+				center: {
+					latitude: center.lat,
+					longitude: center.lon
+				}
+			})
 		},
 
 		setAccuracy: (accuracy) => {
@@ -54,7 +54,7 @@ const AccuracyCircle = forwardRef<AccuracyCircleHandle, IProps>((props, ref) => 
 			radiusRef.current = r
 			circleRef.current?.setNativeProps({
 				radius: r
-			} as Partial<CircleNativeProps>)
+			})
 		},
 
 		hideCircle: (hidden) => setHiddenCircle(hidden)
@@ -62,18 +62,23 @@ const AccuracyCircle = forwardRef<AccuracyCircleHandle, IProps>((props, ref) => 
 
 	if (!initialPoint?.lat || !initialPoint?.lon) return null
 	return (
-		<CircleCustom
+		<Circle
 			ref={circleRef}
-			center={initialPoint}
+			center={{
+				latitude: initialPoint.lat,
+				longitude: initialPoint.lon
+			}}
 			radius={props.debugAccuracyM ?? radiusRef.current}
 			fillColor={setRgbaOpacity(props.color ?? 'rgb(0, 200, 100)', opacityRef.current)}
 			strokeColor="transparent"
 			strokeWidth={0}
-			zIndex={5}
+			style={{
+				zIndex: 5
+			}}
 		/>
 	)
 })
 
-AccuracyCircle.displayName = 'AccuracyCircle'
+RNMapsAccuracyCircle.displayName = 'RNMapsAccuracyCircle'
 
-export default React.memo(AccuracyCircle)
+export default React.memo(RNMapsAccuracyCircle)

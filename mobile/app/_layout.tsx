@@ -13,6 +13,7 @@ import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import './../global.css'
 import { SafeAreaProvider } from 'react-native-safe-area-context'
 import { clearExpiredTimers } from '@/store/timerStorage'
+import { KeyboardProvider } from 'react-native-keyboard-controller'
 
 const queryClient = new QueryClient({
 	defaultOptions: {
@@ -75,50 +76,52 @@ const Root = ({ isAuthenticated }: { isAuthenticated: boolean }) => {
 		<QueryClientProvider client={queryClient}>
 			<GestureHandlerRootView className="flex-1">
 				<PortalProvider>
-					<SafeAreaProvider>
-						<Stack
-							screenOptions={{
-								headerShown: false,
-								contentStyle: {
-									backgroundColor: Colors['black-0d']
-								}
-							}}
-							initialRouteName={isAuthenticated ? '(tabs)' : 'index'}
-						>
-							<Stack.Protected guard={isAuthenticated}>
-								<Stack.Screen name="(tabs)" />
-								<Stack.Screen name="find-people" />
-								<Stack.Screen name="posts/members/[id]" />
-								<Stack.Screen name="posts/[id]" />
-								<Stack.Screen name="workout-history" />
-								<Stack.Screen name="friends/my-friends" />
-								<Stack.Screen name="friends/friend-requests" />
-								<Stack.Screen name="subscribers/my-subscribers" />
-								<Stack.Screen name="subscribers/my-subscriptions" />
-								<Stack.Screen name="notifications" />
-								<Stack.Screen name="profile/edit" />
-								<Stack.Screen name="profile/editActivity" />
-								<Stack.Screen name="user/achievements/[id]" />
-								<Stack.Screen name="achievements" />
-								<Stack.Screen name="user/profile/[id]" />
-								<Stack.Screen name="training/viewWorkout" />
-								<Stack.Screen name="(about)/index" />
-								<Stack.Screen name="(about)/report-a-problem" />
-								<Stack.Screen name="(settings)/index" />
-								<Stack.Screen name="(settings)/in-app-notifications" />
-								{/*<Stack.Screen name="friends/search" /> не используется*/}
-								{/*<Stack.Screen name="find-people" /> не используется*/}
-							</Stack.Protected>
+					<KeyboardProvider>
+						<SafeAreaProvider>
+							<Stack
+								screenOptions={{
+									headerShown: false,
+									contentStyle: {
+										backgroundColor: Colors['black-0d']
+									}
+								}}
+								initialRouteName={isAuthenticated ? '(tabs)' : 'index'}
+							>
+								<Stack.Protected guard={isAuthenticated}>
+									<Stack.Screen name="(tabs)" />
+									<Stack.Screen name="find-people" />
+									<Stack.Screen name="posts/members/[id]" />
+									<Stack.Screen name="posts/[id]" />
+									<Stack.Screen name="workout-history" />
+									<Stack.Screen name="friends/my-friends" />
+									<Stack.Screen name="friends/friend-requests" />
+									<Stack.Screen name="subscribers/my-subscribers" />
+									<Stack.Screen name="subscribers/my-subscriptions" />
+									<Stack.Screen name="notifications" />
+									<Stack.Screen name="profile/edit" />
+									<Stack.Screen name="profile/editActivity" />
+									<Stack.Screen name="user/achievements/[id]" />
+									<Stack.Screen name="achievements" />
+									<Stack.Screen name="user/profile/[id]" />
+									<Stack.Screen name="training/viewWorkout" />
+									<Stack.Screen name="(about)/index" />
+									<Stack.Screen name="(about)/report-a-problem" />
+									<Stack.Screen name="(settings)/index" />
+									<Stack.Screen name="(settings)/in-app-notifications" />
+									{/*<Stack.Screen name="friends/search" /> не используется*/}
+									{/*<Stack.Screen name="find-people" /> не используется*/}
+								</Stack.Protected>
 
-							<Stack.Protected guard={!isAuthenticated}>
-								<Stack.Screen name="index" />
-								<Stack.Screen name="auth" />
-								<Stack.Screen name="(password-restore)/firstStep" />
-								<Stack.Screen name="(password-restore)/secondStep" />
-								<Stack.Screen name="(password-restore)/thirdStep" />
-							</Stack.Protected>
-						</Stack>
-					</SafeAreaProvider>
+								<Stack.Protected guard={!isAuthenticated}>
+									<Stack.Screen name="index" />
+									<Stack.Screen name="auth" />
+									<Stack.Screen name="(password-restore)/firstStep" />
+									<Stack.Screen name="(password-restore)/secondStep" />
+									<Stack.Screen name="(password-restore)/thirdStep" />
+								</Stack.Protected>
+							</Stack>
+						</SafeAreaProvider>
+					</KeyboardProvider>
 
 					<NotificationProvider />
 					<InAppNotificationProvider />

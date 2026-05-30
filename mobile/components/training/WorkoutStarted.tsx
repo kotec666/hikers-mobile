@@ -9,13 +9,13 @@ import MetricsTab from '@/components/training/tabs/MetricsTab'
 import ShowMembersList from '@/components/training/tabs/ShowMembersList'
 import InteractiveBottomElements from '@/components/training/InteractiveBottomElements'
 import { MetricSpeedHandle } from '@/components/training/tabs/metrics/MetricSpeed'
-import { UserLocationMarkerHandle } from '@/components/map/markers/UserLocationMarker/UserLocationMarker'
 import { Point } from 'react-native-yamap-plus'
 import { MetricDistanceHandle } from '@/components/training/tabs/metrics/MetricDistance'
 import { MetricCaloriesHandle } from '@/components/training/tabs/metrics/MetricCalories'
 import { MetricHeightHandle } from '@/components/training/tabs/metrics/MetricHeight'
-import MapComponentSegments, { MapComponentSegmentsHandle } from '@/components/map/MapComponentSegments'
+import MapComponentSegments, { YaMapComponentSegmentsHandle } from '@/components/map/MapComponentSegments'
 import { MetricAvgSpeedHandle } from '@/components/training/tabs/metrics/MetricAvgSpeed'
+import { YaMapUserLocationMarkerHandle } from '@/components/map/markers/UserLocationMarker/YaMapUserLocationMarker'
 
 interface IProps {
 	// headingDebug: number | null
@@ -31,8 +31,8 @@ interface IProps {
 	handleClickOpenEndModal: () => void
 	workoutType: TrainingType
 
-	mapComponentRef: React.RefObject<MapComponentSegmentsHandle | null>
-	userLocationMarkerRef: React.RefObject<UserLocationMarkerHandle | null>
+	yaMapComponentRef: React.RefObject<YaMapComponentSegmentsHandle | null>
+	yaMapUserLocationMarkerRef: React.RefObject<YaMapUserLocationMarkerHandle | null>
 
 	metricAvgSpeedRef: React.RefObject<MetricAvgSpeedHandle | null>
 	metricSpeedRef: React.RefObject<MetricSpeedHandle | null>
@@ -75,8 +75,8 @@ const WorkoutStarted = (props: IProps) => {
 				</Text>
 			</Container>
 			<MapComponentSegments
-				ref={props.mapComponentRef}
-				userLocationMarkerRef={props.userLocationMarkerRef}
+				ref={props.yaMapComponentRef}
+				userLocationMarkerRef={props.yaMapUserLocationMarkerRef}
 				latestUserMarkerLocationRef={props.latestUserMarkerLocationRef}
 				initialMarkerLocation={props.initialMarkerLocation}
 				initialLocations={props.initialLocationsState}

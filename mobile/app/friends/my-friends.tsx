@@ -16,6 +16,7 @@ import { useSafeNavigation } from '@/hooks/useSafeNavigation'
 import BlurProvider from '@/components/providers/BlurProvider'
 import { useMyFriendsQuery, useRemoveFriendMutation } from '@/queries/friends'
 import { Page } from '@/components/ui/Page'
+import { refetchAndHaptics } from '@/helpers/refetchAndHaptics'
 
 const MyFriendsPage = () => {
 	const { push } = useSafeNavigation()
@@ -153,7 +154,7 @@ const MyFriendsPage = () => {
 							refreshControl={
 								<RefreshControl
 									refreshing={isRefetching}
-									onRefresh={refetch}
+									onRefresh={() => refetchAndHaptics(refetch)}
 									tintColor={Colors['green-main']}
 								/>
 							}

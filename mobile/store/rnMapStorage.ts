@@ -1,26 +1,25 @@
 import { createMMKV } from 'react-native-mmkv'
-import { InitialRegion } from 'react-native-yamap-plus'
+import { Camera } from 'react-native-maps'
 
 export const mapStorage = createMMKV({
-	id: 'map-storage'
+	id: 'rn-map-storage'
 })
 
-const mapStorageKey = 'MAP_STORAGE_SETTINGS'
+const mapStorageKey = 'RN_MAP_STORAGE_SETTINGS'
 
-const initialMapSettings = {
-	lat: 55.758745, // Moscow
-	lon: 37.619153, // Moscow
-	zoom: 14,
-	azimuth: undefined
-	// tilt: 0
+const initialMapSettings: Camera = {
+	center: { latitude: 55.758745, longitude: 37.619153 }, // Moscow
+	altitude: 400_000, // аналог zoom
+	heading: 0,
+	pitch: 0
 }
 
-export const getMapSettings = (): InitialRegion => {
+export const getRNMapSettings = (): Camera => {
 	const mapStorageStr = mapStorage.getString(mapStorageKey)
 	let parsedStorage = null
 
 	if (mapStorageStr) {
-		parsedStorage = JSON.parse(mapStorageStr) as InitialRegion
+		parsedStorage = JSON.parse(mapStorageStr) as Camera
 	}
 
 	if (mapStorageStr && parsedStorage) {
@@ -31,22 +30,22 @@ export const getMapSettings = (): InitialRegion => {
 	}
 }
 
-export const updateMapSettings = (settings: Partial<InitialRegion>) => {
+export const updateRNMapSettings = (settings: Partial<Camera>) => {
 	const mapStorageStr = mapStorage.getString(mapStorageKey)
 	let parsedStorage = null
 
 	if (mapStorageStr) {
-		parsedStorage = JSON.parse(mapStorageStr) as InitialRegion
+		parsedStorage = JSON.parse(mapStorageStr) as Camera
 	}
 
 	if (parsedStorage) {
-		const updatedSettings: InitialRegion = {
+		const updatedSettings: Camera = {
 			...parsedStorage,
 			...settings
 		}
 		return mapStorage.set(mapStorageKey, JSON.stringify(updatedSettings))
 	} else {
-		const updatedSettings: InitialRegion = {
+		const updatedSettings: Camera = {
 			...initialMapSettings,
 			...settings
 		}

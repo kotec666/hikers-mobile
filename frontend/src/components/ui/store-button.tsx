@@ -79,7 +79,7 @@ const StoreButton = ({ storeType, type, shrink = true }: IStoreButtonProps) => {
 		>
 			{type === 'lg' ? (
 				<Image
-					className="w-full h-full"
+					className="w-full h-full object-contain"
 					src={componentData.icon}
 					alt=""
 					width={150}

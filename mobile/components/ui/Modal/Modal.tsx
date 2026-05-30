@@ -1,9 +1,10 @@
 import React from 'react'
-import { View, Text, StyleSheet, Modal as RNModal, ModalProps, KeyboardAvoidingView, Platform } from 'react-native'
+import { View, Text, StyleSheet, Modal as RNModal, ModalProps, Platform } from 'react-native'
+import { KeyboardStickyView } from 'react-native-keyboard-controller'
 import CloseCross from '@/components/ui/CloseCross'
-import { BlurView } from 'expo-blur'
 import { useBlurContext } from '@/components/providers/BlurProvider'
 import { GlassView, isLiquidGlassAvailable } from 'expo-glass-effect'
+import { BlurView } from 'expo-blur'
 
 type PROPS = ModalProps & {
 	label?: string
@@ -73,7 +74,7 @@ const Modal = ({ isOpen, withInput, handleClose, label, labelSize, children, blu
 		</View>
 	)
 
-	const Wrapper = withInput ? KeyboardAvoidingView : View
+	const Wrapper = withInput ? KeyboardStickyView : View
 
 	return (
 		<RNModal visible={isOpen} transparent animationType="fade" statusBarTranslucent {...rest}>

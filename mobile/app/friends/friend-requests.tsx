@@ -11,6 +11,7 @@ import { LegendList } from '@legendapp/list'
 import { Colors } from '@/constants/Colors'
 import { useAcceptFriendRequestMutation, useMyFriendRequestsQuery, useRejectFriendMutation } from '@/queries/friends'
 import { Page } from '@/components/ui/Page'
+import { refetchAndHaptics } from '@/helpers/refetchAndHaptics'
 
 const FriendRequestsPage = () => {
 	const {
@@ -111,7 +112,7 @@ const FriendRequestsPage = () => {
 					refreshControl={
 						<RefreshControl
 							refreshing={isRefetching}
-							onRefresh={refetch}
+							onRefresh={() => refetchAndHaptics(refetch)}
 							tintColor={Colors['green-main']}
 						/>
 					}

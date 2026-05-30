@@ -1,7 +1,7 @@
 import React, { useState } from 'react'
 import { Container } from '@/components/ui/Container'
 import HeaderBack from '@/components/ui/HeaderBack'
-import { View, Text, Platform, Keyboard, KeyboardAvoidingView, TouchableWithoutFeedback } from 'react-native'
+import { View, Text, Pressable, Keyboard } from 'react-native'
 import { fontFamily } from '@/constants/Fonts'
 import { Button } from '@/components/ui/Button'
 import { InputIcon } from '@/components/ui/InputIcon'
@@ -15,6 +15,9 @@ import * as Haptics from 'expo-haptics'
 import { lengths } from '@shared/lengths'
 import { requestPasswordRecoveryCode } from '@/api/auth'
 import { createTimer, isRateLimited, TimerType } from '@/store/timerStorage'
+import { KeyboardGestureArea } from 'react-native-keyboard-controller'
+import Animated from 'react-native-reanimated'
+import { useKeyboardAnimation } from '@/hooks/useKeyboardAnimation'
 
 interface IRecoveryPasswordFirstStepFormState {
 	email: string
@@ -30,6 +33,15 @@ const FirstStepPage = () => {
 		formState: { isSubmitting }
 	} = useForm<IRecoveryPasswordFirstStepFormState>()
 	const { ErrorMessages } = useErrorMessage()
+
+	// const params = {
+	// 	offset: {
+	// 		closed: 0,
+	// 		opened: -225
+	// 	}
+	// }
+
+	const { animatedKeyboardStyle } = useKeyboardAnimation() // params
 
 	const onSubmit = async (firstRecoveryStepFormState: IRecoveryPasswordFirstStepFormState) => {
 		setServerErrors({})
@@ -56,12 +68,18 @@ const FirstStepPage = () => {
 
 	return (
 		<Page>
-			<Container className="flex-1">
-				<KeyboardAvoidingView style={{ flex: 1 }} behavior={Platform.OS === 'ios' ? 'padding' : 'height'}>
-					<TouchableWithoutFeedback onPress={Keyboard.dismiss} accessible={false}>
-						<View className="flex-1">
+			<KeyboardGestureArea enableSwipeToDismiss showOnSwipeUp interpolator="linear" style={{ flex: 1 }}>
+				<Pressable onPress={Keyboard.dismiss} className="flex-1">
+					<Container className="flex-1">
+						<View className="flex-1 items-start">
 							<HeaderBack>Назад</HeaderBack>
-							<View className="flex-1 justify-center gap-[24px]">
+							<Animated.View
+								style={animatedKeyboardStyle}
+								// onLayout={(e) => {
+								// 	console.log(e.nativeEvent.layout.height)
+								// }}
+								className="flex-1 justify-center gap-[24px]"
+							>
 								<View className="gap-[32px]">
 									<View className="gap-[8px]">
 										<Text className="text-2xl text-white" style={{ fontFamily: fontFamily.medium }}>
@@ -117,11 +135,11 @@ const FirstStepPage = () => {
 								<Button variant="black" isLoading={isSubmitting} onPress={handleSubmit(onSubmit)}>
 									Отправить код
 								</Button>
-							</View>
+							</Animated.View>
 						</View>
-					</TouchableWithoutFeedback>
-				</KeyboardAvoidingView>
-			</Container>
+					</Container>
+				</Pressable>
+			</KeyboardGestureArea>
 		</Page>
 	)
 }

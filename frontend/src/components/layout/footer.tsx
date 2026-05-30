@@ -17,7 +17,7 @@ export function Footer() {
 		},
 		{
 			label: 'Условия',
-			href: '/privacy'
+			href: '/terms'
 		}
 	]
 

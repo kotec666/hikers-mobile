@@ -1,12 +1,13 @@
 import React from 'react'
 import { Container } from '@/components/ui/Container'
 import HeaderBack from '@/components/ui/HeaderBack'
-import { View, Text, Platform, Keyboard, KeyboardAvoidingView, TouchableWithoutFeedback } from 'react-native'
+import { View, Text, Keyboard, Pressable, Platform } from 'react-native'
 import { Button } from '@/components/ui/Button'
 import { Input } from '@/components/ui/Input'
 import Checkbox from '@/components/ui/Checkbox'
 import { fontFamily } from '@/constants/Fonts'
 import { Page } from '@/components/ui/Page'
+import { KeyboardAvoidingView } from 'react-native-keyboard-controller'
 
 const ReportAProblem = () => {
 	return (
@@ -14,10 +15,10 @@ const ReportAProblem = () => {
 			<Container className="flex-1">
 				<KeyboardAvoidingView
 					style={{ flex: 1 }}
-					keyboardVerticalOffset={40}
-					behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+					keyboardVerticalOffset={Platform.OS === 'android' ? 60 : 80}
+					behavior="padding"
 				>
-					<TouchableWithoutFeedback onPress={Keyboard.dismiss} accessible={false}>
+					<Pressable onPress={Keyboard.dismiss} accessible={false} style={{ flex: 1 }}>
 						<View className="flex-1">
 							<HeaderBack>Сообщить о проблеме</HeaderBack>
 							<View className="justify-center gap-[24px] mt-[20px]">
@@ -51,7 +52,7 @@ const ReportAProblem = () => {
 								<Button variant="white">Отправить сообщение</Button>
 							</View>
 						</View>
-					</TouchableWithoutFeedback>
+					</Pressable>
 				</KeyboardAvoidingView>
 			</Container>
 		</Page>

@@ -2,25 +2,27 @@ import React, { forwardRef, useImperativeHandle, useRef, useCallback, useEffect 
 import { Marker, MarkerRef, Point } from 'react-native-yamap-plus'
 import { View } from 'react-native'
 import UserWithCircleSvg from '@/components/svg/UserWithCircleSvg'
-import AccuracyCircle, { AccuracyCircleHandle } from '@/components/map/markers/UserLocationMarker/AccuracyCircle'
+import YaMapAccuracyCircle, {
+	YaMapAccuracyCircleHandle
+} from '@/components/map/markers/UserLocationMarker/YaMapAccuracyCircle'
 
 interface IProps {
-	initialPosition?: Point | null
-	triangleScale?: number
 	color?: string
+	triangleScale?: number
 	debugAccuracyM?: number
+	initialPosition?: Point | null
 }
 
-export interface UserLocationMarkerHandle {
+export interface YaMapUserLocationMarkerHandle {
 	setAccuracy: (accuracy: number | null) => void
 	setMarkerPosition: (point: Point | null, durationInMs?: number) => void
 	setMarkerHeading: (heading: number | null, durationInSeconds?: number) => void
 }
 
-const UserLocationMarker = forwardRef<UserLocationMarkerHandle, IProps>((props, ref) => {
+const YaMapUserLocationMarker = forwardRef<YaMapUserLocationMarkerHandle, IProps>((props, ref) => {
 	const initialPoint = props.initialPosition
 	const markerRef = useRef<MarkerRef>(null)
-	const accuracyRef = useRef<AccuracyCircleHandle>(null)
+	const accuracyRef = useRef<YaMapAccuracyCircleHandle>(null)
 	const timeoutRef = useRef<NodeJS.Timeout | null>(null)
 
 	const animatedMoveTo = useCallback((point: Point | null, durationInMs: number = 1500) => {
@@ -86,7 +88,7 @@ const UserLocationMarker = forwardRef<UserLocationMarkerHandle, IProps>((props, 
 				</View>
 			</Marker>
 
-			<AccuracyCircle
+			<YaMapAccuracyCircle
 				ref={accuracyRef}
 				initialPosition={initialPoint}
 				debugAccuracyM={props.debugAccuracyM}
@@ -96,10 +98,10 @@ const UserLocationMarker = forwardRef<UserLocationMarkerHandle, IProps>((props, 
 	)
 })
 
-UserLocationMarker.displayName = 'UserLocationMarker'
+YaMapUserLocationMarker.displayName = 'YaMapUserLocationMarker'
 
 export default React.memo(
-	UserLocationMarker,
+	YaMapUserLocationMarker,
 	(prev, next) =>
 		prev.triangleScale === next.triangleScale &&
 		prev.initialPosition?.lat === next.initialPosition?.lat &&

@@ -1,15 +1,5 @@
 import React, { useCallback, useEffect, useRef, useState } from 'react'
-import {
-	View,
-	Text,
-	Platform,
-	KeyboardAvoidingView,
-	TouchableWithoutFeedback,
-	Keyboard,
-	RefreshControl,
-	ActivityIndicator,
-	TextInput
-} from 'react-native'
+import { View, Text, Keyboard, RefreshControl, ActivityIndicator, TextInput, Platform } from 'react-native'
 import { Input } from '@/components/ui/Input'
 import { Container } from '@/components/ui/Container'
 import { NotificationsButton } from '@/components/ui/Notifications/NotificationsButton'
@@ -32,6 +22,9 @@ import { BackButton } from '@/components/ui/HeaderBack'
 import { useFeedPostsQuery } from '@/queries/posts'
 import { useSearchQuery } from '@/queries/search'
 import { Page } from '@/components/ui/Page'
+import { KeyboardAvoidingView } from 'react-native-keyboard-controller'
+import { refetchAndHaptics } from '@/helpers/refetchAndHaptics'
+import { useSafeAreaInsets } from 'react-native-safe-area-context'
 
 const isUser = (item: IFoundUser | IFoundPost): item is IFoundUser => {
 	return 'username' in item
@@ -42,6 +35,7 @@ const isPost = (item: IFoundUser | IFoundPost): item is IFoundPost => {
 }
 
 const PostsPage = () => {
+	const insets = useSafeAreaInsets()
 	const [state, setState] = useState<{
 		isSearchActive: boolean
 		searchMode: SearchType
@@ -195,7 +189,7 @@ const PostsPage = () => {
 
 	if (state.isSearchActive) {
 		return (
-			<Page>
+			<Page edges={['top']}>
 				<View style={{ flex: 1 }}>
 					<Container className="gap-[20px] flex-1">
 						<View className="flex-row justify-center items-center gap-[10px] w-full">
@@ -203,6 +197,7 @@ const PostsPage = () => {
 								onPress={() => {
 									Keyboard.dismiss()
 									setState((s) => ({ ...s, isSearchActive: false }))
+									setSearchWord('')
 								}}
 							/>
 							<Input
@@ -220,44 +215,35 @@ const PostsPage = () => {
 						</View>
 
 						<KeyboardAvoidingView
-							behavior={Platform.OS === 'ios' ? 'position' : 'height'}
 							style={{ flex: 1 }}
-							keyboardVerticalOffset={Platform.OS === 'ios' ? 90 : 0}
+							// behavior={Platform.OS === 'ios' ? 'position' : 'height'}
+							// keyboardVerticalOffset={Platform.OS === 'ios' ? 90 : 0}
 						>
 							<View style={{ flex: 1 }}>
-								<TouchableWithoutFeedback onPress={Keyboard.dismiss}>
-									<View>
-										<View className="flex-row gap-[10px] mb-4">
-											<Button
-												onPress={() =>
-													setState((s) => ({ ...s, searchMode: SearchType.USERS }))
-												}
-												variant={state.searchMode === SearchType.USERS ? 'white' : 'black'}
-												className="w-min px-[30px]"
-												buttonContainerClassName="flex-1"
-											>
-												Люди
-											</Button>
-											<Button
-												onPress={() =>
-													setState((s) => ({ ...s, searchMode: SearchType.POSTS }))
-												}
-												variant={state.searchMode === SearchType.POSTS ? 'white' : 'black'}
-												className="w-min px-[30px]"
-												buttonContainerClassName="flex-1"
-											>
-												Посты
-											</Button>
-										</View>
-
-										<Text
-											className="text-white text-base mb-3"
-											style={{ fontFamily: fontFamily.bold }}
+								<View>
+									<View className="flex-row gap-[10px] mb-4">
+										<Button
+											onPress={() => setState((s) => ({ ...s, searchMode: SearchType.USERS }))}
+											variant={state.searchMode === SearchType.USERS ? 'white' : 'black'}
+											className="w-min px-[30px]"
+											buttonContainerClassName="flex-1"
 										>
-											{state.searchMode === SearchType.USERS ? 'Люди' : 'Посты'}
-										</Text>
+											Люди
+										</Button>
+										<Button
+											onPress={() => setState((s) => ({ ...s, searchMode: SearchType.POSTS }))}
+											variant={state.searchMode === SearchType.POSTS ? 'white' : 'black'}
+											className="w-min px-[30px]"
+											buttonContainerClassName="flex-1"
+										>
+											Посты
+										</Button>
 									</View>
-								</TouchableWithoutFeedback>
+
+									<Text className="text-white text-base mb-3" style={{ fontFamily: fontFamily.bold }}>
+										{state.searchMode === SearchType.USERS ? 'Люди' : 'Посты'}
+									</Text>
+								</View>
 								<LegendList
 									// key={`${state.searchMode}`}
 									data={searchData}
@@ -303,7 +289,7 @@ const PostsPage = () => {
 									refreshControl={
 										<RefreshControl
 											refreshing={isRefetchingSearch}
-											onRefresh={refetchSearch}
+											onRefresh={() => refetchAndHaptics(refetchSearch)}
 											tintColor={Colors['green-main']}
 										/>
 									}
@@ -318,7 +304,7 @@ const PostsPage = () => {
 									}
 									contentContainerStyle={{
 										flexGrow: 1,
-										paddingBottom: 100,
+										paddingBottom: insets.bottom + Platform.OS === 'android' ? 100 : 40,
 										paddingTop: 10
 									}}
 									showsVerticalScrollIndicator={false}
@@ -370,12 +356,12 @@ const PostsPage = () => {
 							refreshControl={
 								<RefreshControl
 									refreshing={isRefetching}
-									onRefresh={refetch}
+									onRefresh={() => refetchAndHaptics(refetch)}
 									tintColor={Colors['green-main']}
 								/>
 							}
 							contentContainerStyle={{
-								paddingBottom: 130,
+								paddingBottom: insets.bottom + Platform.OS === 'android' ? 100 : 40,
 								flexGrow: 1
 							}}
 							showsVerticalScrollIndicator={false}

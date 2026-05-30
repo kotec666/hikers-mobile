@@ -38,7 +38,7 @@ const GooglePlaySmallSvg = ({ size = 56 }: SvgIconProps) => {
 					y2="22.1639"
 					gradientUnits="userSpaceOnUse"
 				>
-					<stop stopColor="#00A0FF" />
+					<stop offset="0" stopColor="#00A0FF" />
 					<stop offset="0.00657" stopColor="#00A1FF" />
 					<stop offset="0.2601" stopColor="#00BEFF" />
 					<stop offset="0.5122" stopColor="#00D2FF" />
@@ -53,7 +53,7 @@ const GooglePlaySmallSvg = ({ size = 56 }: SvgIconProps) => {
 					y2="27.9965"
 					gradientUnits="userSpaceOnUse"
 				>
-					<stop stopColor="#FFE000" />
+					<stop offset="0" stopColor="#FFE000" />
 					<stop offset="0.4087" stopColor="#FFBD00" />
 					<stop offset="0.7754" stopColor="#FFA500" />
 					<stop offset="1" stopColor="#FF9C00" />
@@ -66,7 +66,7 @@ const GooglePlaySmallSvg = ({ size = 56 }: SvgIconProps) => {
 					y2="54.8272"
 					gradientUnits="userSpaceOnUse"
 				>
-					<stop stopColor="#FF3A44" />
+					<stop offset="0" stopColor="#FF3A44" />
 					<stop offset="1" stopColor="#C31162" />
 				</linearGradient>
 				<linearGradient
@@ -77,7 +77,7 @@ const GooglePlaySmallSvg = ({ size = 56 }: SvgIconProps) => {
 					y2="20.5261"
 					gradientUnits="userSpaceOnUse"
 				>
-					<stop stopColor="#32A071" />
+					<stop offset="0" stopColor="#32A071" />
 					<stop offset="0.0685" stopColor="#2DA771" />
 					<stop offset="0.4762" stopColor="#15CF74" />
 					<stop offset="0.8009" stopColor="#06E775" />

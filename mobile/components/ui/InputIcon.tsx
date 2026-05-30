@@ -2,18 +2,18 @@ import { cn } from '@/helpers/cn'
 import { Pressable, TextInput, TextInputProps, View } from 'react-native'
 import { fontFamily } from '@/constants/Fonts'
 import { Colors } from '@/constants/Colors'
-import React, { ReactNode, useState } from 'react'
+import React, { forwardRef, ReactNode, useState } from 'react'
 import EyeSvg from '@/components/svg/EyeSvg'
 import ErrorMessage from '@/components/ErrorMessage'
 
-export interface Props extends TextInputProps {
+export interface InputProps extends TextInputProps {
 	className?: string
 	svg?: ReactNode
 	error?: string | boolean
 	isPassword?: boolean
 }
 
-export function InputIcon(props: Props) {
+export const InputIcon = forwardRef<TextInput, InputProps>((props, ref) => {
 	const { className, svg, error, isPassword, ...restProps } = props
 	const [data, setData] = useState({
 		isPasswordVisible: false
@@ -23,6 +23,7 @@ export function InputIcon(props: Props) {
 		<View>
 			<View>
 				<TextInput
+					ref={ref}
 					style={{
 						fontFamily: fontFamily.regular,
 						paddingRight: isPassword ? 48 : 15
@@ -35,6 +36,7 @@ export function InputIcon(props: Props) {
 						},
 						className
 					)}
+					autoCorrect={isPassword ? false : undefined}
 					selectionColor={Colors['yellow-main']}
 					secureTextEntry={isPassword && !data.isPasswordVisible}
 					{...restProps}
@@ -65,4 +67,6 @@ export function InputIcon(props: Props) {
 			<ErrorMessage error={error} />
 		</View>
 	)
-}
+})
+
+InputIcon.displayName = 'InputIcon'

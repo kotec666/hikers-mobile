@@ -55,7 +55,8 @@ export interface Props extends PropsWithChildren {
 }
 
 export function Button(props: Props & PressableProps) {
-	const { children, className, buttonContainerClassName, variant, isLoading, buttonHeight, ...restProps } = props
+	const { children, className, buttonContainerClassName, variant, isLoading, buttonHeight, disabled, ...restProps } =
+		props
 
 	const animatedValue = useRef(new Animated.Value(0)).current
 	const colors = variantColors[variant]
@@ -91,6 +92,7 @@ export function Button(props: Props & PressableProps) {
 	return (
 		<Motion.Pressable
 			className={cn('flex-row', buttonContainerClassName)}
+			disabled={isLoading || disabled}
 			onPressIn={!isLoading ? fadeIn : undefined}
 			onPressOut={!isLoading ? fadeOut : undefined}
 			{...restProps}

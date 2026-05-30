@@ -1,6 +1,6 @@
 import React, { useCallback, useMemo, useRef, useState } from 'react'
 import { Container } from '@/components/ui/Container'
-import { Keyboard, Pressable, TouchableOpacity, TouchableWithoutFeedback, View, Text, Dimensions } from 'react-native'
+import { Keyboard, Pressable, TouchableOpacity, View, Text, Dimensions, TextInput } from 'react-native'
 import { UserAvatar } from '@/components/ui/UserAvatar'
 import { Button } from '@/components/ui/Button'
 import ActivityInfo from '@/components/ui/Profile/ActivityInfo'
@@ -26,6 +26,7 @@ import BottomSheet from '@/components/ui/BottomSheet/BottomSheet'
 import { BottomSheetHandle } from '@/components/ui/BottomSheet/types'
 import BaseWheelPicker from '@/components/ui/wheel-picker/base-wheel-picker'
 import { cn } from '@/helpers/cn'
+import { KeyboardAwareScrollView } from 'react-native-keyboard-controller'
 
 interface IEditProfileFormState {
 	name: string
@@ -58,6 +59,8 @@ const ProfileEdit = () => {
 	})
 	const weight = watch('weight')
 	const [temporaryWeight, setTemporaryWeight] = useState(weight)
+
+	const usernameRef = useRef<TextInput>(null)
 
 	const bottomSheetRef = useRef<BottomSheetHandle>(null)
 	const { ErrorMessages } = useErrorMessage()
@@ -271,21 +274,23 @@ const ProfileEdit = () => {
 						</View>
 					</View>
 				</Modal>
-				<Container className="gap-[20px]">
+				<Container className="flex-1 gap-[20px]">
 					<HeaderBack returnCallback={handleClickReturnToProfile}>Редактирование профиля</HeaderBack>
-					<TouchableWithoutFeedback onPress={Keyboard.dismiss}>
-						<View className="gap-[20px]">
+					<KeyboardAwareScrollView
+						contentContainerStyle={{
+							flexGrow: 1
+						}}
+					>
+						<View className="flex-1 gap-[20px]">
 							<View className="gap-[16px]">
-								<View className="flex-row justify-between w-full">
-									<TouchableOpacity onPress={handleShowAvatarModal}>
-										<UserAvatar
-											isEditMode
-											className="w-[117px] h-[117px]"
-											iconSize={{ width: 60, height: 60 }}
-											avatar={avatar || getValues('avatarFilename')}
-										/>
-									</TouchableOpacity>
-								</View>
+								<TouchableOpacity onPress={handleShowAvatarModal}>
+									<UserAvatar
+										isEditMode
+										className="w-[117px] h-[117px]"
+										iconSize={{ width: 60, height: 60 }}
+										avatar={avatar || getValues('avatarFilename')}
+									/>
+								</TouchableOpacity>
 								<View className="gap-[10px]">
 									<Controller
 										name="name"
@@ -318,6 +323,10 @@ const ProfileEdit = () => {
 												onChangeText={onChange}
 												value={value}
 												onBlur={onBlur}
+												returnKeyType="next"
+												returnKeyLabel="Далее"
+												submitBehavior="submit"
+												onSubmitEditing={() => usernameRef.current?.focus()}
 											/>
 										)}
 									/>
@@ -346,9 +355,11 @@ const ProfileEdit = () => {
 										}}
 										render={({ field: { onChange, onBlur, value }, fieldState: { error } }) => (
 											<Input
-												textContentType="nickname"
+												ref={usernameRef}
+												textContentType="username"
+												autoComplete="username"
 												keyboardType="default"
-												placeholder="examplenickname194"
+												placeholder="Введите логин"
 												error={error?.message || data.errors?.username}
 												autoCapitalize="none"
 												onChangeText={onChange}
@@ -372,7 +383,7 @@ const ProfileEdit = () => {
 									label="Топ 3 активности на показ"
 								/>
 							</TouchableOpacity>
-							<View className="my-[30px]">
+							<View className="flex-1 justify-end">
 								<Button
 									onPress={handleSubmit(onSubmit)}
 									variant="white"
@@ -382,7 +393,7 @@ const ProfileEdit = () => {
 								</Button>
 							</View>
 						</View>
-					</TouchableWithoutFeedback>
+					</KeyboardAwareScrollView>
 				</Container>
 			</BlurProvider>
 		</Page>

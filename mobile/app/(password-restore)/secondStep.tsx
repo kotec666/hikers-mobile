@@ -1,7 +1,7 @@
 import React, { useCallback, useMemo, useState } from 'react'
 import { Container } from '@/components/ui/Container'
 import HeaderBack from '@/components/ui/HeaderBack'
-import { View, Text, Platform, Keyboard, KeyboardAvoidingView, TouchableWithoutFeedback } from 'react-native'
+import { View, Text, Keyboard, Pressable } from 'react-native'
 import { fontFamily } from '@/constants/Fonts'
 import { Button } from '@/components/ui/Button'
 import { OTPInput } from '@/components/ui/OTP/OTPInput'
@@ -17,6 +17,19 @@ import { useFocusEffect, useLocalSearchParams } from 'expo-router'
 import { createTimer, TimerType } from '@/store/timerStorage'
 import { useTimerCountdown } from '@/hooks/useTimerCountdown'
 import { formatCountdown } from '@/helpers/formatTime'
+import { KeyboardGestureArea } from 'react-native-keyboard-controller'
+import { useKeyboardAnimation } from '@/hooks/useKeyboardAnimation'
+import Animated from 'react-native-reanimated'
+
+const isWrongCodeError = (
+	data: any
+): data is {
+	remainAttempts: number | null
+	success: boolean
+	waitMs: number
+} => {
+	return data && typeof data === 'object' && 'remainAttempts' in data && 'success' in data && 'waitMs' in data
+}
 
 const SecondStepPage = () => {
 	const { push, replace } = useSafeNavigation()
@@ -26,6 +39,8 @@ const SecondStepPage = () => {
 	const { remainingSeconds, isBlocked } = useTimerCountdown(TimerType.PASSWORD_RECOVERY, email)
 
 	const [errors, setErrors] = useState<FieldErrors>({} as FieldErrors)
+
+	const { animatedKeyboardStyle } = useKeyboardAnimation()
 
 	useFocusEffect(
 		useCallback(() => {
@@ -40,40 +55,52 @@ const SecondStepPage = () => {
 			try {
 				if (!email) return push('/(password-restore)/firstStep')
 
-				const result = await confirmPasswordRecoveryCode(code, email)
+				await confirmPasswordRecoveryCode(code, email)
+				push(`/(password-restore)/thirdStep?email=${email}&code=${code}`)
+			} catch (e) {
+				try {
+					const errorData = await e.response?.json()
 
-				// код неверный
-				if (!result.success) {
-					const remainAttempts = result.remainAttempts
+					// код неверный
+					if (isWrongCodeError(errorData)) {
+						const remainAttempts = errorData.remainAttempts
 
-					if (result.waitMs > 0) {
-						createTimer(TimerType.PASSWORD_RECOVERY, email, result.waitMs)
+						if (errorData.waitMs > 0) {
+							if (email) {
+								createTimer(TimerType.PASSWORD_RECOVERY, email, errorData.waitMs)
+							}
+
+							setErrors({
+								code: 'Слишком много попыток. Попробуйте позже.'
+							})
+
+							await Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error)
+
+							return
+						}
+
+						const attemptsText =
+							remainAttempts !== null && remainAttempts <= 3
+								? `Неверный код, осталось попыток: ${remainAttempts}`
+								: 'Неверный код.'
 
 						setErrors({
-							code: 'Слишком много попыток. Попробуйте позже.'
+							code: attemptsText
 						})
-
 						await Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error)
-
 						return
 					}
 
-					const attemptsText =
-						remainAttempts !== null && remainAttempts <= 3
-							? `Неверный код, осталось попыток: ${remainAttempts}`
-							: 'Неверный код.'
-
-					setErrors({
-						code: attemptsText
-					})
-					await Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error)
-					return
+					// все остальные ошибки
+					const formattedErrors = await getFieldsErrors(errorData ?? e)
+					setErrors(formattedErrors)
+				} catch (parseError) {
+					// если вообще не удалось распарсить response
+					console.log('parseError', parseError)
+					const formattedErrors = await getFieldsErrors(e)
+					setErrors(formattedErrors)
 				}
 
-				push(`/(password-restore)/thirdStep?email=${email}&code=${code}`)
-			} catch (e) {
-				const formattedErrors = await getFieldsErrors(e)
-				setErrors(formattedErrors)
 				await Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error)
 			}
 		},
@@ -95,8 +122,15 @@ const SecondStepPage = () => {
 
 		handleClearOTPError()
 
-		const requestCodeResult = await requestPasswordRecoveryCode(email)
-		createTimer(TimerType.PASSWORD_RECOVERY, email, requestCodeResult.waitMs)
+		try {
+			const requestCodeResult = await requestPasswordRecoveryCode(email)
+			createTimer(TimerType.PASSWORD_RECOVERY, email, requestCodeResult.waitMs)
+		} catch (e) {
+			console.log('Ошибка при запросе нового кода', e)
+			const formattedErrors = await getFieldsErrors(e)
+			setErrors(formattedErrors)
+			await Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error)
+		}
 	}
 
 	const hasError = useMemo(() => {
@@ -108,12 +142,12 @@ const SecondStepPage = () => {
 	if (!email) return null
 	return (
 		<Page>
-			<Container className="flex-1">
-				<KeyboardAvoidingView style={{ flex: 1 }} behavior={Platform.OS === 'ios' ? 'padding' : 'height'}>
-					<TouchableWithoutFeedback onPress={Keyboard.dismiss} accessible={false}>
-						<View className="flex-1">
+			<KeyboardGestureArea enableSwipeToDismiss showOnSwipeUp interpolator="linear" style={{ flex: 1 }}>
+				<Pressable onPress={Keyboard.dismiss} style={{ flex: 1 }} accessible={false}>
+					<Container className="flex-1">
+						<View className="flex-1 items-start">
 							<HeaderBack>Назад</HeaderBack>
-							<View className="flex-1 justify-center gap-[24px]">
+							<Animated.View style={animatedKeyboardStyle} className="flex-1 justify-center gap-[24px]">
 								<View className="gap-[32px]">
 									<View className="gap-[8px]">
 										<Text className="text-2xl text-white" style={{ fontFamily: fontFamily.medium }}>
@@ -147,11 +181,11 @@ const SecondStepPage = () => {
 									</Button>
 									<CheckSpam />
 								</View>
-							</View>
+							</Animated.View>
 						</View>
-					</TouchableWithoutFeedback>
-				</KeyboardAvoidingView>
-			</Container>
+					</Container>
+				</Pressable>
+			</KeyboardGestureArea>
 		</Page>
 	)
 }

@@ -7,7 +7,7 @@ import {
 	getWorkoutMeta,
 	IWorkoutLocationStorageItem
 } from '@/store/workoutStorage'
-import { UserLocationMarkerHandle } from '@/components/map/markers/UserLocationMarker/UserLocationMarker'
+import { YaMapUserLocationMarkerHandle } from '@/components/map/markers/UserLocationMarker/YaMapUserLocationMarker'
 import { locationEmitter } from '@/hooks/track-location/locationEmitter'
 import { Point } from 'react-native-yamap-plus'
 import { MetricSpeedHandle } from '@/components/training/tabs/metrics/MetricSpeed'
@@ -17,7 +17,7 @@ import { TrainingType } from '@/shared/enums'
 import { MetricDistanceHandle } from '@/components/training/tabs/metrics/MetricDistance'
 import { MetricCaloriesHandle } from '@/components/training/tabs/metrics/MetricCalories'
 import { MetricHeightHandle } from '@/components/training/tabs/metrics/MetricHeight'
-import { MapComponentSegmentsHandle } from '@/components/map/MapComponentSegments'
+import { YaMapComponentSegmentsHandle } from '@/components/map/MapComponentSegments'
 import { MetricAvgSpeedHandle } from '@/components/training/tabs/metrics/MetricAvgSpeed'
 import { useAuthStore } from '@/store/authStore'
 import { calculateAverageSpeedKmh, getWorkoutElapsedMs } from '@/helpers/workoutMetrics'
@@ -53,8 +53,8 @@ export function useLocationData(
 	const { user } = useAuthStore()
 
 	// Refs для UI
-	const mapComponentRef = useRef<MapComponentSegmentsHandle>(null)
-	const userLocationMarkerRef = useRef<UserLocationMarkerHandle>(null)
+	const yaMapComponentRef = useRef<YaMapComponentSegmentsHandle>(null)
+	const yaMapUserLocationMarkerRef = useRef<YaMapUserLocationMarkerHandle>(null)
 	const latestUserMarkerLocationRef = useRef<Point>(null)
 	const isMountedRef = useRef<boolean>(true)
 
@@ -225,12 +225,12 @@ export function useLocationData(
 			saveInitialLocations(pointsRef.current)
 
 			// UI updates
-			userLocationMarkerRef.current?.setAccuracy(accuracy)
-			userLocationMarkerRef.current?.setMarkerPosition(newLatLon)
+			yaMapUserLocationMarkerRef.current?.setAccuracy(accuracy)
+			yaMapUserLocationMarkerRef.current?.setMarkerPosition(newLatLon)
 			latestUserMarkerLocationRef.current = newLatLon
-			mapComponentRef.current?.updatePath(pointsRef.current)
+			yaMapComponentRef.current?.updatePath(pointsRef.current)
 			// Центрируем карту
-			mapComponentRef.current?.setMapCenter(newLatLon, 1.2)
+			yaMapComponentRef.current?.setMapCenter(newLatLon, 1.2)
 
 			// Обновляем метрики
 			if (!isPausedRef.current) {
@@ -321,13 +321,13 @@ export function useLocationData(
 					initialDataLoadedSetRef.current = true
 				} else if (pointsRef.current.length > 0 && isMountedRef.current) {
 					// Fallback: если вью уже была запущена (крайний случай)
-					mapComponentRef.current?.updatePath(pointsRef.current)
+					yaMapComponentRef.current?.updatePath(pointsRef.current)
 					const last = pointsRef.current[pointsRef.current.length - 1]
 					const { latitude, longitude } = last.locationObject.coords
 					const pos = { lat: latitude, lon: longitude }
-					userLocationMarkerRef.current?.setMarkerPosition(pos)
+					yaMapUserLocationMarkerRef.current?.setMarkerPosition(pos)
 					latestUserMarkerLocationRef.current = pos
-					mapComponentRef.current?.setMapCenter(pos, 0)
+					yaMapComponentRef.current?.setMapCenter(pos, 0)
 				}
 			}
 			// Сценарий 2: Догрузка после background (упрощенно)
@@ -360,14 +360,14 @@ export function useLocationData(
 					pointsRef.current.push(...newPoints)
 
 					// Обновляем карту и метрики
-					mapComponentRef.current?.updatePath(pointsRef.current)
+					yaMapComponentRef.current?.updatePath(pointsRef.current)
 
 					const lastNewPoint = newPoints[newPoints.length - 1]
 					const { latitude, longitude, speed, accuracy } = lastNewPoint.locationObject.coords
 					const pos = { lat: latitude, lon: longitude }
 
-					userLocationMarkerRef.current?.setAccuracy(accuracy)
-					userLocationMarkerRef.current?.setMarkerPosition(pos)
+					yaMapUserLocationMarkerRef.current?.setAccuracy(accuracy)
+					yaMapUserLocationMarkerRef.current?.setMarkerPosition(pos)
 					latestUserMarkerLocationRef.current = pos
 
 					updateRealtimeMetrics(speed ?? 0)
@@ -419,7 +419,7 @@ export function useLocationData(
 		setIsPaused(false)
 
 		// 3. Очистка карты (важно для удаления полилайна)
-		mapComponentRef.current?.updatePath([])
+		yaMapComponentRef.current?.updatePath([])
 
 		// 4. Сброс метрик
 		metricSpeedRef.current?.setSpeed(0)
@@ -517,8 +517,8 @@ export function useLocationData(
 	}, [isWorkoutStarted, updateRealtimeMetrics])
 
 	return {
-		mapComponentRef,
-		userLocationMarkerRef,
+		yaMapComponentRef,
+		yaMapUserLocationMarkerRef,
 		latestUserMarkerLocationRef,
 		metricAvgSpeedRef,
 		metricSpeedRef,

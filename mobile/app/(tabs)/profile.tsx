@@ -1,5 +1,5 @@
 import React, { useCallback, useEffect, useRef } from 'react'
-import { ActivityIndicator, RefreshControl, Text, View } from 'react-native'
+import { ActivityIndicator, Platform, RefreshControl, Text, View } from 'react-native'
 import SettingsSvg from '@/components/svg/SettingsSvg'
 import MoreOptionsButton from '@/components/ui/MoreOptionsButton/MoreOptionsButton'
 import { fontFamily } from '@/constants/Fonts'
@@ -25,6 +25,8 @@ import { useProfileQuery } from '@/queries/my-profile'
 import { Page } from '@/components/ui/Page'
 import { useQueryClient } from '@tanstack/react-query'
 import EmailNotConfirmed from '@/components/profile/EmailNotConfirmed'
+import { refetchAndHaptics } from '@/helpers/refetchAndHaptics'
+import { useSafeAreaInsets } from 'react-native-safe-area-context'
 
 /**
  *
@@ -44,6 +46,7 @@ type AllowedRoute = (typeof ALLOWED_ROUTES)[keyof typeof ALLOWED_ROUTES]
 const Profile = () => {
 	const router = useRouter()
 	const queryClient = useQueryClient()
+	const insets = useSafeAreaInsets()
 	const { push } = useSafeNavigation()
 	const { user, logout } = useAuthStore()
 	const params = useLocalSearchParams()
@@ -138,7 +141,7 @@ const Profile = () => {
 	}, [postsIsFetching])
 
 	return (
-		<Page>
+		<Page edges={['top']}>
 			<BlurProvider>
 				<LegendList
 					ref={legendListRef}
@@ -157,7 +160,7 @@ const Profile = () => {
 					refreshControl={
 						<RefreshControl
 							refreshing={isProfileFetching || postsIsRefetching}
-							onRefresh={onRefreshAll}
+							onRefresh={() => refetchAndHaptics(onRefreshAll)}
 							tintColor={Colors['green-main']}
 						/>
 					}
@@ -251,7 +254,7 @@ const Profile = () => {
 					}
 					contentContainerStyle={{
 						flexGrow: 1,
-						paddingBottom: 100,
+						paddingBottom: insets.bottom + Platform.OS === 'android' ? 100 : 40,
 						paddingHorizontal: 16
 					}}
 				/>

@@ -1,16 +1,6 @@
 import { Container } from '@/components/ui/Container'
 import HeaderBack from '@/components/ui/HeaderBack'
-import {
-	ScrollView,
-	View,
-	Pressable,
-	Platform,
-	StyleSheet,
-	Dimensions,
-	KeyboardAvoidingView,
-	TouchableWithoutFeedback,
-	Keyboard
-} from 'react-native'
+import { ScrollView, View, Pressable, Platform, StyleSheet, Dimensions } from 'react-native'
 import { Colors } from '@/constants/Colors'
 import React, { useState } from 'react'
 import { fontFamily } from '@/constants/Fonts'
@@ -23,9 +13,10 @@ import Modal from '@/components/ui/Modal/Modal'
 import { useRouter } from 'expo-router'
 import BlurProvider from '@/components/providers/BlurProvider'
 import { Page } from '@/components/ui/Page'
+import { KeyboardAwareScrollView } from 'react-native-keyboard-controller'
 
 const { height } = Dimensions.get('screen')
-const MAP_HEIGHT = height / 3
+const MAP_HEIGHT = height / 3.2
 
 const Divider = () => {
 	return <View style={{ height: 1, backgroundColor: Colors['gray-3a'] }} />
@@ -113,73 +104,70 @@ const SettingsPickAColorPage = () => {
 						</View>
 					</View>
 				</Modal>
-				<KeyboardAvoidingView style={{ flex: 1 }} behavior={Platform.OS === 'ios' ? 'padding' : 'height'}>
-					<TouchableWithoutFeedback onPress={Keyboard.dismiss} accessible={false}>
-						<ScrollView
-							contentInsetAdjustmentBehavior="automatic"
-							contentContainerStyle={{ flexGrow: 1 }}
-							keyboardShouldPersistTaps="handled"
-						>
-							<Container className="gap-[20px]">
-								<HeaderBack returnCallback={handleOpenNotSavedModal}>
-									Выбор{' '}
-									<Animated.Text
-										className="text-[20px]"
-										style={[{ fontFamily: fontFamily.bold }, animatedTextStyle]}
-									>
-										цвета
-									</Animated.Text>
-								</HeaderBack>
-								<MapComponentColorPick
-									minMapHeight={MAP_HEIGHT}
-									maxMapHeight={MAP_HEIGHT}
-									rounded={25}
-									// interactiveDisabled
-									activeColor={color}
-								/>
-								{isFreeMode ? (
-									<View style={colorPickerStyle.pickerContainer}>
-										<ColorPicker
-											value={color}
-											sliderThickness={25}
-											thumbSize={24}
-											thumbShape="circle"
-											onChange={onColorChange}
-											onCompleteJS={onColorPick}
-											style={colorPickerStyle.picker}
-											boundedThumb
-										>
-											<Panel1 style={colorPickerStyle.panelStyle} />
-											<HueSlider style={colorPickerStyle.sliderStyle} />
-											<Divider />
-											<InputWidget
-												iconColor="#fff"
-												disableAlphaChannel
-												inputStyle={colorPickerStyle.inputStyle}
-												inputTitleStyle={colorPickerStyle.inputTitleStyle}
+				<KeyboardAwareScrollView
+					contentInsetAdjustmentBehavior="automatic"
+					contentContainerStyle={{ flexGrow: 1 }}
+					keyboardShouldPersistTaps="handled"
+					bottomOffset={50}
+				>
+					<Container className="gap-[20px]">
+						<HeaderBack returnCallback={handleOpenNotSavedModal}>
+							Выбор{' '}
+							<Animated.Text
+								className="text-[20px]"
+								style={[{ fontFamily: fontFamily.bold }, animatedTextStyle]}
+							>
+								цвета
+							</Animated.Text>
+						</HeaderBack>
+						<MapComponentColorPick
+							minMapHeight={MAP_HEIGHT}
+							maxMapHeight={MAP_HEIGHT}
+							rounded={25}
+							// interactiveDisabled
+							activeColor={color}
+						/>
+						{isFreeMode ? (
+							<View style={colorPickerStyle.pickerContainer}>
+								<ColorPicker
+									value={color}
+									sliderThickness={25}
+									thumbSize={24}
+									thumbShape="circle"
+									onChange={onColorChange}
+									onCompleteJS={onColorPick}
+									style={colorPickerStyle.picker}
+									boundedThumb
+								>
+									<Panel1 style={colorPickerStyle.panelStyle} />
+									<HueSlider style={colorPickerStyle.sliderStyle} />
+									<Divider />
+									<InputWidget
+										iconColor="#fff"
+										disableAlphaChannel
+										inputStyle={colorPickerStyle.inputStyle}
+										inputTitleStyle={colorPickerStyle.inputTitleStyle}
+									/>
+								</ColorPicker>
+							</View>
+						) : (
+							<ScrollView>
+								<View className="flex-row flex-wrap gap-[16px]">
+									{Object.values(FREE_COLORS).map((color) => {
+										return (
+											<ColorBox
+												key={color}
+												color={color}
+												onPress={(newColor) => onColorPick(newColor)}
 											/>
-										</ColorPicker>
-									</View>
-								) : (
-									<ScrollView>
-										<View className="flex-row flex-wrap gap-[16px]">
-											{Object.values(FREE_COLORS).map((color) => {
-												return (
-													<ColorBox
-														key={color}
-														color={color}
-														onPress={(newColor) => onColorPick(newColor)}
-													/>
-												)
-											})}
-										</View>
-									</ScrollView>
-								)}
-								<Button variant="white">Сохранить</Button>
-							</Container>
-						</ScrollView>
-					</TouchableWithoutFeedback>
-				</KeyboardAvoidingView>
+										)
+									})}
+								</View>
+							</ScrollView>
+						)}
+						<Button variant="white">Сохранить</Button>
+					</Container>
+				</KeyboardAwareScrollView>
 			</BlurProvider>
 		</Page>
 	)
@@ -225,11 +213,11 @@ export const colorPickerStyle = StyleSheet.create({
 	inputStyle: {
 		color: '#fff',
 		paddingVertical: 2,
-		borderColor: 'rgb(255 255 255 / 0.5)',
+		borderColor: 'rgba(255 255 255 / 0.5)',
 		fontSize: 12,
 		marginLeft: 5
 	},
 	inputTitleStyle: {
-		color: 'rgb(255 255 255 / 0.5)'
+		color: 'rgba(255 255 255 / 0.5)'
 	}
 })

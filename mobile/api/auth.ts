@@ -18,6 +18,7 @@ export const loginUser = async (data: {
 
 export const registrationUser = async (data: {
 	email: string
+	username: string
 	password: string
 	isTermsAccepted: boolean
 }): Promise<
