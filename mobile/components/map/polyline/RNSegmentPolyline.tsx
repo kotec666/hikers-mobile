@@ -4,7 +4,7 @@ import { IPoint } from '@/types/interfaces'
 
 type PolylineRef = React.ComponentRef<typeof Polyline>
 interface IRNSegmentPolylineProps {
-	polylineRef: React.RefObject<PolylineRef | null>
+	polylineRef?: React.RefObject<PolylineRef | null>
 	color: string
 	points: IPoint[]
 }

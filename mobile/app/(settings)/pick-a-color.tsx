@@ -2,32 +2,38 @@ import { Container } from '@/components/ui/Container'
 import HeaderBack from '@/components/ui/HeaderBack'
 import { ScrollView, View, Pressable, Platform, StyleSheet, Dimensions } from 'react-native'
 import { Colors } from '@/constants/Colors'
-import React, { useState } from 'react'
+import React, { useMemo, useState } from 'react'
 import { fontFamily } from '@/constants/Fonts'
 import ColorPicker, { ColorFormatsObject, HueSlider, InputWidget, Panel1 } from 'reanimated-color-picker'
 import Animated, { useAnimatedStyle, useSharedValue } from 'react-native-reanimated'
 import { Button } from '@/components/ui/Button'
-import MapComponentColorPick from '@/components/map/MapComponentColorPick'
+import YaMapComponentColorPick from '@/components/map/YaMapComponentColorPick'
 import { FREE_COLORS } from '@shared/constants'
 import Modal from '@/components/ui/Modal/Modal'
 import { useRouter } from 'expo-router'
 import BlurProvider from '@/components/providers/BlurProvider'
 import { Page } from '@/components/ui/Page'
 import { KeyboardAwareScrollView } from 'react-native-keyboard-controller'
+import RNMapComponentColorPick from '@/components/map/RNMapComponentColorPick'
 
 const { height } = Dimensions.get('screen')
+const { width } = Dimensions.get('window')
+
+const GAP = 16
+const COLUMNS = 7
+const CONTAINER_PADDING = 16
 const MAP_HEIGHT = height / 3.2
 
 const Divider = () => {
 	return <View style={{ height: 1, backgroundColor: Colors['gray-3a'] }} />
 }
 
-const ColorBox = ({ color, onPress }: { color: string; onPress?: (color: string) => void }) => {
+const ColorBox = ({ color, size, onPress }: { color: string; size: number; onPress?: (color: string) => void }) => {
 	return (
 		<Pressable
 			onPress={() => onPress?.(color)}
 			className="w-[40px] h-[40px] border-2 border-white rounded-[4px]"
-			style={{ backgroundColor: color }}
+			style={{ backgroundColor: color, width: size, height: size }}
 		/>
 	)
 }
@@ -35,6 +41,7 @@ const ColorBox = ({ color, onPress }: { color: string; onPress?: (color: string)
 const SettingsPickAColorPage = () => {
 	const [notSavedModal, setNotSavedModal] = useState(false)
 	const router = useRouter()
+	const isIOS = Platform.OS === 'ios'
 
 	const handleCloseNotSavedModal = () => {
 		setNotSavedModal(false)
@@ -78,6 +85,12 @@ const SettingsPickAColorPage = () => {
 		currentColor.value = color.rgb
 	}
 
+	const MapColorPickComponent = useMemo(() => {
+		return isIOS ? RNMapComponentColorPick : YaMapComponentColorPick
+	}, [isIOS])
+
+	const colorBoxSize = (width - CONTAINER_PADDING * 2 - GAP * (COLUMNS - 1)) / COLUMNS
+
 	const isFreeMode = false
 
 	return (
@@ -120,7 +133,7 @@ const SettingsPickAColorPage = () => {
 								цвета
 							</Animated.Text>
 						</HeaderBack>
-						<MapComponentColorPick
+						<MapColorPickComponent
 							rounded={25}
 							activeColor={color}
 							// interactiveDisabled
@@ -151,12 +164,13 @@ const SettingsPickAColorPage = () => {
 							</View>
 						) : (
 							<ScrollView>
-								<View className="flex-row flex-wrap gap-[16px]">
+								<View className="flex-row flex-wrap" style={{ gap: GAP }}>
 									{Object.values(FREE_COLORS).map((color) => {
 										return (
 											<ColorBox
 												key={color}
 												color={color}
+												size={colorBoxSize}
 												onPress={(newColor) => onColorPick(newColor)}
 											/>
 										)

@@ -1,5 +1,5 @@
-import React, { useCallback, useEffect, useState } from 'react'
-import { View, ScrollView, Dimensions, ActivityIndicator } from 'react-native'
+import React, { useCallback, useEffect, useMemo, useState } from 'react'
+import { View, ScrollView, Dimensions, ActivityIndicator, Platform } from 'react-native'
 import { Container } from '@/components/ui/Container'
 import PostListItemHeader from '@/components/ui/Post/PostListItemHeader'
 import HeaderBack from '@/components/ui/HeaderBack'
@@ -19,6 +19,7 @@ import BlurProvider from '@/components/providers/BlurProvider'
 import { useDeletePostMutation, usePostQuery } from '@/queries/posts'
 import { Page } from '@/components/ui/Page'
 import YaMapWorkout from '@/components/map/YaMapWorkout'
+import RNMapWorkout from '@/components/map/RNMapWorkout'
 
 const { height } = Dimensions.get('screen')
 const SLIDE_ASPECT_RATIO = height / 3.6
@@ -28,6 +29,8 @@ const Post = () => {
 	const { push } = useSafeNavigation()
 	const { id } = useLocalSearchParams<{ id: string }>()
 	const { user } = useAuthStore()
+
+	const isIOS = Platform.OS === 'ios'
 	const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false)
 
 	const { data: post, error, isError, isFetching } = usePostQuery(id)
@@ -60,6 +63,10 @@ const Post = () => {
 	const creatorMetrics = post?.training.participants.find(
 		(participant) => participant.user.id === post?.userCreator.id
 	)?.metrics
+
+	const MapWorkoutComponent = useMemo(() => {
+		return isIOS ? RNMapWorkout : YaMapWorkout
+	}, [isIOS])
 
 	if (isFetching) {
 		return (
@@ -118,7 +125,7 @@ const Post = () => {
 									metrics={creatorMetrics}
 									isDetail
 									mapComponent={
-										<YaMapWorkout
+										<MapWorkoutComponent
 											key={post?.training?.participants?.[0]?.route?.points?.length || 0} // какое-то время points undefined
 											bordered
 											rounded={25}
@@ -131,21 +138,6 @@ const Post = () => {
 											)}
 										/>
 									}
-									// @TODO проверить
-									// mapComponent={
-									// 	<RNMapWorkout
-									// 		key={post?.training?.participants?.[0]?.route?.points?.length || 0} // какое-то время points undefined
-									// 		bordered
-									// 		rounded={25}
-									// 		needFinishMarker
-									// 		needFitInitialRoute
-									// 		interactiveDisabled
-									// 		maxContainerHeight={SLIDE_ASPECT_RATIO}
-									// 		initialLocations={adaptLocations(
-									// 			post?.training?.participants?.[0]?.route?.points || []
-									// 		)}
-									// 	/>
-									// }
 								/>
 								{/*<MapRoutesSwitchers />*/}
 								<PostListItemSlider images={post?.fileNames} />

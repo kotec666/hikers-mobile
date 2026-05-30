@@ -6,6 +6,8 @@ import { ITrainingMetrics } from '@/api/workout'
 import { useSafeNavigation } from '@/hooks/useSafeNavigation'
 import { useFullscreenMap } from '@/hooks/useFullscreenMap'
 import FullscreenMap from '@/components/map/FullscreenMap'
+import { IYaMapWorkoutProps } from '@/components/map/YaMapWorkout'
+import { IRNMapWorkoutProps } from '@/components/map/RNMapWorkout'
 
 export enum PostType {
 	FEED_LIST_ITEM = 'FEED_LIST_ITEM',
@@ -19,7 +21,7 @@ interface IProps {
 	description?: string | null
 	images?: string[]
 	metrics?: ITrainingMetrics
-	mapComponent?: React.ReactNode
+	mapComponent?: React.ReactElement<IYaMapWorkoutProps> | React.ReactElement<IRNMapWorkoutProps>
 	isDetail?: boolean
 }
 

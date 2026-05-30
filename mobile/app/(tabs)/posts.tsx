@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useRef, useState } from 'react'
+import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { View, Text, Keyboard, RefreshControl, ActivityIndicator, TextInput, Platform } from 'react-native'
 import { Input } from '@/components/ui/Input'
 import { Container } from '@/components/ui/Container'
@@ -25,6 +25,7 @@ import { KeyboardAvoidingView } from 'react-native-keyboard-controller'
 import { refetchAndHaptics } from '@/helpers/refetchAndHaptics'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
 import YaMapWorkout from '@/components/map/YaMapWorkout'
+import RNMapWorkout from '@/components/map/RNMapWorkout'
 
 const isUser = (item: IFoundUser | IFoundPost): item is IFoundUser => {
 	return 'username' in item
@@ -36,6 +37,7 @@ const isPost = (item: IFoundUser | IFoundPost): item is IFoundPost => {
 
 const PostsPage = () => {
 	const insets = useSafeAreaInsets()
+	const isIOS = Platform.OS === 'ios'
 	const [state, setState] = useState<{
 		isSearchActive: boolean
 		searchMode: SearchType
@@ -129,58 +131,54 @@ const PostsPage = () => {
 		}
 	}, [params.scrollToTop])
 
-	// Функция рендеринга элемента поста
-	const renderPostItem = useCallback(({ item }: { item: IPost }) => {
-		// Находим метрики текущего пользователя среди участников
-		const userMetrics = item.training.participants.find(
-			(participant) => participant.user.id === item.userCreator.id
-		)?.metrics
+	const MapWorkoutComponent = useMemo(() => {
+		return isIOS ? RNMapWorkout : YaMapWorkout
+	}, [isIOS])
 
-		return (
-			<PostListItem
-				key={item.id}
-				{...item}
-				postId={item.id}
-				authorId={item.userCreator?.id || ''}
-				authorName={item.userCreator?.name || ''}
-				avatar={item.userCreator.avatarFilename}
-				createdAt={item.createdAt}
-				workoutType={item.training.type}
-				title={item.title}
-				description={item.description}
-				metrics={userMetrics}
-				participants={item.training.participants}
-				images={item.fileNames}
-				subscribeData={{
-					authorId: item.userCreator.id,
-					isSubscribed: item.isSubscribed
-				}}
-				isLiked={item.isLiked}
-				likesCount={item.likesCount}
-				mapComponent={
-					<YaMapWorkout
-						bordered
-						rounded={25}
-						needFinishMarker
-						needFitInitialRoute
-						interactiveDisabled
-						initialLocations={adaptLocations(item.training.participants[0].route.points)}
-					/>
-				}
-				// @TODO проверить
-				// mapComponent={
-				// 	<RNMapWorkout
-				// 		bordered
-				// 		rounded={25}
-				// 		needFinishMarker
-				// 		needFitInitialRoute
-				// 		interactiveDisabled
-				// 		initialLocations={adaptLocations(item.training.participants[0].route.points)}
-				// 	/>
-				// }
-			/>
-		)
-	}, [])
+	// Функция рендеринга элемента поста
+	const renderPostItem = useCallback(
+		({ item }: { item: IPost }) => {
+			// Находим метрики текущего пользователя среди участников
+			const userMetrics = item.training.participants.find(
+				(participant) => participant.user.id === item.userCreator.id
+			)?.metrics
+
+			return (
+				<PostListItem
+					key={item.id}
+					{...item}
+					postId={item.id}
+					authorId={item.userCreator?.id || ''}
+					authorName={item.userCreator?.name || ''}
+					avatar={item.userCreator.avatarFilename}
+					createdAt={item.createdAt}
+					workoutType={item.training.type}
+					title={item.title}
+					description={item.description}
+					metrics={userMetrics}
+					participants={item.training.participants}
+					images={item.fileNames}
+					subscribeData={{
+						authorId: item.userCreator.id,
+						isSubscribed: item.isSubscribed
+					}}
+					isLiked={item.isLiked}
+					likesCount={item.likesCount}
+					mapComponent={
+						<MapWorkoutComponent
+							bordered
+							rounded={25}
+							needFinishMarker
+							needFitInitialRoute
+							interactiveDisabled
+							initialLocations={adaptLocations(item.training.participants[0].route.points)}
+						/>
+					}
+				/>
+			)
+		},
+		[MapWorkoutComponent]
+	)
 
 	// Функция рендеринга индикатора загрузки
 	const renderFooter = useCallback(() => {

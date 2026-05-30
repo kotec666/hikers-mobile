@@ -1,4 +1,4 @@
-import { StyleSheet, View } from 'react-native'
+import { View } from 'react-native'
 import MapView, { Polyline, Camera, EdgePadding } from 'react-native-maps'
 import React, { forwardRef, useCallback, useImperativeHandle, useMemo, useRef } from 'react'
 import RNMapsStartLocationMarker from '@/components/map/markers/StartLocationMarker/RNMapsStartLocationMarker'
@@ -13,6 +13,7 @@ import { IPoint } from '@/types/interfaces'
 import RNMapsUserLocationMarker, {
 	RNMapsUserLocationMarkerHandle
 } from '@/components/map/markers/UserLocationMarker/RNMapsUserLocationMarker'
+import { DEFAULT_APPLE_LEGAL_POSITION, DEFAULT_APPLE_LOGO_POSITION } from '@/constants/RNMap'
 import RNSegmentPolyline from '@/components/map/polyline/RNSegmentPolyline'
 import { cn } from '@/helpers/cn'
 
@@ -24,7 +25,6 @@ export enum RNMapAnimationType {
 type PolylineRef = React.ComponentRef<typeof Polyline>
 
 export interface RNMapWorkoutHandle {
-	fitAllMarkers: () => void
 	setMapCenter: (newCenter: {
 		center: IPoint | null
 		zoomInMeters?: number
@@ -48,9 +48,6 @@ export interface IRNMapWorkoutProps {
 	userLocationMarkerRef?: React.RefObject<RNMapsUserLocationMarkerHandle | null>
 	latestUserMarkerLocationRef?: React.RefObject<IPoint | null> | undefined
 }
-
-const DEFAULT_APPLE_LOGO_POSITION = { top: 2, right: 48, bottom: 0, left: 0 }
-const DEFAULT_APPLE_LEGAL_POSITION = { top: 17, right: 10, bottom: 0, left: 0 }
 
 const RNMapWorkout = forwardRef<RNMapWorkoutHandle, IRNMapWorkoutProps>((props, ref) => {
 	const mapRef = useRef<MapView | null>(null)
@@ -96,13 +93,7 @@ const RNMapWorkout = forwardRef<RNMapWorkoutHandle, IRNMapWorkoutProps>((props, 
 		}
 	}
 
-	const fitAllMarkers = () => {
-		if (!mapRef.current) return
-		mapRef.current.fitToElements() // @TODO без анимации и чтобы попадали не только маркеры, но и весь маршрут полностью, проверить на посте с батискафом
-	}
-
 	useImperativeHandle(ref, () => ({
-		fitAllMarkers,
 		setMapCenter: (newCenter) => changeMapCenter(newCenter.center, newCenter.zoomInMeters, newCenter.animationType),
 		updatePath: (newItems) => updatePath(newItems)
 	}))
@@ -111,7 +102,22 @@ const RNMapWorkout = forwardRef<RNMapWorkoutHandle, IRNMapWorkoutProps>((props, 
 		if (!mapRef.current) return
 		const initialLocations = props.initialLocations
 		if (!initialLocations || initialLocations.length === 0) return
-		fitAllMarkers() // @TODO без анимации и чтобы попадали не только маркеры, но и весь маршрут полностью, проверить на посте с батискафом
+		const edgePaddingValue = 60
+		mapRef.current.fitToCoordinates(
+			initialLocations.map((loc) => ({
+				latitude: loc.locationObject.coords.latitude,
+				longitude: loc.locationObject.coords.longitude
+			})),
+			{
+				edgePadding: {
+					top: edgePaddingValue,
+					left: edgePaddingValue,
+					right: edgePaddingValue,
+					bottom: edgePaddingValue
+				},
+				animated: false
+			}
+		)
 	}
 
 	const startPosition = useMemo(() => {
@@ -148,8 +154,8 @@ const RNMapWorkout = forwardRef<RNMapWorkoutHandle, IRNMapWorkoutProps>((props, 
 		>
 			<MapView
 				ref={mapRef}
-				style={StyleSheet.absoluteFill}
 				userInterfaceStyle="dark"
+				style={{ height: '100%', width: '100%' }}
 				scrollEnabled={!props.interactiveDisabled}
 				zoomEnabled={!props.interactiveDisabled}
 				rotateEnabled={!props.interactiveDisabled}
@@ -173,7 +179,7 @@ const RNMapWorkout = forwardRef<RNMapWorkoutHandle, IRNMapWorkoutProps>((props, 
 						})
 						.catch(() => {})
 				}}
-				onMapLoaded={() => {
+				onMapReady={() => {
 					if (!props.needFitInitialRoute) return
 					const initialLocations = props.initialLocations
 					if (initialLocations?.length) {

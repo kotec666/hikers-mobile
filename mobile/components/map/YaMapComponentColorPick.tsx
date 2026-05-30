@@ -1,13 +1,14 @@
-import { Yamap } from 'react-native-yamap-plus'
 import React from 'react'
-import { Platform, View } from 'react-native'
+import { View } from 'react-native'
+import { Yamap } from 'react-native-yamap-plus'
 import YaMapPauseLocationMarker from '@/components/map/markers/PauseLocationMarker/YaMapPauseLocationMarker'
 import YaMapResumeLocationMarker from '@/components/map/markers/ResumeLocationMarker/YaMapResumeLocationMarker'
 import YaMapStartLocationMarker from '@/components/map/markers/StartLocationMarker/YaMapStartLocationMarker'
 import YaMapFinishLocationMarker from '@/components/map/markers/FinishLocationMarker/YaMapFinishLocationMarker'
-import { PolylineCustom } from '@/components/map/PolylineCustom'
 import YaMapUserLocationMarker from '@/components/map/markers/UserLocationMarker/YaMapUserLocationMarker'
 import { adjustRgbaOpacity } from '@/helpers/colors/adjustRgbaOpacity'
+import { PolylineCustom } from '@/components/map/PolylineCustom'
+import { mapCenter, firstPoint, secondPoint, thirdPoint, fourthPoint, fifthPoint, sixthPoint } from '@/constants/RNMap'
 
 interface IProps {
 	activeColor?: string
@@ -24,23 +25,6 @@ interface IProps {
 	}
 }
 
-// paused: false
-const firstPoint = { lat: 56.31378765571552, lon: 43.99060212937605 }
-const secondPoint = { lat: 56.31464454498599, lon: 43.99157577124938 }
-
-// paused: true
-const thirdPoint = { lat: 56.31464454498599, lon: 43.99157577124938 }
-const fourthPoint = { lat: 56.314405034469836, lon: 43.99221950141364 }
-
-// paused: false
-const fifthPoint = { lat: 56.314405034469836, lon: 43.99221950141364 }
-const sixthPoint = { lat: 56.31355855359197, lon: 43.991256588376274 }
-
-const mapCenter = {
-	lat: 56.31415659650883,
-	lon: 43.99145507184358
-}
-
 const getSegmentColor = (isPaused: boolean, userColor: string) => {
 	if (isPaused) {
 		return adjustRgbaOpacity(userColor, (a) => a / 2)
@@ -48,16 +32,13 @@ const getSegmentColor = (isPaused: boolean, userColor: string) => {
 	return userColor
 }
 
-// @TODO проверить apple maps
-const MapComponentColorPick = (props: IProps) => {
+const YaMapComponentColorPick = (props: IProps) => {
 	const activeColor = props.activeColor ?? 'rgb(0, 200, 100, 1)'
-	const isIOS = Platform.OS === 'ios' // @TODO убрать
 	return (
 		<View
 			pointerEvents={props.interactiveDisabled ? 'none' : 'auto'}
 			className="flex-1 overflow-hidden border-[1px] border-white/20"
 			style={{
-				overflow: 'hidden',
 				borderRadius: props.rounded || 0,
 				maxHeight: props.maxContainerHeight ?? 'auto'
 			}}
@@ -85,7 +66,7 @@ const MapComponentColorPick = (props: IProps) => {
 					points={[firstPoint, secondPoint]}
 					strokeColor={getSegmentColor(false, activeColor)}
 					strokeWidth={4}
-					outlineWidth={isIOS ? 0 : 2}
+					outlineWidth={2}
 					outlineColor="transparent"
 				/>
 				<PolylineCustom
@@ -93,7 +74,7 @@ const MapComponentColorPick = (props: IProps) => {
 					points={[secondPoint, thirdPoint]}
 					strokeColor={getSegmentColor(true, activeColor)}
 					strokeWidth={4}
-					outlineWidth={isIOS ? 0 : 2}
+					outlineWidth={2}
 					outlineColor="transparent"
 				/>
 				<PolylineCustom
@@ -101,7 +82,7 @@ const MapComponentColorPick = (props: IProps) => {
 					points={[thirdPoint, fourthPoint]}
 					strokeColor={getSegmentColor(true, activeColor)}
 					strokeWidth={4}
-					outlineWidth={isIOS ? 0 : 2}
+					outlineWidth={2}
 					outlineColor="transparent"
 				/>
 				<PolylineCustom
@@ -109,7 +90,7 @@ const MapComponentColorPick = (props: IProps) => {
 					points={[fifthPoint, sixthPoint]}
 					strokeColor={getSegmentColor(false, activeColor)}
 					strokeWidth={4}
-					outlineWidth={isIOS ? 0 : 2}
+					outlineWidth={2}
 					outlineColor="transparent"
 				/>
 				<YaMapPauseLocationMarker key={`pause-1-${activeColor}`} position={secondPoint} color={activeColor} />
@@ -120,11 +101,11 @@ const MapComponentColorPick = (props: IProps) => {
 	)
 }
 
-export default React.memo(MapComponentColorPick, (prev, next) => {
+export default React.memo(YaMapComponentColorPick, (prev, next) => {
 	return (
+		prev.rounded === next.rounded &&
 		prev.activeColor === next.activeColor &&
 		prev.maxContainerHeight === next.maxContainerHeight &&
-		prev.rounded === next.rounded &&
 		prev.interactiveDisabled === next.interactiveDisabled
 	)
 })

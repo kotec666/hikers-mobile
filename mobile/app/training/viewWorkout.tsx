@@ -1,4 +1,4 @@
-import { Text, TextInput, View } from 'react-native'
+import { Platform, Text, TextInput, View } from 'react-native'
 import { Image } from 'expo-image'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
 import { Container } from '@/components/ui/Container'
@@ -48,6 +48,7 @@ import { Page } from '@/components/ui/Page'
 import { DEFAULT_PADDING_TOP } from '@/constants/Variables'
 import { KeyboardAwareScrollView } from 'react-native-keyboard-controller'
 import YaMapWorkout from '@/components/map/YaMapWorkout'
+import RNMapWorkout from '@/components/map/RNMapWorkout'
 
 type Param = {
 	label: string
@@ -159,6 +160,7 @@ export default function ViewWorkout() {
 		historyTrainingId?: string
 		unsavedStartedAt?: string
 	}>()
+	const isIOS = Platform.OS === 'ios'
 	const isView = mode === VIEWWORKOUT_MODE.VIEW
 	const isEdit = mode === VIEWWORKOUT_MODE.EDIT
 	const isFromHistory = mode === VIEWWORKOUT_MODE.FROM_HISTORY
@@ -453,6 +455,10 @@ export default function ViewWorkout() {
 		})
 	}
 
+	const MapWorkoutComponent = useMemo(() => {
+		return isIOS ? RNMapWorkout : YaMapWorkout
+	}, [isIOS])
+
 	return (
 		<Page edges={['bottom']}>
 			<Modal
@@ -574,7 +580,7 @@ export default function ViewWorkout() {
 							</Button>
 						</View>
 						{state.switchChartView === 'map' && (
-							<YaMapWorkout
+							<MapWorkoutComponent
 								bordered
 								rounded={25}
 								needFinishMarker
@@ -583,15 +589,6 @@ export default function ViewWorkout() {
 								initialLocations={mapLocations}
 							/>
 						)}
-						{/* @TODO проверить */}
-						{/* <RNMapWorkout */}
-						{/*	bordered */}
-						{/*	rounded={25} */}
-						{/*	needFinishMarker */}
-						{/*	needFitInitialRoute */}
-						{/*	maxContainerHeight={320} */}
-						{/*	initialLocations={mapLocations} */}
-						{/* /> */}
 						{state.switchChartView === 'chart' && (
 							<View className="rounded-[25px] p-[15px] items-center justify-center bg-black-25 h-[320px]">
 								<View className="w-full pb-[15px]">

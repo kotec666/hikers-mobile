@@ -7,6 +7,8 @@ import PostBodyWrapper, { PostType } from '@/components/ui/Post/PostBodyWrapper'
 import { TrainingType } from '@shared/enums'
 import { ITrainingMetrics } from '@/api/workout'
 import { IParticipant } from '@/api/posts'
+import { IYaMapWorkoutProps } from '@/components/map/YaMapWorkout'
+import { IRNMapWorkoutProps } from '@/components/map/RNMapWorkout'
 
 interface IProps {
 	isMyPost?: boolean
@@ -26,7 +28,7 @@ interface IProps {
 		isSubscribed?: boolean
 	}
 	participants?: IParticipant[]
-	mapComponent?: React.ReactNode
+	mapComponent?: React.ReactElement<IYaMapWorkoutProps> | React.ReactElement<IRNMapWorkoutProps>
 	images?: string[]
 	isDetail?: boolean
 }

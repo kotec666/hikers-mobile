@@ -44,7 +44,7 @@ export const BackButton = memo(({ onPress }: { onPress: () => void }) => {
 	)
 
 	if (isGlassAvailable) {
-		return renderWithEffect(GlassView, {})
+		return renderWithEffect(GlassView, { colorScheme: 'dark' })
 	}
 
 	if (isIos) {
