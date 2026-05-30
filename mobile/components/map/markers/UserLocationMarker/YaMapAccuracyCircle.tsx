@@ -11,13 +11,13 @@ interface IProps {
 	debugAccuracyM?: number
 }
 
-export interface AccuracyCircleHandle {
+export interface YaMapAccuracyCircleHandle {
 	setCircleCenter: (center: Point | null) => void
 	hideCircle: (hidden: boolean) => void
 	setAccuracy: (accuracy: number | null) => void
 }
 
-const AccuracyCircle = forwardRef<AccuracyCircleHandle, IProps>((props, ref) => {
+const YaMapAccuracyCircle = forwardRef<YaMapAccuracyCircleHandle, IProps>((props, ref) => {
 	const initialPoint = useRef(props.initialPosition).current
 	const circleRef = useRef<CircleComponentInstanceRef | null>(null)
 	const radiusRef = useRef(0)
@@ -74,6 +74,5 @@ const AccuracyCircle = forwardRef<AccuracyCircleHandle, IProps>((props, ref) => 
 	)
 })
 
-AccuracyCircle.displayName = 'AccuracyCircle'
-
-export default React.memo(AccuracyCircle)
+YaMapAccuracyCircle.displayName = 'YaMapAccuracyCircle'
+export default React.memo(YaMapAccuracyCircle)

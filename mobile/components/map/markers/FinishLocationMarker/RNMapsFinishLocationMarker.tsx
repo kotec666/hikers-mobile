@@ -8,7 +8,7 @@ interface Props {
 	color?: string
 }
 
-const RNFinishLocationMarker = ({ position, color }: Props) => {
+const RNMapsFinishLocationMarker = ({ position, color }: Props) => {
 	if (!position?.lat || !position?.lon) return null
 
 	return (
@@ -26,4 +26,4 @@ const RNFinishLocationMarker = ({ position, color }: Props) => {
 	)
 }
 
-export default RNFinishLocationMarker
+export default RNMapsFinishLocationMarker

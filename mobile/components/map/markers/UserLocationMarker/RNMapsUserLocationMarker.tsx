@@ -5,7 +5,7 @@ import Animated from 'react-native-reanimated'
 import { Marker } from 'react-native-maps'
 import { View } from 'react-native'
 import RNMapsAccuracyCircle, {
-	AccuracyCircleHandle
+	RNMapsAccuracyCircleHandle
 } from '@/components/map/markers/UserLocationMarker/RNMapsAccuracyCircle'
 import { IPoint } from '@/types/interfaces'
 
@@ -19,17 +19,17 @@ interface IProps {
 	debugAccuracyM?: number
 }
 
-export interface UserLocationMarkerHandle {
+export interface RNMapsUserLocationMarkerHandle {
 	setAccuracy: (accuracy: number | null) => void
 	setMarkerPosition: (newCoords: IPoint | null, durationInMs?: number) => void
 	setMarkerHeading: (heading: number | null, durationInMs?: number) => void
 }
 
 type MarkerRef = React.ComponentRef<typeof Marker>
-const UserLocationMarker = forwardRef<UserLocationMarkerHandle, IProps>((props, ref) => {
+const RNMapsUserLocationMarker = forwardRef<RNMapsUserLocationMarkerHandle, IProps>((props, ref) => {
 	const initialPoint = props.initialPosition
 	const markerRef = useRef<MarkerRef>(null)
-	const accuracyRef = useRef<AccuracyCircleHandle>(null)
+	const accuracyRef = useRef<RNMapsAccuracyCircleHandle>(null)
 	const animated = useAnimatedCoordinate({
 		latitude: initialPoint?.lat || 0,
 		longitude: initialPoint?.lon || 0
@@ -110,10 +110,10 @@ const UserLocationMarker = forwardRef<UserLocationMarkerHandle, IProps>((props, 
 	)
 })
 
-UserLocationMarker.displayName = 'UserLocationMarker'
+RNMapsUserLocationMarker.displayName = 'RNMapsUserLocationMarker'
 
 export default React.memo(
-	UserLocationMarker,
+	RNMapsUserLocationMarker,
 	(prev, next) =>
 		prev.triangleScale === next.triangleScale &&
 		prev.initialPosition?.lat === next.initialPosition?.lat &&

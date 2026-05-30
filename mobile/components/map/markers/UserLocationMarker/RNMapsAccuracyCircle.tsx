@@ -9,14 +9,14 @@ interface IProps {
 	debugAccuracyM?: number
 }
 
-export interface AccuracyCircleHandle {
+export interface RNMapsAccuracyCircleHandle {
 	setCircleCenter: (center: IPoint | null) => void
 	hideCircle: (hidden: boolean) => void
 	setAccuracy: (accuracy: number | null) => void
 }
 
 type CircleRef = React.ComponentRef<typeof Circle>
-const AccuracyCircle = forwardRef<AccuracyCircleHandle, IProps>((props, ref) => {
+const RNMapsAccuracyCircle = forwardRef<RNMapsAccuracyCircleHandle, IProps>((props, ref) => {
 	const initialPoint = useRef(props.initialPosition).current
 	const circleRef = useRef<CircleRef | null>(null)
 	const radiusRef = useRef(0)
@@ -79,6 +79,6 @@ const AccuracyCircle = forwardRef<AccuracyCircleHandle, IProps>((props, ref) => 
 	)
 })
 
-AccuracyCircle.displayName = 'AccuracyCircle'
+RNMapsAccuracyCircle.displayName = 'RNMapsAccuracyCircle'
 
-export default React.memo(AccuracyCircle)
+export default React.memo(RNMapsAccuracyCircle)

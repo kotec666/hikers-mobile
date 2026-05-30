@@ -4,15 +4,15 @@ import { View } from 'react-native'
 import { IWorkoutLocationStorageItem } from '@/store/workoutStorage'
 import { Colors } from '@/constants/Colors'
 import { debounce } from '@/helpers/debounce'
-import PauseLocationMarker from '@/components/map/markers/PauseLocationMarker/YaMapPauseLocationMarker'
-import ResumeLocationMarker from '@/components/map/markers/ResumeLocationMarker/YaMapResumeLocationMarker'
-import StartLocationMarker from '@/components/map/markers/StartLocationMarker/YaMapStartLocationMarker'
-import FinishLocationMarker from '@/components/map/markers/FinishLocationMarker/YaMapFinishLocationMarker'
+import YaMapPauseLocationMarker from '@/components/map/markers/PauseLocationMarker/YaMapPauseLocationMarker'
+import YaMapResumeLocationMarker from '@/components/map/markers/ResumeLocationMarker/YaMapResumeLocationMarker'
+import YaMapStartLocationMarker from '@/components/map/markers/StartLocationMarker/YaMapStartLocationMarker'
+import YaMapFinishLocationMarker from '@/components/map/markers/FinishLocationMarker/YaMapFinishLocationMarker'
 import { getYaMapSettings, updateYaMapSettings } from '@/store/yaMapStorage'
 import { PolylineComponentInstanceRef, PolylineCustom } from '@/components/map/PolylineCustom'
 import { PolylineNativeProps } from 'react-native-yamap-plus/src/spec/PolylineNativeComponent'
-import UserLocationMarker, {
-	UserLocationMarkerHandle
+import YaMapUserLocationMarker, {
+	YaMapUserLocationMarkerHandle
 } from '@/components/map/markers/UserLocationMarker/YaMapUserLocationMarker'
 
 interface IProps {
@@ -33,7 +33,7 @@ interface IProps {
 	}
 	deferInitialRouteRender?: boolean
 	initialMarkerLocation?: Point | null
-	userLocationMarkerRef?: React.RefObject<UserLocationMarkerHandle | null>
+	userLocationMarkerRef?: React.RefObject<YaMapUserLocationMarkerHandle | null>
 	initialLocations?: React.RefObject<IWorkoutLocationStorageItem[]>
 }
 
@@ -460,14 +460,14 @@ const MapComponent = forwardRef<MapComponentHandle, IProps>((props, ref) => {
 			>
 				{/*<DirectionMarkersDebug center={{ lat: 53.374451, lon: 49.460469 }} />*/}
 				{props.initialMarkerLocation && (
-					<UserLocationMarker
+					<YaMapUserLocationMarker
 						ref={props.userLocationMarkerRef}
 						initialPosition={props.initialMarkerLocation}
 					/>
 				)}
 
 				{props.initialLocations?.current && props.initialLocations?.current.length >= 1 && (
-					<StartLocationMarker
+					<YaMapStartLocationMarker
 						position={{
 							lat: props.initialLocations.current[0].locationObject.coords.latitude,
 							lon: props.initialLocations.current[0].locationObject.coords.longitude
@@ -492,13 +492,13 @@ const MapComponent = forwardRef<MapComponentHandle, IProps>((props, ref) => {
 				{/* Render Transition Markers */}
 				{transitionMarkers.map((tm) =>
 					tm.type === 'pause' ? (
-						<PauseLocationMarker key={tm.id} position={tm.position} />
+						<YaMapPauseLocationMarker key={tm.id} position={tm.position} />
 					) : (
-						<ResumeLocationMarker key={tm.id} position={tm.position} />
+						<YaMapResumeLocationMarker key={tm.id} position={tm.position} />
 					)
 				)}
 
-				{props.needFinishMarker && lastPoint && <FinishLocationMarker position={lastPoint} />}
+				{props.needFinishMarker && lastPoint && <YaMapFinishLocationMarker position={lastPoint} />}
 			</Yamap>
 		</View>
 	)

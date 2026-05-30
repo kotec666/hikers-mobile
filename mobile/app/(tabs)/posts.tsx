@@ -157,14 +157,14 @@ const PostsPage = () => {
 				}}
 				isLiked={item.isLiked}
 				likesCount={item.likesCount}
-				// mapComponent={
-				// 	<MapComponent
-				// 		rounded={25}
-				// 		needFinishMarker
-				// 		interactiveDisabled
-				// 		initialLocations={{ current: adaptLocations(item.training.participants[0].route.points) }}
-				// 	/>
-				// }
+				mapComponent={
+					<MapComponent
+						rounded={25}
+						needFinishMarker
+						interactiveDisabled
+						initialLocations={{ current: adaptLocations(item.training.participants[0].route.points) }}
+					/>
+				}
 			/>
 		)
 	}, [])

@@ -22,7 +22,7 @@ import WorkoutType from '@/components/WorkoutType'
 import { useFocusEffect, useRouter } from 'expo-router'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
 import { TrainingType } from '@shared/enums'
-import { UserLocationMarkerHandle } from '@/components/map/markers/UserLocationMarker/YaMapUserLocationMarker'
+import { YaMapUserLocationMarkerHandle } from '@/components/map/markers/UserLocationMarker/YaMapUserLocationMarker'
 import { BottomSheetHandle } from '@/components/ui/BottomSheet/types'
 import BottomSheet from '@/components/ui/BottomSheet/BottomSheet'
 import UnsavedTrainings from '@/components/BottomSheets/UnsavedTrainings'
@@ -34,9 +34,9 @@ import UnsavedTrainingsDetails from '@/components/BottomSheets/UnsavedTrainingsD
 import { useUnsavedWorkoutSync } from '@/hooks/useUnsavedWorkoutSync'
 import NotFinishedWorkout from '@/components/BottomSheets/NotFinishedWorkout'
 import { deleteNotFinishedTraining } from '@/api/workout'
-import MapComponentSegments, { MapComponentSegmentsHandle } from '@/components/map/MapComponentSegments'
-import RNMapWorkout from '@/components/map/RNMapWorkout'
+import MapComponentSegments, { YaMapComponentSegmentsHandle } from '@/components/map/MapComponentSegments'
 import { IPoint } from '@/types/interfaces'
+// import RNMapWorkout from '@/components/map/RNMapWorkout'
 
 export interface IWorkoutModeElement {
 	name: string
@@ -52,8 +52,8 @@ interface IProps {
 	allPermsGranted: () => void
 	WorkoutTypesData: IWorkoutModeElement[]
 	permissionsRef: React.RefObject<AllGeolocationPermissionsHandle | null>
-	mapComponentRef: React.RefObject<MapComponentSegmentsHandle | null>
-	userLocationMarkerRef: React.RefObject<UserLocationMarkerHandle | null>
+	yaMapComponentRef: React.RefObject<YaMapComponentSegmentsHandle | null>
+	yaMapUserLocationMarkerRef: React.RefObject<YaMapUserLocationMarkerHandle | null>
 	latestUserMarkerLocationRef?: RefObject<IPoint | null>
 }
 
@@ -245,15 +245,15 @@ const NewWorkout = memo(
 				<Container className="mb-[20px]">
 					<HeaderBack>Новая тренировка</HeaderBack>
 				</Container>
-				<RNMapWorkout />
-				{/*<MapComponentSegments*/}
-				{/*	ref={props.mapComponentRef}*/}
-				{/*	userLocationMarkerRef={props.userLocationMarkerRef}*/}
-				{/*	latestUserMarkerLocationRef={props.latestUserMarkerLocationRef}*/}
-				{/*	initialMarkerLocation={props.initialMarkerLocation}*/}
-				{/*	maxMapHeight={WINDOW_HEIGHT}*/}
-				{/*	maxContainerHeight={WINDOW_HEIGHT}*/}
-				{/*/>*/}
+				{/*<RNMapWorkout />*/}
+				<MapComponentSegments
+					ref={props.yaMapComponentRef}
+					userLocationMarkerRef={props.yaMapUserLocationMarkerRef}
+					latestUserMarkerLocationRef={props.latestUserMarkerLocationRef}
+					initialMarkerLocation={props.initialMarkerLocation}
+					maxMapHeight={WINDOW_HEIGHT}
+					maxContainerHeight={WINDOW_HEIGHT}
+				/>
 				<View
 					style={{
 						bottom: insets.bottom + 35,

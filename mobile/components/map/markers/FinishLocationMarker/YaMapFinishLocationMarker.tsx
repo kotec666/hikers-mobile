@@ -8,7 +8,7 @@ interface Props {
 	color?: string
 }
 
-const FinishLocationMarker = ({ position, color }: Props) => {
+const YaMapFinishLocationMarker = ({ position, color }: Props) => {
 	if (!position?.lat || !position?.lon) return null
 
 	return (
@@ -20,4 +20,4 @@ const FinishLocationMarker = ({ position, color }: Props) => {
 	)
 }
 
-export default FinishLocationMarker
+export default YaMapFinishLocationMarker

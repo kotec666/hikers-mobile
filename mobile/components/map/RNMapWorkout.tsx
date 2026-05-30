@@ -1,6 +1,6 @@
 import { StyleSheet, View } from 'react-native'
 import MapView, { Polyline, Camera, EdgePadding } from 'react-native-maps'
-import React, { forwardRef, useImperativeHandle, useMemo, useRef } from 'react'
+import React, { forwardRef, useCallback, useImperativeHandle, useMemo, useRef } from 'react'
 import RNMapsStartLocationMarker from '@/components/map/markers/StartLocationMarker/RNMapsStartLocationMarker'
 import RNMapsPauseLocationMarker from '@/components/map/markers/PauseLocationMarker/RNMapsPauseLocationMarker'
 import RNMapsResumeLocationMarker from '@/components/map/markers/ResumeLocationMarker/RNMapsResumeLocationMarker'
@@ -11,7 +11,7 @@ import { useWorkoutPath } from '@/hooks/useWorkoutPath'
 import { debounce } from '@/helpers/debounce'
 import { IPoint } from '@/types/interfaces'
 import RNMapsUserLocationMarker, {
-	UserLocationMarkerHandle
+	RNMapsUserLocationMarkerHandle
 } from '@/components/map/markers/UserLocationMarker/RNMapsUserLocationMarker'
 
 export enum MapAnimationType {
@@ -35,7 +35,7 @@ interface IProps {
 	appleLegalPosition?: EdgePadding
 	initialMarkerLocation?: IPoint | null
 	initialLocations?: IWorkoutLocationStorageItem[]
-	userLocationMarkerRef?: React.RefObject<UserLocationMarkerHandle | null>
+	userLocationMarkerRef?: React.RefObject<RNMapsUserLocationMarkerHandle | null>
 	latestUserMarkerLocationRef?: React.RefObject<IPoint | null> | undefined
 }
 
@@ -48,9 +48,9 @@ const RNMapWorkout = forwardRef<MapComponentSegmentsHandle, IProps>((props, ref)
 	const mapInitialCameraSettingsRef = useRef<Camera>(getRNMapSettings())
 	const updateMapSettingsDebounced = useMemo(() => debounce(updateRNMapSettings, 300), [])
 
-	const handleBlockAnimation = (needBlock: boolean) => {
+	const handleBlockAnimation = useCallback((needBlock: boolean) => {
 		isAnimationBlockedRef.current = needBlock
-	}
+	}, [])
 
 	const { segmentsRef, transitionMarkersRef, updatePath } = useWorkoutPath<PolylineRef>({
 		createPolylineRef: () => React.createRef<PolylineRef>(),

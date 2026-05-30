@@ -1,12 +1,12 @@
 import { Yamap } from 'react-native-yamap-plus'
 import React from 'react'
 import { Platform, View } from 'react-native'
-import PauseLocationMarker from '@/components/map/markers/PauseLocationMarker/YaMapPauseLocationMarker'
-import ResumeLocationMarker from '@/components/map/markers/ResumeLocationMarker/YaMapResumeLocationMarker'
-import StartLocationMarker from '@/components/map/markers/StartLocationMarker/YaMapStartLocationMarker'
-import FinishLocationMarker from '@/components/map/markers/FinishLocationMarker/YaMapFinishLocationMarker'
+import YaMapPauseLocationMarker from '@/components/map/markers/PauseLocationMarker/YaMapPauseLocationMarker'
+import YaMapResumeLocationMarker from '@/components/map/markers/ResumeLocationMarker/YaMapResumeLocationMarker'
+import YaMapStartLocationMarker from '@/components/map/markers/StartLocationMarker/YaMapStartLocationMarker'
+import YaMapFinishLocationMarker from '@/components/map/markers/FinishLocationMarker/YaMapFinishLocationMarker'
 import { PolylineCustom } from '@/components/map/PolylineCustom'
-import UserLocationMarker from '@/components/map/markers/UserLocationMarker/YaMapUserLocationMarker'
+import YaMapUserLocationMarker from '@/components/map/markers/UserLocationMarker/YaMapUserLocationMarker'
 import { adjustRgbaOpacity } from '@/helpers/colors/adjustRgbaOpacity'
 
 interface IProps {
@@ -75,13 +75,13 @@ const MapComponentColorPick = (props: IProps) => {
 				tiltGesturesDisabled
 				rotateGesturesDisabled
 			>
-				<UserLocationMarker
+				<YaMapUserLocationMarker
 					key={`user-${activeColor}`}
 					initialPosition={mapCenter}
 					color={activeColor}
 					debugAccuracyM={20}
 				/>
-				<StartLocationMarker key={`start-${activeColor}`} position={firstPoint} color={activeColor} />
+				<YaMapStartLocationMarker key={`start-${activeColor}`} position={firstPoint} color={activeColor} />
 				<PolylineCustom
 					key={`poly-1-${activeColor}`}
 					points={[firstPoint, secondPoint]}
@@ -114,9 +114,9 @@ const MapComponentColorPick = (props: IProps) => {
 					outlineWidth={isIOS ? 0 : 2}
 					outlineColor="transparent"
 				/>
-				<PauseLocationMarker key={`pause-1-${activeColor}`} position={secondPoint} color={activeColor} />
-				<ResumeLocationMarker key={`resume-1-${activeColor}`} position={fourthPoint} color={activeColor} />
-				<FinishLocationMarker key={`finish-${activeColor}`} position={sixthPoint} color={activeColor} />
+				<YaMapPauseLocationMarker key={`pause-1-${activeColor}`} position={secondPoint} color={activeColor} />
+				<YaMapResumeLocationMarker key={`resume-1-${activeColor}`} position={fourthPoint} color={activeColor} />
+				<YaMapFinishLocationMarker key={`finish-${activeColor}`} position={sixthPoint} color={activeColor} />
 			</Yamap>
 		</View>
 	)

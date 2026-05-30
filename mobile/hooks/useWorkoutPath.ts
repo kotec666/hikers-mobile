@@ -112,7 +112,7 @@ export function useWorkoutPath<TRef>({ createPolylineRef, onNativeUpdate }: Para
 					if (workingPoints.length > 0) {
 						const transitionPoint = workingPoints[workingPoints.length - 1]
 						transitionMarkersRef.current.push({
-							id: crypto.randomUUID(),
+							id: `tm-${Date.now()}-${Math.random()}`,
 							type: isPaused ? 'pause' : 'resume',
 							position: transitionPoint
 						})
