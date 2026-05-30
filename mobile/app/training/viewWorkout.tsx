@@ -7,7 +7,6 @@ import React, { useEffect, useMemo, useRef, useState } from 'react'
 import { fontFamily } from '@/constants/Fonts'
 import Parameter from '@/components/training/Parameter'
 import { Button } from '@/components/ui/Button'
-import MapComponent from '@/components/map/MapComponent'
 import PeopleListItem from '@/components/find-people/PeopleListItem'
 import EyeSvg from '@/components/svg/EyeSvg'
 import { Colors } from '@/constants/Colors'
@@ -48,6 +47,7 @@ import { useExtendedDetailsWorkoutQuery, useFinishWorkoutMutation } from '@/quer
 import { Page } from '@/components/ui/Page'
 import { DEFAULT_PADDING_TOP } from '@/constants/Variables'
 import { KeyboardAwareScrollView } from 'react-native-keyboard-controller'
+import YaMapWorkout from '@/components/map/YaMapWorkout'
 
 type Param = {
 	label: string
@@ -391,7 +391,7 @@ export default function ViewWorkout() {
 		? `Сегодня, ${results.startedAt ? format(results.startedAt, 'HH:mm') : ''} - ${format(Date.now(), 'HH:mm')}`
 		: formatRelativeDate(isEdit ? existPost?.createdAt : extendedTrainingDetails?.createdAt)
 
-	const mapLocations = isView ? pointsRef : { current: isEdit ? adaptedLocations : adaptedLocationsFromHistory }
+	const mapLocations = isView ? pointsRef.current : isEdit ? adaptedLocations : adaptedLocationsFromHistory
 	const chartPoints = isView ? results.points : isEdit ? adaptedLocations : adaptedLocationsFromHistory
 
 	const canPublish = useMemo(() => {
@@ -557,7 +557,6 @@ export default function ViewWorkout() {
 								</View>
 							</View>
 						</View>
-
 						<View className="flex-row gap-[10px]">
 							<Button
 								onPress={() => setState((s) => ({ ...s, switchChartView: 'map' }))}
@@ -575,15 +574,24 @@ export default function ViewWorkout() {
 							</Button>
 						</View>
 						{state.switchChartView === 'map' && (
-							<MapComponent
-								deferInitialRouteRender
-								minMapHeight={320}
-								maxContainerHeight={320}
+							<YaMapWorkout
+								bordered
 								rounded={25}
 								needFinishMarker
+								needFitInitialRoute
+								maxContainerHeight={320}
 								initialLocations={mapLocations}
 							/>
 						)}
+						{/* @TODO проверить */}
+						{/* <RNMapWorkout */}
+						{/*	bordered */}
+						{/*	rounded={25} */}
+						{/*	needFinishMarker */}
+						{/*	needFitInitialRoute */}
+						{/*	maxContainerHeight={320} */}
+						{/*	initialLocations={mapLocations} */}
+						{/* /> */}
 						{state.switchChartView === 'chart' && (
 							<View className="rounded-[25px] p-[15px] items-center justify-center bg-black-25 h-[320px]">
 								<View className="w-full pb-[15px]">

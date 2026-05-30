@@ -12,9 +12,7 @@ import { adjustRgbaOpacity } from '@/helpers/colors/adjustRgbaOpacity'
 interface IProps {
 	activeColor?: string
 	interactiveDisabled?: boolean
-	maxMapHeight?: number
 	maxContainerHeight?: number
-	minMapHeight?: number
 	rounded?: number
 	logoPosition?: {
 		horizontal?: 'left' | 'center' | 'right'
@@ -50,24 +48,24 @@ const getSegmentColor = (isPaused: boolean, userColor: string) => {
 	return userColor
 }
 
+// @TODO проверить apple maps
 const MapComponentColorPick = (props: IProps) => {
 	const activeColor = props.activeColor ?? 'rgb(0, 200, 100, 1)'
-	const isIOS = Platform.OS === 'ios'
+	const isIOS = Platform.OS === 'ios' // @TODO убрать
 	return (
 		<View
 			pointerEvents={props.interactiveDisabled ? 'none' : 'auto'}
-			className="flex-1 border-[1px] border-white/20"
+			className="flex-1 overflow-hidden border-[1px] border-white/20"
 			style={{
 				overflow: 'hidden',
 				borderRadius: props.rounded || 0,
-				minHeight: props.minMapHeight,
 				maxHeight: props.maxContainerHeight ?? 'auto'
 			}}
 		>
 			<Yamap
 				nightMode
 				initialRegion={{ ...mapCenter, zoom: 17 }}
-				style={{ flex: 1, maxHeight: props.maxMapHeight, minHeight: props.minMapHeight }}
+				style={{ height: '100%', width: '100%' }}
 				logoPosition={props.logoPosition || { horizontal: 'right', vertical: 'top' }}
 				logoPadding={props.logoPadding}
 				showUserPosition={false}
@@ -126,8 +124,7 @@ export default React.memo(MapComponentColorPick, (prev, next) => {
 	return (
 		prev.activeColor === next.activeColor &&
 		prev.maxContainerHeight === next.maxContainerHeight &&
-		prev.maxMapHeight === next.maxMapHeight &&
-		prev.minMapHeight === next.minMapHeight &&
-		prev.rounded === next.rounded
+		prev.rounded === next.rounded &&
+		prev.interactiveDisabled === next.interactiveDisabled
 	)
 })

@@ -14,6 +14,7 @@ import RNMapsUserLocationMarker, {
 	RNMapsUserLocationMarkerHandle
 } from '@/components/map/markers/UserLocationMarker/RNMapsUserLocationMarker'
 import RNSegmentPolyline from '@/components/map/polyline/RNSegmentPolyline'
+import { cn } from '@/helpers/cn'
 
 export enum RNMapAnimationType {
 	SMOOTH = 'smooth',
@@ -32,9 +33,13 @@ export interface RNMapWorkoutHandle {
 	updatePath: (newItem: IWorkoutLocationStorageItem[]) => void
 }
 
-interface IProps {
+export interface IRNMapWorkoutProps {
 	rounded?: number
+	bordered?: boolean
+	needSaveCenter?: boolean
 	needFinishMarker?: boolean
+	needFitInitialRoute?: boolean
+	interactiveDisabled?: boolean
 	maxContainerHeight?: number
 	appleLogoPosition?: EdgePadding
 	appleLegalPosition?: EdgePadding
@@ -47,7 +52,7 @@ interface IProps {
 const DEFAULT_APPLE_LOGO_POSITION = { top: 2, right: 48, bottom: 0, left: 0 }
 const DEFAULT_APPLE_LEGAL_POSITION = { top: 17, right: 10, bottom: 0, left: 0 }
 
-const RNMapWorkout = forwardRef<RNMapWorkoutHandle, IProps>((props, ref) => {
+const RNMapWorkout = forwardRef<RNMapWorkoutHandle, IRNMapWorkoutProps>((props, ref) => {
 	const mapRef = useRef<MapView | null>(null)
 	const isAnimationBlockedRef = useRef<boolean>(false)
 	const mapInitialCameraSettingsRef = useRef<Camera>(getRNMapSettings())
@@ -57,7 +62,7 @@ const RNMapWorkout = forwardRef<RNMapWorkoutHandle, IProps>((props, ref) => {
 		isAnimationBlockedRef.current = needBlock
 	}, [])
 
-	const { segmentsRef, transitionMarkersRef, updatePath } = useWorkoutPath<PolylineRef>({
+	const { segmentsRef, transitionMarkersRef, updatePath, initPath } = useWorkoutPath<PolylineRef>({
 		createPolylineRef: () => React.createRef<PolylineRef>(),
 		onNativeUpdate: (segment, points) => {
 			segment.polylineRef.current?.setNativeProps({
@@ -93,7 +98,7 @@ const RNMapWorkout = forwardRef<RNMapWorkoutHandle, IProps>((props, ref) => {
 
 	const fitAllMarkers = () => {
 		if (!mapRef.current) return
-		mapRef.current.fitToElements()
+		mapRef.current.fitToElements() // @TODO без анимации и чтобы попадали не только маркеры, но и весь маршрут полностью, проверить на посте с батискафом
 	}
 
 	useImperativeHandle(ref, () => ({
@@ -101,6 +106,13 @@ const RNMapWorkout = forwardRef<RNMapWorkoutHandle, IProps>((props, ref) => {
 		setMapCenter: (newCenter) => changeMapCenter(newCenter.center, newCenter.zoomInMeters, newCenter.animationType),
 		updatePath: (newItems) => updatePath(newItems)
 	}))
+
+	const fitInitialRoute = () => {
+		if (!mapRef.current) return
+		const initialLocations = props.initialLocations
+		if (!initialLocations || initialLocations.length === 0) return
+		fitAllMarkers() // @TODO без анимации и чтобы попадали не только маркеры, но и весь маршрут полностью, проверить на посте с батискафом
+	}
 
 	const startPosition = useMemo(() => {
 		if (props.initialLocations && props.initialLocations.length > 0) {
@@ -125,9 +137,11 @@ const RNMapWorkout = forwardRef<RNMapWorkoutHandle, IProps>((props, ref) => {
 
 	return (
 		<View
+			pointerEvents={props.interactiveDisabled ? 'none' : 'auto'}
+			className={cn('flex-1 overflow-hidden', {
+				'border-[1px] border-white/20': props.bordered
+			})}
 			style={{
-				flex: 1,
-				overflow: 'hidden',
 				borderRadius: props.rounded || 0,
 				maxHeight: props.maxContainerHeight ?? 'auto'
 			}}
@@ -136,10 +150,15 @@ const RNMapWorkout = forwardRef<RNMapWorkoutHandle, IProps>((props, ref) => {
 				ref={mapRef}
 				style={StyleSheet.absoluteFill}
 				userInterfaceStyle="dark"
+				scrollEnabled={!props.interactiveDisabled}
+				zoomEnabled={!props.interactiveDisabled}
+				rotateEnabled={!props.interactiveDisabled}
+				pitchEnabled={!props.interactiveDisabled}
 				onRegionChangeStart={() => handleBlockAnimation(true)}
 				onRegionChangeComplete={() => {
 					handleBlockAnimation(false)
 
+					if (!props.needSaveCenter) return
 					const currentMap = mapRef.current
 					if (!currentMap) return
 
@@ -153,6 +172,15 @@ const RNMapWorkout = forwardRef<RNMapWorkoutHandle, IProps>((props, ref) => {
 							}
 						})
 						.catch(() => {})
+				}}
+				onMapLoaded={() => {
+					if (!props.needFitInitialRoute) return
+					const initialLocations = props.initialLocations
+					if (initialLocations?.length) {
+						initPath(initialLocations)
+					}
+
+					fitInitialRoute()
 				}}
 				showsScale
 				showsCompass={false}
@@ -201,7 +229,11 @@ const isEdgePaddingEqual = (a?: EdgePadding, b?: EdgePadding) => {
 export default React.memo(RNMapWorkout, (prev, next) => {
 	const layoutPropsEqual =
 		prev.rounded === next.rounded &&
+		prev.bordered === next.bordered &&
+		prev.needSaveCenter === next.needSaveCenter &&
 		prev.needFinishMarker === next.needFinishMarker &&
+		prev.needFitInitialRoute === next.needFitInitialRoute &&
+		prev.interactiveDisabled === next.interactiveDisabled &&
 		prev.maxContainerHeight === next.maxContainerHeight &&
 		prev.userLocationMarkerRef === next.userLocationMarkerRef &&
 		prev.latestUserMarkerLocationRef === next.latestUserMarkerLocationRef &&

@@ -252,6 +252,7 @@ const NewWorkout = memo(
 				{isIOS ? (
 					<RNMapWorkout
 						ref={props.rnMapComponentRef}
+						needSaveCenter
 						userLocationMarkerRef={props.rnMapUserLocationMarkerRef}
 						latestUserMarkerLocationRef={props.latestUserMarkerLocationRef}
 						initialMarkerLocation={props.initialMarkerLocation}
@@ -260,6 +261,7 @@ const NewWorkout = memo(
 				) : (
 					<YaMapWorkout
 						ref={props.yaMapComponentRef}
+						needSaveCenter
 						userLocationMarkerRef={props.yaMapUserLocationMarkerRef}
 						latestUserMarkerLocationRef={props.latestUserMarkerLocationRef}
 						initialMarkerLocation={props.initialMarkerLocation}

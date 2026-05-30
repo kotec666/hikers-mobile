@@ -12,7 +12,6 @@ import { LegendList, LegendListRef } from '@legendapp/list'
 import { IPost } from '@/api/posts'
 import { Colors } from '@/constants/Colors'
 import { useFocusEffect, useLocalSearchParams } from 'expo-router'
-import MapComponent from '@/components/map/MapComponent'
 import { adaptLocations } from '@/helpers/adaptPointsToIWorkoutLocationStorageItem'
 import TrainingsEmpty from '@/components/ui/Post/TrainingsEmpty'
 import { SearchType } from '@/shared/enums'
@@ -25,6 +24,7 @@ import { Page } from '@/components/ui/Page'
 import { KeyboardAvoidingView } from 'react-native-keyboard-controller'
 import { refetchAndHaptics } from '@/helpers/refetchAndHaptics'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
+import YaMapWorkout from '@/components/map/YaMapWorkout'
 
 const isUser = (item: IFoundUser | IFoundPost): item is IFoundUser => {
 	return 'username' in item
@@ -158,13 +158,26 @@ const PostsPage = () => {
 				isLiked={item.isLiked}
 				likesCount={item.likesCount}
 				mapComponent={
-					<MapComponent
+					<YaMapWorkout
+						bordered
 						rounded={25}
 						needFinishMarker
+						needFitInitialRoute
 						interactiveDisabled
-						initialLocations={{ current: adaptLocations(item.training.participants[0].route.points) }}
+						initialLocations={adaptLocations(item.training.participants[0].route.points)}
 					/>
 				}
+				// @TODO проверить
+				// mapComponent={
+				// 	<RNMapWorkout
+				// 		bordered
+				// 		rounded={25}
+				// 		needFinishMarker
+				// 		needFitInitialRoute
+				// 		interactiveDisabled
+				// 		initialLocations={adaptLocations(item.training.participants[0].route.points)}
+				// 	/>
+				// }
 			/>
 		)
 	}, [])

@@ -160,9 +160,18 @@ export function useWorkoutPath<TRef>({ createPolylineRef, onNativeUpdate }: Para
 		[createPolylineRef, onNativeUpdate]
 	)
 
+	const initPath = useCallback(
+		(locations: IWorkoutLocationStorageItem[]) => {
+			if (processedLocationCountRef.current > 0) return
+			updatePath(locations)
+		},
+		[updatePath]
+	)
+
 	return {
 		segmentsRef,
 		transitionMarkersRef,
-		updatePath
+		updatePath,
+		initPath
 	}
 }

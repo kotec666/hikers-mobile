@@ -1,6 +1,6 @@
 import { Animation, InitialRegion, Point, Yamap, YamapRef } from 'react-native-yamap-plus'
 import React, { forwardRef, useCallback, useImperativeHandle, useMemo, useRef } from 'react'
-import { View, StyleSheet } from 'react-native'
+import { View } from 'react-native'
 import { IWorkoutLocationStorageItem } from '@/store/workoutStorage'
 import { debounce } from '@/helpers/debounce'
 import YaMapPauseLocationMarker from '@/components/map/markers/PauseLocationMarker/YaMapPauseLocationMarker'
@@ -12,28 +12,42 @@ import YaMapUserLocationMarker, {
 	YaMapUserLocationMarkerHandle
 } from '@/components/map/markers/UserLocationMarker/YaMapUserLocationMarker'
 import { useWorkoutPath } from '@/hooks/useWorkoutPath'
+import YaMapFinishLocationMarker from '@/components/map/markers/FinishLocationMarker/YaMapFinishLocationMarker'
+import { cn } from '@/helpers/cn'
 
-interface IProps {
+export interface IYaMapWorkoutProps {
 	rounded?: number
+	bordered?: boolean
+	needSaveCenter?: boolean
+	needFinishMarker?: boolean
+	needFitInitialRoute?: boolean
+	interactiveDisabled?: boolean
 	maxContainerHeight?: number
 	initialMarkerLocation?: Point | null
 	userLocationMarkerRef?: React.RefObject<YaMapUserLocationMarkerHandle | null>
 	latestUserMarkerLocationRef?: React.RefObject<Point | null> | undefined
 	initialLocations?: IWorkoutLocationStorageItem[]
+	logoPosition?: {
+		horizontal?: 'left' | 'center' | 'right'
+		vertical?: 'top' | 'bottom'
+	}
+	logoPadding?: {
+		horizontal?: number
+		vertical?: number
+	}
 }
 
 export interface YaMapWorkoutHandle {
 	setMapCenter: (center: Point | null, durationInSeconds?: number, zoom?: number, animationType?: Animation) => void
-	fitAllMarkers: (durationInSeconds?: number) => void
 	updatePath: (newItem: IWorkoutLocationStorageItem[]) => void
 }
 
-const YaMapWorkout = forwardRef<YaMapWorkoutHandle, IProps>((props, ref) => {
+const YaMapWorkout = forwardRef<YaMapWorkoutHandle, IYaMapWorkoutProps>((props, ref) => {
 	const mapRef = useRef<YamapRef>(null)
 	const isAnimationBlockedRef = useRef<boolean>(false)
 	const mapInitialRegionSettingsRef = useRef<InitialRegion>(getYaMapSettings())
 
-	const { segmentsRef, transitionMarkersRef, updatePath } = useWorkoutPath<PolylineComponentInstanceRef>({
+	const { segmentsRef, transitionMarkersRef, updatePath, initPath } = useWorkoutPath<PolylineComponentInstanceRef>({
 		createPolylineRef: () => React.createRef<PolylineComponentInstanceRef>(),
 		onNativeUpdate: (segment, points) => {
 			segment.polylineRef.current?.setNativeProps({
@@ -42,24 +56,11 @@ const YaMapWorkout = forwardRef<YaMapWorkoutHandle, IProps>((props, ref) => {
 		}
 	})
 
-	// Инициализация при маунте, если переданы initialLocations
-	// useEffect(() => {
-	// 	if (props.initialLocations && props.initialLocations.length > 0 && processedLocationCountRef.current === 0) {
-	// 		updatePath(props.initialLocations)
-	// 	}
-	// }, [props.initialLocations, updatePath])
-
 	useImperativeHandle(ref, () => ({
 		setMapCenter: (center, durationInSeconds, zoom, animationType) =>
 			changeMapCenter(center, durationInSeconds, zoom, animationType),
-		fitAllMarkers: (durationInSeconds) => fitAllMarkers(durationInSeconds),
 		updatePath: (newItems) => updatePath(newItems)
 	}))
-
-	const fitAllMarkers = (durationInSeconds?: number) => {
-		if (!mapRef.current) return
-		mapRef.current.fitAllMarkers(durationInSeconds, Animation.LINEAR)
-	}
 
 	const changeMapCenter = (
 		center: Point | null,
@@ -89,6 +90,20 @@ const YaMapWorkout = forwardRef<YaMapWorkoutHandle, IProps>((props, ref) => {
 
 	const updateMapSettingsDebounced = useMemo(() => debounce(updateYaMapSettings, 300), [])
 
+	const fitInitialRoute = () => {
+		if (!mapRef.current) return
+		const initialLocations = props.initialLocations
+		if (!initialLocations || initialLocations.length === 0) return
+		mapRef.current.fitMarkers(
+			initialLocations.map((loc) => ({
+				lat: loc.locationObject.coords.latitude,
+				lon: loc.locationObject.coords.longitude
+			})),
+			0,
+			Animation.LINEAR
+		)
+	}
+
 	const startPosition = useMemo(() => {
 		if (props.initialLocations && props.initialLocations.length > 0) {
 			const startPoint = props.initialLocations[0]
@@ -100,13 +115,23 @@ const YaMapWorkout = forwardRef<YaMapWorkoutHandle, IProps>((props, ref) => {
 		return null
 	}, [props.initialLocations])
 
+	const finishPosition = useMemo(() => {
+		const initialLocations = props.initialLocations
+		if (!initialLocations) return null
+		const lastLocation = initialLocations[initialLocations.length - 1]
+		if (!lastLocation) return null
+		return { lat: lastLocation.locationObject.coords.latitude, lon: lastLocation.locationObject.coords.longitude }
+	}, [props.initialLocations])
+
 	const markerPosition = props.latestUserMarkerLocationRef?.current || props.initialMarkerLocation
 
 	return (
 		<View
+			pointerEvents={props.interactiveDisabled ? 'none' : 'auto'}
+			className={cn('flex-1 overflow-hidden', {
+				'border-[1px] border-white/20': props.bordered
+			})}
 			style={{
-				flex: 1,
-				overflow: 'hidden',
 				borderRadius: props.rounded || 0,
 				maxHeight: props.maxContainerHeight ?? 'auto'
 			}}
@@ -115,11 +140,13 @@ const YaMapWorkout = forwardRef<YaMapWorkoutHandle, IProps>((props, ref) => {
 				ref={mapRef}
 				nightMode
 				initialRegion={mapInitialRegionSettingsRef.current}
-				style={StyleSheet.absoluteFill}
-				logoPosition={{ horizontal: 'right', vertical: 'top' }}
+				style={{ height: '100%', width: '100%' }}
+				logoPosition={props.logoPosition || { horizontal: 'right', vertical: 'top' }}
+				logoPadding={props.logoPadding}
 				showUserPosition={false}
 				tiltGesturesDisabled={true}
 				rotateGesturesDisabled={false}
+				interactiveDisabled={props.interactiveDisabled}
 				onCameraPositionChange={() => {
 					if (isAnimationBlockedRef.current) return
 					handleBlockAnimation(true)
@@ -129,6 +156,7 @@ const YaMapWorkout = forwardRef<YaMapWorkoutHandle, IProps>((props, ref) => {
 				}}
 				onCameraPositionChangeEnd={() => {
 					handleBlockAnimation(false)
+					if (!props.needSaveCenter) return
 					mapRef.current?.getCameraPosition((pos) => {
 						const newSettings = {
 							lat: pos.point.lat,
@@ -142,6 +170,15 @@ const YaMapWorkout = forwardRef<YaMapWorkoutHandle, IProps>((props, ref) => {
 							...newSettings
 						}
 					})
+				}}
+				onMapLoaded={() => {
+					if (!props.needFitInitialRoute) return
+					const initialLocations = props.initialLocations
+					if (initialLocations?.length) {
+						initPath(initialLocations)
+					}
+
+					fitInitialRoute()
 				}}
 			>
 				<YaMapUserLocationMarker ref={props.userLocationMarkerRef} initialPosition={markerPosition} />
@@ -166,7 +203,7 @@ const YaMapWorkout = forwardRef<YaMapWorkoutHandle, IProps>((props, ref) => {
 					)
 				)}
 
-				{/*<YaMapFinishLocationMarker position={{ lat: 53.374451, lon: 49.660469 }} />*/}
+				{props.needFinishMarker && <YaMapFinishLocationMarker position={finishPosition} />}
 			</Yamap>
 		</View>
 	)
@@ -176,8 +213,13 @@ YaMapWorkout.displayName = 'YaMapWorkout'
 
 export default React.memo(YaMapWorkout, (prev, next) => {
 	const layoutPropsEqual =
-		prev.maxContainerHeight === next.maxContainerHeight &&
 		prev.rounded === next.rounded &&
+		prev.bordered === next.bordered &&
+		prev.needSaveCenter === next.needSaveCenter &&
+		prev.needFinishMarker === next.needFinishMarker &&
+		prev.needFitInitialRoute === next.needFitInitialRoute &&
+		prev.maxContainerHeight === next.maxContainerHeight &&
+		prev.interactiveDisabled === next.interactiveDisabled &&
 		prev.initialMarkerLocation === next.initialMarkerLocation &&
 		prev.userLocationMarkerRef === next.userLocationMarkerRef &&
 		prev.latestUserMarkerLocationRef === next.latestUserMarkerLocationRef

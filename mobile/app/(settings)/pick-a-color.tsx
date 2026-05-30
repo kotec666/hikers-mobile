@@ -121,11 +121,10 @@ const SettingsPickAColorPage = () => {
 							</Animated.Text>
 						</HeaderBack>
 						<MapComponentColorPick
-							minMapHeight={MAP_HEIGHT}
-							maxMapHeight={MAP_HEIGHT}
 							rounded={25}
-							// interactiveDisabled
 							activeColor={color}
+							// interactiveDisabled
+							maxContainerHeight={MAP_HEIGHT}
 						/>
 						{isFreeMode ? (
 							<View style={colorPickerStyle.pickerContainer}>

@@ -14,7 +14,6 @@ import { AnimatedProfilePicture } from '@/components/ui/Profile/AnimatedProfileP
 import { LegendList, LegendListRef } from '@legendapp/list'
 import { IPost } from '@/api/posts'
 import { Colors } from '@/constants/Colors'
-import MapComponent from '@/components/map/MapComponent'
 import { adaptLocations } from '@/helpers/adaptPointsToIWorkoutLocationStorageItem'
 import BlurProvider from '@/components/providers/BlurProvider'
 import HeaderBack from '@/components/ui/HeaderBack'
@@ -30,6 +29,7 @@ import { useToggleSubscribeMutation } from '@/queries/subscriptions'
 import { Page } from '@/components/ui/Page'
 import { refetchAndHaptics } from '@/helpers/refetchAndHaptics'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
+import YaMapWorkout from '@/components/map/YaMapWorkout'
 
 /**
  *
@@ -171,13 +171,26 @@ const UserProfilePage = () => {
 				likesCount={item.likesCount}
 				participants={item.training.participants}
 				mapComponent={
-					<MapComponent
+					<YaMapWorkout
+						bordered
 						rounded={25}
-						interactiveDisabled
 						needFinishMarker
-						initialLocations={{ current: adaptLocations(item.training.participants[0].route.points) }}
+						needFitInitialRoute
+						interactiveDisabled
+						initialLocations={adaptLocations(item.training.participants[0].route.points)}
 					/>
 				}
+				// @TODO проверить
+				// mapComponent={
+				// 	<RNMapWorkout
+				// 		bordered
+				// 		rounded={25}
+				// 		needFinishMarker
+				// 		needFitInitialRoute
+				// 		interactiveDisabled
+				// 		initialLocations={adaptLocations(item.training.participants[0].route.points)}
+				// 	/>
+				// }
 			/>
 		)
 	}, [])

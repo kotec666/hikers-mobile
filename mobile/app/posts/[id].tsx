@@ -11,7 +11,6 @@ import MoreOptionsSvg from '@/components/svg/MoreOptionsSvg'
 import MoreOptionsButton from '@/components/ui/MoreOptionsButton/MoreOptionsButton'
 import { useLocalSearchParams, useRouter } from 'expo-router'
 import { useAuthStore } from '@/store/authStore'
-import MapComponent from '@/components/map/MapComponent'
 import { adaptLocations } from '@/helpers/adaptPointsToIWorkoutLocationStorageItem'
 import { VIEWWORKOUT_MODE } from '@/app/training/viewWorkout'
 import { useSafeNavigation } from '@/hooks/useSafeNavigation'
@@ -19,6 +18,7 @@ import { Colors } from '@/constants/Colors'
 import BlurProvider from '@/components/providers/BlurProvider'
 import { useDeletePostMutation, usePostQuery } from '@/queries/posts'
 import { Page } from '@/components/ui/Page'
+import YaMapWorkout from '@/components/map/YaMapWorkout'
 
 const { height } = Dimensions.get('screen')
 const SLIDE_ASPECT_RATIO = height / 3.6
@@ -118,20 +118,34 @@ const Post = () => {
 									metrics={creatorMetrics}
 									isDetail
 									mapComponent={
-										<MapComponent
+										<YaMapWorkout
 											key={post?.training?.participants?.[0]?.route?.points?.length || 0} // какое-то время points undefined
+											bordered
 											rounded={25}
-											interactiveDisabled
-											minMapHeight={SLIDE_ASPECT_RATIO}
-											maxMapHeight={SLIDE_ASPECT_RATIO}
 											needFinishMarker
-											initialLocations={{
-												current: adaptLocations(
-													post?.training?.participants?.[0]?.route?.points || []
-												)
-											}}
+											needFitInitialRoute
+											interactiveDisabled
+											maxContainerHeight={SLIDE_ASPECT_RATIO}
+											initialLocations={adaptLocations(
+												post?.training?.participants?.[0]?.route?.points || []
+											)}
 										/>
 									}
+									// @TODO проверить
+									// mapComponent={
+									// 	<RNMapWorkout
+									// 		key={post?.training?.participants?.[0]?.route?.points?.length || 0} // какое-то время points undefined
+									// 		bordered
+									// 		rounded={25}
+									// 		needFinishMarker
+									// 		needFitInitialRoute
+									// 		interactiveDisabled
+									// 		maxContainerHeight={SLIDE_ASPECT_RATIO}
+									// 		initialLocations={adaptLocations(
+									// 			post?.training?.participants?.[0]?.route?.points || []
+									// 		)}
+									// 	/>
+									// }
 								/>
 								{/*<MapRoutesSwitchers />*/}
 								<PostListItemSlider images={post?.fileNames} />

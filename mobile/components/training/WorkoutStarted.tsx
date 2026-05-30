@@ -72,6 +72,7 @@ const WorkoutStarted = (props: IProps) => {
 			{isIOS ? (
 				<RNMapWorkout
 					ref={props.rnMapComponentRef}
+					needSaveCenter
 					userLocationMarkerRef={props.rnMapUserLocationMarkerRef}
 					latestUserMarkerLocationRef={props.latestUserMarkerLocationRef}
 					initialMarkerLocation={props.initialMarkerLocation}
@@ -81,6 +82,7 @@ const WorkoutStarted = (props: IProps) => {
 			) : (
 				<YaMapWorkout
 					ref={props.yaMapComponentRef}
+					needSaveCenter
 					userLocationMarkerRef={props.yaMapUserLocationMarkerRef}
 					latestUserMarkerLocationRef={props.latestUserMarkerLocationRef}
 					initialMarkerLocation={props.initialMarkerLocation}
