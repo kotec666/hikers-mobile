@@ -34,10 +34,11 @@ import { useUnsavedWorkoutSync } from '@/hooks/useUnsavedWorkoutSync'
 import NotFinishedWorkout from '@/components/BottomSheets/NotFinishedWorkout'
 import { deleteNotFinishedTraining } from '@/api/workout'
 import { IPoint } from '@/types/interfaces'
-import YaMapWorkout, { YaMapWorkoutHandle } from '@/components/map/YaMapWorkout'
-import RNMapWorkout, { RNMapWorkoutHandle } from '@/components/map/RNMapWorkout'
+import { YaMapWorkoutHandle } from '@/components/map/YaMapWorkout'
+import { RNMapWorkoutHandle } from '@/components/map/RNMapWorkout'
 import { YaMapUserLocationMarkerHandle } from '@/components/map/markers/UserLocationMarker/YaMapUserLocationMarker'
 import { RNMapsUserLocationMarkerHandle } from '@/components/map/markers/UserLocationMarker/RNMapsUserLocationMarker'
+import WorkoutMap from '@/components/map/WorkoutMap'
 
 export interface IWorkoutModeElement {
 	name: string
@@ -75,7 +76,6 @@ const NewWorkout = memo(
 		const { handleChangeWorkout: onChangeWorkout } = props
 		const { user } = useAuthStore()
 		const router = useRouter()
-		const isIOS = Platform.OS === 'ios'
 		const insets = useSafeAreaInsets()
 		const toast = useToast()
 		const bottomSheetRef = useRef<BottomSheetHandle>(null)
@@ -249,25 +249,17 @@ const NewWorkout = memo(
 				<Container className="mb-[20px]">
 					<HeaderBack>Новая тренировка</HeaderBack>
 				</Container>
-				{isIOS ? (
-					<RNMapWorkout
-						ref={props.rnMapComponentRef}
-						needSaveCenter
-						userLocationMarkerRef={props.rnMapUserLocationMarkerRef}
-						latestUserMarkerLocationRef={props.latestUserMarkerLocationRef}
-						initialMarkerLocation={props.initialMarkerLocation}
-						// maxContainerHeight={WINDOW_HEIGHT}
-					/>
-				) : (
-					<YaMapWorkout
-						ref={props.yaMapComponentRef}
-						needSaveCenter
-						userLocationMarkerRef={props.yaMapUserLocationMarkerRef}
-						latestUserMarkerLocationRef={props.latestUserMarkerLocationRef}
-						initialMarkerLocation={props.initialMarkerLocation}
-						maxContainerHeight={WINDOW_HEIGHT}
-					/>
-				)}
+				<WorkoutMap
+					rnMapComponentRef={props.rnMapComponentRef}
+					yaMapComponentRef={props.yaMapComponentRef}
+					rnMapUserLocationMarkerRef={props.rnMapUserLocationMarkerRef}
+					yaMapUserLocationMarkerRef={props.yaMapUserLocationMarkerRef}
+					needSaveCenter
+					latestUserMarkerLocationRef={props.latestUserMarkerLocationRef}
+					initialMarkerLocation={props.initialMarkerLocation}
+					maxContainerHeight={WINDOW_HEIGHT}
+					// maxContainerHeight={WINDOW_HEIGHT}
+				/>
 				<View
 					style={{
 						bottom: insets.bottom + 35,

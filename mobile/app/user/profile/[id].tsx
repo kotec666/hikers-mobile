@@ -1,4 +1,4 @@
-import React, { useEffect, useState, useCallback, useRef, useMemo } from 'react'
+import React, { useEffect, useState, useCallback, useRef } from 'react'
 import { ActivityIndicator, Platform, RefreshControl, Text, View } from 'react-native'
 import { fontFamily } from '@/constants/Fonts'
 import SocialStats from '@/components/ui/Profile/SocialStats'
@@ -29,8 +29,7 @@ import { useToggleSubscribeMutation } from '@/queries/subscriptions'
 import { Page } from '@/components/ui/Page'
 import { refetchAndHaptics } from '@/helpers/refetchAndHaptics'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
-import YaMapWorkout from '@/components/map/YaMapWorkout'
-import RNMapWorkout from '@/components/map/RNMapWorkout'
+import WorkoutMap from '@/components/map/WorkoutMap'
 
 /**
  *
@@ -51,7 +50,6 @@ const UserProfilePage = () => {
 	const { id } = useLocalSearchParams<{ id: string }>()
 	const legendListRef = useRef<LegendListRef>(null)
 
-	const isIOS = Platform.OS === 'ios'
 	const [isDeleteModalOpened, setIsDeleteModalOpened] = useState<boolean>(false)
 
 	const {
@@ -147,51 +145,44 @@ const UserProfilePage = () => {
 		[toggleSubscribe]
 	)
 
-	const MapWorkoutComponent = useMemo(() => {
-		return isIOS ? RNMapWorkout : YaMapWorkout
-	}, [isIOS])
-
-	const renderPostItem = useCallback(
-		({ item }: { item: IPost }) => {
-			return (
-				<PostListItem
-					key={item.id}
-					{...item}
-					postId={item.id}
-					authorId={item.userCreator?.id || ''}
-					authorName={item.userCreator?.name || ''}
-					avatar={item.userCreator.avatarFilename}
-					createdAt={item.createdAt}
-					workoutType={item.training.type}
-					title={item.title}
-					description={item.description}
-					images={item.fileNames}
-					metrics={
-						item.training.participants.find((participant) => participant.user.id === item.userCreator.id)
-							?.metrics
-					}
-					subscribeData={{
-						authorId: item.userCreator.id,
-						isSubscribed: item.isSubscribed
-					}}
-					isLiked={item.isLiked}
-					likesCount={item.likesCount}
-					participants={item.training.participants}
-					mapComponent={
-						<MapWorkoutComponent
-							bordered
-							rounded={25}
-							needFinishMarker
-							needFitInitialRoute
-							interactiveDisabled
-							initialLocations={adaptLocations(item.training.participants[0].route.points)}
-						/>
-					}
-				/>
-			)
-		},
-		[MapWorkoutComponent]
-	)
+	const renderPostItem = useCallback(({ item }: { item: IPost }) => {
+		return (
+			<PostListItem
+				key={item.id}
+				{...item}
+				postId={item.id}
+				authorId={item.userCreator?.id || ''}
+				authorName={item.userCreator?.name || ''}
+				avatar={item.userCreator.avatarFilename}
+				createdAt={item.createdAt}
+				workoutType={item.training.type}
+				title={item.title}
+				description={item.description}
+				images={item.fileNames}
+				metrics={
+					item.training.participants.find((participant) => participant.user.id === item.userCreator.id)
+						?.metrics
+				}
+				subscribeData={{
+					authorId: item.userCreator.id,
+					isSubscribed: item.isSubscribed
+				}}
+				isLiked={item.isLiked}
+				likesCount={item.likesCount}
+				participants={item.training.participants}
+				mapComponent={
+					<WorkoutMap
+						bordered
+						rounded={25}
+						needFinishMarker
+						needFitInitialRoute
+						interactiveDisabled
+						initialLocations={adaptLocations(item.training.participants[0].route.points)}
+					/>
+				}
+			/>
+		)
+	}, [])
 
 	// Определяем вариант кнопки
 	const getButtonVariant = () => {
@@ -359,7 +350,7 @@ const UserProfilePage = () => {
 						</>
 					}
 					contentContainerStyle={{
-						paddingBottom: insets.bottom + Platform.OS === 'android' ? 100 : 40,
+						paddingBottom: insets.bottom + (Platform.OS === 'android' ? 100 : 40),
 						paddingHorizontal: 16
 					}}
 				/>

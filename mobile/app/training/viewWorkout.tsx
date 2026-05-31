@@ -1,4 +1,4 @@
-import { Platform, Text, TextInput, View } from 'react-native'
+import { Text, TextInput, View } from 'react-native'
 import { Image } from 'expo-image'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
 import { Container } from '@/components/ui/Container'
@@ -47,8 +47,7 @@ import { useExtendedDetailsWorkoutQuery, useFinishWorkoutMutation } from '@/quer
 import { Page } from '@/components/ui/Page'
 import { DEFAULT_PADDING_TOP } from '@/constants/Variables'
 import { KeyboardAwareScrollView } from 'react-native-keyboard-controller'
-import YaMapWorkout from '@/components/map/YaMapWorkout'
-import RNMapWorkout from '@/components/map/RNMapWorkout'
+import WorkoutMap from '@/components/map/WorkoutMap'
 
 type Param = {
 	label: string
@@ -160,7 +159,6 @@ export default function ViewWorkout() {
 		historyTrainingId?: string
 		unsavedStartedAt?: string
 	}>()
-	const isIOS = Platform.OS === 'ios'
 	const isView = mode === VIEWWORKOUT_MODE.VIEW
 	const isEdit = mode === VIEWWORKOUT_MODE.EDIT
 	const isFromHistory = mode === VIEWWORKOUT_MODE.FROM_HISTORY
@@ -455,10 +453,6 @@ export default function ViewWorkout() {
 		})
 	}
 
-	const MapWorkoutComponent = useMemo(() => {
-		return isIOS ? RNMapWorkout : YaMapWorkout
-	}, [isIOS])
-
 	return (
 		<Page edges={['bottom']}>
 			<Modal
@@ -580,7 +574,7 @@ export default function ViewWorkout() {
 							</Button>
 						</View>
 						{state.switchChartView === 'map' && (
-							<MapWorkoutComponent
+							<WorkoutMap
 								bordered
 								rounded={25}
 								needFinishMarker

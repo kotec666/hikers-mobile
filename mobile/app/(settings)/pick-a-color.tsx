@@ -2,19 +2,18 @@ import { Container } from '@/components/ui/Container'
 import HeaderBack from '@/components/ui/HeaderBack'
 import { ScrollView, View, Pressable, Platform, StyleSheet, Dimensions } from 'react-native'
 import { Colors } from '@/constants/Colors'
-import React, { useMemo, useState } from 'react'
+import React, { useState } from 'react'
 import { fontFamily } from '@/constants/Fonts'
 import ColorPicker, { ColorFormatsObject, HueSlider, InputWidget, Panel1 } from 'reanimated-color-picker'
 import Animated, { useAnimatedStyle, useSharedValue } from 'react-native-reanimated'
 import { Button } from '@/components/ui/Button'
-import YaMapComponentColorPick from '@/components/map/YaMapComponentColorPick'
 import { FREE_COLORS } from '@shared/constants'
 import Modal from '@/components/ui/Modal/Modal'
 import { useRouter } from 'expo-router'
 import BlurProvider from '@/components/providers/BlurProvider'
 import { Page } from '@/components/ui/Page'
 import { KeyboardAwareScrollView } from 'react-native-keyboard-controller'
-import RNMapComponentColorPick from '@/components/map/RNMapComponentColorPick'
+import MapComponentColorPick from '@/components/map/MapComponentColorPick'
 
 const { height } = Dimensions.get('screen')
 const { width } = Dimensions.get('window')
@@ -41,7 +40,6 @@ const ColorBox = ({ color, size, onPress }: { color: string; size: number; onPre
 const SettingsPickAColorPage = () => {
 	const [notSavedModal, setNotSavedModal] = useState(false)
 	const router = useRouter()
-	const isIOS = Platform.OS === 'ios'
 
 	const handleCloseNotSavedModal = () => {
 		setNotSavedModal(false)
@@ -84,10 +82,6 @@ const SettingsPickAColorPage = () => {
 		'worklet'
 		currentColor.value = color.rgb
 	}
-
-	const MapColorPickComponent = useMemo(() => {
-		return isIOS ? RNMapComponentColorPick : YaMapComponentColorPick
-	}, [isIOS])
 
 	const colorBoxSize = (width - CONTAINER_PADDING * 2 - GAP * (COLUMNS - 1)) / COLUMNS
 
@@ -133,7 +127,7 @@ const SettingsPickAColorPage = () => {
 								цвета
 							</Animated.Text>
 						</HeaderBack>
-						<MapColorPickComponent
+						<MapComponentColorPick
 							rounded={25}
 							activeColor={color}
 							// interactiveDisabled

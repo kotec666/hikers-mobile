@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useMemo, useRef } from 'react'
+import React, { useCallback, useEffect, useRef } from 'react'
 import { ActivityIndicator, Platform, RefreshControl, Text, View } from 'react-native'
 import SettingsSvg from '@/components/svg/SettingsSvg'
 import MoreOptionsButton from '@/components/ui/MoreOptionsButton/MoreOptionsButton'
@@ -26,8 +26,7 @@ import { useQueryClient } from '@tanstack/react-query'
 import EmailNotConfirmed from '@/components/profile/EmailNotConfirmed'
 import { refetchAndHaptics } from '@/helpers/refetchAndHaptics'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
-import YaMapWorkout from '@/components/map/YaMapWorkout'
-import RNMapWorkout from '@/components/map/RNMapWorkout'
+import WorkoutMap from '@/components/map/WorkoutMap'
 
 /**
  *
@@ -52,8 +51,6 @@ const Profile = () => {
 	const { user, logout } = useAuthStore()
 	const params = useLocalSearchParams()
 	const legendListRef = useRef<LegendListRef>(null)
-
-	const isIOS = Platform.OS === 'ios'
 
 	const { data: profileData, isFetching: isProfileFetching, refetch: refetchProfile } = useProfileQuery()
 	const shouldShowEmailConfirmation =
@@ -90,10 +87,6 @@ const Profile = () => {
 		await Promise.all([refetchProfile(), postsRefetch()]) // , refresh()
 	}, [refetchProfile, postsRefetch]) // , refresh
 
-	const MapWorkoutComponent = useMemo(() => {
-		return isIOS ? RNMapWorkout : YaMapWorkout
-	}, [isIOS])
-
 	// Функция рендеринга элемента поста
 	const renderPostItem = useCallback(
 		({ item }: { item: IPost }) => {
@@ -117,7 +110,7 @@ const Profile = () => {
 					likesCount={item.likesCount}
 					participants={item.training.participants}
 					mapComponent={
-						<MapWorkoutComponent
+						<WorkoutMap
 							bordered
 							rounded={25}
 							needFinishMarker
@@ -129,7 +122,7 @@ const Profile = () => {
 				/>
 			)
 		},
-		[user?.id, MapWorkoutComponent]
+		[user?.id]
 	)
 
 	// Функция рендеринга индикатора загрузки
@@ -263,7 +256,7 @@ const Profile = () => {
 					}
 					contentContainerStyle={{
 						flexGrow: 1,
-						paddingBottom: insets.bottom + Platform.OS === 'android' ? 100 : 40,
+						paddingBottom: insets.bottom + (Platform.OS === 'android' ? 100 : 40),
 						paddingHorizontal: 16
 					}}
 				/>

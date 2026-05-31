@@ -1,6 +1,6 @@
 import React, { RefObject, useCallback, useMemo, useState } from 'react'
 import { Container } from '@/components/ui/Container'
-import { Dimensions, Platform, Text, View } from 'react-native'
+import { Dimensions, Text, View } from 'react-native'
 import { fontFamily } from '@/constants/Fonts'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
 import { IWorkoutLocationStorageItem } from '@/store/workoutStorage'
@@ -14,10 +14,11 @@ import { MetricDistanceHandle } from '@/components/training/tabs/metrics/MetricD
 import { MetricCaloriesHandle } from '@/components/training/tabs/metrics/MetricCalories'
 import { MetricHeightHandle } from '@/components/training/tabs/metrics/MetricHeight'
 import { MetricAvgSpeedHandle } from '@/components/training/tabs/metrics/MetricAvgSpeed'
-import YaMapWorkout, { YaMapWorkoutHandle } from '@/components/map/YaMapWorkout'
+import { YaMapWorkoutHandle } from '@/components/map/YaMapWorkout'
 import { YaMapUserLocationMarkerHandle } from '@/components/map/markers/UserLocationMarker/YaMapUserLocationMarker'
-import RNMapWorkout, { RNMapWorkoutHandle } from '@/components/map/RNMapWorkout'
+import { RNMapWorkoutHandle } from '@/components/map/RNMapWorkout'
 import { RNMapsUserLocationMarkerHandle } from '@/components/map/markers/UserLocationMarker/RNMapsUserLocationMarker'
+import WorkoutMap from '@/components/map/WorkoutMap'
 
 interface IProps {
 	initialMarkerLocation?: Point | null
@@ -47,7 +48,6 @@ const { height } = Dimensions.get('screen')
 
 const WorkoutStarted = (props: IProps) => {
 	const insets = useSafeAreaInsets()
-	const isIOS = Platform.OS === 'ios'
 	const maxMapHeight = useMemo(() => height / 2 - 40 - insets.top, [insets.top])
 	const [peopleListHidden, setPeopleListHidden] = useState(true)
 	const [mapViewHidden, setMapViewHidden] = useState(true)
@@ -69,28 +69,17 @@ const WorkoutStarted = (props: IProps) => {
 					Тренировка
 				</Text>
 			</Container>
-			{isIOS ? (
-				<RNMapWorkout
-					ref={props.rnMapComponentRef}
-					needSaveCenter
-					userLocationMarkerRef={props.rnMapUserLocationMarkerRef}
-					latestUserMarkerLocationRef={props.latestUserMarkerLocationRef}
-					initialMarkerLocation={props.initialMarkerLocation}
-					initialLocations={props.initialLocationsState}
-					maxContainerHeight={mapViewHidden ? maxMapHeight : 0}
-				/>
-			) : (
-				<YaMapWorkout
-					ref={props.yaMapComponentRef}
-					needSaveCenter
-					userLocationMarkerRef={props.yaMapUserLocationMarkerRef}
-					latestUserMarkerLocationRef={props.latestUserMarkerLocationRef}
-					initialMarkerLocation={props.initialMarkerLocation}
-					initialLocations={props.initialLocationsState}
-					maxContainerHeight={mapViewHidden ? maxMapHeight : 0}
-				/>
-			)}
-
+			<WorkoutMap
+				rnMapComponentRef={props.rnMapComponentRef}
+				yaMapComponentRef={props.yaMapComponentRef}
+				rnMapUserLocationMarkerRef={props.rnMapUserLocationMarkerRef}
+				yaMapUserLocationMarkerRef={props.yaMapUserLocationMarkerRef}
+				needSaveCenter
+				latestUserMarkerLocationRef={props.latestUserMarkerLocationRef}
+				initialMarkerLocation={props.initialMarkerLocation}
+				initialLocations={props.initialLocationsState}
+				maxContainerHeight={mapViewHidden ? maxMapHeight : 0}
+			/>
 			<Container style={{ paddingBottom: insets.bottom + 35 }} className="flex-1 w-full pt-[16px]">
 				<View className="flex-1 justify-between gap-[16px]">
 					{peopleListHidden ? (

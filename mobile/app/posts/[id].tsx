@@ -1,5 +1,5 @@
-import React, { useCallback, useEffect, useMemo, useState } from 'react'
-import { View, ScrollView, Dimensions, ActivityIndicator, Platform } from 'react-native'
+import React, { useCallback, useEffect, useState } from 'react'
+import { View, ScrollView, Dimensions, ActivityIndicator } from 'react-native'
 import { Container } from '@/components/ui/Container'
 import PostListItemHeader from '@/components/ui/Post/PostListItemHeader'
 import HeaderBack from '@/components/ui/HeaderBack'
@@ -18,8 +18,7 @@ import { Colors } from '@/constants/Colors'
 import BlurProvider from '@/components/providers/BlurProvider'
 import { useDeletePostMutation, usePostQuery } from '@/queries/posts'
 import { Page } from '@/components/ui/Page'
-import YaMapWorkout from '@/components/map/YaMapWorkout'
-import RNMapWorkout from '@/components/map/RNMapWorkout'
+import WorkoutMap from '@/components/map/WorkoutMap'
 
 const { height } = Dimensions.get('screen')
 const SLIDE_ASPECT_RATIO = height / 3.6
@@ -30,7 +29,6 @@ const Post = () => {
 	const { id } = useLocalSearchParams<{ id: string }>()
 	const { user } = useAuthStore()
 
-	const isIOS = Platform.OS === 'ios'
 	const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false)
 
 	const { data: post, error, isError, isFetching } = usePostQuery(id)
@@ -63,10 +61,6 @@ const Post = () => {
 	const creatorMetrics = post?.training.participants.find(
 		(participant) => participant.user.id === post?.userCreator.id
 	)?.metrics
-
-	const MapWorkoutComponent = useMemo(() => {
-		return isIOS ? RNMapWorkout : YaMapWorkout
-	}, [isIOS])
 
 	if (isFetching) {
 		return (
@@ -125,7 +119,7 @@ const Post = () => {
 									metrics={creatorMetrics}
 									isDetail
 									mapComponent={
-										<MapWorkoutComponent
+										<WorkoutMap
 											key={post?.training?.participants?.[0]?.route?.points?.length || 0} // какое-то время points undefined
 											bordered
 											rounded={25}

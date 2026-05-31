@@ -10,7 +10,7 @@ import { adjustRgbaOpacity } from '@/helpers/colors/adjustRgbaOpacity'
 import { PolylineCustom } from '@/components/map/PolylineCustom'
 import { mapCenter, firstPoint, secondPoint, thirdPoint, fourthPoint, fifthPoint, sixthPoint } from '@/constants/RNMap'
 
-interface IProps {
+export interface IYaMapComponentColorPickProps {
 	activeColor?: string
 	interactiveDisabled?: boolean
 	maxContainerHeight?: number
@@ -32,7 +32,7 @@ const getSegmentColor = (isPaused: boolean, userColor: string) => {
 	return userColor
 }
 
-const YaMapComponentColorPick = (props: IProps) => {
+const YaMapComponentColorPick = (props: IYaMapComponentColorPickProps) => {
 	const activeColor = props.activeColor ?? 'rgb(0, 200, 100, 1)'
 	return (
 		<View

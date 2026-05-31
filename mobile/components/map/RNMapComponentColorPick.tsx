@@ -20,7 +20,7 @@ import {
 } from '@/constants/RNMap'
 import { adjustRgbaOpacity } from '@/helpers/colors/adjustRgbaOpacity'
 
-interface IProps {
+export interface IRNMapComponentColorPickProps {
 	activeColor?: string
 	interactiveDisabled?: boolean
 	maxContainerHeight?: number
@@ -36,7 +36,7 @@ const getSegmentColor = (isPaused: boolean, userColor: string) => {
 	return userColor
 }
 
-const RNMapComponentColorPick = (props: IProps) => {
+const RNMapComponentColorPick = (props: IRNMapComponentColorPickProps) => {
 	const activeColor = props.activeColor ?? 'rgb(0, 200, 100, 1)'
 	return (
 		<View
