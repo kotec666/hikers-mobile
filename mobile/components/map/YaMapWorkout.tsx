@@ -128,10 +128,12 @@ const YaMapWorkout = forwardRef<YaMapWorkoutHandle, IYaMapWorkoutProps>((props, 
 	return (
 		<View
 			pointerEvents={props.interactiveDisabled ? 'none' : 'auto'}
-			className={cn('flex-1 overflow-hidden', {
+			className={cn('overflow-hidden', {
 				'border-[1px] border-white/20': props.bordered
 			})}
 			style={{
+				width: '100%',
+				height: '100%',
 				borderRadius: props.rounded || 0,
 				maxHeight: props.maxContainerHeight ?? 'auto'
 			}}
@@ -140,7 +142,7 @@ const YaMapWorkout = forwardRef<YaMapWorkoutHandle, IYaMapWorkoutProps>((props, 
 				ref={mapRef}
 				nightMode
 				initialRegion={mapInitialRegionSettingsRef.current}
-				style={{ height: '100%', width: '100%' }}
+				style={{ height: '100%', width: '100%' }} // style={{ flex: 1 }}
 				logoPosition={props.logoPosition || { horizontal: 'right', vertical: 'top' }}
 				logoPadding={props.logoPadding}
 				showUserPosition={false}

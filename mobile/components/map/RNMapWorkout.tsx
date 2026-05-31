@@ -144,10 +144,12 @@ const RNMapWorkout = forwardRef<RNMapWorkoutHandle, IRNMapWorkoutProps>((props, 
 	return (
 		<View
 			pointerEvents={props.interactiveDisabled ? 'none' : 'auto'}
-			className={cn('flex-1 overflow-hidden', {
+			className={cn('overflow-hidden', {
 				'border-[1px] border-white/20': props.bordered
 			})}
 			style={{
+				width: '100%',
+				height: '100%',
 				borderRadius: props.rounded || 0,
 				maxHeight: props.maxContainerHeight ?? 'auto'
 			}}
@@ -155,7 +157,7 @@ const RNMapWorkout = forwardRef<RNMapWorkoutHandle, IRNMapWorkoutProps>((props, 
 			<MapView
 				ref={mapRef}
 				userInterfaceStyle="dark"
-				style={{ height: '100%', width: '100%' }}
+				style={{ height: '100%', width: '100%' }} // style={{ flex: 1 }}
 				scrollEnabled={!props.interactiveDisabled}
 				zoomEnabled={!props.interactiveDisabled}
 				rotateEnabled={!props.interactiveDisabled}

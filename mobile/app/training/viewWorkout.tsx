@@ -575,6 +575,7 @@ export default function ViewWorkout() {
 						</View>
 						{state.switchChartView === 'map' && (
 							<WorkoutMap
+								key={mapLocations.length || 0} // какое-то время points undefined
 								bordered
 								rounded={25}
 								needFinishMarker
