@@ -171,7 +171,7 @@ const YaMapWorkout = forwardRef<YaMapWorkoutHandle, IYaMapWorkoutProps>((props, 
 						}
 					})
 				}}
-				onMapLoaded={() => {
+				onLayout={() => {
 					if (!props.needFitInitialRoute) return
 					const initialLocations = props.initialLocations
 					if (initialLocations?.length) {
