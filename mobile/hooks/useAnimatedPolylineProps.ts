@@ -12,17 +12,22 @@ const withOpacity = (color: string, opacity: number) => {
 	return `rgba(${values[0]}, ${values[1]}, ${values[2]}, ${opacity})`
 }
 
-export const useAnimatedPolylineProps = (currentColor: SharedValue<string>, opacity = 1) => {
+export const useAnimatedPolylineProps = (
+	fieldName: string,
+	needProcessColorToNative: boolean,
+	currentColor: SharedValue<string>,
+	opacity = 1
+) => {
 	return useAnimatedProps(
 		() => ({
-			strokeColor: opacity === 1 ? currentColor.value : withOpacity(currentColor.value, opacity)
+			[fieldName]: opacity === 1 ? currentColor.value : withOpacity(currentColor.value, opacity)
 		}),
 		[],
 		(props) => {
 			'worklet'
 
-			if ('strokeColor' in props) {
-				props.strokeColor = processColor(props.strokeColor)
+			if (fieldName in props) {
+				props[fieldName] = needProcessColorToNative ? processColor(props[fieldName]) : props[fieldName]
 			}
 		}
 	)

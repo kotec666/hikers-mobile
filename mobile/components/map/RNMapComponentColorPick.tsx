@@ -1,12 +1,6 @@
 import React from 'react'
 import { View } from 'react-native'
-import MapView from 'react-native-maps'
-import RNMapsPauseLocationMarker from '@/components/map/markers/PauseLocationMarker/RNMapsPauseLocationMarker'
-import RNMapsResumeLocationMarker from '@/components/map/markers/ResumeLocationMarker/RNMapsResumeLocationMarker'
-import RNMapsStartLocationMarker from '@/components/map/markers/StartLocationMarker/RNMapsStartLocationMarker'
-import RNMapsFinishLocationMarker from '@/components/map/markers/FinishLocationMarker/RNMapsFinishLocationMarker'
-import RNMapsUserLocationMarker from '@/components/map/markers/UserLocationMarker/RNMapsUserLocationMarker'
-import RNSegmentPolyline from '@/components/map/polyline/RNSegmentPolyline'
+import MapView, { Polyline } from 'react-native-maps'
 import {
 	mapCenter,
 	// DEFAULT_APPLE_LEGAL_POSITION,
@@ -18,7 +12,13 @@ import {
 	fifthPoint,
 	sixthPoint
 } from '@/constants/RNMap'
-import { adjustRgbaOpacity } from '@/helpers/colors/adjustRgbaOpacity'
+import Animated from 'react-native-reanimated'
+import { MapPolylineProps } from 'react-native-maps/dist/src/MapPolyline'
+import RNMapsAnimatedStartLocationMarker from '@/components/map/markers/StartLocationMarker/RNMapsAnimatedStartLocationMarker'
+import RNMapsAnimatedPauseLocationMarker from '@/components/map/markers/PauseLocationMarker/RNMapsAnimatedPauseLocationMarker'
+import RNMapsAnimatedResumeLocationMarker from '@/components/map/markers/ResumeLocationMarker/RNMapsAnimatedResumeLocationMarker'
+import RNMapsAnimatedFinishLocationMarker from '@/components/map/markers/FinishLocationMarker/RNMapsAnimatedFinishLocationMarker'
+import RNMapsAnimatedUserLocationMarker from '@/components/map/markers/UserLocationMarker/RNMapsAnimatedUserLocationMarker'
 
 export interface IRNMapComponentColorPickProps {
 	activeColor?: string
@@ -27,17 +27,16 @@ export interface IRNMapComponentColorPickProps {
 	rounded?: number
 	// appleLogoPosition?: EdgePadding
 	// appleLegalPosition?: EdgePadding
+	animatedStrokeColorProps?: Partial<MapPolylineProps>
+	animatedStrokeColorWithOpacityProps?: Partial<MapPolylineProps>
+	animatedStrokeProps?: Partial<{ stroke: string }>
+	animatedFillProps?: Partial<{ fill: string }>
+	animatedFillColorProps?: Partial<{ fillColor: string }>
+	animatedFillColorWithOpacityProps?: Partial<{ fillColor: string }>
 }
 
-const getSegmentColor = (isPaused: boolean, userColor: string) => {
-	if (isPaused) {
-		return adjustRgbaOpacity(userColor, (a) => a / 2)
-	}
-	return userColor
-}
-
+export const AnimatedPolyline = Animated.createAnimatedComponent(Polyline)
 const RNMapComponentColorPick = (props: IRNMapComponentColorPickProps) => {
-	const activeColor = props.activeColor ?? 'rgb(0, 200, 100, 1)'
 	return (
 		<View
 			pointerEvents={props.interactiveDisabled ? 'none' : 'auto'}
@@ -65,40 +64,52 @@ const RNMapComponentColorPick = (props: IRNMapComponentColorPickProps) => {
 				showsCompass={false}
 				showsScale
 			>
-				<RNMapsUserLocationMarker
-					key={`user-${activeColor}`}
+				<RNMapsAnimatedUserLocationMarker
 					initialPosition={mapCenter}
-					color={activeColor}
 					debugAccuracyM={20}
+					animatedFillProps={props.animatedFillProps}
+					animatedFillColorWithOpacityProps={props.animatedFillColorWithOpacityProps}
 				/>
-				<RNMapsStartLocationMarker key={`start-${activeColor}`} position={firstPoint} color={activeColor} />
-				<RNSegmentPolyline
-					key={`poly-1-${activeColor}`}
-					points={[firstPoint, secondPoint]}
-					color={getSegmentColor(false, activeColor)}
+				<RNMapsAnimatedStartLocationMarker
+					position={firstPoint}
+					animatedCircleProps={props.animatedStrokeProps}
 				/>
-				<RNSegmentPolyline
-					key={`poly-2-${activeColor}`}
-					points={[secondPoint, thirdPoint]}
-					color={getSegmentColor(true, activeColor)}
+
+				<AnimatedPolyline
+					strokeWidth={4}
+					coordinates={[
+						{ latitude: firstPoint.lat, longitude: firstPoint.lon },
+						{ latitude: secondPoint.lat, longitude: secondPoint.lon }
+					]}
+					animatedProps={props.animatedStrokeColorProps}
 				/>
-				<RNSegmentPolyline
-					key={`poly-3-${activeColor}`}
-					points={[thirdPoint, fourthPoint]}
-					color={getSegmentColor(true, activeColor)}
+
+				<AnimatedPolyline
+					strokeWidth={4}
+					coordinates={[
+						{ latitude: thirdPoint.lat, longitude: thirdPoint.lon },
+						{ latitude: fourthPoint.lat, longitude: fourthPoint.lon }
+					]}
+					animatedProps={props.animatedStrokeColorWithOpacityProps}
 				/>
-				<RNSegmentPolyline
-					key={`poly-4-${activeColor}`}
-					points={[fifthPoint, sixthPoint]}
-					color={getSegmentColor(false, activeColor)}
+
+				<AnimatedPolyline
+					strokeWidth={4}
+					coordinates={[
+						{ latitude: fifthPoint.lat, longitude: fifthPoint.lon },
+						{ latitude: sixthPoint.lat, longitude: sixthPoint.lon }
+					]}
+					animatedProps={props.animatedStrokeColorProps}
 				/>
-				<RNMapsPauseLocationMarker key={`pause-1-${activeColor}`} position={secondPoint} color={activeColor} />
-				<RNMapsResumeLocationMarker
-					key={`resume-1-${activeColor}`}
+				<RNMapsAnimatedPauseLocationMarker position={secondPoint} animatedPathProps={props.animatedFillProps} />
+				<RNMapsAnimatedResumeLocationMarker
 					position={fourthPoint}
-					color={activeColor}
+					animatedPathProps={props.animatedFillProps}
 				/>
-				<RNMapsFinishLocationMarker key={`finish-${activeColor}`} position={sixthPoint} color={activeColor} />
+				<RNMapsAnimatedFinishLocationMarker
+					position={sixthPoint}
+					animatedPathProps={props.animatedStrokeProps}
+				/>
 			</MapView>
 		</View>
 	)

@@ -24,8 +24,8 @@ export interface IYaMapComponentColorPickProps {
 		horizontal?: number
 		vertical?: number
 	}
-	animatedYaMapPolylineProps?: AnimatedPolylineProps
-	animatedYaMapPausedPolylineProps?: AnimatedPolylineProps
+	animatedStrokeColorProps?: AnimatedPolylineProps
+	animatedStrokeColorWithOpacityProps?: AnimatedPolylineProps
 }
 
 export const AnimatedPolyline = Animated.createAnimatedComponent(PolylineCustom)
@@ -66,21 +66,21 @@ const YaMapComponentColorPick = (props: IYaMapComponentColorPickProps) => {
 					strokeWidth={4}
 					outlineWidth={2}
 					outlineColor="transparent"
-					animatedProps={props.animatedYaMapPolylineProps}
+					animatedProps={props.animatedStrokeColorProps}
 				/>
 				<AnimatedPolyline
 					points={[thirdPoint, fourthPoint]}
 					strokeWidth={4}
 					outlineWidth={2}
 					outlineColor="transparent"
-					animatedProps={props.animatedYaMapPausedPolylineProps}
+					animatedProps={props.animatedStrokeColorWithOpacityProps}
 				/>
 				<AnimatedPolyline
 					points={[fifthPoint, sixthPoint]}
 					strokeWidth={4}
 					outlineWidth={2}
 					outlineColor="transparent"
-					animatedProps={props.animatedYaMapPolylineProps}
+					animatedProps={props.animatedStrokeColorProps}
 				/>
 				<YaMapPauseLocationMarker key={`pause-1-${activeColor}`} position={secondPoint} color={activeColor} />
 				<YaMapResumeLocationMarker key={`resume-1-${activeColor}`} position={fourthPoint} color={activeColor} />

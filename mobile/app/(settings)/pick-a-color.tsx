@@ -68,8 +68,12 @@ const SettingsPickAColorPage = () => {
 		}
 	})
 
-	const animatedPolylineProps = useAnimatedPolylineProps(currentColor, 1)
-	const animatedPausedPolylineProps = useAnimatedPolylineProps(currentColor, 0.5)
+	const animatedStrokeColorProps = useAnimatedPolylineProps('strokeColor', true, currentColor, 1)
+	const animatedStrokeColorWithOpacityProps = useAnimatedPolylineProps('strokeColor', true, currentColor, 0.5)
+	const animatedStrokeProps = useAnimatedPolylineProps('stroke', false, currentColor, 1)
+	const animatedFillProps = useAnimatedPolylineProps('fill', false, currentColor, 1)
+	const animatedFillColorProps = useAnimatedPolylineProps('fillColor', false, currentColor, 1)
+	const animatedFillColorWithOpacityProps = useAnimatedPolylineProps('fillColor', true, currentColor, 0.2)
 
 	// runs on the js thread on color pick
 	const onColorPick = (color: string | ColorFormatsObject) => {
@@ -136,8 +140,12 @@ const SettingsPickAColorPage = () => {
 							activeColor={color}
 							// interactiveDisabled
 							maxContainerHeight={MAP_HEIGHT}
-							animatedYaMapPolylineProps={animatedPolylineProps}
-							animatedYaMapPausedPolylineProps={animatedPausedPolylineProps}
+							animatedStrokeColorProps={animatedStrokeColorProps}
+							animatedStrokeColorWithOpacityProps={animatedStrokeColorWithOpacityProps}
+							animatedStrokeProps={animatedStrokeProps}
+							animatedFillProps={animatedFillProps}
+							animatedFillColorProps={animatedFillColorProps}
+							animatedFillColorWithOpacityProps={animatedFillColorWithOpacityProps}
 						/>
 						{isFreeMode ? (
 							<View style={colorPickerStyle.pickerContainer}>

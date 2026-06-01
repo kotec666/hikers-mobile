@@ -1,0 +1,72 @@
+import * as React from 'react'
+import Svg, { Circle, Polygon, G } from 'react-native-svg'
+import Animated from 'react-native-reanimated'
+
+interface IProps {
+	color?: string
+	width?: number
+	height?: number
+	heading: number | null
+	animatedFillProps?: Partial<{ fill: string }>
+}
+
+const AnimatedCircle = Animated.createAnimatedComponent(Circle)
+const AnimatedUserWithCircleSvg = React.memo((props: IProps) => {
+	const { width = 100, height = 100, heading, animatedFillProps, color = 'rgb(0, 200, 100)' } = props
+
+	const { centerX, centerY, viewBox } = React.useMemo(() => {
+		const cx = width / 2
+		const cy = height / 2
+		return {
+			centerX: cx,
+			centerY: cy,
+			viewBox: `0 0 ${width} ${height}`
+		}
+	}, [width, height])
+
+	const trianglePoints = React.useMemo(() => {
+		const circleRadius = 16
+		const triangleWidth = 30
+		const triangleHeight = 22
+		const triangleDepth = -7
+
+		const topY = centerY - circleRadius - triangleHeight - triangleDepth
+
+		return `
+			${centerX},${topY}
+			${centerX - triangleWidth / 2},${topY + triangleHeight}
+			${centerX + triangleWidth / 2},${topY + triangleHeight}
+		`
+	}, [centerX, centerY])
+
+	const rotationTransform = React.useMemo(() => {
+		if (typeof heading === 'number') {
+			return `rotate(${heading}, ${centerX}, ${centerY})`
+		}
+		return undefined
+	}, [heading, centerX, centerY])
+
+	return (
+		<Svg width={width} height={height} viewBox={viewBox}>
+			{rotationTransform && (
+				<G transform={rotationTransform}>
+					<Polygon points={trianglePoints} fill="#FFF" strokeWidth={0} />
+				</G>
+			)}
+
+			<AnimatedCircle
+				cx={centerX}
+				cy={centerY}
+				r={16}
+				fill={color}
+				animatedProps={animatedFillProps}
+				strokeWidth={3}
+				stroke="#FFF"
+			/>
+		</Svg>
+	)
+})
+
+AnimatedUserWithCircleSvg.displayName = 'UserWithCircleSvg'
+
+export default AnimatedUserWithCircleSvg
