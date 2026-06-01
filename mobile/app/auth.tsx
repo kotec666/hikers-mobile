@@ -22,8 +22,7 @@ import { useSafeNavigation } from '@/hooks/useSafeNavigation'
 import { createTimer, TimerType } from '@/store/timerStorage'
 import { KeyboardAwareScrollView, KeyboardStickyView } from 'react-native-keyboard-controller'
 import EmailSvg from '@/components/svg/EmailSvg'
-import { useKeyboardAnimation } from '@/hooks/useKeyboardAnimation'
-import Animated from 'react-native-reanimated'
+import { useKeyboardHeight } from '@/hooks/useKeyboardHeight'
 
 export enum AUTH_MODE {
 	AUTH = 'auth',
@@ -47,6 +46,7 @@ const AuthPage = () => {
 		formState: { errors }
 	} = useForm<IAuthFormState>()
 	const { ErrorMessages } = useErrorMessage()
+	const keyboardHeight = useKeyboardHeight()
 
 	const [data, setData] = useState<{
 		mode: AUTH_MODE
@@ -113,19 +113,11 @@ const AuthPage = () => {
 	}
 
 	const isAuth = data.mode === AUTH_MODE.AUTH
-
-	const { animatedKeyboardStyle } = useKeyboardAnimation({
-		enabled: !isAuth,
-		mode: 'shift',
-		type: 'translate',
-		offset: {
-			opened: 60
-		}
-	})
+	const hasSoftKeyboard = keyboardHeight > 80
 
 	return (
 		<Page style={{ paddingBottom: 20 }}>
-			<Animated.View style={animatedKeyboardStyle} className="flex-1">
+			<View className="flex-1">
 				<KeyboardAwareScrollView
 					keyboardShouldPersistTaps="handled"
 					contentContainerStyle={{
@@ -336,8 +328,8 @@ const AuthPage = () => {
 						</View>
 					</Container>
 				</KeyboardAwareScrollView>
-			</Animated.View>
-			<KeyboardStickyView offset={{ opened: 90, closed: -10 }}>
+			</View>
+			<KeyboardStickyView offset={hasSoftKeyboard ? { opened: 90, closed: 0 } : {}} style={{ paddingBottom: 10 }}>
 				<Container>
 					<Button
 						variant="white"
