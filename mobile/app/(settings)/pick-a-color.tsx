@@ -14,6 +14,7 @@ import BlurProvider from '@/components/providers/BlurProvider'
 import { Page } from '@/components/ui/Page'
 import { KeyboardAwareScrollView } from 'react-native-keyboard-controller'
 import MapComponentColorPick from '@/components/map/MapComponentColorPick'
+import { useAnimatedPolylineProps } from '@/hooks/useAnimatedPolylineProps'
 
 const { height } = Dimensions.get('screen')
 const { width } = Dimensions.get('window')
@@ -67,6 +68,9 @@ const SettingsPickAColorPage = () => {
 		}
 	})
 
+	const animatedPolylineProps = useAnimatedPolylineProps(currentColor, 1)
+	const animatedPausedPolylineProps = useAnimatedPolylineProps(currentColor, 0.5)
+
 	// runs on the js thread on color pick
 	const onColorPick = (color: string | ColorFormatsObject) => {
 		if (typeof color === 'string') {
@@ -85,7 +89,7 @@ const SettingsPickAColorPage = () => {
 
 	const colorBoxSize = (width - CONTAINER_PADDING * 2 - GAP * (COLUMNS - 1)) / COLUMNS
 
-	const isFreeMode = false
+	const isFreeMode = true
 
 	return (
 		<Page>
@@ -132,6 +136,8 @@ const SettingsPickAColorPage = () => {
 							activeColor={color}
 							// interactiveDisabled
 							maxContainerHeight={MAP_HEIGHT}
+							animatedYaMapPolylineProps={animatedPolylineProps}
+							animatedYaMapPausedPolylineProps={animatedPausedPolylineProps}
 						/>
 						{isFreeMode ? (
 							<View style={colorPickerStyle.pickerContainer}>
