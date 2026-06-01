@@ -12,7 +12,7 @@ const withOpacity = (color: string, opacity: number) => {
 	return `rgba(${values[0]}, ${values[1]}, ${values[2]}, ${opacity})`
 }
 
-export const useAnimatedPolylineProps = (
+export const useAnimatedColorPickProps = (
 	fieldName: string,
 	needProcessColorToNative: boolean,
 	currentColor: SharedValue<string>,
