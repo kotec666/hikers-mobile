@@ -1,6 +1,6 @@
 import { Container } from '@/components/ui/Container'
 import HeaderBack from '@/components/ui/HeaderBack'
-import { ScrollView, View, Pressable, Platform, StyleSheet, Dimensions } from 'react-native'
+import { View, Pressable, Platform, StyleSheet, Dimensions } from 'react-native'
 import { Colors } from '@/constants/Colors'
 import React, { useState } from 'react'
 import { fontFamily } from '@/constants/Fonts'
@@ -19,7 +19,7 @@ import { useAnimatedColorPickProps } from '@/hooks/useAnimatedColorPickProps'
 const { height } = Dimensions.get('screen')
 const { width } = Dimensions.get('window')
 
-const GAP = 16
+const GAP = 15
 const COLUMNS = 7
 const CONTAINER_PADDING = 16
 const MAP_HEIGHT = height / 3.2
@@ -125,7 +125,7 @@ const SettingsPickAColorPage = () => {
 					keyboardShouldPersistTaps="handled"
 					bottomOffset={50}
 				>
-					<Container className="gap-[20px]">
+					<Container className="gap-[20px] flex-1">
 						<HeaderBack returnCallback={handleOpenNotSavedModal}>
 							Выбор{' '}
 							<Animated.Text
@@ -171,22 +171,22 @@ const SettingsPickAColorPage = () => {
 								</ColorPicker>
 							</View>
 						) : (
-							<ScrollView>
-								<View className="flex-row flex-wrap" style={{ gap: GAP }}>
-									{Object.values(FREE_COLORS).map((color) => {
-										return (
-											<ColorBox
-												key={color}
-												color={color}
-												size={colorBoxSize}
-												onPress={(newColor) => onColorPick(newColor)}
-											/>
-										)
-									})}
-								</View>
-							</ScrollView>
+							<View className="flex-row flex-wrap" style={{ gap: GAP }}>
+								{Object.values(FREE_COLORS).map((color) => {
+									return (
+										<ColorBox
+											key={color}
+											color={color}
+											size={colorBoxSize}
+											onPress={(newColor) => onColorPick(newColor)}
+										/>
+									)
+								})}
+							</View>
 						)}
-						<Button variant="white">Сохранить</Button>
+						<View className="flex-1 justify-end">
+							<Button variant="white">Сохранить</Button>
+						</View>
 					</Container>
 				</KeyboardAwareScrollView>
 			</BlurProvider>
