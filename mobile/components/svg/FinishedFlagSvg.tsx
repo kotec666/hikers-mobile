@@ -1,20 +1,24 @@
 import * as React from 'react'
 import Svg, { Path } from 'react-native-svg'
 import { Colors } from '@/constants/Colors'
+import Animated from 'react-native-reanimated'
 
 interface IProps {
 	color?: string
 	width?: number
 	height?: number
+	animatedStrokeProps?: Partial<{ stroke: string }>
 }
 
+const AnimatedPath = Animated.createAnimatedComponent(Path)
 const SvgComponent = (props: IProps) => {
-	const { width = 14, height = 14, color = Colors['green-main'] } = props
+	const { width = 14, height = 14, animatedStrokeProps, color = Colors['green-main'] } = props
 
 	return (
 		<Svg width={width} height={height} fill="none" viewBox="0 0 14 14">
-			<Path
+			<AnimatedPath
 				stroke={color}
+				animatedProps={animatedStrokeProps}
 				strokeLinecap="round"
 				strokeLinejoin="round"
 				strokeWidth={1.6}

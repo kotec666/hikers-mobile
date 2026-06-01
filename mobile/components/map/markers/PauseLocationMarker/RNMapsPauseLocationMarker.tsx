@@ -6,9 +6,10 @@ import { IPoint } from '@/types/interfaces'
 interface Props {
 	position?: IPoint | null
 	color?: string
+	animatedFillProps?: Partial<{ fill: string }>
 }
 
-const RNMapsPauseLocationMarker = ({ position, color }: Props) => {
+const RNMapsPauseLocationMarker = ({ position, color, animatedFillProps }: Props) => {
 	if (!position?.lat || !position?.lon) return null
 
 	return (
@@ -22,7 +23,7 @@ const RNMapsPauseLocationMarker = ({ position, color }: Props) => {
 				zIndex: 5
 			}}
 		>
-			<PauseWithCircleSvg color={color} />
+			<PauseWithCircleSvg color={color} animatedFillProps={animatedFillProps} />
 		</Marker>
 	)
 }

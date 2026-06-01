@@ -1,15 +1,18 @@
 import * as React from 'react'
 import Svg, { Circle, Polygon, G } from 'react-native-svg'
+import Animated from 'react-native-reanimated'
 
 interface IProps {
 	color?: string
 	width?: number
 	height?: number
 	heading: number | null
+	animatedFillProps?: Partial<{ fill: string }>
 }
 
+const AnimatedCircle = Animated.createAnimatedComponent(Circle)
 const UserWithCircleSvg = React.memo((props: IProps) => {
-	const { width = 100, height = 100, heading, color = 'rgb(0, 200, 100)' } = props
+	const { width = 100, height = 100, heading, animatedFillProps, color = 'rgb(0, 200, 100)' } = props
 
 	const { centerX, centerY, viewBox } = React.useMemo(() => {
 		const cx = width / 2
@@ -51,7 +54,15 @@ const UserWithCircleSvg = React.memo((props: IProps) => {
 				</G>
 			)}
 
-			<Circle cx={centerX} cy={centerY} r={16} fill={color} strokeWidth={3} stroke="#FFF" />
+			<AnimatedCircle
+				cx={centerX}
+				cy={centerY}
+				r={16}
+				fill={color}
+				animatedProps={animatedFillProps}
+				strokeWidth={3}
+				stroke="#FFF"
+			/>
 		</Svg>
 	)
 })

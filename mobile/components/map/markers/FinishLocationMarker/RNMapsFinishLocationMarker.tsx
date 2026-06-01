@@ -6,9 +6,10 @@ import { IPoint } from '@/types/interfaces'
 interface Props {
 	position?: IPoint | null
 	color?: string
+	animatedStrokeProps?: Partial<{ stroke: string }>
 }
 
-const RNMapsFinishLocationMarker = ({ position, color }: Props) => {
+const RNMapsFinishLocationMarker = ({ position, color, animatedStrokeProps }: Props) => {
 	if (!position?.lat || !position?.lon) return null
 
 	return (
@@ -21,7 +22,7 @@ const RNMapsFinishLocationMarker = ({ position, color }: Props) => {
 				zIndex: 6
 			}}
 		>
-			<FinishWithCircleSvg color={color} />
+			<FinishWithCircleSvg color={color} animatedStrokeProps={animatedStrokeProps} />
 		</Marker>
 	)
 }

@@ -17,6 +17,8 @@ interface IProps {
 	triangleScale?: number
 	color?: string
 	debugAccuracyM?: number
+	animatedFillProps?: Partial<{ fill: string }>
+	animatedFillColorWithOpacityProps?: Partial<{ fillColor: string }>
 }
 
 export interface RNMapsUserLocationMarkerHandle {
@@ -95,7 +97,11 @@ const RNMapsUserLocationMarker = forwardRef<RNMapsUserLocationMarkerHandle, IPro
 				{/* с помощью border задал границы иконки, чтобы при вращении иконка сама не смещалась относительно центра  */}
 				<View className="border border-transparent">
 					<Animated.View style={animated.rotationStyle}>
-						<UserWithCircleSvg heading={0} color={props.color} />
+						<UserWithCircleSvg
+							heading={0}
+							color={props.color}
+							animatedFillProps={props.animatedFillProps}
+						/>
 					</Animated.View>
 				</View>
 			</AnimatedMarker>
@@ -105,6 +111,7 @@ const RNMapsUserLocationMarker = forwardRef<RNMapsUserLocationMarkerHandle, IPro
 				initialPosition={initialPoint}
 				debugAccuracyM={props.debugAccuracyM}
 				color={props.color}
+				animatedFillColorWithOpacityProps={props.animatedFillColorWithOpacityProps}
 			/>
 		</>
 	)
@@ -118,5 +125,7 @@ export default React.memo(
 		prev.triangleScale === next.triangleScale &&
 		prev.initialPosition?.lat === next.initialPosition?.lat &&
 		prev.initialPosition?.lon === next.initialPosition?.lon &&
-		prev.color === next.color
+		prev.color === next.color &&
+		prev.animatedFillProps?.fill === next.animatedFillProps?.fill &&
+		prev.animatedFillColorWithOpacityProps?.fillColor === next.animatedFillColorWithOpacityProps?.fillColor
 )

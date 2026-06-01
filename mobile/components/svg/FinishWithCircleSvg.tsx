@@ -8,10 +8,11 @@ interface IProps {
 	width?: number
 	height?: number
 	style?: StyleProp<ViewStyle>
+	animatedStrokeProps?: Partial<{ stroke: string }>
 }
 
 const FinishWithCircleSvg = (props: IProps) => {
-	const { width = 100, height = 100, color } = props
+	const { width = 100, height = 100, animatedStrokeProps, color } = props
 
 	const centerX = width / 2
 	const centerY = width / 2
@@ -33,7 +34,7 @@ const FinishWithCircleSvg = (props: IProps) => {
 		>
 			<Circle cx={centerX} cy={centerY} r={circleRadius} fill="white" strokeWidth={0} />
 			<G transform={`translate(${centerX - 7}, ${centerY - 7})`}>
-				<FinishedFlagSvg color={color} />
+				<FinishedFlagSvg color={color} animatedStrokeProps={animatedStrokeProps} />
 			</G>
 		</Svg>
 	)

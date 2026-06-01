@@ -14,11 +14,11 @@ import {
 } from '@/constants/RNMap'
 import Animated from 'react-native-reanimated'
 import { MapPolylineProps } from 'react-native-maps/dist/src/MapPolyline'
-import RNMapsAnimatedStartLocationMarker from '@/components/map/markers/StartLocationMarker/RNMapsAnimatedStartLocationMarker'
-import RNMapsAnimatedPauseLocationMarker from '@/components/map/markers/PauseLocationMarker/RNMapsAnimatedPauseLocationMarker'
-import RNMapsAnimatedResumeLocationMarker from '@/components/map/markers/ResumeLocationMarker/RNMapsAnimatedResumeLocationMarker'
-import RNMapsAnimatedFinishLocationMarker from '@/components/map/markers/FinishLocationMarker/RNMapsAnimatedFinishLocationMarker'
-import RNMapsAnimatedUserLocationMarker from '@/components/map/markers/UserLocationMarker/RNMapsAnimatedUserLocationMarker'
+import RNMapsUserLocationMarker from '@/components/map/markers/UserLocationMarker/RNMapsUserLocationMarker'
+import RNMapsStartLocationMarker from '@/components/map/markers/StartLocationMarker/RNMapsStartLocationMarker'
+import RNMapsPauseLocationMarker from '@/components/map/markers/PauseLocationMarker/RNMapsPauseLocationMarker'
+import RNMapsResumeLocationMarker from '@/components/map/markers/ResumeLocationMarker/RNMapsResumeLocationMarker'
+import RNMapsFinishLocationMarker from '@/components/map/markers/FinishLocationMarker/RNMapsFinishLocationMarker'
 
 export interface IRNMapComponentColorPickProps {
 	activeColor?: string
@@ -64,15 +64,11 @@ const RNMapComponentColorPick = (props: IRNMapComponentColorPickProps) => {
 				showsCompass={false}
 				showsScale
 			>
-				<RNMapsAnimatedUserLocationMarker
+				<RNMapsUserLocationMarker
 					initialPosition={mapCenter}
 					debugAccuracyM={20}
 					animatedFillProps={props.animatedFillProps}
 					animatedFillColorWithOpacityProps={props.animatedFillColorWithOpacityProps}
-				/>
-				<RNMapsAnimatedStartLocationMarker
-					position={firstPoint}
-					animatedCircleProps={props.animatedStrokeProps}
 				/>
 
 				<AnimatedPolyline
@@ -101,15 +97,10 @@ const RNMapComponentColorPick = (props: IRNMapComponentColorPickProps) => {
 					]}
 					animatedProps={props.animatedStrokeColorProps}
 				/>
-				<RNMapsAnimatedPauseLocationMarker position={secondPoint} animatedPathProps={props.animatedFillProps} />
-				<RNMapsAnimatedResumeLocationMarker
-					position={fourthPoint}
-					animatedPathProps={props.animatedFillProps}
-				/>
-				<RNMapsAnimatedFinishLocationMarker
-					position={sixthPoint}
-					animatedPathProps={props.animatedStrokeProps}
-				/>
+				<RNMapsStartLocationMarker position={firstPoint} animatedStrokeProps={props.animatedStrokeProps} />
+				<RNMapsPauseLocationMarker position={secondPoint} animatedFillProps={props.animatedFillProps} />
+				<RNMapsResumeLocationMarker position={fourthPoint} animatedFillProps={props.animatedFillProps} />
+				<RNMapsFinishLocationMarker position={sixthPoint} animatedStrokeProps={props.animatedStrokeProps} />
 			</MapView>
 		</View>
 	)

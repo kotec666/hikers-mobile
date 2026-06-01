@@ -2,16 +2,19 @@ import * as React from 'react'
 import Svg, { Circle } from 'react-native-svg'
 import { StyleProp, ViewStyle } from 'react-native'
 import { Colors } from '@/constants/Colors'
+import Animated from 'react-native-reanimated'
 
 interface IProps {
 	color?: string
 	width?: number
 	height?: number
 	style?: StyleProp<ViewStyle>
+	animatedStrokeProps?: Partial<{ stroke: string }>
 }
 
+const AnimatedCircle = Animated.createAnimatedComponent(Circle)
 const StartWithCircleSvg = (props: IProps) => {
-	const { width = 100, height = 100, color = Colors['green-main'] } = props
+	const { width = 100, height = 100, animatedStrokeProps, color = Colors['green-main'] } = props
 
 	const centerX = width / 2
 	const centerY = width / 2
@@ -31,13 +34,14 @@ const StartWithCircleSvg = (props: IProps) => {
 			}}
 			{...props}
 		>
-			<Circle
+			<AnimatedCircle
 				cx={centerX}
 				cy={centerY}
 				r={circleRadius}
 				fill={Colors.white}
 				stroke={color}
 				strokeWidth={circleRadius - 2}
+				animatedProps={animatedStrokeProps}
 			/>
 		</Svg>
 	)
