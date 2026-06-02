@@ -68,7 +68,13 @@
 - ERRORS.INVALID_LENGTH
 - ERRORS.DIGIT_REQUIRED
 
-### 3.3. isTermsAccepted:
+### 3.3. username:
+
+- ERRORS.ALREADY_EXISTS // Такой никнейм уже используется
+- ERRORS.MISMATCH // Не прошел регулярку (только латиница и цифры)
+- ERRORS.INVALID_LENGTH
+
+### 3.4. isTermsAccepted:
 
 - ERRORS.BAD_REQUEST // Поле не передано, или передано false (чел не принял правила игры)
 
@@ -147,6 +153,8 @@
 
 ### 9.2. username?:
 
+- ERRORS.ALREADY_EXISTS // Такой никнейм уже используется
+- ERRORS.MISMATCH // Не прошел регулярку (только латиница и цифры)
 - ERRORS.INVALID_LENGTH
 
 ### 9.3. name?:
