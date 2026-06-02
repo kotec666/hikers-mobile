@@ -32,7 +32,7 @@ export class MailerService {
 	}
 
 	public async sendEmailConfirmationMail(to: string, code: number | string) {
-		const subject = `Заголовок ${Date.now()}`;
+		const subject = 'Хайкерс | Код для подтверждения почты';
 
 		return this.mailer.sendMail({
 			headers: {
@@ -49,7 +49,7 @@ export class MailerService {
 	}
 
 	public async sendPasswordRecoveryMail(to: string, code: number | string) {
-		const subject = `Заголовок ${Date.now()}`;
+		const subject = 'Хайкерс | Код для восстановления пароля';
 
 		return this.mailer.sendMail({
 			headers: {
