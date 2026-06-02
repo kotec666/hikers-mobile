@@ -247,11 +247,19 @@ export class TrainingsService {
 	}
 
 	public async sync(userId: string, trainingId: string, dto: TrainingDto.Sync): Promise<CommonDto.BooleanResponse> {
-		// @TODO в будущем отдавать на фронт айди участника, чтобы тут не искать треню а сразу участника прокидывать далее
+		// @TODO в будущем работать через айди участника, чтобы тут не искать треню а сразу участника прокидывать далее
+		/** KNOWN ISSUE
+		 * если клиент будет слать запросы не дожидаясь завершения предыдущих,
+		 * то дистанция будет рассчитываться от последней сохраненной точки,
+		 * не учитывая те которые в данный момент ещё обрабатываются и не были сохранены в бд
+		 * Решение - мапа очередей запросов по юзерам? Map<string, TrainingDto.Sync[]>
+		 */
+
 		const [participant] = await this.db.db
-			.select({ id: trainingParticipants.id, metricsId: trainingMetrics.id })
+			.select({ id: trainingParticipants.id, metricsId: trainingMetrics.id, points: trainingRoutes.points })
 			.from(trainingParticipants)
 			.leftJoin(trainingMetrics, eq(trainingMetrics.participantId, trainingParticipants.id))
+			.leftJoin(trainingRoutes, eq(trainingRoutes.participantId, trainingParticipants.id))
 			.where(and(eq(trainingParticipants.trainingId, trainingId), eq(trainingParticipants.userId, userId)))
 			.limit(1);
 		if (!participant) {
@@ -261,16 +269,36 @@ export class TrainingsService {
 			throw new ConflictException(ERRORS.TRAINING_ALREADY_FINISHED);
 		}
 
-		const points = this.convertMetrics(dto.metrics);
+		const lastSavedPoint = participant.points?.length
+			? this.convertToClientNode(participant.points[participant.points.length - 1])
+			: null;
+
+		const points = this.convertMetrics(lastSavedPoint, dto.metrics);
 
 		await this.upsertRoute(participant.id, points);
 
 		return { success: true };
 	}
 
+	public convertToClientNode(node: DebugTrainingRouteNode): DebugTrainingRouteNodeClient {
+		return {
+			relTs: node.rel_ts,
+			...node,
+		};
+	}
+
 	/** Обработка клиентских метрик. Расчет дистанции */
-	private convertMetrics(metrics: DebugTrainingRouteNodeClient[]): DebugTrainingRouteNode[] {
+	private convertMetrics(
+		pointBefore: DebugTrainingRouteNodeClient | null,
+		metrics: DebugTrainingRouteNodeClient[],
+	): DebugTrainingRouteNode[] {
 		const points: DebugTrainingRouteNode[] = [];
+
+		// Добавляем точку перед новыми, чтобы корректно рассчиталась дистанция у первой новой точки
+		if (pointBefore) {
+			metrics.unshift(pointBefore);
+		}
+
 		if (metrics.length > 1) {
 			metrics.reduce((prev, curr) => {
 				points.push({
