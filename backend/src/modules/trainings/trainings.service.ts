@@ -29,12 +29,20 @@ import { Event } from '@events/constants';
 
 @Injectable()
 export class TrainingsService {
+	/** Мапа очередей запросов на синхру по id юзеров */
+	private syncQueue = new Map<string, TrainingDto.Sync[]>();
+	private isQueueSyncingNow = false;
+
+	private readonly SYNC_QUEUE_INTERVAL_MS = 1000;
+
 	constructor(
 		private readonly db: DatabaseService,
 		private readonly eventEmitter: EventEmitter2,
 	) {
 		// @TODO интервал на чистку пустых тренировок
 		// @TODO восстановление тренировок на паузе из бд
+
+		setInterval(this.processSyncQueue.bind(this), this.SYNC_QUEUE_INTERVAL_MS);
 	}
 
 	public async start(userId: string, dto: TrainingDto.Start): Promise<TrainingDto.Entity> {
@@ -157,6 +165,8 @@ export class TrainingsService {
 	}
 
 	public async finish(userId: string, ts?: number): Promise<CommonDto.BooleanResponse> {
+		// @TODO проверка что все метрики из очереди обработаны, иначе - откладываем финиш
+
 		// Создатель может завершить только активную треню - находим её
 		const [activeTraining] = await this.getActive(userId, true);
 		if (!activeTraining) {
@@ -180,7 +190,7 @@ export class TrainingsService {
 			// Удаляем неактуальные инвайты
 			await tx.delete(trainingInvites).where(eq(trainingInvites.trainingId, activeTraining.id));
 
-			return this.upsertMetrics(activeTraining.id, activeTraining.type)
+			return this.upsertMetrics(activeTraining.id, activeTraining.type, true)
 				.then(() => {
 					this.eventEmitter.emit(Event.TRAINING_FINISHED, activeTraining.id);
 					return { success: true };
@@ -217,7 +227,7 @@ export class TrainingsService {
 			throw new ForbiddenException(ERRORS.FORBIDDEN);
 		}
 
-		return this.upsertMetrics(train.id, train.type)
+		return this.upsertMetrics(train.id, train.type, true)
 			.then(() => {
 				this.eventEmitter.emit(Event.TRAINING_FINISHED, train.id);
 				return { success: true };
@@ -228,7 +238,11 @@ export class TrainingsService {
 			});
 	}
 
-	public async upsertMetrics(trainingId: string, trainingType: TrainingType): Promise<CommonDto.BooleanResponse> {
+	public async upsertMetrics(
+		trainingId: string,
+		trainingType: TrainingType,
+		withSyncQueueClearing = false,
+	): Promise<CommonDto.BooleanResponse> {
 		// Всем участникам просчитываем метрики
 		const participants = await this.getExtendedParticipants(trainingId);
 
@@ -242,18 +256,63 @@ export class TrainingsService {
 				}),
 			);
 
+			if (withSyncQueueClearing) {
+				participants.forEach((p) => {
+					this.syncQueue.delete(p.id);
+				});
+			}
+
 			return { success: true };
 		});
 	}
 
+	public async pushToSyncQueue(
+		userId: string,
+		trainingId: string,
+		dto: TrainingDto.Sync,
+	): Promise<CommonDto.BooleanResponse> {
+		const [participant] = await this.db.db
+			.select({ id: trainingParticipants.id, finishedAt: training.finishedAt })
+			.from(trainingParticipants)
+			.innerJoin(training, eq(training.id, trainingId))
+			.where(and(eq(trainingParticipants.trainingId, trainingId), eq(trainingParticipants.userId, userId)))
+			.limit(1);
+		if (!participant) {
+			throw new NotFoundException(ERRORS.NOT_FOUND);
+		}
+		if (participant.finishedAt) {
+			throw new ConflictException(ERRORS.TRAINING_ALREADY_FINISHED);
+		}
+
+		const requestsQueue = this.syncQueue.get(participant.id) ?? [];
+		requestsQueue.push(dto);
+
+		this.syncQueue.set(participant.id, requestsQueue);
+
+		return { success: true };
+	}
+
+	public async processSyncQueue(): Promise<void> {
+		/**
+		 * Идея - гонять интервал, и смотреть для каждой очереди её длину,
+		 * и выбирать для обработки сначала очереди с наиб. числом элементов.
+		 * При этом - объединяя все элементы из одной очереди в один батч
+		 */
+
+		if (this.isQueueSyncingNow) {
+			return;
+		}
+
+		this.isQueueSyncingNow = true;
+
+		// todo..
+
+		this.isQueueSyncingNow = false;
+	}
+
+	// @TODO выпилить
 	public async sync(userId: string, trainingId: string, dto: TrainingDto.Sync): Promise<CommonDto.BooleanResponse> {
 		// @TODO в будущем работать через айди участника, чтобы тут не искать треню а сразу участника прокидывать далее
-		/** KNOWN ISSUE
-		 * если клиент будет слать запросы не дожидаясь завершения предыдущих,
-		 * то дистанция будет рассчитываться от последней сохраненной точки,
-		 * не учитывая те которые в данный момент ещё обрабатываются и не были сохранены в бд
-		 * Решение - мапа очередей запросов по юзерам? Map<string, TrainingDto.Sync[]>
-		 */
 
 		const [participant] = await this.db.db
 			.select({ id: trainingParticipants.id, metricsId: trainingMetrics.id, points: trainingRoutes.points })
