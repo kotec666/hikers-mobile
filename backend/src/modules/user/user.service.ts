@@ -43,6 +43,7 @@ export class UserService {
 				username: dto.username,
 				password: hashedPassword,
 				termsAcceptedAt: dto.isTermsAccepted ? new Date() : null,
+				emailConfirmedAt: new Date(),
 			})
 			.returning({
 				id: users.id,
