@@ -5,7 +5,16 @@ import { lengths } from '@shared/lengths';
 import { HasDigit, ValidEmailDomain } from '@validation/property-decorators';
 
 export namespace AuthDto {
+	export class RequestConfirmEmail {
+		@ValidEmailDomain()
+		@IsEmail(undefined, { message: `_email:${ERRORS.INVALID_EMAIL}` })
+		email: string;
+	}
+
 	export class ConfirmEmail {
+		@IsEmail(undefined, { message: `_email:${ERRORS.INVALID_EMAIL}` })
+		email: string;
+
 		@Length(EMAIL_CONFIRMATION_CODE_SIZE, EMAIL_CONFIRMATION_CODE_SIZE, {
 			message: `_code:${ERRORS.INVALID_LENGTH}`,
 		})
