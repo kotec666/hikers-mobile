@@ -1,9 +1,7 @@
-import { Controller, Res, UnauthorizedException, Req, Body, Post, UseInterceptors } from '@nestjs/common';
+import { Controller, Res, UnauthorizedException, Req, Body, Post } from '@nestjs/common';
 import { AuthService } from './auth.service';
 import { UserDto } from '../user/user.dto';
 import { AuthDto } from './auth.dto';
-import { UserInterceptor } from '@interceptors/user.interceptor';
-import { User, UserData } from '@decorators/user.decorator';
 
 @Controller('auth')
 export class AuthController {
@@ -11,14 +9,11 @@ export class AuthController {
 
 	/**
 	 * @tag Auth
-	 * @summary Регистрация
+	 * @summary Регистрация. После нужно обязательное подтверждение почты
 	 */
 	@Post('registration')
-	public async registration(@Body() dto: UserDto.Registration, @Res({ passthrough: true }) res) {
-		const accessToken = await this.authService.registration(dto);
-
-		res.status(201);
-		return accessToken;
+	public async registration(@Body() dto: UserDto.Registration) {
+		return this.authService.fakeRegistration(dto);
 	}
 
 	/**
@@ -26,11 +21,8 @@ export class AuthController {
 	 * @summary Логин
 	 */
 	@Post('login')
-	public async login(@Body() dto: UserDto.Login, @Res({ passthrough: true }) res) {
-		const accessToken = await this.authService.login(dto);
-
-		res.status(200);
-		return accessToken;
+	public async login(@Body() dto: UserDto.Login) {
+		return this.authService.login(dto);
 	}
 
 	/**
@@ -55,23 +47,19 @@ export class AuthController {
 	/**
 	 * @tag Auth
 	 * @summary Запросить код подтверждения почты
-	 * @security token
 	 */
-	@UseInterceptors(UserInterceptor)
 	@Post('request-confirm-email')
-	public async requestConfirmEmail(@User() user: UserData) {
-		return this.authService.requestConfirmEmail(user.id);
+	public async requestConfirmEmail(@Body() dto: AuthDto.RequestConfirmEmail) {
+		return this.authService.requestConfirmEmail(dto.email);
 	}
 
 	/**
 	 * @tag Auth
-	 * @summary Ввести код подтверждения почты
-	 * @security token
+	 * @summary Ввести код подтверждения почты и тем самым зарегать юзера
 	 */
-	@UseInterceptors(UserInterceptor)
 	@Post('confirm-email')
-	public async confirmEmail(@User() user: UserData, @Body() dto: AuthDto.ConfirmEmail) {
-		return this.authService.confirmEmail(user.id, dto.code);
+	public async confirmEmail(@Body() dto: AuthDto.ConfirmEmail) {
+		return this.authService.confirmEmail(dto.email, dto.code);
 	}
 
 	/**
