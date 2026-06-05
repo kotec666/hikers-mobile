@@ -214,13 +214,25 @@
 
 - ERRORS.INVALID_LENGTH
 
-## 13. POST /auth/confirm-email
+## 13. POST /auth/request-confirm-email
+
+### Общие ошибки:
+
+- ERRORS.NOT_FOUND // Такой юзер не найден
+- ERRORS.EMAIL_ALREADY_CONFIRMED // Почта уже подтверждена
+
+### 13.1. email:
+
+- ERRORS.NOT_FOUND // Такая почта не зарегистрирована
+- ERRORS.INVALID_EMAIL // Строка не формата почты
+
+## 14. POST /auth/confirm-email
 
 ### Общие ошибки:
 
 - ERRORS.NOT_FOUND // Запрос не найден или устарел
 
-### 13.1. code:
+### 14.1. code:
 
 - ERRORS.INVALID_LENGTH
 - ERRORS.MISMATCH // Неверный код
