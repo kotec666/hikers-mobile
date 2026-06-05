@@ -46,6 +46,15 @@ export class AuthController {
 
 	/**
 	 * @tag Auth
+	 * @summary Запросить код подтверждения почты
+	 */
+	@Post('request-confirm-email')
+	public async requestConfirmEmail(@Body() dto: AuthDto.RequestConfirmEmail) {
+		return this.authService.requestConfirmEmail(dto.email);
+	}
+
+	/**
+	 * @tag Auth
 	 * @summary Ввести код подтверждения почты и тем самым зарегать юзера
 	 */
 	@Post('confirm-email')

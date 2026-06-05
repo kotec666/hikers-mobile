@@ -281,6 +281,61 @@ export class AuthService {
 			}));
 	}
 
+	public async requestConfirmEmail(email: string): Promise<CommonDto.RateLimited<CommonDto.BooleanResponse>> {
+		const cachedCodeKey = this.getEmailConfirmationKey(email);
+		const rateLimitKey = this.getEmailConfirmationRateLimitKey(email);
+
+		const rateLimitSince = await this.cacheManager.get<number>(rateLimitKey);
+		if (rateLimitSince) {
+			throw new HttpException(
+				{
+					statusCode: 429,
+					success: false,
+					waitMs: rateLimitSince + EMAIL_CONFIRMATION_CODE_RATE_LIMIT_MS - Date.now(),
+				},
+				429,
+			);
+		}
+
+		const [user] = await this.db.db
+			.select({
+				id: users.id,
+				email: users.email,
+				emailConfirmedAt: users.emailConfirmedAt,
+			})
+			.from(users)
+			.where(eq(users.email, email))
+			.limit(1);
+		if (!user) {
+			throw new NotFoundException(ERRORS.NOT_FOUND);
+		}
+		if (user.emailConfirmedAt) {
+			throw new ConflictException(ERRORS.EMAIL_ALREADY_CONFIRMED);
+		}
+
+		const isEmailValid = await this.mailer.isDeliverable(user.email);
+		if (!isEmailValid) {
+			throw new BadRequestException(ERRORS.INVALID_EMAIL);
+		}
+
+		const code = generateNumericCode(EMAIL_CONFIRMATION_CODE_SIZE);
+		await this.cacheManager.set(cachedCodeKey, code, EMAIL_CONFIRMATION_CODE_TTL_MS);
+		await this.cacheManager.set(rateLimitKey, Date.now(), EMAIL_CONFIRMATION_CODE_RATE_LIMIT_MS);
+
+		return this.mailer
+			.sendEmailConfirmationMail(user.email, code)
+			.catch(() => {
+				throw new BadGatewayException({
+					success: false,
+					waitMs: EMAIL_CONFIRMATION_CODE_RATE_LIMIT_MS,
+				});
+			})
+			.then(() => ({
+				success: true,
+				waitMs: EMAIL_CONFIRMATION_CODE_RATE_LIMIT_MS,
+			}));
+	}
+
 	public async confirmEmail(email: string, code: string): Promise<TokenDto.TokenResponse & UserDto.Entity> {
 		const cachedCodeKey = this.getEmailConfirmationKey(email);
 		const cachedCode = await this.cacheManager.get<string>(cachedCodeKey);
