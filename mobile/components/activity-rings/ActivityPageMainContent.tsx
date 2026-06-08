@@ -1,6 +1,5 @@
 import React from 'react'
-import { View, Text } from 'react-native'
-import { Container } from '@/components/ui/Container'
+import { View, Text, ScrollView } from 'react-native'
 import { Rings } from '@/components/activity-rings/Rings'
 import { fontFamily } from '@/constants/Fonts'
 import PopupMenu from '@/components/ui/Popup/PopupMenu'
@@ -18,21 +17,23 @@ interface IProps {
 	handlePressChangeGoalToday: () => void
 	handlePressChangeGoalSchedule: () => void
 	handlePressChangeGoal: () => void
+	isToday?: boolean
 }
 
 const ActivityPageMainContent = ({
 	handlePressChangeGoalToday,
 	handlePressChangeGoalSchedule,
-	handlePressChangeGoal
+	handlePressChangeGoal,
+	isToday = false
 }: IProps) => {
 	return (
-		<Container className="flex-1">
+		<ScrollView>
 			<View className="flex-1 gap-4">
 				<View className="flex-1 py-6">
 					<Rings isAnimated circleSize={280} />
 				</View>
 				<View className="flex-row items-end justify-between ">
-					<View className="">
+					<View>
 						<Text className="text-gray-ab text-base" style={{ fontFamily: fontFamily.medium }}>
 							Подвижность
 						</Text>
@@ -41,40 +42,42 @@ const ActivityPageMainContent = ({
 						</Text>
 					</View>
 					<View style={{ paddingBottom: 5 }}>
-						<PopupMenu
-							menuWidth={260}
-							menuHeight={150}
-							trigger={({ open }) => (
-								<Motion.Pressable
-									onPress={open}
-									className="bg-gray-1c w-[40px] h-[40px] rounded-full items-center justify-center"
-								>
-									<Motion.View
-										whileTap={{ scale: 0.8 }}
-										transition={{
-											type: 'spring',
-											damping: 20,
-											stiffness: 400
-										}}
+						{isToday && (
+							<PopupMenu
+								menuWidth={260}
+								menuHeight={150}
+								trigger={({ open }) => (
+									<Motion.Pressable
+										onPress={open}
+										className="bg-gray-1c w-[40px] h-[40px] rounded-full items-center justify-center"
 									>
-										<RoundedPlusMinusSvg />
-									</Motion.View>
-								</Motion.Pressable>
-							)}
-						>
-							<PopupMenuItem onPress={handlePressChangeGoalToday}>
-								<View className="flex-row gap-3">
-									<CircleSvg />
-									<Text className="text-white text-base">Изменить цель на сегодня</Text>
-								</View>
-							</PopupMenuItem>
-							<PopupMenuItem onPress={handlePressChangeGoalSchedule}>
-								<View className="flex-row gap-3">
-									<CalendarSvg />
-									<Text className="text-white text-base">Изменить расписание</Text>
-								</View>
-							</PopupMenuItem>
-						</PopupMenu>
+										<Motion.View
+											whileTap={{ scale: 0.8 }}
+											transition={{
+												type: 'spring',
+												damping: 20,
+												stiffness: 400
+											}}
+										>
+											<RoundedPlusMinusSvg />
+										</Motion.View>
+									</Motion.Pressable>
+								)}
+							>
+								<PopupMenuItem onPress={handlePressChangeGoalToday}>
+									<View className="flex-row gap-3">
+										<CircleSvg />
+										<Text className="text-white text-base">Изменить цель на сегодня</Text>
+									</View>
+								</PopupMenuItem>
+								<PopupMenuItem onPress={handlePressChangeGoalSchedule}>
+									<View className="flex-row gap-3">
+										<CalendarSvg />
+										<Text className="text-white text-base">Изменить расписание</Text>
+									</View>
+								</PopupMenuItem>
+							</PopupMenu>
+						)}
 					</View>
 				</View>
 				<View>
@@ -87,11 +90,13 @@ const ActivityPageMainContent = ({
 					<MetricContainer value="1 226" title="Шаги" icon={<FootprintsSvg />} />
 					<MetricContainer value="0.87 км" title="Дистанция" icon={<DistanceSvg />} />
 				</View>
-				<Button variant="white" onPress={handlePressChangeGoal}>
-					Изменить цель
-				</Button>
+				{isToday && (
+					<Button variant="white" onPress={handlePressChangeGoal}>
+						Изменить цель
+					</Button>
+				)}
 			</View>
-		</Container>
+		</ScrollView>
 	)
 }
 

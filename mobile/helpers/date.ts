@@ -27,9 +27,11 @@ export const canGoNextDay = (date: Date) => {
 }
 
 export const canGoNextWeek = (date: Date) => {
-	const nextWeek = addWeeks(date, 1)
+	const nextWeekStart = startOfWeek(addWeeks(date, 1), {
+		weekStartsOn: 1
+	})
 
-	return !isAfter(startOfWeek(nextWeek, { weekStartsOn: 1 }), TODAY)
+	return !isAfter(nextWeekStart, TODAY)
 }
 
 export const formatHeaderDate = (date: Date) => {
