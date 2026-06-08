@@ -40,8 +40,7 @@ const ActivityRingsHeader = ({
 			className="gap-4 px-[16px]"
 			style={{
 				paddingTop: DEFAULT_PADDING_TOP + insets.top,
-				paddingBottom: 12,
-				backgroundColor: 'rgba(0,0,0,0.5)'
+				paddingBottom: 12
 			}}
 		>
 			<View className="flex-row items-center justify-between">

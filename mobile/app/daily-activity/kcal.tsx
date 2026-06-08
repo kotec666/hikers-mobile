@@ -256,7 +256,6 @@ const Kcal = () => {
 					/>
 				</BottomSheetResizable>
 
-				{/*<ScrollView stickyHeaderIndices={[0]} showsVerticalScrollIndicator={false}> @TODO fixed header */}
 				<ActivityRingsHeader
 					weekPagerRef={weekPagerRef}
 					selectedDate={selectedDate}
