@@ -1,4 +1,4 @@
-import { addDays, addWeeks, endOfWeek, format, isAfter, isSameDay, startOfWeek } from 'date-fns'
+import { addDays, addWeeks, format, isAfter, isSameDay, startOfWeek } from 'date-fns'
 import { ru } from 'date-fns/locale'
 
 export const TODAY = new Date()
@@ -9,17 +9,6 @@ export const getWeek = (date: Date) => {
 	})
 
 	return Array.from({ length: 7 }).map((_, index) => addDays(start, index))
-}
-
-export const getWeekRange = (date: Date) => {
-	return {
-		start: startOfWeek(date, {
-			weekStartsOn: 1
-		}),
-		end: endOfWeek(date, {
-			weekStartsOn: 1
-		})
-	}
 }
 
 export const canGoNextDay = (date: Date) => {
