@@ -262,6 +262,7 @@ const Kcal = () => {
 					handlePressHeaderCalendar={handlePressHeaderCalendar}
 					handleWeekPageSelected={handleWeekPageSelected}
 					setSelectedDate={setSelectedDate}
+					canSwipeNextWeek={canSwipeNextWeek}
 				/>
 
 				<PagerView
