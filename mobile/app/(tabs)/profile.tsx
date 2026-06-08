@@ -1,7 +1,6 @@
 import React, { useCallback, useEffect, useRef } from 'react'
 import { ActivityIndicator, Platform, RefreshControl, Text, View } from 'react-native'
 import SettingsSvg from '@/components/svg/SettingsSvg'
-import MoreOptionsButton from '@/components/ui/MoreOptionsButton/MoreOptionsButton'
 import { fontFamily } from '@/constants/Fonts'
 import SocialStats from '@/components/ui/Profile/SocialStats'
 import { Button } from '@/components/ui/Button'
@@ -27,6 +26,10 @@ import EmailNotConfirmed from '@/components/profile/EmailNotConfirmed'
 import { refetchAndHaptics } from '@/helpers/refetchAndHaptics'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
 import WorkoutMap from '@/components/map/WorkoutMap'
+import DailyActivityRedirect from '@/components/activity-rings/DailyActivityRedirect'
+import { RoundedButton } from '@/components/ui/HeaderBack'
+import PopupMenuItem from '@/components/ui/Popup/PopupMenuItem'
+import PopupMenu from '@/components/ui/Popup/PopupMenu'
 
 /**
  *
@@ -180,28 +183,32 @@ const Profile = () => {
 											bordered
 											imageUrl={`${PATH_TO_IMAGE}${profileData?.user?.avatarFilename}`}
 										/>
-										<MoreOptionsButton
-											icon={<SettingsSvg />}
-											params={[
-												{
-													label: 'Редактировать профиль',
-													action: () => handleClickRedirect(ALLOWED_ROUTES.EDIT_PROFILE)
-												},
-												{
-													label: 'О приложении',
-													action: () => handleClickRedirect(ALLOWED_ROUTES.ABOUT)
-												},
-												{
-													label: 'Настройки',
-													action: () => handleClickRedirect(ALLOWED_ROUTES.SETTINGS)
-												},
-												{
-													label: 'results page',
-													action: () => handleClickRedirect(ALLOWED_ROUTES.RESULTS_PAGE)
-												},
-												{ label: 'Выход', action: handleClickExit }
-											]}
-										/>
+
+										<PopupMenu
+											menuWidth={200}
+											menuHeight={300}
+											trigger={({ open }) => (
+												<RoundedButton onPress={open} icon={<SettingsSvg />} />
+											)}
+										>
+											<PopupMenuItem
+												title="Редактировать профиль"
+												onPress={() => handleClickRedirect(ALLOWED_ROUTES.EDIT_PROFILE)}
+											/>
+											<PopupMenuItem
+												title="О приложении"
+												onPress={() => handleClickRedirect(ALLOWED_ROUTES.ABOUT)}
+											/>
+											<PopupMenuItem
+												title="Настройки"
+												onPress={() => handleClickRedirect(ALLOWED_ROUTES.SETTINGS)}
+											/>
+											<PopupMenuItem
+												title="results page"
+												onPress={() => handleClickRedirect(ALLOWED_ROUTES.RESULTS_PAGE)}
+											/>
+											<PopupMenuItem title="Выход" onPress={handleClickExit} />
+										</PopupMenu>
 									</View>
 									<View>
 										{profileData?.user?.name && (
@@ -222,7 +229,6 @@ const Profile = () => {
 										)}
 									</View>
 								</View>
-
 								<View className="flex-row justify-between gap-[10px]">
 									<SocialStats
 										label="Подписчики"
@@ -245,6 +251,7 @@ const Profile = () => {
 								</Button>
 								<RedirectAchievementsInfo achievements={profileData?.achievements} isMyProfile />
 								<ActivityInfo label="Активности" activities={profileData?.activities || []} />
+								<DailyActivityRedirect />
 							</View>
 							<Text
 								className="text-base text-white border-b-[1px] border-b-black-44 py-[20px]"

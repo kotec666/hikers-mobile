@@ -17,7 +17,7 @@ import Portal from '@/components/Portal/Portal'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
 import { GlassView, isLiquidGlassAvailable } from 'expo-glass-effect'
 
-const { height: SCREEN_HEIGHT } = Dimensions.get('window')
+const { height: SCREEN_HEIGHT } = Dimensions.get('screen')
 
 export type BottomSheetResizableRef = {
 	scrollTo: (destination: number) => void
@@ -26,13 +26,19 @@ export type BottomSheetResizableRef = {
 	open: (destination?: number) => void
 }
 
+export enum SNAP_POINT_INDEX {
+	HALF,
+	MAX
+}
+
 type BottomSheetResizableProps = {
 	children?: ReactNode
 	blurDisabled?: boolean
+	initialSnapIndex?: SNAP_POINT_INDEX
 }
 
 const BottomSheetResizable = forwardRef<BottomSheetResizableRef, BottomSheetResizableProps>(
-	({ children, blurDisabled }, ref) => {
+	({ children, blurDisabled, initialSnapIndex = SNAP_POINT_INDEX.HALF }, ref) => {
 		const insets = useSafeAreaInsets()
 		const blurTargetRef = useBlurContext()
 		const isGlassAvailable = Platform.OS === 'ios' && isLiquidGlassAvailable()
@@ -64,12 +70,12 @@ const BottomSheetResizable = forwardRef<BottomSheetResizableRef, BottomSheetResi
 		}, [isSheetActive, translateY])
 
 		const open = useCallback(
-			(destination = SNAP_POINTS[0]) => {
+			(destination = SNAP_POINTS[initialSnapIndex]) => {
 				'worklet'
 				isSheetActive.value = true
 				translateY.value = withSpring(destination, { damping: 50, stiffness: 200 })
 			},
-			[SNAP_POINTS, isSheetActive, translateY]
+			[SNAP_POINTS, initialSnapIndex, isSheetActive, translateY]
 		)
 
 		useImperativeHandle(
@@ -118,7 +124,7 @@ const BottomSheetResizable = forwardRef<BottomSheetResizableRef, BottomSheetResi
 			})
 
 		const animatedSheetStyle = useAnimatedStyle(() => {
-			const hidden = translateY.value >= 0
+			// const hidden = translateY.value >= 0
 			return {
 				borderRadius: interpolate(
 					translateY.value,
@@ -126,8 +132,8 @@ const BottomSheetResizable = forwardRef<BottomSheetResizableRef, BottomSheetResi
 					[25, 5],
 					Extrapolation.CLAMP
 				),
-				transform: [{ translateY: translateY.value }],
-				display: hidden ? 'none' : 'flex'
+				transform: [{ translateY: translateY.value }]
+				// display: hidden ? 'none' : 'flex'
 			}
 		})
 
@@ -146,14 +152,6 @@ const BottomSheetResizable = forwardRef<BottomSheetResizableRef, BottomSheetResi
 			opacity: withTiming(isSheetActive.value ? 1 : 0.5, { duration: 300 }),
 			transform: [{ scale: handleScale.value }]
 		}))
-
-		// видимая высота шторки = -translateY (translateY отрицательное при поднятии)
-		const animatedContentStyle = useAnimatedStyle(() => {
-			const visibleHeight = Math.max(0, -translateY.value)
-			return {
-				height: visibleHeight
-			}
-		})
 
 		const platformStyles = [
 			styles.container,
@@ -194,7 +192,6 @@ const BottomSheetResizable = forwardRef<BottomSheetResizableRef, BottomSheetResi
 				<Animated.View style={platformStyles}>
 					{renderBackground()}
 					<BottomSheetResizableContent
-						animatedContentStyle={animatedContentStyle}
 						animatedHandleStyle={animatedHandleStyle}
 						handleGesture={handleGesture}
 					>
@@ -209,12 +206,10 @@ const BottomSheetResizable = forwardRef<BottomSheetResizableRef, BottomSheetResi
 const BottomSheetResizableContent = ({
 	handleGesture,
 	animatedHandleStyle,
-	animatedContentStyle,
 	children
 }: {
 	handleGesture: PanGesture
 	animatedHandleStyle: { opacity: 1 | 0.5; transform: { scale: number }[] }
-	animatedContentStyle: { height: number }
 	children?: ReactNode
 }) => {
 	return (
@@ -225,9 +220,9 @@ const BottomSheetResizableContent = ({
 				</View>
 			</GestureDetector>
 
-			<Animated.View style={[styles.contentWrapper, animatedContentStyle]}>
+			<View style={styles.contentWrapper}>
 				<View style={styles.contentInner}>{children}</View>
-			</Animated.View>
+			</View>
 		</>
 	)
 }
@@ -263,10 +258,9 @@ const styles = StyleSheet.create({
 		borderRadius: 2
 	},
 	contentWrapper: {
-		width: '100%',
-		overflow: 'hidden'
+		flex: 1
 	},
 	contentInner: {
-		height: '100%'
+		flex: 1
 	}
 })

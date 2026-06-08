@@ -34,18 +34,19 @@ export function UserAvatar(props: IProps) {
 				})}
 				style={[
 					props.style as StyleProp<ViewStyle>,
-					{ borderRadius: 999 },
+					{ borderRadius: 999, overflow: 'hidden' },
 					props.bordered && { borderWidth: 1, borderColor: 'rgba(255, 255, 255, 0.4)' }
 				]}
 			>
 				<Image
 					source={{ uri: props.avatar }}
-					style={{ width: '100%', height: '100%', borderRadius: 999 }}
+					style={{ width: '100%', height: '100%' }}
+					contentFit="cover"
 					onError={() => setImageError(true)}
 				/>
 				{props.isEditMode && (
 					<View
-						className="absolute right-0 bg-white rounded-full w-[25px] h-[25px] items-center justify-center"
+						className="absolute right-0 bg-white rounded-full w-[25px] h-[25px] items-center justify-center overflow-hidden"
 						style={{ bottom: 10 }}
 					>
 						<PenSvg />
@@ -62,14 +63,14 @@ export function UserAvatar(props: IProps) {
 			)}
 			style={[
 				props.style as StyleProp<ViewStyle>,
-				{ borderRadius: 999 },
+				{ borderRadius: 999, overflow: 'hidden' },
 				props.bordered && { borderWidth: 1, borderColor: 'rgba(255, 255, 255, 0.4)' }
 			]}
 		>
 			<PeopleSvg height={props?.iconSize?.height} width={props?.iconSize?.width} />
 			{props.isEditMode && (
 				<View
-					className="absolute right-0 bg-white rounded-full w-[25px] h-[25px] items-center justify-center"
+					className="absolute right-0 bg-white rounded-full w-[25px] h-[25px] items-center justify-center overflow-hidden"
 					style={{ bottom: 10 }}
 				>
 					<PenSvg />

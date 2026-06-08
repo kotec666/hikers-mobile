@@ -266,15 +266,19 @@ const UserProfilePage = () => {
 													bordered
 													imageUrl={`${PATH_TO_IMAGE}${profileData?.user?.avatarFilename}`}
 												/>
-												{/*<MoreOptionsButton*/}
-												{/*	icon={<MoreOptionsSvg />}*/}
-												{/*	params={[*/}
-												{/*		{ label: 'Редактировать профиль', action: () => {} },*/}
-												{/*		{ label: 'Политика конфиденциальности', action: () => {} },*/}
-												{/*		{ label: 'Политика обработки персональных данных', action: () => {} },*/}
-												{/*		{ label: 'Выход', action: () => {} }*/}
-												{/*	]}*/}
-												{/*/>*/}
+												{/*<PopupMenu*/}
+												{/*	menuWidth={200}*/}
+												{/*	menuHeight={300}*/}
+												{/*	trigger={({ open }) => (*/}
+												{/*		<RoundedButton onPress={open} icon={<SettingsSvg />} />*/}
+												{/*	)}*/}
+												{/*>*/}
+												{/*	<PopupMenuItem*/}
+												{/*		title="Настройки"*/}
+												{/*		onPress={() => handleClickRedirect(ALLOWED_ROUTES.SETTINGS)}*/}
+												{/*	/>*/}
+												{/*	<PopupMenuItem title="Выход" onPress={handleClickExit} />*/}
+												{/*</PopupMenu>*/}
 											</View>
 											<View>
 												{profileData?.user?.name && (

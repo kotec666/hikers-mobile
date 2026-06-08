@@ -17,7 +17,7 @@ import TrainingsEmpty from '@/components/ui/Post/TrainingsEmpty'
 import { SearchType } from '@/shared/enums'
 import { IFoundPost, IFoundUser } from '@/api/search'
 import { PATH_TO_IMAGE } from '@/constants/PATH_TO_FILES'
-import { BackButton } from '@/components/ui/HeaderBack'
+import { RoundedButton } from '@/components/ui/HeaderBack'
 import { useFeedPostsQuery } from '@/queries/posts'
 import { useSearchQuery } from '@/queries/search'
 import { Page } from '@/components/ui/Page'
@@ -195,7 +195,7 @@ const PostsPage = () => {
 				<View style={{ flex: 1 }}>
 					<Container className="gap-[20px] flex-1">
 						<View className="flex-row justify-center items-center gap-[10px] w-full">
-							<BackButton
+							<RoundedButton
 								onPress={() => {
 									Keyboard.dismiss()
 									setState((s) => ({ ...s, isSearchActive: false }))

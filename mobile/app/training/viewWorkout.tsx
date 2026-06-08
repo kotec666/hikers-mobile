@@ -41,7 +41,7 @@ import { formatTimeFromSecondsCompact } from '@/helpers/formatTime'
 import { mpsToKmph } from '@/helpers/mpsToKmph'
 import { formatBackendPace } from '@/helpers/formatBackendPace'
 import { saveSingleWorkout, WorkoutSource } from '@/helpers/saveUnsavedTraining'
-import { BackButton } from '@/components/ui/HeaderBack'
+import { RoundedButton } from '@/components/ui/HeaderBack'
 import { useCreatePostMutation, usePostByTrainingQuery, usePostQuery, useUpdatePostMutation } from '@/queries/posts'
 import { useExtendedDetailsWorkoutQuery, useFinishWorkoutMutation } from '@/queries/workout'
 import { Page } from '@/components/ui/Page'
@@ -518,7 +518,7 @@ export default function ViewWorkout() {
 						className="absolute w-full h-full inset-0 justify-between pb-4"
 						style={{ paddingTop: insets.top + DEFAULT_PADDING_TOP }}
 					>
-						<BackButton onPress={handlePressGoBack} />
+						<RoundedButton onPress={handlePressGoBack} />
 						<View className="flex-row w-full justify-between items-center">
 							<View className="flex-row items-center gap-[10px]">
 								<View className="bg-white rounded-xl items-center justify-center w-[40px] h-[40px]">
