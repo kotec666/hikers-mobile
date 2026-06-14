@@ -42,6 +42,7 @@ export class MailerService {
 			context: {
 				code,
 				ttlMins: (EMAIL_CONFIRMATION_CODE_TTL_MS / 1000 / 60).toFixed(0),
+				currentYear: new Date().getFullYear(),
 			},
 			to,
 			subject,
@@ -59,6 +60,7 @@ export class MailerService {
 			context: {
 				code,
 				ttlMins: (PASSWORD_RECOVERY_CODE_TTL_MS / 1000 / 60).toFixed(0),
+				currentYear: new Date().getFullYear(),
 			},
 			to,
 			subject,
