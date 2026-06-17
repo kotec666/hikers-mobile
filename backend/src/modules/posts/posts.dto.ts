@@ -15,7 +15,7 @@ export namespace PostDto {
 		isSubscribed: boolean;
 
 		userCreator: UserDto.Entity | null;
-		training: TrainingDto.ExtendedEntity;
+		training: TrainingDto.ExtendedEntity | null;
 
 		title: string;
 		description: string | null;
