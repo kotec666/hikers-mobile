@@ -9,7 +9,7 @@ import { StaticService } from '../static/static.service';
 import { CommonDto } from '../../common/dto/common.dto';
 import { UserDto } from '../user/user.dto';
 import { SubscribersService } from '../subscribers/subscribers.service';
-import { TrainingParticipantDto } from '../trainings/trainings.dto';
+import { TrainingDto, TrainingParticipantDto } from '../trainings/trainings.dto';
 import { NotificationsService } from '../notifications/notifications.service';
 import { NotificationType } from '@shared/enums';
 
@@ -249,8 +249,11 @@ export class PostsService {
 
 		const fileNames = await this.getFileNames(id);
 
-		// Пока что все посты закреплены за своей тренировкой
-		const training = await this.trainings.getExtendedById(post.trainingId!);
+		let training: TrainingDto.ExtendedEntity | null = null;
+		if (post.trainingId) {
+			training = await this.trainings.getExtendedById(post.trainingId);
+		}
+
 		const isSubscribed = await this.subscribers.isSubscribed(userId, post.userCreator.id);
 
 		return { ...post, isSubscribed, likesCount, isLiked, training, fileNames };
@@ -284,8 +287,10 @@ export class PostsService {
 
 		const fileNames = await this.getFileNames(id);
 
-		// Пока что все посты закреплены за своей тренировкой
-		const training = await this.trainings.getExtendedById(post.trainingId!);
+		let training: TrainingDto.ExtendedEntity | null = null;
+		if (post.trainingId) {
+			training = await this.trainings.getExtendedById(post.trainingId);
+		}
 
 		return { ...post, likesCount, training, fileNames };
 	}
@@ -597,8 +602,12 @@ export class PostsService {
 			throw new NotFoundException(ERRORS.NOT_FOUND);
 		}
 
-		// Пока что все посты закреплены за своей тренировкой
-		return this.trainings.getParticipantsWithSubs(userId, post.trainingId!, page, limit);
+		// Нет тренировки - нет участников
+		if (!post.trainingId) {
+			return [];
+		}
+
+		return this.trainings.getParticipantsWithSubs(userId, post.trainingId, page, limit);
 	}
 
 	public async deletePost(postId: string, userId: string): Promise<CommonDto.BooleanResponse> {

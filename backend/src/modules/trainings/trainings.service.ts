@@ -894,10 +894,6 @@ export class TrainingsService {
 			.where(inArray(training.id, ids))
 			.innerJoin(users, eq(users.id, training.userCreatorId));
 
-		if (trainingRows.length === 0) {
-			throw new NotFoundException(ERRORS.NOT_FOUND);
-		}
-
 		return Promise.all(
 			trainingRows.map(async (t) => {
 				const participants = await this.getExtendedParticipants(t.id);
