@@ -873,6 +873,35 @@ export class TrainingsService {
 		return extendedTraining;
 	}
 
+	public async getExtendedByIds(ids: string[]): Promise<TrainingDto.ExtendedEntity[]> {
+		const trainingRows = await this.db.db
+			.select({
+				id: training.id,
+				type: training.type,
+				creatorId: training.userCreatorId,
+				createdAt: training.createdAt,
+				startedAt: training.startedAt,
+				finishedAt: training.finishedAt,
+
+				creator: {
+					id: users.id,
+					name: users.name,
+					username: users.username,
+					avatarFilename: users.avatarFilename,
+				},
+			})
+			.from(training)
+			.where(inArray(training.id, ids))
+			.innerJoin(users, eq(users.id, training.userCreatorId));
+
+		return Promise.all(
+			trainingRows.map(async (t) => {
+				const participants = await this.getExtendedParticipants(t.id);
+				return { ...t, participants };
+			}),
+		);
+	}
+
 	public async getExtendedById(id: string): Promise<TrainingDto.ExtendedEntity> {
 		const [trainingRow] = await this.db.db
 			.select({
