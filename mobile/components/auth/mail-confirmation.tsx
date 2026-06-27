@@ -8,7 +8,6 @@ import { OTPInput } from '@/components/ui/OTP/OTPInput'
 import { Page } from '@/components/ui/Page'
 import { EMAIL_CONFIRMATION_CODE_SIZE } from '@/shared/constants'
 import { useSafeNavigation } from '@/hooks/useSafeNavigation'
-import { useLocalSearchParams, useFocusEffect } from 'expo-router'
 import { requestConfirmEmailCode } from '@/api/auth'
 import { useConfirmEmailMutation } from '@/queries/my-profile'
 import { FieldErrors, getFieldsErrors } from '@/helpers/getFieldsErrors'
@@ -21,28 +20,28 @@ import { useKeyboardAnimation } from '@/hooks/useKeyboardAnimation'
 import Animated from 'react-native-reanimated'
 import { KeyboardGestureArea } from 'react-native-keyboard-controller'
 import * as Haptics from 'expo-haptics'
+import { useAuthStore } from '@/store/authStore'
 
-const MailConfirmation = () => {
-	const { push, replace } = useSafeNavigation()
-	const { email } = useLocalSearchParams<{ email?: string }>()
+interface IProps {
+	email: string
+	handlePressBack: () => void
+}
+
+const MailConfirmation = ({ email, handlePressBack }: IProps) => {
+	const { login } = useAuthStore()
+	const { push } = useSafeNavigation()
 	const { mutateAsync: confirmEmailMutation, isPending } = useConfirmEmailMutation()
 	const { remainingSeconds, isBlocked } = useTimerCountdown(TimerType.EMAIL_CONFIRMATION, email)
 	const { animatedKeyboardStyle } = useKeyboardAnimation()
 
 	const [errors, setErrors] = useState<FieldErrors>({} as FieldErrors)
 
-	useFocusEffect(
-		useCallback(() => {
-			if (!email) {
-				replace('/(tabs)/profile')
-			}
-		}, [email, replace])
-	)
-
 	const onDone = useCallback(
 		async (code: string) => {
 			try {
-				await confirmEmailMutation(code)
+				const regData = await confirmEmailMutation({ email, code })
+				const { token, ...restParameters } = regData
+				await login(regData.token, restParameters)
 				push('/(tabs)/profile')
 			} catch (e) {
 				const formattedErrors = await getFieldsErrors(e)
@@ -50,7 +49,7 @@ const MailConfirmation = () => {
 				await Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error)
 			}
 		},
-		[confirmEmailMutation, push]
+		[email, confirmEmailMutation, login, push]
 	)
 
 	const handleClearOTPError = () => {
@@ -69,7 +68,7 @@ const MailConfirmation = () => {
 		handleClearOTPError()
 
 		try {
-			const requestCodeResult = await requestConfirmEmailCode()
+			const requestCodeResult = await requestConfirmEmailCode(email)
 			createTimer(TimerType.EMAIL_CONFIRMATION, email, requestCodeResult.waitMs)
 		} catch (e) {
 			const formattedErrors = await getFieldsErrors(e)
@@ -91,7 +90,7 @@ const MailConfirmation = () => {
 				<Container className="flex-1">
 					<Pressable onPress={Keyboard.dismiss} className="flex-1">
 						<View className="flex-1">
-							<HeaderBack returnCallback={() => push('/(tabs)/profile')}>Назад</HeaderBack>
+							<HeaderBack returnCallback={handlePressBack}>Назад</HeaderBack>
 							<Animated.View style={animatedKeyboardStyle} className="flex-1 justify-center gap-[24px]">
 								<View className="gap-[32px]">
 									<View className="gap-[8px]">

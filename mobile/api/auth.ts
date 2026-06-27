@@ -16,16 +16,20 @@ export const loginUser = async (data: {
 	).json()
 }
 
+// : Promise<
+// 	IUser & {
+// 		token: string
+// 	}
+// >
 export const registrationUser = async (data: {
 	email: string
 	username: string
 	password: string
 	isTermsAccepted: boolean
-}): Promise<
-	IUser & {
-		token: string
-	}
-> => {
+}): Promise<{
+	success: boolean
+	waitMs: number
+}> => {
 	return (
 		await fetcher.post('auth/registration', {
 			json: data
@@ -34,22 +38,33 @@ export const registrationUser = async (data: {
 }
 
 // Запросить код подтверждения почты
-export const requestConfirmEmailCode = async (): Promise<{
+export const requestConfirmEmailCode = async (
+	email: string
+): Promise<{
 	success: boolean
 	waitMs: number
 }> => {
-	return (await fetcher.post('auth/request-confirm-email')).json()
+	return (
+		await fetcher.post('auth/request-confirm-email', {
+			json: { email }
+		})
+	).json()
 }
 
 // Ввести код подтверждения почты
 export const confirmEmailCode = async (
+	email: string,
 	code: string
 ): Promise<{
-	success: boolean
+	token: string
+	id: string
+	name: string
+	username: string
+	avatarFilename: null | string
 }> => {
 	return (
 		await fetcher.post('auth/confirm-email', {
-			json: { code }
+			json: { email, code }
 		})
 	).json()
 }

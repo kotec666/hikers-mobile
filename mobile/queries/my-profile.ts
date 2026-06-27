@@ -44,21 +44,10 @@ export const useUpdateProfileMutation = () => {
 }
 
 export const useConfirmEmailMutation = () => {
-	const queryClient = useQueryClient()
-	const toast = useToast()
+	// const queryClient = useQueryClient()
+	// const toast = useToast()
 	return useMutation({
-		mutationFn: (code: string) => confirmEmailCode(code),
-		onSuccess: (data) => {
-			if (!data.success) return
-			toast.success('Почта успешно подтверждена')
-			const prevMyProfile = queryClient.getQueryData<IProfile>(QUERY_KEYS.MY_PROFILE)
-			if (!prevMyProfile || !prevMyProfile.user) return
-
-			queryClient.setQueryData(QUERY_KEYS.MY_PROFILE, {
-				...prevMyProfile,
-				user: { ...prevMyProfile.user, isEmailConfirmed: true }
-			})
-		}
+		mutationFn: ({ email, code }: { email: string; code: string }) => confirmEmailCode(email, code)
 	})
 }
 
