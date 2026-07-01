@@ -444,15 +444,17 @@ export class PostsService {
 	public async attachFiles(postId: string, files: Express.Multer.File[]): Promise<string[]> {
 		const mediaIds: string[] = [];
 
-		for (const file of files) {
-			// @TODO тест что если файл не догрузится, чтобы не стопил остальные
-			try {
-				const mediaId = await this.attachFile(postId, file);
-				mediaIds.push(mediaId);
-			} catch (error) {
-				console.error(`Файл ${file.originalname} не догрузился в пост ${postId} по причине:`, error);
-			}
-		}
+		await Promise.all(
+			files.map(async (file) => {
+				// @TODO тест что если файл не догрузится, чтобы не стопил остальные
+				try {
+					const mediaId = await this.attachFile(postId, file);
+					mediaIds.push(mediaId);
+				} catch (error) {
+					console.error(`Файл ${file.originalname} не догрузился в пост ${postId} по причине:`, error);
+				}
+			}),
+		);
 
 		return mediaIds;
 	}
