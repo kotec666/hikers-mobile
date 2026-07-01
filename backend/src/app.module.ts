@@ -33,6 +33,7 @@ import { MailerModule } from '@nestjs-modules/mailer';
 import { MailerModule as MyMailerModule } from './modules/mailer/mailer.module';
 import { HandlebarsAdapter } from '@nestjs-modules/mailer/adapters/handlebars.adapter';
 import { CacheModule } from '@nestjs/cache-manager';
+import { ReportsModule } from './modules/reports/reports.module';
 
 config({ quiet: true });
 
@@ -126,6 +127,7 @@ config({ quiet: true });
 		NotificationsModule,
 		WebsocketsModule,
 		MyMailerModule,
+		ReportsModule,
 	],
 	providers: [UniqueEmailValidator, UniqueUsernameValidator, FinishedTrainingParticipantValidator],
 })
