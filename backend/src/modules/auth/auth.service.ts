@@ -227,9 +227,7 @@ export class AuthService {
 			throw new BadRequestException(`_isTermsAccepted:${ERRORS.BAD_REQUEST}`);
 		}
 
-		const cachedCodeKey = this.getEmailConfirmationKey(dto.email);
 		const rateLimitKey = this.getEmailConfirmationRateLimitKey(dto.email);
-
 		const rateLimitSince = await this.cacheManager.get<number>(rateLimitKey);
 		if (rateLimitSince) {
 			throw new HttpException(
@@ -252,7 +250,7 @@ export class AuthService {
 			.where(eq(users.email, dto.email))
 			.limit(1);
 		if (user) {
-			throw new ConflictException(ERRORS.EMAIL_ALREADY_CONFIRMED);
+			throw new ConflictException(ERRORS.ALREADY_EXISTS);
 		}
 
 		const isEmailValid = await this.mailer.isDeliverable(dto.email);
@@ -260,25 +258,10 @@ export class AuthService {
 			throw new BadRequestException(ERRORS.INVALID_EMAIL);
 		}
 
-		const code = generateNumericCode(EMAIL_CONFIRMATION_CODE_SIZE);
-		await this.cacheManager.set(cachedCodeKey, code, EMAIL_CONFIRMATION_CODE_TTL_MS);
-		await this.cacheManager.set(rateLimitKey, Date.now(), EMAIL_CONFIRMATION_CODE_RATE_LIMIT_MS);
+		const regKey = this.getRegistrationKey(dto.email);
+		await this.cacheManager.set<UserDto.Registration>(regKey, dto, EMAIL_CONFIRMATION_CODE_TTL_MS);
 
-		const key = this.getRegistrationKey(dto.email);
-		await this.cacheManager.set(key, dto, EMAIL_CONFIRMATION_CODE_TTL_MS);
-
-		return this.mailer
-			.sendEmailConfirmationMail(dto.email, code)
-			.catch(() => {
-				throw new BadGatewayException({
-					success: false,
-					waitMs: EMAIL_CONFIRMATION_CODE_RATE_LIMIT_MS,
-				});
-			})
-			.then(() => ({
-				success: true,
-				waitMs: EMAIL_CONFIRMATION_CODE_RATE_LIMIT_MS,
-			}));
+		return this.requestConfirmEmail(dto.email);
 	}
 
 	public async requestConfirmEmail(email: string): Promise<CommonDto.RateLimited<CommonDto.BooleanResponse>> {
@@ -297,23 +280,27 @@ export class AuthService {
 			);
 		}
 
-		const [user] = await this.db.db
-			.select({
-				id: users.id,
-				email: users.email,
-				emailConfirmedAt: users.emailConfirmedAt,
-			})
-			.from(users)
-			.where(eq(users.email, email))
-			.limit(1);
-		if (!user) {
-			throw new NotFoundException(ERRORS.NOT_FOUND);
-		}
-		if (user.emailConfirmedAt) {
-			throw new ConflictException(ERRORS.EMAIL_ALREADY_CONFIRMED);
+		const regKey = this.getRegistrationKey(email);
+		const regPayload = await this.cacheManager.get<UserDto.Registration>(regKey);
+		if (!regPayload) {
+			const [user] = await this.db.db
+				.select({
+					id: users.id,
+					email: users.email,
+					emailConfirmedAt: users.emailConfirmedAt,
+				})
+				.from(users)
+				.where(eq(users.email, email))
+				.limit(1);
+			if (!user) {
+				throw new NotFoundException(ERRORS.NOT_FOUND);
+			}
+			if (user.emailConfirmedAt) {
+				throw new ConflictException(ERRORS.EMAIL_ALREADY_CONFIRMED);
+			}
 		}
 
-		const isEmailValid = await this.mailer.isDeliverable(user.email);
+		const isEmailValid = await this.mailer.isDeliverable(email);
 		if (!isEmailValid) {
 			throw new BadRequestException(ERRORS.INVALID_EMAIL);
 		}
@@ -323,7 +310,7 @@ export class AuthService {
 		await this.cacheManager.set(rateLimitKey, Date.now(), EMAIL_CONFIRMATION_CODE_RATE_LIMIT_MS);
 
 		return this.mailer
-			.sendEmailConfirmationMail(user.email, code)
+			.sendEmailConfirmationMail(email, code)
 			.catch(() => {
 				throw new BadGatewayException({
 					success: false,
