@@ -31,7 +31,7 @@ const MailConfirmation = ({ email, handlePressBack }: IProps) => {
 	const { login } = useAuthStore()
 	const { push } = useSafeNavigation()
 	const { mutateAsync: confirmEmailMutation, isPending } = useConfirmEmailMutation()
-	const { remainingSeconds, isBlocked } = useTimerCountdown(TimerType.EMAIL_CONFIRMATION, email)
+	const { remainingSeconds, isBlocked, refresh } = useTimerCountdown(TimerType.EMAIL_CONFIRMATION, email)
 	const { animatedKeyboardStyle } = useKeyboardAnimation()
 
 	const [errors, setErrors] = useState<FieldErrors>({} as FieldErrors)
@@ -70,6 +70,7 @@ const MailConfirmation = ({ email, handlePressBack }: IProps) => {
 		try {
 			const requestCodeResult = await requestConfirmEmailCode(email)
 			createTimer(TimerType.EMAIL_CONFIRMATION, email, requestCodeResult.waitMs)
+			refresh()
 		} catch (e) {
 			const formattedErrors = await getFieldsErrors(e)
 			setErrors(formattedErrors)

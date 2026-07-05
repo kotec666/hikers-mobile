@@ -7,57 +7,43 @@ interface IUseTimerCountdown {
 	isBlocked: boolean
 }
 
-export const useTimerCountdown = (type: TimerType, email?: string): IUseTimerCountdown => {
+export const useTimerCountdown = (type: TimerType, email?: string) => {
 	const [state, setState] = useState<IUseTimerCountdown>({
 		remainingSeconds: 0,
 		isBlocked: false
 	})
 
+	const update = useCallback(() => {
+		if (!email) {
+			setState({
+				remainingSeconds: 0,
+				isBlocked: false
+			})
+			return
+		}
+
+		const remaining = getRemainingTime(type, email)
+
+		setState({
+			remainingSeconds: remaining,
+			isBlocked: remaining > 0
+		})
+	}, [type, email])
+
 	useFocusEffect(
 		useCallback(() => {
-			if (!email) {
-				setState({
-					remainingSeconds: 0,
-					isBlocked: false
-				})
-
-				return
-			}
-
-			let interval: ReturnType<typeof setInterval> | null = null
-
-			const update = () => {
-				const remaining = getRemainingTime(type, email)
-
-				if (remaining <= 0 && interval) {
-					clearInterval(interval)
-				}
-
-				setState((prev) => {
-					const next = {
-						remainingSeconds: remaining,
-						isBlocked: remaining > 0
-					}
-
-					if (prev.remainingSeconds === next.remainingSeconds && prev.isBlocked === next.isBlocked) {
-						return prev
-					}
-
-					return next
-				})
-			}
+			if (!email) return
 
 			update()
 
-			interval = setInterval(update, 1000)
+			const interval = setInterval(update, 1000)
 
-			return () => {
-				if (interval) {
-					clearInterval(interval)
-				}
-			}
-		}, [type, email])
+			return () => clearInterval(interval)
+		}, [email, update])
 	)
 
-	return state
+	return {
+		...state,
+		refresh: update
+	}
 }
