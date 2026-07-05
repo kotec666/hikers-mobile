@@ -39,4 +39,10 @@ export const lengths = {
 			max: 255,
 		},
 	},
+	reports: {
+		text: {
+			min: 0,
+			max: 4095,
+		},
+	},
 };

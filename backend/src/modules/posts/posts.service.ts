@@ -48,20 +48,47 @@ export class PostsService {
 			.offset(offset)
 			.limit(limit);
 
-		// @TODO костыль переделать
+		const postsIds = rows.map((p) => p.id);
+		const trainingsIds: string[] = rows.map((p) => p.trainingId).filter((tid) => typeof tid === 'string');
+
+		const [likesInfo, subscriptions, trainings, files] = await Promise.all([
+			this.getPostsLikes(postsIds),
+			this.subscribers.getSubscriptionsIds(userId),
+			this.trainings.getExtendedByIds(trainingsIds),
+			this.getPostsFileNames(postsIds),
+		]);
+
+		const likesInfoByPostId = new Map<string, Awaited<ReturnType<typeof this.getPostsLikes>>>();
+		likesInfo.forEach((likeInfo) => {
+			const existing = likesInfoByPostId.get(likeInfo.postId) ?? [];
+			existing.push(likeInfo);
+			likesInfoByPostId.set(likeInfo.postId, existing);
+		});
+
+		const userSubscriptions = new Set<string>();
+		subscriptions.forEach((subId) => {
+			userSubscriptions.add(subId);
+		});
+
+		const filesByPostId = new Map<string, string[]>();
+		files.forEach((file) => {
+			const existing = filesByPostId.get(file.postId) ?? [];
+			existing.push(file.mediaFilename);
+			filesByPostId.set(file.postId, existing);
+		});
+
 		const postEntities: PostDto.Entity[] = [];
-		for (const row of rows) {
-			const isLiked = await this.isLiked(userId, row.id);
-			const likesCount = await this.getLikesCount(row.id);
 
-			const fileNames = await this.getFileNames(row.id);
-
-			// Пока что все посты закреплены за своей тренировкой
-			const training = await this.trainings.getExtendedById(row.trainingId!);
-			const isSubscribed = await this.subscribers.isSubscribed(userId, row.userCreator.id);
+		rows.forEach((row) => {
+			const isSubscribed = userSubscriptions.has(row.userCreator.id);
+			const likesInfo = likesInfoByPostId.get(row.id);
+			const likesCount = likesInfo ? likesInfo.length : 0;
+			const isLiked = likesInfo ? !!likesInfo.find((info) => info.id === userId) : false;
+			const training = trainings.find((t) => t.id === row.trainingId) ?? null;
+			const fileNames = filesByPostId.get(row.id) ?? [];
 
 			postEntities.push({ ...row, isSubscribed, likesCount, isLiked, training, fileNames });
-		}
+		});
 
 		return postEntities;
 	}
@@ -125,20 +152,47 @@ export class PostsService {
 			.offset(offset)
 			.limit(limit);
 
-		// @TODO костыль переделать
+		const postsIds = rows.map((p) => p.id);
+		const trainingsIds: string[] = rows.map((p) => p.trainingId).filter((tid) => typeof tid === 'string');
+
+		const [likesInfo, subscriptions, trainings, files] = await Promise.all([
+			this.getPostsLikes(postsIds),
+			this.subscribers.getSubscriptionsIds(userId),
+			this.trainings.getExtendedByIds(trainingsIds),
+			this.getPostsFileNames(postsIds),
+		]);
+
+		const likesInfoByPostId = new Map<string, Awaited<ReturnType<typeof this.getPostsLikes>>>();
+		likesInfo.forEach((likeInfo) => {
+			const existing = likesInfoByPostId.get(likeInfo.postId) ?? [];
+			existing.push(likeInfo);
+			likesInfoByPostId.set(likeInfo.postId, existing);
+		});
+
+		const userSubscriptions = new Set<string>();
+		subscriptions.forEach((subId) => {
+			userSubscriptions.add(subId);
+		});
+
+		const filesByPostId = new Map<string, string[]>();
+		files.forEach((file) => {
+			const existing = filesByPostId.get(file.postId) ?? [];
+			existing.push(file.mediaFilename);
+			filesByPostId.set(file.postId, existing);
+		});
+
 		const postEntities: PostDto.Entity[] = [];
-		for (const row of rows) {
-			const isLiked = await this.isLiked(userId, row.id);
-			const likesCount = await this.getLikesCount(row.id);
 
-			const fileNames = await this.getFileNames(row.id);
-
-			// Пока что все посты закреплены за своей тренировкой
-			const training = await this.trainings.getExtendedById(row.trainingId!);
-			const isSubscribed = await this.subscribers.isSubscribed(userId, row.userCreator.id);
+		rows.forEach((row) => {
+			const isSubscribed = userSubscriptions.has(row.userCreator.id);
+			const likesInfo = likesInfoByPostId.get(row.id);
+			const likesCount = likesInfo ? likesInfo.length : 0;
+			const isLiked = likesInfo ? !!likesInfo.find((info) => info.id === userId) : false;
+			const training = trainings.find((t) => t.id === row.trainingId) ?? null;
+			const fileNames = filesByPostId.get(row.id) ?? [];
 
 			postEntities.push({ ...row, isSubscribed, likesCount, isLiked, training, fileNames });
-		}
+		});
 
 		return postEntities;
 	}
@@ -444,15 +498,17 @@ export class PostsService {
 	public async attachFiles(postId: string, files: Express.Multer.File[]): Promise<string[]> {
 		const mediaIds: string[] = [];
 
-		for (const file of files) {
-			// @TODO тест что если файл не догрузится, чтобы не стопил остальные
-			try {
-				const mediaId = await this.attachFile(postId, file);
-				mediaIds.push(mediaId);
-			} catch (error) {
-				console.error(`Файл ${file.originalname} не догрузился в пост ${postId} по причине:`, error);
-			}
-		}
+		await Promise.all(
+			files.map(async (file) => {
+				// @TODO тест что если файл не догрузится, чтобы не стопил остальные
+				try {
+					const mediaId = await this.attachFile(postId, file);
+					mediaIds.push(mediaId);
+				} catch (error) {
+					console.error(`Файл ${file.originalname} не догрузился в пост ${postId} по причине:`, error);
+				}
+			}),
+		);
 
 		return mediaIds;
 	}

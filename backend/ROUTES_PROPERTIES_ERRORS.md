@@ -236,3 +236,25 @@
 
 - ERRORS.INVALID_LENGTH
 - ERRORS.MISMATCH // Неверный код
+
+## 15. POST /reports
+
+### 15.0. Общие ошибки:
+
+- ERRORS.TOO_LARGE // Если запрос слишком много весит
+
+### 15.1. type:
+
+- ERRORS.MISMATCH // Неверный тип
+
+### 15.2. text:
+
+- ERRORS.INVALID_LENGTH
+
+### 15.3. relEntityId:
+
+- ERRORS.MISMATCH // Если передана строка формата не UUID ЛИБО если по type нужна сущность, а поле relEntityId не передано
+
+### 15.4. files:
+
+- ERRORS.BAD_REQUEST // Если с каким-то из файлов что-то не так. Не верный формат/Слишком много весит/Слишком много файлов. (все лимиты в shared/constants.ts)
