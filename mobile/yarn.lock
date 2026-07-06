@@ -4343,7 +4343,7 @@ expo-dev-menu@~57.0.5:
   dependencies:
     expo-dev-menu-interface "~57.0.0"
 
-expo-file-system@~57.0.0:
+expo-file-system@^57.0.0, expo-file-system@~57.0.0:
   version "57.0.0"
   resolved "https://registry.yarnpkg.com/expo-file-system/-/expo-file-system-57.0.0.tgz#d7afbb2ff0a269113a00a688c1f6ba89404df56c"
   integrity sha512-G+eytNuNGMiS7dbdj1j0nAYMowXnNr1vpO+jss6nQvBlRxshcGBFMtk8xfc67ynz0MUVkzod7WwKO7Vf1iOaJw==

@@ -48,6 +48,7 @@ import { Page } from '@/components/ui/Page'
 import { DEFAULT_PADDING_TOP } from '@/constants/Variables'
 import { KeyboardAwareScrollView } from 'react-native-keyboard-controller'
 import WorkoutMap from '@/components/map/WorkoutMap'
+import { File } from 'expo-file-system'
 
 type Param = {
 	label: string
@@ -163,8 +164,6 @@ export default function ViewWorkout() {
 	const isEdit = mode === VIEWWORKOUT_MODE.EDIT
 	const isFromHistory = mode === VIEWWORKOUT_MODE.FROM_HISTORY
 
-	const [existPost, setExistPost] = useState<IPost | null>(null)
-
 	const { handleSubmit, control, setValue } = useForm<IPostFormState>()
 	const { ErrorMessages } = useErrorMessage()
 
@@ -192,18 +191,20 @@ export default function ViewWorkout() {
 	})
 
 	const { data: editPost } = usePostQuery(editPostId)
+	const { data: postFromTraining } = usePostByTrainingQuery(historyTrainingId) // id тренировки может существовать, но поста может не существовать
+
+	const existPost = useMemo(() => {
+		return editPost ?? postFromTraining ?? null
+	}, [editPost, postFromTraining])
 
 	useEffect(() => {
 		if (editPost) {
 			// setIsTrainingAuthor(true)
-			setExistPost(editPost)
 			setExistingImages(editPost.fileNames)
 			setValue('title', editPost.title)
 			setValue('description', editPost.description || '')
 		}
 	}, [editPost, setValue])
-
-	const { data: postFromTraining } = usePostByTrainingQuery(historyTrainingId) // id тренировки может существовать, но поста может не существовать
 
 	useEffect(() => {
 		if (postFromTraining) {
@@ -212,7 +213,6 @@ export default function ViewWorkout() {
 			} else {
 				setIsTrainingAuthor(false)
 			}
-			setExistPost(postFromTraining)
 			setExistingImages(postFromTraining.fileNames)
 			setValue('title', postFromTraining.title)
 			setValue('description', postFromTraining.description || '')
@@ -232,31 +232,9 @@ export default function ViewWorkout() {
 	}, [extendedTrainingDetails, setValue, user?.id])
 
 	const handlePostImages = (postImages: string[], formData: FormData) => {
-		if (postImages.length) {
-			const filesArray: any[] = []
-
-			postImages.forEach((postImage, index) => {
-				if (postImage.startsWith('file://')) {
-					const filename = postImage.split('/').pop()
-					const match = /\.(\w+)$/.exec(filename || '')
-					const type = match ? `image/${match[1]}` : 'image/jpeg'
-
-					filesArray.push({
-						uri: postImage,
-						type,
-						name: filename || `post-image-${index}.jpg`
-					})
-				} else {
-					// Если это уже загруженное изображение (URL), отправляем как строку
-					// Для URL просто добавляем строку в массив
-					filesArray.push(postImage)
-				}
-			})
-
-			for (let i = 0; i < filesArray.length; i++) {
-				formData.append('files', filesArray[i])
-			}
-		}
+		postImages.forEach((postImage) => {
+			formData.append('files', new File(postImage))
+		})
 	}
 
 	const saveWorkoutBeforeSubmit = async (): Promise<string | null> => {

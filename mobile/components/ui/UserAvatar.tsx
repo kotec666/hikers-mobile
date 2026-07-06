@@ -28,22 +28,24 @@ export function UserAvatar(props: IProps) {
 		!imageError
 	) {
 		return (
-			<View
-				className={cn('relative h-[50px] w-[50px] rounded-full', props.className, {
-					'border-[1px] border-white/20': props.bordered
-				})}
-				style={[
-					props.style as StyleProp<ViewStyle>,
-					{ borderRadius: 999, overflow: 'hidden' },
-					props.bordered && { borderWidth: 1, borderColor: 'rgba(255, 255, 255, 0.4)' }
-				]}
-			>
-				<Image
-					source={{ uri: props.avatar }}
-					style={{ width: '100%', height: '100%' }}
-					contentFit="cover"
-					onError={() => setImageError(true)}
-				/>
+			<View className="relative self-start">
+				<View
+					className={cn('relative h-[50px] w-[50px] rounded-full', props.className, {
+						'border-[1px] border-white/20': props.bordered
+					})}
+					style={[
+						props.style as StyleProp<ViewStyle>,
+						{ borderRadius: 999, overflow: 'hidden' },
+						props.bordered && { borderWidth: 1, borderColor: 'rgba(255, 255, 255, 0.4)' }
+					]}
+				>
+					<Image
+						source={{ uri: props.avatar }}
+						style={{ width: '100%', height: '100%' }}
+						contentFit="cover"
+						onError={() => setImageError(true)}
+					/>
+				</View>
 				{props.isEditMode && (
 					<View
 						className="absolute right-0 bg-white rounded-full w-[25px] h-[25px] items-center justify-center overflow-hidden"
@@ -56,18 +58,20 @@ export function UserAvatar(props: IProps) {
 		)
 	}
 	return (
-		<View
-			className={cn(
-				'relative h-[50px] w-[50px] rounded-full justify-center items-center bg-blue-98',
-				props.className
-			)}
-			style={[
-				props.style as StyleProp<ViewStyle>,
-				{ borderRadius: 999, overflow: 'hidden' },
-				props.bordered && { borderWidth: 1, borderColor: 'rgba(255, 255, 255, 0.4)' }
-			]}
-		>
-			<PeopleSvg height={props?.iconSize?.height} width={props?.iconSize?.width} />
+		<View className="relative self-start">
+			<View
+				className={cn(
+					'relative h-[50px] w-[50px] rounded-full justify-center items-center bg-blue-98',
+					props.className
+				)}
+				style={[
+					props.style as StyleProp<ViewStyle>,
+					{ borderRadius: 999, overflow: 'hidden' },
+					props.bordered && { borderWidth: 1, borderColor: 'rgba(255, 255, 255, 0.4)' }
+				]}
+			>
+				<PeopleSvg height={props?.iconSize?.height} width={props?.iconSize?.width} />
+			</View>
 			{props.isEditMode && (
 				<View
 					className="absolute right-0 bg-white rounded-full w-[25px] h-[25px] items-center justify-center overflow-hidden"

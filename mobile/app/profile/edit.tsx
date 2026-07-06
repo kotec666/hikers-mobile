@@ -27,6 +27,7 @@ import { BottomSheetHandle } from '@/components/ui/BottomSheet/types'
 import BaseWheelPicker from '@/components/ui/wheel-picker/base-wheel-picker'
 import { cn } from '@/helpers/cn'
 import { KeyboardAwareScrollView } from 'react-native-keyboard-controller'
+import { File } from 'expo-file-system'
 
 interface IEditProfileFormState {
 	name: string
@@ -104,16 +105,8 @@ const ProfileEdit = () => {
 		}
 
 		if (formState.avatarFilename) {
-			if (formState.avatarFilename.startsWith('file://')) {
-				const filename = formState.avatarFilename.split('/').pop()
-				const match = /\.(\w+)$/.exec(filename || '')
-				const type = match ? `image/${match[1]}` : 'image/jpeg'
-
-				formData.append('avatarFilename', {
-					uri: formState.avatarFilename,
-					type,
-					name: filename || 'profile-image.jpg'
-				} as unknown as Blob)
+			if (formState.avatarFilename.startsWith('file:///')) {
+				formData.append('avatarFilename', new File(formState.avatarFilename))
 			} else {
 				formData.append('avatarFilename', formState.avatarFilename)
 			}
