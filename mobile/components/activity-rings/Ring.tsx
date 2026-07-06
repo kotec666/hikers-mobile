@@ -73,10 +73,8 @@ export const Ring = memo(
 		const r = useMemo(() => size / 2 - strokeWidth / 2, [size, strokeWidth])
 
 		const clip = useMemo(() => {
-			const outerCircle = Skia.Path.Make()
-			outerCircle.addCircle(center.x, center.y, size / 2)
-			const innerCircle = Skia.Path.Make()
-			innerCircle.addCircle(center.x, center.y, size / 2 - strokeWidth)
+			const outerCircle = Skia.Path.Circle(center.x, center.y, size / 2)
+			const innerCircle = Skia.Path.Circle(center.x, center.y, size / 2 - strokeWidth)
 			return Skia.Path.MakeFromOp(outerCircle, innerCircle, PathOp.Difference)!
 		}, [center.x, center.y, size, strokeWidth])
 
@@ -92,7 +90,7 @@ export const Ring = memo(
 
 		// ОПТИМИЗАЦИЯ: Упрощаем Path для прогресса
 		const fullPath = useMemo(() => {
-			const path = Skia.Path.Make()
+			const path = Skia.PathBuilder.Make()
 			const angle = 360 * (totalProgress % 1)
 
 			// Если полных оборотов нет, просто рисуем дугу
@@ -105,14 +103,15 @@ export const Ring = memo(
 					path.addArc(fromCircle(center, r), 0, angle)
 				}
 			}
-			return path
+			return path.detach()
 		}, [center, r, totalProgress])
 
 		const path = useDerivedValue(() => {
 			'worklet'
 			if (trim.value < 1) {
-				return fullPath.copy().trim(0, trim.value, false)!
+				return Skia.Path.Trim(fullPath, 0, trim.value, false) ?? fullPath
 			}
+
 			return fullPath
 		})
 

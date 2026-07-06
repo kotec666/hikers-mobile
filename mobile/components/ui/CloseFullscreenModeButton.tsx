@@ -1,7 +1,7 @@
 import React from 'react'
 import { Colors } from '@/constants/Colors'
-import { Feather } from '@expo/vector-icons'
 import { TouchableOpacity } from 'react-native'
+import CloseSvg from '@/components/svg/CloseSvg'
 
 const CloseFullscreenModeButton = ({ onPress, insetTop = 0 }: { onPress?: () => void; insetTop?: number }) => {
 	return (
@@ -21,7 +21,7 @@ const CloseFullscreenModeButton = ({ onPress, insetTop = 0 }: { onPress?: () => 
 				borderRadius: 4
 			}}
 		>
-			<Feather name="x" size={20} color="white" />
+			<CloseSvg />
 		</TouchableOpacity>
 	)
 }

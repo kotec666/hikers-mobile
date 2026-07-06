@@ -8,7 +8,7 @@ import { IRNMapWorkoutProps } from '@/components/map/RNMapWorkout'
 interface Props {
 	visible: boolean
 	onClose: () => void
-	map?: React.ReactElement<IYaMapWorkoutProps> | React.ReactElement<IRNMapWorkoutProps>
+	map?: React.ReactElement<IYaMapWorkoutProps> | React.ReactElement<IRNMapWorkoutProps> | null
 }
 
 const FullscreenMap = ({ visible, onClose, map }: Props) => {
