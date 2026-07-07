@@ -50,7 +50,7 @@ const WeekDaySettingButton = ({
 					</Text>
 					<Text
 						className="text-gray-ab opacity-50 text-center"
-						style={{ fontSize: 12, fontFamily: fontFamily.bold, lineHeight: 9 }}
+						style={{ fontSize: 12, fontFamily: fontFamily.bold }}
 					>
 						ККАЛ
 					</Text>
