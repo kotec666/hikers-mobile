@@ -23,6 +23,7 @@ import { KeyboardAwareScrollView, KeyboardStickyView } from 'react-native-keyboa
 import EmailSvg from '@/components/svg/EmailSvg'
 import { useKeyboardHeight } from '@/hooks/useKeyboardHeight'
 import MailConfirmation from '@/components/auth/mail-confirmation'
+import { Colors } from '@/constants/Colors'
 
 export enum AUTH_MODE {
 	AUTH = 'auth',
@@ -49,7 +50,9 @@ const AuthPage = () => {
 		handleSubmit,
 		control,
 		formState: { errors }
-	} = useForm<IAuthFormState>()
+	} = useForm<IAuthFormState>({
+		mode: 'onChange'
+	})
 	const { ErrorMessages } = useErrorMessage()
 	const keyboardHeight = useKeyboardHeight()
 
@@ -298,7 +301,9 @@ const AuthPage = () => {
 								<LinkCustom
 									href="/(password-restore)/firstStep"
 									text="Забыли пароль?"
-									className="text-blue-3d"
+									style={{
+										color: Colors['blue-3d']
+									}}
 								/>
 							)}
 						</View>
@@ -335,19 +340,17 @@ const AuthPage = () => {
 										<LinkCustom
 											href="/document"
 											text="условиями обработки"
-											className={cn('', {
-												'text-blue-3d': !errors.agree?.message,
-												'text-red-500': errors.agree?.message
-											})}
+											style={{
+												color: errors.agree?.message ? Colors['red-ff4'] : Colors['blue-3d']
+											}}
 										/>{' '}
 										персональных данных и{' '}
 										<LinkCustom
 											href="/document"
 											text="политикой конфиденциальности"
-											className={cn('', {
-												'text-blue-3d': !errors.agree?.message,
-												'text-red-500': errors.agree?.message
-											})}
+											style={{
+												color: errors.agree?.message ? Colors['red-ff4'] : Colors['blue-3d']
+											}}
 										/>
 									</Text>
 								</View>
