@@ -10,11 +10,28 @@ import { ERRORS } from '@shared/errors';
 export class SubscribersService {
 	constructor(private readonly db: DatabaseService) {}
 
-	/** Получить подписки */
-	public async getSubscriptions(userId: string, page: number, limit: number): Promise<SubscriptionDto.Entity[]> {
+	/** Получить id подписок (чуть быстрее чем {@link getSubscriptions}) */
+	public async getSubscriptionsIds(userId: string, page?: number, limit?: number): Promise<string[]> {
+		const query = this.db.db
+			.select({
+				id: userSubscribers.userId,
+			})
+			.from(userSubscribers)
+			.where(eq(userSubscribers.userSubscriberId, userId))
+			.$dynamic();
+
+		if (typeof page !== 'number' || typeof limit !== 'number') {
+			return (await query).map((u) => u.id);
+		}
+
 		const offset = Math.max(0, (page - 1) * limit);
 
-		return await this.db.db
+		return (await query.offset(offset).limit(limit)).map((u) => u.id);
+	}
+
+	/** Получить подписки */
+	public async getSubscriptions(userId: string, page?: number, limit?: number): Promise<SubscriptionDto.Entity[]> {
+		const query = this.db.db
 			.select({
 				user: {
 					id: users.id,
@@ -26,15 +43,39 @@ export class SubscribersService {
 			.from(userSubscribers)
 			.where(eq(userSubscribers.userSubscriberId, userId))
 			.innerJoin(users, eq(users.id, userSubscribers.userId))
-			.offset(offset)
-			.limit(limit);
+			.$dynamic();
+
+		if (typeof page !== 'number' || typeof limit !== 'number') {
+			return await query;
+		}
+
+		const offset = Math.max(0, (page - 1) * limit);
+
+		return await query.offset(offset).limit(limit);
+	}
+
+	/** Получить id подписчиков (чуть быстрее чем {@link getSubscribers}) */
+	public async getSubscribersIds(userId: string, page: number, limit: number): Promise<string[]> {
+		const query = this.db.db
+			.select({
+				id: userSubscribers.userSubscriberId,
+			})
+			.from(userSubscribers)
+			.where(eq(userSubscribers.userId, userId))
+			.$dynamic();
+
+		if (typeof page !== 'number' || typeof limit !== 'number') {
+			return (await query).map((u) => u.id);
+		}
+
+		const offset = Math.max(0, (page - 1) * limit);
+
+		return (await query.offset(offset).limit(limit)).map((u) => u.id);
 	}
 
 	/** Получить подписчиков */
 	public async getSubscribers(userId: string, page: number, limit: number): Promise<SubscriberDto.Entity[]> {
-		const offset = Math.max(0, (page - 1) * limit);
-
-		return await this.db.db
+		const query = this.db.db
 			.select({
 				user: {
 					id: users.id,
@@ -46,8 +87,15 @@ export class SubscribersService {
 			.from(userSubscribers)
 			.where(eq(userSubscribers.userId, userId))
 			.innerJoin(users, eq(users.id, userSubscribers.userSubscriberId))
-			.offset(offset)
-			.limit(limit);
+			.$dynamic();
+
+		if (typeof page !== 'number' || typeof limit !== 'number') {
+			return await query;
+		}
+
+		const offset = Math.max(0, (page - 1) * limit);
+
+		return await query.offset(offset).limit(limit);
 	}
 
 	/** Получить кол-во подписчиков */

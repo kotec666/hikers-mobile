@@ -49,6 +49,10 @@ export class AuthService {
 		@Inject(CACHE_MANAGER) private cacheManager: Cache,
 	) {}
 
+	private getRegistrationKey(email: string): string {
+		return `reg:${email}`;
+	}
+
 	private getPasswordRecoveryKey(email: string): string {
 		return `passw:${email}`;
 	}
@@ -57,12 +61,12 @@ export class AuthService {
 		return `passw:${email}:rate_limit`;
 	}
 
-	private getEmailConfirmationKey(userId: string): string {
-		return `conf:${userId}`;
+	private getEmailConfirmationKey(email: string): string {
+		return `conf:${email}`;
 	}
 
-	private getEmailConfirmationRateLimitKey(userId: string): string {
-		return `conf:${userId}:rate_limit`;
+	private getEmailConfirmationRateLimitKey(email: string): string {
+		return `conf:${email}:rate_limit`;
 	}
 
 	public async requestPasswordRecovery(email: string): Promise<CommonDto.RateLimited<CommonDto.BooleanResponse>> {
@@ -216,10 +220,14 @@ export class AuthService {
 		return { success: true };
 	}
 
-	public async requestConfirmEmail(userId: string): Promise<CommonDto.RateLimited<CommonDto.BooleanResponse>> {
-		const cachedCodeKey = this.getEmailConfirmationKey(userId);
-		const rateLimitKey = this.getEmailConfirmationRateLimitKey(userId);
+	public async fakeRegistration(
+		dto: UserDto.Registration,
+	): Promise<CommonDto.RateLimited<CommonDto.BooleanResponse>> {
+		if (!dto.isTermsAccepted) {
+			throw new BadRequestException(`_isTermsAccepted:${ERRORS.BAD_REQUEST}`);
+		}
 
+		const rateLimitKey = this.getEmailConfirmationRateLimitKey(dto.email);
 		const rateLimitSince = await this.cacheManager.get<number>(rateLimitKey);
 		if (rateLimitSince) {
 			throw new HttpException(
@@ -239,16 +247,60 @@ export class AuthService {
 				emailConfirmedAt: users.emailConfirmedAt,
 			})
 			.from(users)
-			.where(eq(users.id, userId))
+			.where(eq(users.email, dto.email))
 			.limit(1);
-		if (!user) {
-			throw new NotFoundException(ERRORS.NOT_FOUND);
-		}
-		if (user.emailConfirmedAt) {
-			throw new ConflictException(ERRORS.EMAIL_ALREADY_CONFIRMED);
+		if (user) {
+			throw new ConflictException(ERRORS.ALREADY_EXISTS);
 		}
 
-		const isEmailValid = await this.mailer.isDeliverable(user.email);
+		const isEmailValid = await this.mailer.isDeliverable(dto.email);
+		if (!isEmailValid) {
+			throw new BadRequestException(ERRORS.INVALID_EMAIL);
+		}
+
+		const regKey = this.getRegistrationKey(dto.email);
+		await this.cacheManager.set<UserDto.Registration>(regKey, dto, EMAIL_CONFIRMATION_CODE_TTL_MS);
+
+		return this.requestConfirmEmail(dto.email);
+	}
+
+	public async requestConfirmEmail(email: string): Promise<CommonDto.RateLimited<CommonDto.BooleanResponse>> {
+		const cachedCodeKey = this.getEmailConfirmationKey(email);
+		const rateLimitKey = this.getEmailConfirmationRateLimitKey(email);
+
+		const rateLimitSince = await this.cacheManager.get<number>(rateLimitKey);
+		if (rateLimitSince) {
+			throw new HttpException(
+				{
+					statusCode: 429,
+					success: false,
+					waitMs: rateLimitSince + EMAIL_CONFIRMATION_CODE_RATE_LIMIT_MS - Date.now(),
+				},
+				429,
+			);
+		}
+
+		const regKey = this.getRegistrationKey(email);
+		const regPayload = await this.cacheManager.get<UserDto.Registration>(regKey);
+		if (!regPayload) {
+			const [user] = await this.db.db
+				.select({
+					id: users.id,
+					email: users.email,
+					emailConfirmedAt: users.emailConfirmedAt,
+				})
+				.from(users)
+				.where(eq(users.email, email))
+				.limit(1);
+			if (!user) {
+				throw new NotFoundException(ERRORS.NOT_FOUND);
+			}
+			if (user.emailConfirmedAt) {
+				throw new ConflictException(ERRORS.EMAIL_ALREADY_CONFIRMED);
+			}
+		}
+
+		const isEmailValid = await this.mailer.isDeliverable(email);
 		if (!isEmailValid) {
 			throw new BadRequestException(ERRORS.INVALID_EMAIL);
 		}
@@ -258,7 +310,7 @@ export class AuthService {
 		await this.cacheManager.set(rateLimitKey, Date.now(), EMAIL_CONFIRMATION_CODE_RATE_LIMIT_MS);
 
 		return this.mailer
-			.sendEmailConfirmationMail(user.email, code)
+			.sendEmailConfirmationMail(email, code)
 			.catch(() => {
 				throw new BadGatewayException({
 					success: false,
@@ -271,9 +323,8 @@ export class AuthService {
 			}));
 	}
 
-	public async confirmEmail(userId: string, code: string): Promise<CommonDto.BooleanResponse> {
-		const cachedCodeKey = this.getEmailConfirmationKey(userId);
-
+	public async confirmEmail(email: string, code: string): Promise<TokenDto.TokenResponse & UserDto.Entity> {
+		const cachedCodeKey = this.getEmailConfirmationKey(email);
 		const cachedCode = await this.cacheManager.get<string>(cachedCodeKey);
 		if (!cachedCode) {
 			throw new NotFoundException(ERRORS.NOT_FOUND);
@@ -282,39 +333,32 @@ export class AuthService {
 			throw new BadRequestException(`_code:${ERRORS.MISMATCH}`);
 		}
 
-		return this.db.db
-			.update(users)
-			.set({
-				emailConfirmedAt: new Date(),
-			})
-			.where(eq(users.id, userId))
-			.catch(() => {
-				throw new BadGatewayException({
-					success: false,
-				});
-			})
-			.then(() => {
-				this.cacheManager.del(cachedCodeKey);
+		const regKey = this.getRegistrationKey(email);
+		const regPayload = await this.cacheManager.get<UserDto.Registration>(regKey);
+		if (!regPayload) {
+			throw new NotFoundException(ERRORS.NOT_FOUND);
+		}
 
-				return { success: true };
-			});
+		return this.registrationAfterConfirmation(regPayload).then((data) => {
+			this.cacheManager.del(cachedCodeKey);
+			this.cacheManager.del(regKey);
+
+			return data;
+		});
 	}
 
-	public async registration(dto: UserDto.Registration): Promise<TokenDto.TokenResponse & UserDto.Entity> {
+	public async registrationAfterConfirmation(
+		dto: UserDto.Registration,
+	): Promise<TokenDto.TokenResponse & UserDto.Entity> {
 		if (!dto.isTermsAccepted) {
 			throw new BadRequestException(`_isTermsAccepted:${ERRORS.BAD_REQUEST}`);
 		}
 
 		try {
-			await this.userService.checkEmailAvailable(dto.email);
-
 			const user = await this.userService.createUser(dto);
 			const { token } = await this.tokenService.generatePairAndGetAccess(user.id);
 			return { ...user, token };
 		} catch (e: any) {
-			if (e.message === ERRORS.ALREADY_EXISTS) {
-				throw new BadRequestException(`_email:${ERRORS.ALREADY_EXISTS}`);
-			}
 			throw e;
 		}
 	}

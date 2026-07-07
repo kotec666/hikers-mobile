@@ -2,7 +2,12 @@
 import { NotificationType, UserActivity } from '@shared/enums';
 import { ERRORS } from '@shared/errors';
 import { validate } from 'uuid';
-import { FinishedTrainingParticipantValidator, UniqueEmailValidator, ValidEmailDomainValidator } from './validators';
+import {
+	FinishedTrainingParticipantValidator,
+	UniqueEmailValidator,
+	UniqueUsernameValidator,
+	ValidEmailDomainValidator,
+} from './validators';
 
 export function IsValidNotificationSettings(validationOptions?: ValidationOptions) {
 	return function (object: object, propertyName: string) {
@@ -146,6 +151,19 @@ export function UniqueEmail(validationOptions?: ValidationOptions) {
 			options: validationOptions,
 			async: true,
 			validator: UniqueEmailValidator,
+		});
+	};
+}
+
+export function UniqueUsername(validationOptions?: ValidationOptions) {
+	return function (object: object, propertyName: string) {
+		registerDecorator({
+			name: 'UniqueUsername',
+			target: object.constructor,
+			propertyName: propertyName,
+			options: validationOptions,
+			async: true,
+			validator: UniqueUsernameValidator,
 		});
 	};
 }

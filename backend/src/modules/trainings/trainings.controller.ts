@@ -101,7 +101,7 @@ export class TrainingsController {
 		@IsUUID('id') @Param('id') id: string,
 		@Body() dto: TrainingDto.Sync,
 	): Promise<CommonDto.BooleanResponse> {
-		return this.service.sync(user.id, id, dto);
+		return this.service.pushToSyncQueue(user.id, id, dto);
 	}
 
 	/**

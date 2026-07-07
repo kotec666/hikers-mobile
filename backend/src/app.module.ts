@@ -3,7 +3,11 @@ import { Module } from '@nestjs/common';
 import { ConfigModule } from '@nestjs/config';
 import { JwtModule } from '@nestjs/jwt';
 import { LoggerModule } from 'nestjs-pino';
-import { FinishedTrainingParticipantValidator, UniqueEmailValidator } from '@validation/validators';
+import {
+	FinishedTrainingParticipantValidator,
+	UniqueEmailValidator,
+	UniqueUsernameValidator,
+} from '@validation/validators';
 import { AppController } from './app.controller';
 import { DatabaseModule } from './modules/database/database.module';
 import { defaultEnv } from './modules/env/env.validation';
@@ -29,6 +33,7 @@ import { MailerModule } from '@nestjs-modules/mailer';
 import { MailerModule as MyMailerModule } from './modules/mailer/mailer.module';
 import { HandlebarsAdapter } from '@nestjs-modules/mailer/adapters/handlebars.adapter';
 import { CacheModule } from '@nestjs/cache-manager';
+import { ReportsModule } from './modules/reports/reports.module';
 
 config({ quiet: true });
 
@@ -122,7 +127,8 @@ config({ quiet: true });
 		NotificationsModule,
 		WebsocketsModule,
 		MyMailerModule,
+		ReportsModule,
 	],
-	providers: [UniqueEmailValidator, FinishedTrainingParticipantValidator],
+	providers: [UniqueEmailValidator, UniqueUsernameValidator, FinishedTrainingParticipantValidator],
 })
 export class AppModule {}

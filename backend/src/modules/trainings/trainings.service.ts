@@ -29,12 +29,25 @@ import { Event } from '@events/constants';
 
 @Injectable()
 export class TrainingsService {
+	/** Мапа очередей запросов на синхру по id участников */
+	private syncQueue = new Map<string, DebugTrainingRouteNodeClient[]>();
+	private isQueueSyncingNow = false;
+
+	/** Интервал обработки накопившихся запросов на синхру */
+	private readonly SYNC_QUEUES_INTERVAL_MS = 1000;
+	/** Макс. кол-во участников, обрабатывамое за одну итерацию */
+	private readonly SYNC_QUEUES_PARTICIPANTS_BATCH_SIZE = 5;
+	/** Макс. кол-во метрик из очереди, которые будут обработаны за одну итерацию */
+	private readonly SYNC_QUEUE_METRICS_BATCH_SIZE = 50;
+
 	constructor(
 		private readonly db: DatabaseService,
 		private readonly eventEmitter: EventEmitter2,
 	) {
 		// @TODO интервал на чистку пустых тренировок
 		// @TODO восстановление тренировок на паузе из бд
+
+		setInterval(this.processSyncQueue.bind(this), this.SYNC_QUEUES_INTERVAL_MS);
 	}
 
 	public async start(userId: string, dto: TrainingDto.Start): Promise<TrainingDto.Entity> {
@@ -169,7 +182,7 @@ export class TrainingsService {
 			}
 		}
 
-		return await this.db.db.transaction(async (tx) => {
+		await this.db.db.transaction(async (tx) => {
 			await tx
 				.update(training)
 				.set({
@@ -179,17 +192,18 @@ export class TrainingsService {
 
 			// Удаляем неактуальные инвайты
 			await tx.delete(trainingInvites).where(eq(trainingInvites.trainingId, activeTraining.id));
-
-			return this.upsertMetrics(activeTraining.id, activeTraining.type)
-				.then(() => {
-					this.eventEmitter.emit(Event.TRAINING_FINISHED, activeTraining.id);
-					return { success: true };
-				})
-				.catch((reason) => {
-					console.log('Failed to upsert metrics for training', activeTraining.id, reason);
-					return { success: false };
-				});
 		});
+
+		// Делаем вне транзакции, потому что промис может быть долгим, из-за очереди на синхру
+		return this.upsertMetrics(activeTraining.id, activeTraining.type)
+			.then(() => {
+				this.eventEmitter.emit(Event.TRAINING_FINISHED, activeTraining.id);
+				return { success: true };
+			})
+			.catch((reason) => {
+				console.log('Failed to upsert metrics for training', activeTraining.id, reason);
+				return { success: false };
+			});
 	}
 
 	public async requestCalcMetrics(userId: string, trainingId: string): Promise<CommonDto.BooleanResponse> {
@@ -228,31 +242,145 @@ export class TrainingsService {
 			});
 	}
 
-	public async upsertMetrics(trainingId: string, trainingType: TrainingType): Promise<CommonDto.BooleanResponse> {
+	public async upsertMetrics(
+		trainingId: string,
+		trainingType: TrainingType,
+		withSyncQueueClearing = false,
+	): Promise<void> {
 		// Всем участникам просчитываем метрики
 		const participants = await this.getExtendedParticipants(trainingId);
 
 		return this.db.db.transaction(async (tx) => {
+			const promiseFunc = async (participant: TrainingParticipantDto.ExtendedEntity) => {
+				// Без очистки очереди - ждём догрузки метрик
+				if (!withSyncQueueClearing && this.syncQueue.has(participant.id)) {
+					await new Promise((resolve) => {
+						this.eventEmitter.once(Event.ALL_PARTICIPANT_METRICS_SYNCED, resolve);
+					});
+				}
+
+				await tx.insert(trainingMetrics).values({
+					participantId: participant.id,
+					...this.calcMetrics(participant, trainingType),
+				});
+			};
+
 			await Promise.all(
 				participants.map(async (participant) => {
-					await tx.insert(trainingMetrics).values({
-						participantId: participant.id,
-						...this.calcMetrics(participant, trainingType),
+					return promiseFunc(participant).then(() => {
+						if (withSyncQueueClearing) {
+							this.syncQueue.delete(participant.id);
+						}
 					});
 				}),
 			);
-
-			return { success: true };
 		});
 	}
 
-	public async sync(userId: string, trainingId: string, dto: TrainingDto.Sync): Promise<CommonDto.BooleanResponse> {
-		// @TODO в будущем отдавать на фронт айди участника, чтобы тут не искать треню а сразу участника прокидывать далее
+	public async pushToSyncQueue(
+		userId: string,
+		trainingId: string,
+		dto: TrainingDto.Sync,
+	): Promise<CommonDto.BooleanResponse> {
 		const [participant] = await this.db.db
-			.select({ id: trainingParticipants.id, metricsId: trainingMetrics.id })
+			.select({ id: trainingParticipants.id, finishedAt: training.finishedAt })
+			.from(trainingParticipants)
+			.innerJoin(training, eq(training.id, trainingId))
+			.where(and(eq(trainingParticipants.trainingId, trainingId), eq(trainingParticipants.userId, userId)))
+			.limit(1);
+		if (!participant) {
+			throw new NotFoundException(ERRORS.NOT_FOUND);
+		}
+		if (participant.finishedAt) {
+			throw new ConflictException(ERRORS.TRAINING_ALREADY_FINISHED);
+		}
+
+		const requestsQueue = this.syncQueue.get(participant.id) ?? [];
+		this.syncQueue.set(participant.id, requestsQueue.concat(dto.metrics));
+
+		return { success: true };
+	}
+
+	private async processSyncQueue(): Promise<void> {
+		/**
+		 * Идея - гонять интервал, и смотреть для каждой очереди её длину,
+		 * и выбирать для обработки сначала очереди с наиб. числом элементов.
+		 * При этом - объединяя все метрики из одной очереди в один массив
+		 */
+
+		if (this.isQueueSyncingNow) {
+			return;
+		}
+
+		this.isQueueSyncingNow = true;
+
+		const syncArr = Array.from(this.syncQueue.entries());
+		// Сортируем в порядке убывания кол-ва точек для синхры
+		syncArr.sort((a, b) => {
+			return b[1].length - a[1].length;
+		});
+
+		const batchSlice = syncArr.slice(0, this.SYNC_QUEUES_PARTICIPANTS_BATCH_SIZE);
+
+		const promiseFunc = async (participantId: string, metrics: DebugTrainingRouteNodeClient[]) => {
+			// Сортируем в порядке возрастания rel_ts
+			metrics.sort((a, b) => {
+				if (a.relTs > b.relTs) {
+					return 1;
+				}
+				if (a.relTs < b.relTs) {
+					return -1;
+				}
+				return 0;
+			});
+
+			return this.saveParticipantMetrics(participantId, metrics);
+		};
+
+		await Promise.all(
+			batchSlice.map(async ([participantId, metrics]) => {
+				// Убираем метрики юзера из очереди, т.к. скоро сохраним их в бд
+				const metricsToSave = metrics.slice(0, this.SYNC_QUEUE_METRICS_BATCH_SIZE);
+				const remainedMetrics = metrics.slice(this.SYNC_QUEUE_METRICS_BATCH_SIZE);
+				if (remainedMetrics.length) {
+					this.syncQueue.set(participantId, remainedMetrics);
+				} else {
+					this.syncQueue.delete(participantId);
+				}
+
+				return promiseFunc(participantId, metricsToSave)
+					.then(() => {
+						if (!this.syncQueue.has(participantId)) {
+							this.eventEmitter.emit(Event.ALL_PARTICIPANT_METRICS_SYNCED, participantId);
+						}
+					})
+					.catch((r) => {
+						// @TODO проверить проблему, что при ошибке метрики будут копиться и копиться и такие ошибочные юзеры будут вечно занимать очердь
+						console.error(
+							`Ошибка при сохранении ${metricsToSave.length} метрик учатсника ${participantId}:`,
+							r,
+						);
+
+						// Если метрики сохранить не удалось - помещаем их обратно в очередь
+						const newMetrics = this.syncQueue.get(participantId) ?? [];
+						this.syncQueue.set(participantId, metricsToSave.concat(newMetrics));
+					});
+			}),
+		);
+
+		this.isQueueSyncingNow = false;
+	}
+
+	private async saveParticipantMetrics(
+		participantId: string,
+		metrics: DebugTrainingRouteNodeClient[],
+	): Promise<CommonDto.BooleanResponse> {
+		const [participant] = await this.db.db
+			.select({ id: trainingParticipants.id, metricsId: trainingMetrics.id, points: trainingRoutes.points })
 			.from(trainingParticipants)
 			.leftJoin(trainingMetrics, eq(trainingMetrics.participantId, trainingParticipants.id))
-			.where(and(eq(trainingParticipants.trainingId, trainingId), eq(trainingParticipants.userId, userId)))
+			.leftJoin(trainingRoutes, eq(trainingRoutes.participantId, trainingParticipants.id))
+			.where(eq(trainingParticipants.id, participantId))
 			.limit(1);
 		if (!participant) {
 			throw new NotFoundException(ERRORS.NOT_FOUND);
@@ -261,16 +389,35 @@ export class TrainingsService {
 			throw new ConflictException(ERRORS.TRAINING_ALREADY_FINISHED);
 		}
 
-		const points = this.convertMetrics(dto.metrics);
+		const lastSavedPoint = participant.points?.length
+			? this.convertToClientNode(participant.points[participant.points.length - 1])
+			: null;
 
+		const points = this.convertMetrics(lastSavedPoint, metrics);
 		await this.upsertRoute(participant.id, points);
 
 		return { success: true };
 	}
 
+	public convertToClientNode(node: DebugTrainingRouteNode): DebugTrainingRouteNodeClient {
+		return {
+			relTs: node.rel_ts,
+			...node,
+		};
+	}
+
 	/** Обработка клиентских метрик. Расчет дистанции */
-	private convertMetrics(metrics: DebugTrainingRouteNodeClient[]): DebugTrainingRouteNode[] {
+	private convertMetrics(
+		pointBefore: DebugTrainingRouteNodeClient | null,
+		metrics: DebugTrainingRouteNodeClient[],
+	): DebugTrainingRouteNode[] {
 		const points: DebugTrainingRouteNode[] = [];
+
+		// Добавляем точку перед новыми, чтобы корректно рассчиталась дистанция у первой новой точки
+		if (pointBefore) {
+			metrics.unshift(pointBefore);
+		}
+
 		if (metrics.length > 1) {
 			metrics.reduce((prev, curr) => {
 				points.push({
@@ -724,6 +871,35 @@ export class TrainingsService {
 		}
 
 		return extendedTraining;
+	}
+
+	public async getExtendedByIds(ids: string[]): Promise<TrainingDto.ExtendedEntity[]> {
+		const trainingRows = await this.db.db
+			.select({
+				id: training.id,
+				type: training.type,
+				creatorId: training.userCreatorId,
+				createdAt: training.createdAt,
+				startedAt: training.startedAt,
+				finishedAt: training.finishedAt,
+
+				creator: {
+					id: users.id,
+					name: users.name,
+					username: users.username,
+					avatarFilename: users.avatarFilename,
+				},
+			})
+			.from(training)
+			.where(inArray(training.id, ids))
+			.innerJoin(users, eq(users.id, training.userCreatorId));
+
+		return Promise.all(
+			trainingRows.map(async (t) => {
+				const participants = await this.getExtendedParticipants(t.id);
+				return { ...t, participants };
+			}),
+		);
 	}
 
 	public async getExtendedById(id: string): Promise<TrainingDto.ExtendedEntity> {

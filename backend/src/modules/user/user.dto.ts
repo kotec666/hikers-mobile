@@ -1,5 +1,5 @@
-import { IsBoolean, IsEmail, Length } from 'class-validator';
-import { HasDigit, UniqueEmail, ValidEmailDomain } from '@validation/property-decorators';
+import { IsBoolean, IsEmail, Length, Matches } from 'class-validator';
+import { HasDigit, UniqueEmail, UniqueUsername, ValidEmailDomain } from '@validation/property-decorators';
 import { ERRORS } from '@shared/errors';
 import { lengths } from '@shared/lengths';
 
@@ -35,6 +35,11 @@ export namespace UserDto {
 		@Length(lengths.user.password.min, lengths.user.password.max, { message: `_password:${ERRORS.INVALID_LENGTH}` })
 		@HasDigit()
 		password: string;
+
+		@UniqueUsername()
+		@Matches(/^[a-zA-Z0-9]+$/, { message: `_username:${ERRORS.MISMATCH}` })
+		@Length(lengths.user.username.min, lengths.user.username.max, { message: `_username:${ERRORS.INVALID_LENGTH}` })
+		username: string;
 
 		@IsBoolean({ message: `_isTermsAccepted:${ERRORS.BAD_REQUEST}` })
 		isTermsAccepted: boolean;

@@ -1,4 +1,4 @@
-﻿import { IsOptional, Length } from 'class-validator';
+﻿import { IsOptional, Length, Matches } from 'class-validator';
 import { Transform } from 'class-transformer';
 import { AchievementDto } from '../achievements/achievements.dto';
 import { ActivitiyDto } from '../activities/activities.dto';
@@ -6,7 +6,7 @@ import { UserDto } from '../user/user.dto';
 import { lengths } from '@shared/lengths';
 import { ERRORS } from '@shared/errors';
 import { FriendStatus, UserActivity } from '@shared/enums';
-import { isUserActivityEnumValue, isUUID, TypedArray } from '@validation/property-decorators';
+import { isUserActivityEnumValue, isUUID, TypedArray, UniqueUsername } from '@validation/property-decorators';
 import { toArray } from '@transformers/array.transformer';
 
 export namespace ProfileDto {
@@ -35,6 +35,8 @@ export namespace ProfileDto {
 	/** Form-Data запрос */
 	export class Edit {
 		@IsOptional()
+		@UniqueUsername()
+		@Matches(/^[a-zA-Z0-9]+$/, { message: `_username:${ERRORS.MISMATCH}` })
 		@Length(lengths.user.username.min, lengths.user.username.max, { message: `_username:${ERRORS.INVALID_LENGTH}` })
 		username?: string;
 

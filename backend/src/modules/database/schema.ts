@@ -6,7 +6,6 @@ import {
 	timestamp,
 	integer,
 	decimal,
-	text,
 	primaryKey,
 	smallint,
 	index,
@@ -16,14 +15,16 @@ import {
 	pgEnum,
 } from 'drizzle-orm/pg-core';
 import { enumToPgEnum } from './helpers';
-import { MeasuringUnit, NotificationType, TrainingType, UserActivity } from '@shared/enums';
+import { MeasuringUnit, NotificationType, ReportType, TrainingType, UserActivity } from '@shared/enums';
 import { NotificationDto } from '../notifications/notifications.dto';
+import { ReportDto } from '../reports/reports.dto';
 
 /**
  * ENUMS
  */
 export const trainingTypeEnum = pgEnum('training_type', enumToPgEnum(TrainingType));
 export const notificationTypeEnum = pgEnum('notification_type', enumToPgEnum(NotificationType));
+export const reportTypeEnum = pgEnum('report_type', enumToPgEnum(ReportType));
 export const userActivityEnum = pgEnum('user_activity', enumToPgEnum(UserActivity));
 export const measuringUnitEnum = pgEnum('measuring_unit', enumToPgEnum(MeasuringUnit));
 
@@ -165,7 +166,7 @@ export const achievements = pgTable('achievements', {
 
 	colorHex: varchar('color_hex', { length: 7 }),
 	title: varchar('title', { length: 255 }).notNull(),
-	description: text('description'),
+	description: varchar('description', { length: 511 }),
 	claimedPercent: decimal('claimed_percent', { precision: 5, scale: 2 }).default('0.00').notNull(),
 });
 
@@ -279,7 +280,7 @@ export const posts = pgTable(
 		trainingId: uuid('training_id').references(() => training.id),
 		userCreatorId: uuid('user_creator_id').references(() => users.id),
 		title: varchar('title', { length: 255 }).notNull(),
-		description: text('description'),
+		description: varchar('description', { length: 4095 }),
 		createdAt: timestamp('created_at').defaultNow().notNull(),
 		updatedAt: timestamp('updated_at'),
 	},
@@ -338,4 +339,31 @@ export const notificationsSettings = pgTable('notifications_settings', {
 		.notNull()
 		.references(() => users.id),
 	settings: jsonb('settings').default({}).notNull().$type<NotificationDto.Settings>(),
+});
+
+// Reports
+export const reports = pgTable(
+	'reports',
+	{
+		id: uuid('id').primaryKey().defaultRandom(),
+		fromUserId: uuid('from_user_id')
+			.notNull()
+			.references(() => users.id),
+		type: reportTypeEnum().notNull(),
+		addons: jsonb('addons').$type<ReportDto.Addons>(),
+		text: varchar('text', { length: 4095 }),
+		createdAt: timestamp('created_at').defaultNow().notNull(),
+	},
+	(table) => [index('rpt_usr_idx').on(table.fromUserId)],
+);
+
+// Reports Media (many-to-many)
+export const reportMedia = pgTable('report_media', {
+	id: uuid('id').primaryKey().defaultRandom(),
+	reportId: uuid('report_id')
+		.notNull()
+		.references(() => reports.id),
+	mediaFilename: varchar('media_filename', { length: 255 })
+		.notNull()
+		.references(() => media.filename),
 });

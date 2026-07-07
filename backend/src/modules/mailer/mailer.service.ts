@@ -32,7 +32,7 @@ export class MailerService {
 	}
 
 	public async sendEmailConfirmationMail(to: string, code: number | string) {
-		const subject = `Заголовок ${Date.now()}`;
+		const subject = 'Хайкерс | Код для подтверждения почты';
 
 		return this.mailer.sendMail({
 			headers: {
@@ -42,6 +42,7 @@ export class MailerService {
 			context: {
 				code,
 				ttlMins: (EMAIL_CONFIRMATION_CODE_TTL_MS / 1000 / 60).toFixed(0),
+				currentYear: new Date().getFullYear(),
 			},
 			to,
 			subject,
@@ -49,7 +50,7 @@ export class MailerService {
 	}
 
 	public async sendPasswordRecoveryMail(to: string, code: number | string) {
-		const subject = `Заголовок ${Date.now()}`;
+		const subject = 'Хайкерс | Код для восстановления пароля';
 
 		return this.mailer.sendMail({
 			headers: {
@@ -59,6 +60,7 @@ export class MailerService {
 			context: {
 				code,
 				ttlMins: (PASSWORD_RECOVERY_CODE_TTL_MS / 1000 / 60).toFixed(0),
+				currentYear: new Date().getFullYear(),
 			},
 			to,
 			subject,

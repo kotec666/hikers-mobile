@@ -47,3 +47,11 @@ export enum NotificationType {
 	TAGGED_IN_POST = 'tagged_in_post',
 	NEW_ACHIEVEMENT = 'new_achievement',
 }
+
+export enum ReportType {
+	COMMON = 'common',
+	TO_USER = 'to_user',
+	TO_POST = 'to_post',
+	TO_MEDIA = 'to_media',
+	TO_TRAINING = 'to_training',
+}

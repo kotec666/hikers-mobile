@@ -40,8 +40,10 @@ export class UserService {
 			.insert(users)
 			.values({
 				email: dto.email,
+				username: dto.username,
 				password: hashedPassword,
 				termsAcceptedAt: dto.isTermsAccepted ? new Date() : null,
+				emailConfirmedAt: new Date(),
 			})
 			.returning({
 				id: users.id,

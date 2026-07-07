@@ -232,6 +232,20 @@
       "when": 1778761822351,
       "tag": "0032_add_email_confirmed_field",
       "breakpoints": true
+    },
+    {
+      "idx": 33,
+      "version": "7",
+      "when": 1782205523953,
+      "tag": "0033_varchars_instead_of_text",
+      "breakpoints": true
+    },
+    {
+      "idx": 34,
+      "version": "7",
+      "when": 1782207373673,
+      "tag": "0034_feat_reports",
+      "breakpoints": true
     }
   ]
 }

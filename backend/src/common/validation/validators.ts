@@ -41,6 +41,25 @@ export class UniqueEmailValidator implements ValidatorConstraintInterface {
 	}
 }
 
+@Injectable()
+@ValidatorConstraint({ async: true })
+export class UniqueUsernameValidator implements ValidatorConstraintInterface {
+	constructor(private db: DatabaseService) {}
+
+	async validate(username: string): Promise<boolean> {
+		const [user] = await this.db.db
+			.select({ id: users.id })
+			.from(users)
+			.where(eq(users.username, username))
+			.limit(1);
+		return !user;
+	}
+
+	defaultMessage(args: ValidationArguments): string {
+		return `_${args.property}:${ERRORS.ALREADY_EXISTS}`;
+	}
+}
+
 @ValidatorConstraint({ async: true })
 export class ValidEmailDomainValidator implements ValidatorConstraintInterface {
 	constructor() {}
