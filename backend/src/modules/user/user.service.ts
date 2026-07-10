@@ -19,7 +19,7 @@ import {
 	users,
 	userSubscribers,
 } from '../database/schema';
-import { and, eq, ilike, ne, or, sql } from 'drizzle-orm';
+import { and, eq, ilike, InferInsertModel, ne, or, sql } from 'drizzle-orm';
 import { comparePassword, hashPassword } from './user.helpers';
 import { ERRORS } from '@shared/errors';
 import { EventEmitter2 } from '@nestjs/event-emitter';
@@ -61,8 +61,9 @@ export class UserService {
 		return user;
 	}
 
-	public async updateUser(id: string, dto: Partial<Omit<UserDto.Entity, 'id'>>): Promise<UserDto.Entity> {
+	public async updateUser(id: string, dto: Partial<InferInsertModel<typeof users>>): Promise<UserDto.Entity> {
 		if (dto['id']) delete dto['id'];
+		if (dto['password']) delete dto['password'];
 
 		const [user] = await this.db.db.update(users).set(dto).where(eq(users.id, id)).returning({
 			id: users.id,
