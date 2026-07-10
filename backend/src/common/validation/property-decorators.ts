@@ -129,6 +129,32 @@ export function FinishedTrainingParticipant(validationOptions?: ValidationOption
 	};
 }
 
+// Название для завоза, не судите строго
+export function NashEmailDomain(validationOptions?: ValidationOptions) {
+	return function (object: object, propertyName: string) {
+		registerDecorator({
+			name: 'NashEmailDomain',
+			target: object.constructor,
+			propertyName: propertyName,
+			options: validationOptions,
+			async: false,
+			validator: {
+				validate(value: any) {
+					if (typeof value !== 'string') {
+						return false;
+					}
+
+					const ourDomains: string[] = ['.ru', '.su', '.рф', 'vk.com'];
+					return ourDomains.some((domain) => value.endsWith(domain));
+				},
+				defaultMessage() {
+					return `_${propertyName}:${ERRORS.INVALID_EMAIL}`;
+				},
+			},
+		});
+	};
+}
+
 export function ValidEmailDomain(validationOptions?: ValidationOptions) {
 	return function (object: object, propertyName: string) {
 		registerDecorator({
