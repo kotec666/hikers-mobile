@@ -253,6 +253,13 @@
       "when": 1783675292214,
       "tag": "0035_feat_user_color",
       "breakpoints": true
+    },
+    {
+      "idx": 36,
+      "version": "7",
+      "when": 1783678327224,
+      "tag": "0036_feat_user_badge",
+      "breakpoints": true
     }
   ]
 }

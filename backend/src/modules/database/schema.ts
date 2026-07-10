@@ -95,6 +95,7 @@ export const users = pgTable(
 		name: varchar('name', { length: 255 }),
 		username: varchar('username', { length: 63 }).unique(),
 		color: varchar('color', { length: 20 }).default('rgb(34,203,90)').notNull(),
+		badge: varchar('badge', { length: 12 }),
 		avatarFilename: varchar('avatar_filename', { length: 255 }).references(() => media.filename),
 		termsAcceptedAt: timestamp('terms_accepted_at'),
 		// @TODO если будет смена почты, то обязательно СБРАСЫВАТЬ это поле!
