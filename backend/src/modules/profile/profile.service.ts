@@ -7,6 +7,7 @@ import { AchievementsService } from '../achievements/achievements.service';
 import { ActivitiesService } from '../activities/activities.service';
 import { StaticService } from '../static/static.service';
 import { UserDto } from '../user/user.dto';
+import { CommonDto } from '../../common/dto/common.dto';
 
 const PROFILE_TOP_ACTIVITIES_COUNT = 3;
 const PROFILE_TOP_ACHIEVEMENTS_COUNT = 3;
@@ -59,6 +60,14 @@ export class ProfileService {
 			achievements,
 			activities,
 		};
+	}
+
+	public async setColor(userId: string, colorRgb: string): Promise<CommonDto.BooleanResponse> {
+		await this.users.updateUser(userId, {
+			color: colorRgb,
+		});
+
+		return { success: true };
 	}
 
 	public async edit(userId: string, dto: ProfileDto.Edit): Promise<ProfileDto.Entity> {
