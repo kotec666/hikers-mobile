@@ -50,6 +50,7 @@ export class UserService {
 				name: users.name,
 				username: users.username,
 				color: users.color,
+				badge: users.badge,
 				avatarFilename: users.avatarFilename,
 			});
 		if (!user) {
@@ -70,6 +71,7 @@ export class UserService {
 			name: users.name,
 			username: users.username,
 			color: users.color,
+			badge: users.badge,
 			avatarFilename: users.avatarFilename,
 		});
 		if (!user) {
@@ -86,6 +88,7 @@ export class UserService {
 				name: users.name,
 				username: users.username,
 				color: users.color,
+				badge: users.badge,
 				avatarFilename: users.avatarFilename,
 				password: users.password,
 			})
@@ -106,6 +109,7 @@ export class UserService {
 			name: user.name,
 			username: user.username,
 			color: user.color,
+			badge: user.badge,
 			avatarFilename: user.avatarFilename,
 		};
 	}
@@ -117,6 +121,7 @@ export class UserService {
 				name: users.name,
 				username: users.username,
 				color: users.color,
+				badge: users.badge,
 				email: users.email,
 				avatarFilename: users.avatarFilename,
 			})
@@ -137,6 +142,7 @@ export class UserService {
 				name: users.name,
 				username: users.username,
 				color: users.color,
+				badge: users.badge,
 				avatarFilename: users.avatarFilename,
 			})
 			.from(users)
@@ -156,6 +162,7 @@ export class UserService {
 				name: users.name,
 				username: users.username,
 				color: users.color,
+				badge: users.badge,
 				avatarFilename: users.avatarFilename,
 				password: users.password,
 			})
@@ -184,6 +191,7 @@ export class UserService {
 				name: users.name,
 				username: users.username,
 				color: users.color,
+				badge: users.badge,
 				avatarFilename: users.avatarFilename,
 			});
 
@@ -286,6 +294,7 @@ export class UserService {
 				name: users.name,
 				username: users.username,
 				color: users.color,
+				badge: users.badge,
 				avatarFilename: users.avatarFilename,
 				email: users.email,
 				isEmailConfirmed: sql<boolean>`${users.emailConfirmedAt} IS NOT NULL`,
@@ -307,6 +316,7 @@ export class UserService {
 				name: users.name,
 				username: users.username,
 				color: users.color,
+				badge: users.badge,
 				avatarFilename: users.avatarFilename,
 			})
 			.from(users)
@@ -338,6 +348,7 @@ export class UserService {
 				name: users.name,
 				username: users.username,
 				color: users.color,
+				badge: users.badge,
 				avatarFilename: users.avatarFilename,
 			})
 			.from(users);
@@ -352,6 +363,7 @@ export class UserService {
 				name: users.name,
 				username: users.username,
 				color: users.color,
+				badge: users.badge,
 				avatarFilename: users.avatarFilename,
 			})
 			.from(users)

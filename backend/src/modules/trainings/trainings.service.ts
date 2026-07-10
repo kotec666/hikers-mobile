@@ -653,6 +653,7 @@ export class TrainingsService {
 					name: users.name,
 					username: users.username,
 					color: users.color,
+					badge: users.badge,
 					avatarFilename: users.avatarFilename,
 				},
 				route: {
@@ -694,6 +695,7 @@ export class TrainingsService {
 					name: users.name,
 					username: users.username,
 					color: users.color,
+					badge: users.badge,
 					avatarFilename: users.avatarFilename,
 				},
 			})
@@ -722,6 +724,7 @@ export class TrainingsService {
 					name: users.name,
 					username: users.username,
 					color: users.color,
+					badge: users.badge,
 					avatarFilename: users.avatarFilename,
 				},
 				isSubscribed: sql<boolean>`${userSubscribers.userId} IS NOT NULL`,
@@ -771,6 +774,7 @@ export class TrainingsService {
 					name: users.name,
 					username: users.username,
 					color: users.color,
+					badge: users.badge,
 					avatarFilename: users.avatarFilename,
 				},
 			})
@@ -886,6 +890,7 @@ export class TrainingsService {
 					name: users.name,
 					username: users.username,
 					color: users.color,
+					badge: users.badge,
 					avatarFilename: users.avatarFilename,
 				},
 			})
@@ -916,6 +921,7 @@ export class TrainingsService {
 					name: users.name,
 					username: users.username,
 					color: users.color,
+					badge: users.badge,
 					avatarFilename: users.avatarFilename,
 				},
 			})

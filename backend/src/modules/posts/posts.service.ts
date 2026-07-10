@@ -40,6 +40,7 @@ export class PostsService {
 					name: users.name,
 					username: users.username,
 					color: users.color,
+					badge: users.badge,
 					avatarFilename: users.avatarFilename,
 				},
 			})
@@ -143,6 +144,7 @@ export class PostsService {
 					name: users.name,
 					username: users.username,
 					color: users.color,
+					badge: users.badge,
 					avatarFilename: users.avatarFilename,
 				},
 			})
@@ -216,6 +218,7 @@ export class PostsService {
 					name: users.name,
 					username: users.username,
 					color: users.color,
+					badge: users.badge,
 					avatarFilename: users.avatarFilename,
 				},
 			})
@@ -331,6 +334,7 @@ export class PostsService {
 					name: users.name,
 					username: users.username,
 					color: users.color,
+					badge: users.badge,
 					avatarFilename: users.avatarFilename,
 				},
 			})
@@ -602,6 +606,7 @@ export class PostsService {
 				username: users.username,
 				name: users.name,
 				color: users.color,
+				badge: users.badge,
 				avatarFilename: users.avatarFilename,
 			})
 			.from(postLikes)
@@ -616,6 +621,7 @@ export class PostsService {
 				name: users.name,
 				username: users.username,
 				color: users.color,
+				badge: users.badge,
 				avatarFilename: users.avatarFilename,
 			})
 			.from(postLikes)

@@ -9,6 +9,7 @@ export namespace UserDto {
 		name: string | null;
 		username: string | null;
 		color: string;
+		badge: string | null;
 		avatarFilename: string | null;
 	};
 
