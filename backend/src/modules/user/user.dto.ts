@@ -8,6 +8,7 @@ export namespace UserDto {
 		id: string;
 		name: string | null;
 		username: string | null;
+		color: string;
 		avatarFilename: string | null;
 	};
 

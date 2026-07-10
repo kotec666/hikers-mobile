@@ -6,7 +6,13 @@ import { UserDto } from '../user/user.dto';
 import { lengths } from '@shared/lengths';
 import { ERRORS } from '@shared/errors';
 import { FriendStatus, UserActivity } from '@shared/enums';
-import { isUserActivityEnumValue, isUUID, TypedArray, UniqueUsername } from '@validation/property-decorators';
+import {
+	IsRgbColor,
+	isUserActivityEnumValue,
+	isUUID,
+	TypedArray,
+	UniqueUsername,
+} from '@validation/property-decorators';
 import { toArray } from '@transformers/array.transformer';
 
 export namespace ProfileDto {
@@ -31,6 +37,13 @@ export namespace ProfileDto {
 		achievements: AchievementDto.Entity[];
 		activities: ActivitiyDto.Entity[];
 	};
+
+	// @TODO валидация цветов по наличию премиум подписки
+	export class SetColor {
+		@Transform(({ value }) => value.replace(/\s/g, ''))
+		@IsRgbColor()
+		colorRgb: string;
+	}
 
 	/** Form-Data запрос */
 	export class Edit {
