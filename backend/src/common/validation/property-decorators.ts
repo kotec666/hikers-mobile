@@ -194,6 +194,40 @@ export function IsHexColor(validationOptions?: ValidationOptions) {
 	};
 }
 
+export function IsOnlyOneEmoji(validationOptions?: ValidationOptions) {
+	return function (object: object, propertyName: string) {
+		registerDecorator({
+			name: 'IsOnlyOneEmoji',
+			target: object.constructor,
+			propertyName: propertyName,
+			options: validationOptions,
+			validator: {
+				validate(value: any): boolean {
+					if (typeof value !== 'string') {
+						return false;
+					}
+
+					const trimmed = value.trim();
+					if (trimmed.length === 0) return false;
+
+					const emojiRegex = /\p{RGI_Emoji}/gv;
+					const matches = [...trimmed.matchAll(emojiRegex)];
+
+					// Проверяем, что все совпадения покрывают всю строку
+					const matchedText = matches.map((m) => m[0]).join('');
+
+					// Добавляем проверку: количество эмодзи должно быть ровно 1
+					return matches.length === 1 && matchedText === trimmed;
+				},
+
+				defaultMessage(): string {
+					return `_${propertyName}:${ERRORS.MISMATCH}`;
+				},
+			},
+		});
+	};
+}
+
 export function IsRgbColor(validationOptions?: ValidationOptions) {
 	return function (object: object, propertyName: string) {
 		registerDecorator({

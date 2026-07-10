@@ -12,6 +12,7 @@ import {
 	isUUID,
 	TypedArray,
 	UniqueUsername,
+	IsOnlyOneEmoji,
 } from '@validation/property-decorators';
 import { toArray } from '@transformers/array.transformer';
 
@@ -37,6 +38,13 @@ export namespace ProfileDto {
 		achievements: AchievementDto.Entity[];
 		activities: ActivitiyDto.Entity[];
 	};
+
+	// @TODO валидация по наличию премиум подписки
+	export class SetBadge {
+		@IsOptional()
+		@IsOnlyOneEmoji()
+		badge: string | null;
+	}
 
 	// @TODO валидация цветов по наличию премиум подписки
 	export class SetColor {

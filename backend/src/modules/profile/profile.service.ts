@@ -67,6 +67,14 @@ export class ProfileService {
 		};
 	}
 
+	public async setBadge(userId: string, badge: string | null): Promise<CommonDto.BooleanResponse> {
+		await this.users.updateUser(userId, {
+			badge,
+		});
+
+		return { success: true };
+	}
+
 	public async setColor(userId: string, colorRgb: string): Promise<CommonDto.BooleanResponse> {
 		await this.users.updateUser(userId, {
 			color: colorRgb,

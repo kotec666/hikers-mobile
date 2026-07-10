@@ -61,6 +61,19 @@ export class ProfileController {
 
 	/**
 	 * @tag Profile
+	 * @summary Выбор эмодзи в профиле
+	 * @security token
+	 */
+	@Patch('/set-badge')
+	public async setBadge(
+		@User() user: UserData,
+		@Body() body: ProfileDto.SetBadge,
+	): Promise<CommonDto.BooleanResponse> {
+		return this.service.setBadge(user.id, body.badge);
+	}
+
+	/**
+	 * @tag Profile
 	 * @summary Выбор своего цвета
 	 * @security token
 	 */
