@@ -31,11 +31,16 @@ export class ProfileService {
 	public async getOtherProfileById(currentUserId: string, otherUserId: string): Promise<ProfileDto.Entity> {
 		const profile = await this.getProfile(otherUserId);
 
+		// Создаем новый объект без нужных полей
+		// eslint-disable-next-line @typescript-eslint/no-unused-vars
+		const { email, isEmailConfirmed, ...userWithoutSensitive } = profile.user;
+
 		const isFriend = await this.friends.getFriendsStatus(currentUserId, otherUserId);
 		const isSubscribed = await this.subs.isSubscribed(currentUserId, otherUserId);
 
 		return {
 			...profile,
+			user: userWithoutSensitive,
 			isFriend,
 			isSubscribed,
 		};
