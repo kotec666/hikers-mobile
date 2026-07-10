@@ -37,6 +37,7 @@ export class SubscribersService {
 					id: users.id,
 					name: users.name,
 					username: users.username,
+					color: users.color,
 					avatarFilename: users.avatarFilename,
 				},
 			})
@@ -81,6 +82,7 @@ export class SubscribersService {
 					id: users.id,
 					name: users.name,
 					username: users.username,
+					color: users.color,
 					avatarFilename: users.avatarFilename,
 				},
 			})

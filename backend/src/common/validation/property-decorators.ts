@@ -194,6 +194,47 @@ export function IsHexColor(validationOptions?: ValidationOptions) {
 	};
 }
 
+export function IsRgbColor(validationOptions?: ValidationOptions) {
+	return function (object: object, propertyName: string) {
+		registerDecorator({
+			name: 'IsRgbColor',
+			target: object.constructor,
+			propertyName: propertyName,
+			options: validationOptions,
+			validator: {
+				validate(value: any): boolean {
+					if (typeof value !== 'string') {
+						return false;
+					}
+
+					// Убираем пробелы для проверки (но не изменяем исходное значение)
+					const trimmed = value.replace(/\s/g, '');
+
+					// Регулярка для формата rgb(число,число,число)
+					// Каждое число от 0 до 255 (включительно)
+					const rgbRegex = /^rgb\((\d{1,3}),(\d{1,3}),(\d{1,3})\)$/;
+					const match = trimmed.match(rgbRegex);
+
+					if (!match) {
+						return false;
+					}
+
+					// Проверяем, что каждое число в диапазоне 0-255
+					const r = parseInt(match[1], 10);
+					const g = parseInt(match[2], 10);
+					const b = parseInt(match[3], 10);
+
+					return r >= 0 && r <= 255 && g >= 0 && g <= 255 && b >= 0 && b <= 255;
+				},
+
+				defaultMessage(): string {
+					return `_${propertyName}:${ERRORS.MISMATCH}`;
+				},
+			},
+		});
+	};
+}
+
 export function TypedArray(checkFn: (item: any) => boolean, validationOptions?: ValidationOptions) {
 	return function (object: object, propertyName: string) {
 		registerDecorator({

@@ -39,6 +39,7 @@ export class PostsService {
 					id: users.id,
 					name: users.name,
 					username: users.username,
+					color: users.color,
 					avatarFilename: users.avatarFilename,
 				},
 			})
@@ -141,6 +142,7 @@ export class PostsService {
 					id: users.id,
 					name: users.name,
 					username: users.username,
+					color: users.color,
 					avatarFilename: users.avatarFilename,
 				},
 			})
@@ -213,6 +215,7 @@ export class PostsService {
 					id: users.id,
 					name: users.name,
 					username: users.username,
+					color: users.color,
 					avatarFilename: users.avatarFilename,
 				},
 			})
@@ -327,6 +330,7 @@ export class PostsService {
 					id: users.id,
 					name: users.name,
 					username: users.username,
+					color: users.color,
 					avatarFilename: users.avatarFilename,
 				},
 			})
@@ -597,6 +601,7 @@ export class PostsService {
 				id: users.id,
 				username: users.username,
 				name: users.name,
+				color: users.color,
 				avatarFilename: users.avatarFilename,
 			})
 			.from(postLikes)
@@ -608,8 +613,9 @@ export class PostsService {
 		return this.db.db
 			.select({
 				id: users.id,
-				username: users.username,
 				name: users.name,
+				username: users.username,
+				color: users.color,
 				avatarFilename: users.avatarFilename,
 			})
 			.from(postLikes)

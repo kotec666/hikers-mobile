@@ -12,11 +12,7 @@ export namespace UserDto {
 		avatarFilename: string | null;
 	};
 
-	export type EntityWithEmail = {
-		id: string;
-		name: string | null;
-		username: string | null;
-		avatarFilename: string | null;
+	export type EntityWithEmail = Entity & {
 		email: string | null;
 		isEmailConfirmed: boolean;
 	};

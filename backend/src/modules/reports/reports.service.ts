@@ -62,6 +62,7 @@ export class ReportsService {
 					id: users.id,
 					name: users.name,
 					username: users.username,
+					color: users.color,
 					avatarFilename: users.avatarFilename,
 				},
 			})

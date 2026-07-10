@@ -44,6 +44,7 @@ export class FriendsService {
 				id: friendUser.id,
 				name: friendUser.name,
 				username: friendUser.username,
+				color: friendUser.color,
 				avatarFilename: friendUser.avatarFilename,
 			},
 		};
@@ -74,6 +75,7 @@ export class FriendsService {
 						id: friendUser.id,
 						name: friendUser.name,
 						username: friendUser.username,
+						color: friendUser.color,
 						avatarFilename: friendUser.avatarFilename,
 					},
 				};
@@ -171,6 +173,7 @@ export class FriendsService {
 						id: invitedUser.id,
 						name: invitedUser.name,
 						username: invitedUser.username,
+						color: invitedUser.color,
 						avatarFilename: invitedUser.avatarFilename,
 					},
 				};
@@ -198,6 +201,7 @@ export class FriendsService {
 						id: user.id,
 						name: user.name,
 						username: user.username,
+						color: user.color,
 						avatarFilename: user.avatarFilename,
 					},
 				};
