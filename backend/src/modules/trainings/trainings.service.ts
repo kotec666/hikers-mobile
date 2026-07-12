@@ -101,7 +101,6 @@ export class TrainingsService {
 				.insert(trainingParticipants)
 				.values({
 					trainingId: trainingRow.id,
-					colorHex: dto.colorHex,
 					userId,
 				})
 				.returning({
@@ -149,7 +148,6 @@ export class TrainingsService {
 				.insert(trainingParticipants)
 				.values({
 					trainingId: train.id,
-					colorHex: dto.colorHex,
 					userId,
 				})
 				.returning({
@@ -650,11 +648,12 @@ export class TrainingsService {
 		const participants = await this.db.db
 			.select({
 				id: trainingParticipants.id,
-				colorHex: trainingParticipants.colorHex,
 				user: {
 					id: users.id,
 					name: users.name,
 					username: users.username,
+					color: users.color,
+					badge: users.badge,
 					avatarFilename: users.avatarFilename,
 				},
 				route: {
@@ -695,9 +694,10 @@ export class TrainingsService {
 					id: users.id,
 					name: users.name,
 					username: users.username,
+					color: users.color,
+					badge: users.badge,
 					avatarFilename: users.avatarFilename,
 				},
-				colorHex: trainingParticipants.colorHex,
 			})
 			.from(trainingParticipants)
 			.where(eq(trainingParticipants.trainingId, trainingId))
@@ -723,9 +723,10 @@ export class TrainingsService {
 					id: users.id,
 					name: users.name,
 					username: users.username,
+					color: users.color,
+					badge: users.badge,
 					avatarFilename: users.avatarFilename,
 				},
-				colorHex: trainingParticipants.colorHex,
 				isSubscribed: sql<boolean>`${userSubscribers.userId} IS NOT NULL`,
 			})
 			.from(trainingParticipants)
@@ -772,9 +773,10 @@ export class TrainingsService {
 					id: users.id,
 					name: users.name,
 					username: users.username,
+					color: users.color,
+					badge: users.badge,
 					avatarFilename: users.avatarFilename,
 				},
-				colorHex: trainingParticipants.colorHex,
 			})
 			.from(trainingParticipants)
 			.innerJoin(users, eq(users.id, trainingParticipants.userId))
@@ -887,6 +889,8 @@ export class TrainingsService {
 					id: users.id,
 					name: users.name,
 					username: users.username,
+					color: users.color,
+					badge: users.badge,
 					avatarFilename: users.avatarFilename,
 				},
 			})
@@ -916,6 +920,8 @@ export class TrainingsService {
 					id: users.id,
 					name: users.name,
 					username: users.username,
+					color: users.color,
+					badge: users.badge,
 					avatarFilename: users.avatarFilename,
 				},
 			})

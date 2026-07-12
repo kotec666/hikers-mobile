@@ -2,7 +2,7 @@
 import { UserDto } from '../user/user.dto';
 import { IsBoolean, IsEnum, IsInt, IsNumber, IsOptional, ValidateNested } from 'class-validator';
 import { DebugTrainingRouteNode } from '../database/schema';
-import { IsHexColor, NotNegative } from '@validation/property-decorators';
+import { NotNegative } from '@validation/property-decorators';
 import { ERRORS } from '@shared/errors';
 import { Type } from 'class-transformer';
 
@@ -116,9 +116,6 @@ export namespace TrainingDto {
 		@IsEnum(TrainingType, { message: `_type:${ERRORS.MISMATCH}` })
 		type: TrainingType;
 
-		@IsHexColor()
-		colorHex: string;
-
 		/** Время старта. Для частично-оффлайн тренировок */
 		@IsOptional()
 		@IsInt({ message: `_ts:${ERRORS.BAD_REQUEST}` })
@@ -142,9 +139,6 @@ export namespace TrainingDto {
 		@IsEnum(TrainingType, { message: `_type:${ERRORS.MISMATCH}` })
 		type: TrainingType;
 
-		@IsHexColor()
-		colorHex: string;
-
 		@IsInt({ message: `_startedAt:${ERRORS.BAD_REQUEST}` })
 		startedAt: number;
 		@IsInt({ message: `_finishedAt:${ERRORS.BAD_REQUEST}` })
@@ -156,7 +150,6 @@ export namespace TrainingParticipantDto {
 	export type Entity = {
 		id: string;
 		user: UserDto.Entity;
-		colorHex: string | null;
 		isSubscribed?: boolean;
 	};
 

@@ -129,6 +129,32 @@ export function FinishedTrainingParticipant(validationOptions?: ValidationOption
 	};
 }
 
+// Название для завоза, не судите строго
+export function NashEmailDomain(validationOptions?: ValidationOptions) {
+	return function (object: object, propertyName: string) {
+		registerDecorator({
+			name: 'NashEmailDomain',
+			target: object.constructor,
+			propertyName: propertyName,
+			options: validationOptions,
+			async: false,
+			validator: {
+				validate(value: any) {
+					if (typeof value !== 'string') {
+						return false;
+					}
+
+					const ourDomains: string[] = ['.ru', '.su', '.рф', 'vk.com'];
+					return ourDomains.some((domain) => value.endsWith(domain));
+				},
+				defaultMessage() {
+					return `_${propertyName}:${ERRORS.EMAIL_DOMAIN_NOT_ALLOWED}`;
+				},
+			},
+		});
+	};
+}
+
 export function ValidEmailDomain(validationOptions?: ValidationOptions) {
 	return function (object: object, propertyName: string) {
 		registerDecorator({
@@ -184,6 +210,81 @@ export function IsHexColor(validationOptions?: ValidationOptions) {
 					// Проверяем, что строка начинается с # и содержит только hex-символы
 					const hexColorRegex = /^#([A-Fa-f0-9]{6}|[A-Fa-f0-9]{3})$/;
 					return hexColorRegex.test(value);
+				},
+
+				defaultMessage(): string {
+					return `_${propertyName}:${ERRORS.MISMATCH}`;
+				},
+			},
+		});
+	};
+}
+
+export function IsOnlyOneEmoji(validationOptions?: ValidationOptions) {
+	return function (object: object, propertyName: string) {
+		registerDecorator({
+			name: 'IsOnlyOneEmoji',
+			target: object.constructor,
+			propertyName: propertyName,
+			options: validationOptions,
+			validator: {
+				validate(value: any): boolean {
+					if (typeof value !== 'string') {
+						return false;
+					}
+
+					const trimmed = value.trim();
+					if (trimmed.length === 0) return false;
+
+					const emojiRegex = /\p{RGI_Emoji}/gv;
+					const matches = [...trimmed.matchAll(emojiRegex)];
+
+					// Проверяем, что все совпадения покрывают всю строку
+					const matchedText = matches.map((m) => m[0]).join('');
+
+					// Добавляем проверку: количество эмодзи должно быть ровно 1
+					return matches.length === 1 && matchedText === trimmed;
+				},
+
+				defaultMessage(): string {
+					return `_${propertyName}:${ERRORS.MISMATCH}`;
+				},
+			},
+		});
+	};
+}
+
+export function IsRgbColor(validationOptions?: ValidationOptions) {
+	return function (object: object, propertyName: string) {
+		registerDecorator({
+			name: 'IsRgbColor',
+			target: object.constructor,
+			propertyName: propertyName,
+			options: validationOptions,
+			validator: {
+				validate(value: any): boolean {
+					if (typeof value !== 'string') {
+						return false;
+					}
+
+					// Убираем пробелы для проверки (но не изменяем исходное значение)
+					const trimmed = value.replace(/\s/g, '');
+
+					// Регулярка для формата rgb(число,число,число)
+					// Каждое число от 0 до 255 (включительно)
+					const rgbRegex = /^rgb\((\d{1,3}),(\d{1,3}),(\d{1,3})\)$/;
+					const match = trimmed.match(rgbRegex);
+
+					if (!match) {
+						return false;
+					}
+
+					// Проверяем, что каждое число в диапазоне 0-255
+					const r = parseInt(match[1], 10);
+					const g = parseInt(match[2], 10);
+					const b = parseInt(match[3], 10);
+
+					return r >= 0 && r <= 255 && g >= 0 && g <= 255 && b >= 0 && b <= 255;
 				},
 
 				defaultMessage(): string {

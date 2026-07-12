@@ -7,6 +7,7 @@ import { AchievementsService } from '../achievements/achievements.service';
 import { ActivitiesService } from '../activities/activities.service';
 import { StaticService } from '../static/static.service';
 import { UserDto } from '../user/user.dto';
+import { CommonDto } from '../../common/dto/common.dto';
 
 const PROFILE_TOP_ACTIVITIES_COUNT = 3;
 const PROFILE_TOP_ACHIEVEMENTS_COUNT = 3;
@@ -30,11 +31,16 @@ export class ProfileService {
 	public async getOtherProfileById(currentUserId: string, otherUserId: string): Promise<ProfileDto.Entity> {
 		const profile = await this.getProfile(otherUserId);
 
+		// Создаем новый объект без нужных полей
+		// eslint-disable-next-line @typescript-eslint/no-unused-vars
+		const { email, isEmailConfirmed, ...userWithoutSensitive } = profile.user;
+
 		const isFriend = await this.friends.getFriendsStatus(currentUserId, otherUserId);
 		const isSubscribed = await this.subs.isSubscribed(currentUserId, otherUserId);
 
 		return {
 			...profile,
+			user: userWithoutSensitive,
 			isFriend,
 			isSubscribed,
 		};
@@ -59,6 +65,22 @@ export class ProfileService {
 			achievements,
 			activities,
 		};
+	}
+
+	public async setBadge(userId: string, badge: string | null): Promise<CommonDto.BooleanResponse> {
+		await this.users.updateUser(userId, {
+			badge,
+		});
+
+		return { success: true };
+	}
+
+	public async setColor(userId: string, colorRgb: string): Promise<CommonDto.BooleanResponse> {
+		await this.users.updateUser(userId, {
+			color: colorRgb,
+		});
+
+		return { success: true };
 	}
 
 	public async edit(userId: string, dto: ProfileDto.Edit): Promise<ProfileDto.Entity> {
