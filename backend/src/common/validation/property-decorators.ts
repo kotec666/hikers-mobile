@@ -148,7 +148,7 @@ export function NashEmailDomain(validationOptions?: ValidationOptions) {
 					return ourDomains.some((domain) => value.endsWith(domain));
 				},
 				defaultMessage() {
-					return `_${propertyName}:${ERRORS.INVALID_EMAIL}`;
+					return `_${propertyName}:${ERRORS.EMAIL_DOMAIN_NOT_ALLOWED}`;
 				},
 			},
 		});
