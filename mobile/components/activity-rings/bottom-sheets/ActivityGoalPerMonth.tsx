@@ -1,9 +1,9 @@
-import React, { useRef, useState } from 'react'
-import { StyleSheet, View } from 'react-native'
+import React, { useCallback, useRef, useState } from 'react'
+import { StyleSheet, View, useWindowDimensions } from 'react-native'
 import { CalendarHeader } from '@/components/activity-rings/calendar/CalendarHeader'
-import { LegendList, LegendListRef } from '@legendapp/list'
+import { LegendList, LegendListRef } from '@legendapp/list/react-native'
 import { MonthSection } from '@/components/activity-rings/calendar/MonthSection'
-import { CalendarMonth } from '@/helpers/calendar'
+import { CalendarMonth, getMonthHeight, ROW_HEIGHT } from '@/helpers/calendar'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
 
 interface IProps {
@@ -13,10 +13,19 @@ interface IProps {
 	isVisible: boolean
 }
 
+const HORIZONTAL_PADDING = 3 // px-3 * 2 сторон уже учтено ниже
+
 const ActivityGoalPerMonth = ({ months, currentMonthIndex, onLoadMore, isVisible }: IProps) => {
 	const [visibleMonth, setVisibleMonth] = useState(months[0].title)
 	const listRef = useRef<LegendListRef>(null)
 	const insets = useSafeAreaInsets()
+
+	const { width, height } = useWindowDimensions()
+	const containerWidth = width - HORIZONTAL_PADDING * 2
+
+	const getProgress = (_date: Date) => 50 // ваша реальная функция получения прогресса за день
+
+	const getFixedItemSize = useCallback((item: CalendarMonth) => getMonthHeight(item, ROW_HEIGHT), [])
 
 	return (
 		<View
@@ -27,7 +36,7 @@ const ActivityGoalPerMonth = ({ months, currentMonthIndex, onLoadMore, isVisible
 				opacity: isVisible ? 1 : 0
 			}}
 		>
-			<CalendarHeader title={visibleMonth} />
+			<CalendarHeader title={visibleMonth} containerWidth={containerWidth} />
 
 			<LegendList
 				ref={listRef}
@@ -37,11 +46,13 @@ const ActivityGoalPerMonth = ({ months, currentMonthIndex, onLoadMore, isVisible
 				onStartReached={onLoadMore}
 				onStartReachedThreshold={1}
 				maintainVisibleContentPosition
-				renderItem={({ item }) => <MonthSection month={item} />}
+				renderItem={({ item }) => (
+					<MonthSection month={item} containerWidth={containerWidth} getProgress={getProgress} />
+				)}
 				keyExtractor={(item) => item.id}
-				estimatedItemSize={500}
+				getFixedItemSize={getFixedItemSize}
 				recycleItems
-				drawDistance={500}
+				drawDistance={height}
 				onViewableItemsChanged={({ viewableItems }) => {
 					const first = viewableItems?.[0]
 

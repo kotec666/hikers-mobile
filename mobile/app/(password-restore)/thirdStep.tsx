@@ -49,7 +49,7 @@ const ThirdStepPage = () => {
 	const {
 		handleSubmit,
 		control,
-		watch,
+		getValues,
 		formState: { isSubmitting }
 	} = useForm<IRecoveryPasswordThirdStepFormState>()
 	const { ErrorMessages } = useErrorMessage()
@@ -155,7 +155,7 @@ const ThirdStepPage = () => {
 													message: ErrorMessages.optionalMax(lengths.user.password.max)
 												},
 												validate: (val: string) => {
-													if (watch('password') !== val) {
+													if (getValues('password') !== val) {
 														return ErrorMessages.passwordsNotEquals
 													}
 												}

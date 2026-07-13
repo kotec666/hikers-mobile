@@ -6,10 +6,11 @@ import YaMapResumeLocationMarker from '@/components/map/markers/ResumeLocationMa
 import YaMapStartLocationMarker from '@/components/map/markers/StartLocationMarker/YaMapStartLocationMarker'
 import YaMapFinishLocationMarker from '@/components/map/markers/FinishLocationMarker/YaMapFinishLocationMarker'
 import YaMapUserLocationMarker from '@/components/map/markers/UserLocationMarker/YaMapUserLocationMarker'
-import { PolylineCustom, PolylineProps } from '@/components/map/PolylineCustom'
 import { mapCenter, firstPoint, secondPoint, thirdPoint, fourthPoint, fifthPoint, sixthPoint } from '@/constants/RNMap'
-import Animated, { useAnimatedProps } from 'react-native-reanimated'
-type AnimatedPolylineProps = ReturnType<typeof useAnimatedProps<PolylineProps>>
+import { processColor, useAnimatedProps } from 'react-native-reanimated'
+import { YaMapAnimatedPolyline } from '@/components/map/YaMapAnimatedPolyline'
+import { PolylineNativeProps } from 'react-native-yamap-plus/src/spec/PolylineNativeComponent'
+export type AnimatedYaMapPolylineProps = ReturnType<typeof useAnimatedProps<PolylineNativeProps>>
 
 export interface IYaMapComponentColorPickProps {
 	activeColor?: string
@@ -24,11 +25,10 @@ export interface IYaMapComponentColorPickProps {
 		horizontal?: number
 		vertical?: number
 	}
-	animatedStrokeColorProps?: AnimatedPolylineProps
-	animatedStrokeColorWithOpacityProps?: AnimatedPolylineProps
+	animatedStrokeColorProps?: AnimatedYaMapPolylineProps
+	animatedStrokeColorWithOpacityProps?: AnimatedYaMapPolylineProps
 }
 
-export const AnimatedPolyline = Animated.createAnimatedComponent(PolylineCustom)
 const YaMapComponentColorPick = (props: IYaMapComponentColorPickProps) => {
 	const activeColor = props.activeColor ?? 'rgb(0, 200, 100, 1)'
 
@@ -61,25 +61,25 @@ const YaMapComponentColorPick = (props: IYaMapComponentColorPickProps) => {
 					debugAccuracyM={20}
 				/>
 				<YaMapStartLocationMarker key={`start-${activeColor}`} position={firstPoint} color={activeColor} />
-				<AnimatedPolyline
+				<YaMapAnimatedPolyline
 					points={[firstPoint, secondPoint]}
 					strokeWidth={4}
 					outlineWidth={2}
-					outlineColor="transparent"
+					outlineColor={processColor('transparent')}
 					animatedProps={props.animatedStrokeColorProps}
 				/>
-				<AnimatedPolyline
+				<YaMapAnimatedPolyline
 					points={[thirdPoint, fourthPoint]}
 					strokeWidth={4}
 					outlineWidth={2}
-					outlineColor="transparent"
+					outlineColor={processColor('transparent')}
 					animatedProps={props.animatedStrokeColorWithOpacityProps}
 				/>
-				<AnimatedPolyline
+				<YaMapAnimatedPolyline
 					points={[fifthPoint, sixthPoint]}
 					strokeWidth={4}
 					outlineWidth={2}
-					outlineColor="transparent"
+					outlineColor={processColor('transparent')}
 					animatedProps={props.animatedStrokeColorProps}
 				/>
 				<YaMapPauseLocationMarker key={`pause-1-${activeColor}`} position={secondPoint} color={activeColor} />

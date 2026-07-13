@@ -1,14 +1,15 @@
-import { View, Text } from 'react-native'
+import { Text, View } from 'react-native'
 import { fontFamily } from '@/constants/Fonts'
 import { WEEK_DAYS } from '@/constants/Variables'
 
 interface CalendarHeaderProps {
 	title: string
+	containerWidth: number
 }
 
-export const CalendarHeader = ({ title }: CalendarHeaderProps) => {
+export const CalendarHeader = ({ title, containerWidth }: CalendarHeaderProps) => {
 	return (
-		<View className="px-4 pt-4 pb-3 gap-4">
+		<View className="pt-4 pb-3 gap-4">
 			<Text
 				className="text-white text-center"
 				style={{
@@ -18,7 +19,13 @@ export const CalendarHeader = ({ title }: CalendarHeaderProps) => {
 			>
 				{title} г.
 			</Text>
-			<View className="flex-row gap-2">
+			<View
+				style={{
+					flexDirection: 'row',
+					width: containerWidth,
+					gap: 2
+				}}
+			>
 				{WEEK_DAYS.map((day) => (
 					<View key={day} className="flex-1">
 						<Text className="text-xs text-gray-ab text-center">{day}</Text>

@@ -221,6 +221,12 @@ const AuthPage = () => {
 											value: true,
 											message: ErrorMessages.required
 										},
+										pattern: {
+											value: /^[A-Za-z0-9_]+$/,
+											message: ErrorMessages.customMessage(
+												'Никнейм содержит недопустимые символы'
+											)
+										},
 										minLength: {
 											value: lengths.user.username.min,
 											message: ErrorMessages.optionalMin(lengths.user.username.min)

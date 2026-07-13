@@ -2,7 +2,7 @@ import { Container } from '@/components/ui/Container'
 import HeaderBack from '@/components/ui/HeaderBack'
 import { View, Pressable, Platform, StyleSheet, Dimensions } from 'react-native'
 import { Colors } from '@/constants/Colors'
-import React, { useState } from 'react'
+import React, { useRef, useState } from 'react'
 import { fontFamily } from '@/constants/Fonts'
 import ColorPicker, { ColorFormatsObject, HueSlider, InputWidget, Panel1 } from 'reanimated-color-picker'
 import Animated, { useAnimatedStyle, useSharedValue } from 'react-native-reanimated'
@@ -15,6 +15,7 @@ import { Page } from '@/components/ui/Page'
 import { KeyboardAwareScrollView } from 'react-native-keyboard-controller'
 import MapComponentColorPick from '@/components/map/MapComponentColorPick'
 import { useAnimatedColorPickProps } from '@/hooks/useAnimatedColorPickProps'
+import { useProfileQuery, useUpdateProfileColorMutation } from '@/queries/my-profile'
 
 const { height } = Dimensions.get('screen')
 const { width } = Dimensions.get('window')
@@ -42,6 +43,14 @@ const SettingsPickAColorPage = () => {
 	const [notSavedModal, setNotSavedModal] = useState(false)
 	const router = useRouter()
 
+	const isChangedRef = useRef(false)
+	const { data: profileData, isFetching: isProfileFetching } = useProfileQuery()
+	const { mutateAsync: updateProfileColor, isPending } = useUpdateProfileColorMutation()
+
+	const currentSavedColor = profileData?.user.color
+
+	const isFreeMode = false
+
 	const handleCloseNotSavedModal = () => {
 		setNotSavedModal(false)
 	}
@@ -59,8 +68,16 @@ const SettingsPickAColorPage = () => {
 		}
 	}
 
-	const [color, setColor] = useState<string>('rgb(0, 200, 100)') // rgb(0,200,100) // alpha ,0.2
-	const currentColor = useSharedValue('rgb(0, 200, 100)')
+	const handleGoBack = () => {
+		if (isChangedRef.current) {
+			handleOpenNotSavedModal()
+		} else {
+			exitWithoutSave()
+		}
+	}
+
+	const [color, setColor] = useState<string>(currentSavedColor || 'rgb(0, 200, 100)')
+	const currentColor = useSharedValue(currentSavedColor || 'rgb(0, 200, 100)')
 
 	const animatedTextStyle = useAnimatedStyle(() => {
 		return {
@@ -77,6 +94,7 @@ const SettingsPickAColorPage = () => {
 
 	// runs on the js thread on color pick
 	const onColorPick = (color: string | ColorFormatsObject) => {
+		isChangedRef.current = true
 		if (typeof color === 'string') {
 			currentColor.value = color
 			setColor(color)
@@ -93,7 +111,10 @@ const SettingsPickAColorPage = () => {
 
 	const colorBoxSize = (width - CONTAINER_PADDING * 2 - GAP * (COLUMNS - 1)) / COLUMNS
 
-	const isFreeMode = false
+	const onPressSaveColor = async () => {
+		isChangedRef.current = false
+		await updateProfileColor(color)
+	}
 
 	return (
 		<Page>
@@ -126,7 +147,7 @@ const SettingsPickAColorPage = () => {
 					bottomOffset={50}
 				>
 					<Container className="gap-[20px] flex-1">
-						<HeaderBack returnCallback={handleOpenNotSavedModal}>
+						<HeaderBack returnCallback={handleGoBack}>
 							Выбор{' '}
 							<Animated.Text
 								className="text-[20px]"
@@ -185,7 +206,13 @@ const SettingsPickAColorPage = () => {
 							</View>
 						)}
 						<View className="flex-1 justify-end">
-							<Button variant="white">Сохранить</Button>
+							<Button
+								variant="white"
+								onPress={onPressSaveColor}
+								isLoading={isPending || isProfileFetching}
+							>
+								Сохранить
+							</Button>
 						</View>
 					</Container>
 				</KeyboardAwareScrollView>

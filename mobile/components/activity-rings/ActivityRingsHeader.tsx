@@ -1,4 +1,4 @@
-import React from 'react'
+import React, { useEffect, useState } from 'react'
 import { DEFAULT_PADDING_TOP } from '@/constants/Variables'
 import { Pressable, Text, View } from 'react-native'
 import { RoundedButton } from '@/components/ui/HeaderBack'
@@ -8,10 +8,10 @@ import CalendarSvg from '@/components/svg/CalendarSvg'
 import PagerView from 'react-native-pager-view'
 import { addWeeks, format, isAfter, isSameDay } from 'date-fns'
 import { ru } from 'date-fns/locale'
-import { Rings } from '@/components/activity-rings/Rings'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
 import { useRouter } from 'expo-router'
 import { capitalizeFirstLetter } from '@/helpers/capitalizeFirstLetter'
+import { MiniRing } from '@/components/activity-rings/MiniRing'
 
 interface IProps {
 	selectedDate: Date
@@ -33,16 +33,28 @@ const ActivityRingsHeader = ({
 	const router = useRouter()
 	const insets = useSafeAreaInsets()
 
+	// первый кадр рисуем только активную страницу, соседей — сразу после маунта
+	const [neighborsReady, setNeighborsReady] = useState(false)
+	useEffect(() => {
+		const id = requestAnimationFrame(() => setNeighborsReady(true))
+		return () => cancelAnimationFrame(id)
+	}, [])
+
 	const handlePressGoBack = () => {
 		return router.back()
 	}
 
 	const renderWeekPage = (offset: number) => {
+		const isActivePage = offset === 0
+		if (!isActivePage && !neighborsReady) {
+			return <View key={offset} style={{ flex: 1 }} />
+		}
+
 		const days = getWeek(addWeeks(selectedDate, offset))
 
 		return (
 			<View key={offset} collapsable={false} className="flex-row justify-between px-[5px]">
-				{days.map((date) => {
+				{days.map((date, index) => {
 					const isSelected = isSameDay(date, selectedDate)
 					const isToday = isSameDay(date, TODAY)
 					const isPastSelected = isSelected && !isToday
@@ -51,7 +63,8 @@ const ActivityRingsHeader = ({
 
 					return (
 						<Pressable
-							key={date.toISOString()}
+							// ключ по позиции в неделе, а не по дате — компонент переиспользуется при свайпе
+							key={index}
 							onPress={() => {
 								if (isAfter(date, TODAY)) return
 
@@ -90,7 +103,7 @@ const ActivityRingsHeader = ({
 								</Text>
 							</View>
 
-							<Rings circleSize={40} />
+							<MiniRing size={40} />
 						</Pressable>
 					)
 				})}

@@ -3,7 +3,7 @@ import { View, Text, TouchableOpacity, ActivityIndicator } from 'react-native'
 import { fontFamily } from '@/constants/Fonts'
 import { Colors } from '@/constants/Colors'
 import { Link } from 'expo-router'
-import { VIEWWORKOUT_MODE } from '@/app/training/viewWorkout'
+import { VIEW_WORKOUT_MODE } from '@/app/training/viewWorkout'
 import { cn } from '@/helpers/cn'
 
 interface IIcon {
@@ -71,7 +71,7 @@ const WorkoutHistoryListItem = (props: IProps) => {
 	if (props.isHistoryListItem) {
 		return (
 			<Link
-				href={`/training/viewWorkout?mode=${VIEWWORKOUT_MODE.FROM_HISTORY}&historyTrainingId=${props.id}`}
+				href={`/training/viewWorkout?mode=${VIEW_WORKOUT_MODE.FROM_HISTORY}&historyTrainingId=${props.id}`}
 				className="flex-row items-center justify-between pt-2"
 			>
 				<WorkoutHistoryListItemContent {...props} />

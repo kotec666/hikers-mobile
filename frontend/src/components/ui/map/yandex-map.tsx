@@ -7,6 +7,7 @@ import YMapLoader from '@/components/ui/map/ymap-loader'
 import { YMap as YMapType, YMapFeature as YMapFeatureType, YMapMarker as YMapMarkerType } from '@yandex/ymaps3-types'
 import { useMap } from '@/components/providers/map-provider'
 import { cn } from '@/lib/utils'
+import { withOpacity } from '@/helpers/withOpacity'
 
 function createMarkerElement(Svg: React.FC<SvgIconProps>, color = '#22c55e', size = 32) {
 	const el = document.createElement('div')
@@ -27,8 +28,8 @@ interface TransitionMarker {
 	position: [number, number]
 }
 
-const pausedLineColor = '#9ca3af'
-const activeLineColor = '#20DC52'
+// const pausedLineColor = '#9ca3af'
+const defaultActiveLineColor = '#20DC52'
 
 export interface YandexMapRef {
 	setPath: (points: ITrainingPoint[]) => void
@@ -37,129 +38,138 @@ export interface YandexMapRef {
 interface IYandexMapProps {
 	points?: ITrainingPoint[]
 	className?: string
+	routeColor?: string
 }
 
-const YandexMapInner = forwardRef<YandexMapRef, IYandexMapProps>(({ points: propPoints, className }, ref) => {
-	const { reactifyApi } = useMap()
-	const [mapRef, setMapRef] = useState<YMapType | null>(null)
-	const objectsRef = useRef<(YMapFeatureType | YMapMarkerType)[]>([])
+const YandexMapInner = forwardRef<YandexMapRef, IYandexMapProps>(
+	({ points: propPoints, routeColor, className }, ref) => {
+		const { reactifyApi } = useMap()
+		const [mapRef, setMapRef] = useState<YMapType | null>(null)
+		const objectsRef = useRef<(YMapFeatureType | YMapMarkerType)[]>([])
 
-	const buildRouteOnMap = useCallback(
-		(points: ITrainingPoint[]) => {
-			if (!mapRef || !points.length) return
-			const { YMapFeature, YMapMarker } = ymaps3
+		const activeLineColor = routeColor || defaultActiveLineColor
+		const pausedLineColor = routeColor ? withOpacity(routeColor, 0.5) : withOpacity(defaultActiveLineColor, 0.5)
 
-			objectsRef.current.forEach((obj) => mapRef.removeChild(obj))
-			objectsRef.current = []
+		const buildRouteOnMap = useCallback(
+			(points: ITrainingPoint[]) => {
+				if (!mapRef || !points.length) return
+				const { YMapFeature, YMapMarker } = ymaps3
 
-			const segments: Segment[] = []
-			const transitions: TransitionMarker[] = []
+				objectsRef.current.forEach((obj) => mapRef.removeChild(obj))
+				objectsRef.current = []
 
-			let currentGroup: ITrainingPoint[] = [points[0]]
-			let minLng = points[0].lng,
-				maxLng = points[0].lng
-			let minLat = points[0].lat,
-				maxLat = points[0].lat
+				const segments: Segment[] = []
+				const transitions: TransitionMarker[] = []
 
-			for (let i = 1; i < points.length; i++) {
-				const prev = points[i - 1],
-					curr = points[i]
-				minLng = Math.min(minLng, curr.lng)
-				maxLng = Math.max(maxLng, curr.lng)
-				minLat = Math.min(minLat, curr.lat)
-				maxLat = Math.max(maxLat, curr.lat)
+				let currentGroup: ITrainingPoint[] = [points[0]]
+				let minLng = points[0].lng,
+					maxLng = points[0].lng
+				let minLat = points[0].lat,
+					maxLat = points[0].lat
 
-				if (prev.paused === curr.paused) {
-					currentGroup.push(curr)
-				} else {
-					currentGroup.push(curr)
-					segments.push({ isPaused: prev.paused, points: currentGroup.map((p) => [p.lng, p.lat]) })
-					transitions.push({ type: prev.paused ? 'resume' : 'pause', position: [curr.lng, curr.lat] })
-					currentGroup = [curr]
+				for (let i = 1; i < points.length; i++) {
+					const prev = points[i - 1],
+						curr = points[i]
+					minLng = Math.min(minLng, curr.lng)
+					maxLng = Math.max(maxLng, curr.lng)
+					minLat = Math.min(minLat, curr.lat)
+					maxLat = Math.max(maxLat, curr.lat)
+
+					if (prev.paused === curr.paused) {
+						currentGroup.push(curr)
+					} else {
+						currentGroup.push(curr)
+						segments.push({ isPaused: prev.paused, points: currentGroup.map((p) => [p.lng, p.lat]) })
+						transitions.push({ type: prev.paused ? 'resume' : 'pause', position: [curr.lng, curr.lat] })
+						currentGroup = [curr]
+					}
 				}
-			}
 
-			if (currentGroup.length) {
-				segments.push({ isPaused: currentGroup[0].paused, points: currentGroup.map((p) => [p.lng, p.lat]) })
-			}
+				if (currentGroup.length) {
+					segments.push({ isPaused: currentGroup[0].paused, points: currentGroup.map((p) => [p.lng, p.lat]) })
+				}
 
-			segments.forEach((seg) => {
-				const line = new YMapFeature({
-					geometry: { type: 'LineString', coordinates: seg.points },
-					style: { stroke: [{ width: 4, color: seg.isPaused ? pausedLineColor : activeLineColor }] }
+				segments.forEach((seg) => {
+					const line = new YMapFeature({
+						geometry: { type: 'LineString', coordinates: seg.points },
+						style: { stroke: [{ width: 4, color: seg.isPaused ? pausedLineColor : activeLineColor }] }
+					})
+					mapRef.addChild(line)
+					objectsRef.current.push(line)
 				})
-				mapRef.addChild(line)
-				objectsRef.current.push(line)
-			})
 
-			const start = points[0],
-				end = points[points.length - 1]
-			if (start) {
-				const marker = new YMapMarker(
-					{ coordinates: [start.lng, start.lat] },
-					createMarkerElement(StartMarkerSvg, activeLineColor)
-				)
-				mapRef.addChild(marker)
-				objectsRef.current.push(marker)
-			}
-			transitions.forEach((t) => {
-				const Svg = t.type === 'pause' ? PauseMarkerSvg : ResumeMarkerSvg
-				const marker = new YMapMarker({ coordinates: t.position }, createMarkerElement(Svg, activeLineColor))
-				mapRef.addChild(marker)
-				objectsRef.current.push(marker)
-			})
-			if (end) {
-				const marker = new YMapMarker(
-					{ coordinates: [end.lng, end.lat] },
-					createMarkerElement(FinishMarkerFlagSvg, activeLineColor)
-				)
-				mapRef.addChild(marker)
-				objectsRef.current.push(marker)
-			}
+				const start = points[0],
+					end = points[points.length - 1]
+				if (start) {
+					const marker = new YMapMarker(
+						{ coordinates: [start.lng, start.lat] },
+						createMarkerElement(StartMarkerSvg, activeLineColor)
+					)
+					mapRef.addChild(marker)
+					objectsRef.current.push(marker)
+				}
+				transitions.forEach((t) => {
+					const Svg = t.type === 'pause' ? PauseMarkerSvg : ResumeMarkerSvg
+					const marker = new YMapMarker(
+						{ coordinates: t.position },
+						createMarkerElement(Svg, activeLineColor)
+					)
+					mapRef.addChild(marker)
+					objectsRef.current.push(marker)
+				})
+				if (end) {
+					const marker = new YMapMarker(
+						{ coordinates: [end.lng, end.lat] },
+						createMarkerElement(FinishMarkerFlagSvg, activeLineColor)
+					)
+					mapRef.addChild(marker)
+					objectsRef.current.push(marker)
+				}
 
-			mapRef.update({
-				location: {
-					bounds: [
-						[minLng, minLat],
-						[maxLng, maxLat]
-					]
-				},
-				margin: [60, 60, 60, 60]
-			})
-		},
-		[mapRef]
-	)
-
-	useEffect(() => {
-		if (Array.isArray(propPoints) && propPoints.length) {
-			buildRouteOnMap(propPoints)
-		}
-	}, [propPoints, mapRef, buildRouteOnMap])
-
-	useImperativeHandle(ref, () => ({
-		setPath: (newPoints: ITrainingPoint[]) => {
-			buildRouteOnMap(newPoints)
-		}
-	}))
-
-	if (!reactifyApi)
-		return (
-			<div className={cn('overflow-hidden', className)} style={{ width: '100%', height: '100%' }}>
-				<YMapLoader />
-			</div>
+				mapRef.update({
+					location: {
+						bounds: [
+							[minLng, minLat],
+							[maxLng, maxLat]
+						]
+					},
+					margin: [60, 60, 60, 60]
+				})
+			},
+			[mapRef, activeLineColor, pausedLineColor]
 		)
 
-	const { YMap, YMapDefaultSchemeLayer, YMapDefaultFeaturesLayer } = reactifyApi
+		useEffect(() => {
+			if (Array.isArray(propPoints) && propPoints.length) {
+				buildRouteOnMap(propPoints)
+			}
+		}, [propPoints, mapRef, buildRouteOnMap])
 
-	return (
-		<div className={cn('overflow-hidden', className)} style={{ width: '100%', height: '100%' }}>
-			<YMap ref={(ref) => setMapRef(ref)} location={{ center: [37.57, 55.75], zoom: 13 }} theme="dark">
-				<YMapDefaultSchemeLayer />
-				<YMapDefaultFeaturesLayer />
-			</YMap>
-		</div>
-	)
-})
+		useImperativeHandle(ref, () => ({
+			setPath: (newPoints: ITrainingPoint[]) => {
+				buildRouteOnMap(newPoints)
+			}
+		}))
+
+		if (!reactifyApi)
+			return (
+				<div className={cn('overflow-hidden', className)} style={{ width: '100%', height: '100%' }}>
+					<YMapLoader />
+				</div>
+			)
+
+		const { YMap, YMapDefaultSchemeLayer, YMapDefaultFeaturesLayer } = reactifyApi
+
+		return (
+			<div className={cn('overflow-hidden', className)} style={{ width: '100%', height: '100%' }}>
+				<YMap ref={(ref) => setMapRef(ref)} location={{ center: [37.57, 55.75], zoom: 13 }} theme="dark">
+					<YMapDefaultSchemeLayer />
+					<YMapDefaultFeaturesLayer />
+				</YMap>
+			</div>
+		)
+	}
+)
 
 const arePointsEqual = (a?: ITrainingPoint[], b?: ITrainingPoint[]) => {
 	if (!a && !b) return true

@@ -66,6 +66,7 @@ const SettingsInAppNotificationsPage = () => {
 
 	useEffect(() => {
 		if (settings) {
+			// eslint-disable-next-line react-hooks/set-state-in-effect -- инициализация локального черновика данными асинхронного запроса; localSettings затем редактируется независимо от settings
 			setLocalSettings(settings)
 			localSettingsRef.current = settings
 			settingsRef.current = settings

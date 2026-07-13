@@ -1,5 +1,5 @@
 import React, { useCallback, useEffect, useRef } from 'react'
-import { ActivityIndicator, Platform, RefreshControl, Text, View } from 'react-native'
+import { ActivityIndicator, Platform, Pressable, RefreshControl, Text, View } from 'react-native'
 import SettingsSvg from '@/components/svg/SettingsSvg'
 import { fontFamily } from '@/constants/Fonts'
 import SocialStats from '@/components/ui/Profile/SocialStats'
@@ -11,7 +11,7 @@ import { RelativePathString, useLocalSearchParams, useRouter } from 'expo-router
 import { useAuthStore } from '@/store/authStore'
 import { PATH_TO_IMAGE } from '@/constants/PATH_TO_FILES'
 import { AnimatedProfilePicture } from '@/components/ui/Profile/AnimatedProfilePicture'
-import { LegendList, LegendListRef } from '@legendapp/list'
+import { LegendList, LegendListRef } from '@legendapp/list/react-native'
 import { IPost } from '@/api/posts'
 import { Colors } from '@/constants/Colors'
 import { adaptLocations } from '@/helpers/adaptPointsToIWorkoutLocationStorageItem'
@@ -19,7 +19,7 @@ import { useSafeNavigation } from '@/hooks/useSafeNavigation'
 import TrainingsEmpty from '@/components/ui/Post/TrainingsEmpty'
 import BlurProvider from '@/components/providers/BlurProvider'
 import { useProfilePostsQuery } from '@/queries/posts'
-import { useProfileQuery } from '@/queries/my-profile'
+import { useProfileQuery, useUpdateProfileBadgeMutation } from '@/queries/my-profile'
 import { Page } from '@/components/ui/Page'
 import { useQueryClient } from '@tanstack/react-query'
 import { refetchAndHaptics } from '@/helpers/refetchAndHaptics'
@@ -29,6 +29,7 @@ import DailyActivityRedirect from '@/components/activity-rings/DailyActivityRedi
 import { RoundedButton } from '@/components/ui/HeaderBack'
 import PopupMenuItem from '@/components/ui/Popup/PopupMenuItem'
 import PopupMenu from '@/components/ui/Popup/PopupMenu'
+import { EmojiSheetModule } from 'expo-native-sheet-emojis'
 
 /**
  *
@@ -55,6 +56,7 @@ const Profile = () => {
 	const legendListRef = useRef<LegendListRef>(null)
 
 	const { data: profileData, isFetching: isProfileFetching, refetch: refetchProfile } = useProfileQuery()
+	const { mutateAsync: updateProfileBadge } = useUpdateProfileBadgeMutation()
 
 	const {
 		data: posts = [],
@@ -86,6 +88,51 @@ const Profile = () => {
 	const onRefreshAll = useCallback(async () => {
 		await Promise.all([refetchProfile(), postsRefetch()]) // , refresh()
 	}, [refetchProfile, postsRefetch]) // , refresh
+
+	const handlePressEmojiPick = async () => {
+		const result = await EmojiSheetModule.present({
+			categoryBarPosition: 'top',
+			layoutDirection: 'auto',
+			enableAnimations: true,
+			theme: {
+				backgroundColor: Colors['black-0d'],
+				searchBarBackgroundColor: 'white',
+				textColor: 'black',
+				textSecondaryColor: Colors['gray-ab'],
+				// searchTextColor?: Colors['gray-ab'],
+				// placeholderTextColor?: string;
+				accentColor: Colors['green-main'],
+				// selectionColor?: string;
+				// categoryIconColor?: string;
+				// categoryActiveIconColor?: string;
+				categoryActiveBackgroundColor: Colors['black-5c'],
+				// handleColor?: string;
+				dividerColor: Colors['gray-ab']
+				// categoryBarBackgroundColor?: string;
+			},
+			translations: {
+				searchPlaceholder: 'Поиск эмодзи',
+				noResultsText: 'Ничего не найдено',
+				categoryNames: {
+					search_results: 'Результаты поиска',
+					frequently_used: 'Недавно использованные',
+					smileys_emotion: 'Смайлики и эмоции',
+					people_body: 'Люди и тело',
+					animals_nature: 'Животные и природа',
+					food_drink: 'Еда и напитки',
+					travel_places: 'Путешествия и места',
+					activities: 'Активности',
+					objects: 'Объекты',
+					symbols: 'Символы',
+					flags: 'Флаги'
+				}
+			}
+		})
+
+		if (!result.cancelled) {
+			await updateProfileBadge(result.emoji)
+		}
+	}
 
 	// Функция рендеринга элемента поста
 	const renderPostItem = useCallback(
@@ -208,22 +255,30 @@ const Profile = () => {
 										</PopupMenu>
 									</View>
 									<View>
-										{profileData?.user?.name && (
-											<Text
-												className="text-[19px] text-white"
-												style={{ fontFamily: fontFamily.bold }}
-											>
-												{profileData?.user?.name}
-											</Text>
-										)}
-										{profileData?.user?.username && (
-											<Text
-												className="text-base text-gray-ab"
-												style={{ fontFamily: fontFamily.medium }}
-											>
-												@{profileData?.user?.username}
-											</Text>
-										)}
+										<Pressable
+											onPress={handlePressEmojiPick}
+											className="flex-row items-center gap-3"
+										>
+											{profileData?.user?.name && (
+												<Text
+													className="text-[19px] text-white"
+													style={{ fontFamily: fontFamily.bold }}
+												>
+													{profileData?.user?.name}
+												</Text>
+											)}
+											{profileData?.user?.badge && (
+												<Text className="text-xl" style={{ fontFamily: fontFamily.bold }}>
+													{profileData.user.badge}
+												</Text>
+											)}
+										</Pressable>
+										<Text
+											className="text-base text-gray-ab"
+											style={{ fontFamily: fontFamily.medium }}
+										>
+											@{profileData?.user?.username}
+										</Text>
 									</View>
 								</View>
 								<View className="flex-row justify-between gap-[10px]">

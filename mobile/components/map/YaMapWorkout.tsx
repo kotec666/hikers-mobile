@@ -14,6 +14,7 @@ import YaMapUserLocationMarker, {
 import { useWorkoutPath } from '@/hooks/useWorkoutPath'
 import YaMapFinishLocationMarker from '@/components/map/markers/FinishLocationMarker/YaMapFinishLocationMarker'
 import { cn } from '@/helpers/cn'
+import { useAuthStore } from '@/store/authStore'
 
 export interface IYaMapWorkoutProps {
 	rounded?: number
@@ -43,6 +44,7 @@ export interface YaMapWorkoutHandle {
 }
 
 const YaMapWorkout = forwardRef<YaMapWorkoutHandle, IYaMapWorkoutProps>((props, ref) => {
+	const { user } = useAuthStore()
 	const mapRef = useRef<YamapRef>(null)
 	const isAnimationBlockedRef = useRef<boolean>(false)
 	const mapInitialRegionSettingsRef = useRef<InitialRegion>(getYaMapSettings())
@@ -183,9 +185,13 @@ const YaMapWorkout = forwardRef<YaMapWorkoutHandle, IYaMapWorkoutProps>((props, 
 					fitInitialRoute()
 				}}
 			>
-				<YaMapUserLocationMarker ref={props.userLocationMarkerRef} initialPosition={markerPosition} />
+				<YaMapUserLocationMarker
+					ref={props.userLocationMarkerRef}
+					initialPosition={markerPosition}
+					color={user?.color}
+				/>
 
-				{startPosition && <YaMapStartLocationMarker position={startPosition} />}
+				{startPosition && <YaMapStartLocationMarker position={startPosition} color={user?.color} />}
 
 				{segmentsRef.current.map((seg, idx) => (
 					<PolylineCustom
@@ -199,13 +205,13 @@ const YaMapWorkout = forwardRef<YaMapWorkoutHandle, IYaMapWorkoutProps>((props, 
 
 				{transitionMarkersRef.current.map((tm) =>
 					tm.type === 'pause' ? (
-						<YaMapPauseLocationMarker key={tm.id} position={tm.position} />
+						<YaMapPauseLocationMarker key={tm.id} position={tm.position} color={user?.color} />
 					) : (
-						<YaMapResumeLocationMarker key={tm.id} position={tm.position} />
+						<YaMapResumeLocationMarker key={tm.id} position={tm.position} color={user?.color} />
 					)
 				)}
 
-				{props.needFinishMarker && <YaMapFinishLocationMarker position={finishPosition} />}
+				{props.needFinishMarker && <YaMapFinishLocationMarker position={finishPosition} color={user?.color} />}
 			</Yamap>
 		</View>
 	)

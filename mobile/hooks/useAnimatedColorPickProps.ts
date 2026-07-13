@@ -3,32 +3,24 @@ import { processColor, SharedValue, useAnimatedProps } from 'react-native-reanim
 const withOpacity = (color: string, opacity: number) => {
 	'worklet'
 
-	const values = color.match(/\d+/g)
+	const rgb = color.match(/\d+/g)
 
-	if (!values || values.length < 3) {
-		return color
-	}
+	if (!rgb) return color
 
-	return `rgba(${values[0]}, ${values[1]}, ${values[2]}, ${opacity})`
+	return `rgba(${rgb[0]}, ${rgb[1]}, ${rgb[2]}, ${opacity})`
 }
 
 export const useAnimatedColorPickProps = (
 	fieldName: string,
-	needProcessColorToNative: boolean,
+	processNative: boolean,
 	currentColor: SharedValue<string>,
 	opacity = 1
 ) => {
-	return useAnimatedProps(
-		() => ({
-			[fieldName]: opacity === 1 ? currentColor.value : withOpacity(currentColor.value, opacity)
-		}),
-		[],
-		(props) => {
-			'worklet'
+	return useAnimatedProps(() => {
+		const color = opacity === 1 ? currentColor.value : withOpacity(currentColor.value, opacity)
 
-			if (fieldName in props) {
-				props[fieldName] = needProcessColorToNative ? processColor(props[fieldName]) : props[fieldName]
-			}
+		return {
+			[fieldName]: processNative ? processColor(color) : color
 		}
-	)
+	})
 }

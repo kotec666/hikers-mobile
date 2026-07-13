@@ -11,7 +11,7 @@ import { PATH_TO_IMAGE } from '@/constants/PATH_TO_FILES'
 import Modal from '@/components/ui/Modal/Modal'
 import { FriendStatus } from '@shared/enums'
 import { AnimatedProfilePicture } from '@/components/ui/Profile/AnimatedProfilePicture'
-import { LegendList, LegendListRef } from '@legendapp/list'
+import { LegendList, LegendListRef } from '@legendapp/list/react-native'
 import { IPost } from '@/api/posts'
 import { Colors } from '@/constants/Colors'
 import { adaptLocations } from '@/helpers/adaptPointsToIWorkoutLocationStorageItem'
@@ -281,14 +281,24 @@ const UserProfilePage = () => {
 												{/*</PopupMenu>*/}
 											</View>
 											<View>
-												{profileData?.user?.name && (
-													<Text
-														className="text-[19px] text-white"
-														style={{ fontFamily: fontFamily.bold }}
-													>
-														{profileData?.user?.name}
-													</Text>
-												)}
+												<View className="flex-row items-center gap-3">
+													{profileData?.user?.name && (
+														<Text
+															className="text-[19px] text-white"
+															style={{ fontFamily: fontFamily.bold }}
+														>
+															{profileData?.user?.name}
+														</Text>
+													)}
+													{profileData?.user?.badge && (
+														<Text
+															className="text-xl"
+															style={{ fontFamily: fontFamily.bold }}
+														>
+															{profileData.user.badge}
+														</Text>
+													)}
+												</View>
 												{profileData?.user?.username && (
 													<Text
 														className="text-base text-gray-ab"

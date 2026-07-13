@@ -2,6 +2,8 @@ import React, { useCallback, useRef, useState } from 'react'
 import { Colors } from '@/constants/Colors'
 import { IWorkoutLocationStorageItem } from '@/store/workoutStorage'
 import { IPoint } from '@/types/interfaces'
+import { useAuthStore } from '@/store/authStore'
+import { setRgbaOpacity } from '@/helpers/colors/setRgbaOpacity'
 
 export interface Segment<TRef = unknown> {
 	points: IPoint[]
@@ -21,6 +23,8 @@ interface Params<TRef> {
 }
 
 export function useWorkoutPath<TRef>({ createPolylineRef, onNativeUpdate }: Params<TRef>) {
+	const { user } = useAuthStore()
+
 	// Используем useState только для триггера рендера при добавлении НОВЫХ сегментов
 	const [, forceRender] = useState(0)
 
@@ -52,8 +56,8 @@ export function useWorkoutPath<TRef>({ createPolylineRef, onNativeUpdate }: Para
 			const newLocations = locations.slice(processedCount)
 			processedLocationCountRef.current = locations.length
 
-			const activeLineColor = Colors['green-main']
-			const pausedLineColor = Colors['gray-ab']
+			const activeLineColor = user?.color || Colors['green-main']
+			const pausedLineColor = setRgbaOpacity(activeLineColor, 0.5)
 
 			let hasStructureChanged = false
 
@@ -157,7 +161,7 @@ export function useWorkoutPath<TRef>({ createPolylineRef, onNativeUpdate }: Para
 				onNativeUpdate?.(lastSegment, workingPoints)
 			}
 		},
-		[createPolylineRef, onNativeUpdate]
+		[createPolylineRef, onNativeUpdate, user]
 	)
 
 	const initPath = useCallback(

@@ -1,4 +1,4 @@
-import React, { useCallback, useMemo, useRef, useState } from 'react'
+import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { View, Dimensions } from 'react-native'
 import { Page } from '@/components/ui/Page'
 import { Container } from '@/components/ui/Container'
@@ -202,18 +202,30 @@ const Kcal = () => {
 		}
 	}
 
-	const renderPage = (key: string, pageIsToday: boolean) => (
-		<View style={{ width: '100%', height: '100%' }} key={key}>
-			<Container className="flex-1">
-				<ActivityPageMainContent
-					handlePressChangeGoalToday={handlePressChangeGoalToday}
-					handlePressChangeGoalSchedule={handlePressChangeGoalSchedule}
-					handlePressChangeGoal={handlePressChangeGoal}
-					isToday={pageIsToday}
-				/>
-			</Container>
-		</View>
-	)
+	const [dayNeighborsReady, setDayNeighborsReady] = useState(false)
+	useEffect(() => {
+		const id = requestAnimationFrame(() => setDayNeighborsReady(true))
+		return () => cancelAnimationFrame(id)
+	}, [])
+
+	const renderPage = (key: string, pageIsToday: boolean, isActive: boolean) => {
+		if (!isActive && !dayNeighborsReady) {
+			return <View key={key} style={{ width: '100%', height: '100%' }} />
+		}
+
+		return (
+			<View style={{ width: '100%', height: '100%' }} key={key}>
+				<Container className="flex-1">
+					<ActivityPageMainContent
+						handlePressChangeGoalToday={handlePressChangeGoalToday}
+						handlePressChangeGoalSchedule={handlePressChangeGoalSchedule}
+						handlePressChangeGoal={handlePressChangeGoal}
+						isToday={pageIsToday}
+					/>
+				</Container>
+			</View>
+		)
+	}
 
 	const renderEmptyPage = (key: string) => <View key={key} style={{ width: '100%', height: '100%' }} />
 
@@ -272,9 +284,9 @@ const Kcal = () => {
 					onPageSelected={handleDayPageSelected}
 					overScrollMode="never"
 				>
-					{renderPage('prev', false)}
-					{renderPage('current', isToday)}
-					{canSwipeNextDay ? renderPage('next', false) : renderEmptyPage('next')}
+					{renderPage('prev', false, false)}
+					{renderPage('current', isToday, true)}
+					{canSwipeNextDay ? renderPage('next', false, false) : renderEmptyPage('next')}
 				</PagerView>
 			</BlurProvider>
 		</Page>

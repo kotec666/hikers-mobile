@@ -7,7 +7,6 @@ import { cache } from 'react'
 export interface IParticipant {
 	id: string
 	user: IPublicUser
-	colorHex: null | string
 	route: ITrainingRoute
 	metrics: ITrainingMetrics
 }

@@ -38,7 +38,7 @@ import { formatDistance } from '@/helpers/distance'
 import { WorkoutTypesData } from '@/constants/WorkoutTypes'
 import { TrainingType } from '@shared/enums'
 import { useAuthStore } from '@/store/authStore'
-import { VIEWWORKOUT_MODE } from '@/app/training/viewWorkout'
+import { VIEW_WORKOUT_MODE } from '@/app/training/viewWorkout'
 import { getFieldsErrors } from '@/helpers/getFieldsErrors'
 import { ERRORS } from '@shared/errors'
 import BlurProvider from '@/components/providers/BlurProvider'
@@ -55,7 +55,6 @@ import {
 	startWorkoutLiveActivity
 } from '@/hooks/track-location/liveActivity'
 import type { PendingWidgetAction } from '@/modules/expo-live-activity'
-import { randomHexColor } from '@/helpers/colors/randomHexColor'
 import { useFinishWorkoutMutation } from '@/queries/workout'
 import { Page } from '@/components/ui/Page'
 import { RNMapAnimationType } from '@/components/map/RNMapWorkout'
@@ -154,7 +153,7 @@ export default function NewTraining() {
 			setActiveWorkoutPauseState(nextPauseState, user.id)
 			setIsPaused(nextPauseState)
 		},
-		[metricSpeedRef, setIsPaused, user?.id]
+		[metricSpeedRef, setIsPaused, user]
 	)
 
 	const handleCloseEndModal = useCallback(() => {
@@ -182,7 +181,7 @@ export default function NewTraining() {
 			// Нажатие завершения в live activity
 			handleClickOpenEndModal()
 		},
-		[handleClickOpenEndModal, setWorkoutPauseState, user?.id]
+		[handleClickOpenEndModal, setWorkoutPauseState, user]
 	)
 
 	useEffect(() => {
@@ -247,6 +246,7 @@ export default function NewTraining() {
 
 	const throttledHeadingUpdate = useMemo(
 		() =>
+			// eslint-disable-next-line react-hooks/refs -- throttle оборачивает функцию, рефы читаются при вызове колбэка, не при рендере
 			throttle((data: Location.LocationHeadingObject) => {
 				if (isIOS) {
 					rnMapUserLocationMarkerRef.current?.setMarkerHeading(data.trueHeading ?? data.magHeading)
@@ -410,7 +410,7 @@ export default function NewTraining() {
 
 				if (isInternetConnectedRef.current) {
 					try {
-						const newTraining = await startTraining({ type: workoutType, colorHex: randomHexColor() })
+						const newTraining = await startTraining({ type: workoutType })
 						newTrainingId = newTraining.id
 					} catch (e: unknown) {
 						console.log('(1) [start-workout-error]:', e)
@@ -459,7 +459,7 @@ export default function NewTraining() {
 			startTrackingLocation,
 			stopActiveTracking,
 			toast,
-			user?.id
+			user
 		]
 	)
 
@@ -469,7 +469,10 @@ export default function NewTraining() {
 		},
 		[chosenWorkout.type, startWorkout]
 	)
-	handleClickStartRef.current = handleClickStart
+
+	useEffect(() => {
+		handleClickStartRef.current = handleClickStart
+	}, [handleClickStart])
 
 	const handleChangeWorkout = useCallback((workoutType: TrainingType) => {
 		const foundedWorkout = WorkoutTypesData.find((workout) => workout.type === workoutType)
@@ -604,8 +607,9 @@ export default function NewTraining() {
 		} catch (e) {
 			console.log('handleClickPause error:', e)
 		}
-	}, [getLastUserPosition, isPaused, pointsRef, setWorkoutPauseState, user?.id])
+	}, [getLastUserPosition, isPaused, pointsRef, setWorkoutPauseState, user])
 
+	// eslint-disable-next-line react-hooks/refs -- debounce оборачивает функцию, handleClickPause вызывается позже, не при рендере
 	const pauseDebounced = useMemo(() => debounce(handleClickPause, PAUSE_DEBOUNCE_MS), [handleClickPause])
 
 	const calculateMetricsWhenFinished = useCallback(
@@ -653,7 +657,7 @@ export default function NewTraining() {
 				console.error('[sync-before-finish] failed:', e)
 			}
 		}
-	}, [user?.id, finishWorkout])
+	}, [user, finishWorkout])
 
 	const handleClickEndWorkout = useCallback(async () => {
 		try {
@@ -706,7 +710,7 @@ export default function NewTraining() {
 			}
 			// Полный сброс состояния карты и переменных
 			resetWorkoutState()
-			router.push(`/training/viewWorkout?mode=${VIEWWORKOUT_MODE.VIEW}&unsavedStartedAt=${meta?.startedAt}`)
+			router.push(`/training/viewWorkout?mode=${VIEW_WORKOUT_MODE.VIEW}&unsavedStartedAt=${meta?.startedAt}`)
 		} catch (e: unknown) {
 			console.error('handleClickEndWorkout error: ', e)
 			await getFieldsErrors(e)
@@ -722,7 +726,7 @@ export default function NewTraining() {
 		stopHeadingTracking,
 		toast,
 		tracking,
-		user?.id
+		user
 	])
 
 	const handleClickEnd = useCallback(() => {

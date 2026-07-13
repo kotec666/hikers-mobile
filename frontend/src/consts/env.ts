@@ -9,5 +9,7 @@ export const env = {
 	app_gallery_link: process.env.NEXT_PUBLIC_APP_GALLERY_LINK,
 	vk_link: process.env.NEXT_PUBLIC_VK_LINK,
 	tg_link: process.env.NEXT_PUBLIC_TG_LINK,
-	tt_link: process.env.NEXT_PUBLIC_TT_LINK
+	tt_link: process.env.NEXT_PUBLIC_TT_LINK,
+	support_email: process.env.NEXT_PUBLIC_SUPPORT_EMAIL,
+	contacts_email: process.env.NEXT_PUBLIC_CONTACTS_EMAIL
 }

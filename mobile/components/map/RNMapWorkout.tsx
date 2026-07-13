@@ -16,6 +16,7 @@ import RNMapsUserLocationMarker, {
 import { DEFAULT_APPLE_LEGAL_POSITION, DEFAULT_APPLE_LOGO_POSITION } from '@/constants/RNMap'
 import RNSegmentPolyline from '@/components/map/polyline/RNSegmentPolyline'
 import { cn } from '@/helpers/cn'
+import { useAuthStore } from '@/store/authStore'
 
 export enum RNMapAnimationType {
 	SMOOTH = 'smooth',
@@ -50,6 +51,7 @@ export interface IRNMapWorkoutProps {
 }
 
 const RNMapWorkout = forwardRef<RNMapWorkoutHandle, IRNMapWorkoutProps>((props, ref) => {
+	const { user } = useAuthStore()
 	const mapRef = useRef<MapView | null>(null)
 	const isAnimationBlockedRef = useRef<boolean>(false)
 	const mapInitialCameraSettingsRef = useRef<Camera>(getRNMapSettings())
@@ -196,9 +198,13 @@ const RNMapWorkout = forwardRef<RNMapWorkoutHandle, IRNMapWorkoutProps>((props, 
 				appleLogoInsets={props.appleLogoPosition || DEFAULT_APPLE_LOGO_POSITION}
 				legalLabelInsets={props.appleLegalPosition || DEFAULT_APPLE_LEGAL_POSITION}
 			>
-				<RNMapsUserLocationMarker ref={props.userLocationMarkerRef} initialPosition={markerPosition} />
+				<RNMapsUserLocationMarker
+					ref={props.userLocationMarkerRef}
+					initialPosition={markerPosition}
+					color={user?.color}
+				/>
 
-				{startPosition && <RNMapsStartLocationMarker position={startPosition} />}
+				{startPosition && <RNMapsStartLocationMarker position={startPosition} color={user?.color} />}
 
 				{segmentsRef.current.map((seg, idx) => (
 					<RNSegmentPolyline key={idx} polylineRef={seg.polylineRef} color={seg.color} points={seg.points} />
@@ -206,13 +212,13 @@ const RNMapWorkout = forwardRef<RNMapWorkoutHandle, IRNMapWorkoutProps>((props, 
 
 				{transitionMarkersRef.current.map((tm) =>
 					tm.type === 'pause' ? (
-						<RNMapsPauseLocationMarker key={tm.id} position={tm.position} />
+						<RNMapsPauseLocationMarker key={tm.id} position={tm.position} color={user?.color} />
 					) : (
-						<RNMapsResumeLocationMarker key={tm.id} position={tm.position} />
+						<RNMapsResumeLocationMarker key={tm.id} position={tm.position} color={user?.color} />
 					)
 				)}
 
-				{props.needFinishMarker && <RNMapsFinishLocationMarker position={finishPosition} />}
+				{props.needFinishMarker && <RNMapsFinishLocationMarker position={finishPosition} color={user?.color} />}
 			</MapView>
 		</View>
 	)

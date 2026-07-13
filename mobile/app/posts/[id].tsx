@@ -11,7 +11,7 @@ import MoreOptionsSvg from '@/components/svg/MoreOptionsSvg'
 import { useLocalSearchParams, useRouter } from 'expo-router'
 import { useAuthStore } from '@/store/authStore'
 import { adaptLocations } from '@/helpers/adaptPointsToIWorkoutLocationStorageItem'
-import { VIEWWORKOUT_MODE } from '@/app/training/viewWorkout'
+import { VIEW_WORKOUT_MODE } from '@/app/training/viewWorkout'
 import { useSafeNavigation } from '@/hooks/useSafeNavigation'
 import { Colors } from '@/constants/Colors'
 import BlurProvider from '@/components/providers/BlurProvider'
@@ -93,7 +93,7 @@ const Post = () => {
 										title="Редактировать"
 										onPress={() =>
 											push(
-												`/training/viewWorkout?mode=${VIEWWORKOUT_MODE.EDIT}&editPostId=${post?.id}`
+												`/training/viewWorkout?mode=${VIEW_WORKOUT_MODE.EDIT}&editPostId=${post?.id}`
 											)
 										}
 									/>

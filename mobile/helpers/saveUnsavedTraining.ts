@@ -13,7 +13,6 @@ import { createOfflineTraining, deleteNotFinishedTrainingById, syncTraining } fr
 import { chunkArray } from '@/helpers/chunkArray'
 import { prepareLocationsForSync } from '@/helpers/prepareLocationsForSync'
 import { getFieldsErrors } from '@/helpers/getFieldsErrors'
-import { randomHexColor } from '@/helpers/colors/randomHexColor'
 import { UseMutateAsyncFunction } from '@tanstack/react-query'
 
 export enum WorkoutSource {
@@ -125,7 +124,6 @@ export const saveSingleWorkout = async (
 	if (!trainingId) {
 		const newTraining = await createOfflineTraining({
 			type: workout.type,
-			colorHex: randomHexColor(),
 			startedAt: workout.startedAt,
 			finishedAt: workout.locations.at(-1)!.relTs + workout.startedAt
 		})

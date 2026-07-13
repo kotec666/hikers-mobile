@@ -90,7 +90,12 @@ export function WorkoutPost({ post }: WorkoutPostProps) {
 					<UserAvatar bordered iconSize={24} avatarFilename={post?.userCreator.avatarFilename} />
 					<div>
 						<div className="flex flex-col gap-2">
-							<span className="text-white font-medium">{username}</span>
+							<div className="flex flex-row items-center gap-2">
+								<span className="text-white font-medium">{username}</span>
+								{post?.userCreator.badge && (
+									<span className="text-xl font-medium">{post?.userCreator.badge}</span>
+								)}
+							</div>
 							<div className="flex items-center gap-2">
 								<div className="flex items-center justify-center bg-white rounded-sm w-5 h-5">
 									{renderIcon(post?.training.type)}
@@ -132,7 +137,7 @@ export function WorkoutPost({ post }: WorkoutPostProps) {
 				<MapProvider
 					apiUrl={`https://api-maps.yandex.ru/v3/?apikey=${process.env.NEXT_PUBLIC_YANDEX_MAPS_KEY}&lang=ru_RU`}
 				>
-					<YandexMap className="rounded-xl" points={creatorPoints} />
+					<YandexMap className="rounded-xl" points={creatorPoints} routeColor={post?.userCreator.color} />
 				</MapProvider>
 			</div>
 

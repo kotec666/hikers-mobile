@@ -12,7 +12,6 @@ export interface ITraining {
 
 export interface ITrainingParticipant {
 	id: string
-	email: string
 	name: string | null
 	username: string | null
 	avatarFilename: string | null
@@ -47,7 +46,6 @@ export interface ITrainingRoute {
 export interface IParticipantTrainingRoute {
 	id: string
 	user: ITrainingParticipant
-	colorHex: string
 	route: ITrainingRoute
 	metrics: ITrainingMetrics
 }
@@ -91,7 +89,7 @@ export const getTrainingInfo = async (trainingId: string): Promise<ITraining[]> 
 }
 
 // Начать тренировку
-export const startTraining = async (data: { type: TrainingType; colorHex: string }): Promise<ITraining> => {
+export const startTraining = async (data: { type: TrainingType }): Promise<ITraining> => {
 	return (
 		await fetcher.post(`trainings/start`, {
 			json: data

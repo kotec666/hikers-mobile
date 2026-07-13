@@ -9,6 +9,7 @@ export const QUERY_KEYS = {
 	MY_FRIEND_REQUESTS: ['my-friend-requests'],
 	MY_SUBSCRIPTIONS: ['my-subscriptions'],
 	POSTS_MY_PROFILE: ['posts-my-profile'],
+	MY_REPORTS: ['my-reports'],
 	POSTS_NOT_MY_PROFILE: ['posts-not-my-profile'],
 	POSTS_FEED: ['posts-feed'],
 	POST_DETAILS: ['post-details'],

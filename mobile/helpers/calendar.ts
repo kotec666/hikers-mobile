@@ -67,3 +67,14 @@ export const generateMonthsRange = (startOffset: number, endOffset: number): Gen
 		currentMonthIndex
 	}
 }
+
+export const getMonthHeight = (month: CalendarMonth, rowHeight: number) => {
+	const totalRows = Math.ceil((month.startOffset + month.days.length) / 7)
+	const TITLE_HEIGHT = 12 + 28 + 20 // paddingTop + строка заголовка + mb-5
+	return TITLE_HEIGHT + totalRows * rowHeight
+}
+
+export const RING_SIZE = 30
+export const TEXT_ZONE_HEIGHT = 24
+export const ROW_GAP = 20
+export const ROW_HEIGHT = TEXT_ZONE_HEIGHT + RING_SIZE + ROW_GAP

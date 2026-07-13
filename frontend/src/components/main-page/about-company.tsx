@@ -54,18 +54,18 @@ export function AboutCompany() {
 	const companyLinks = [
 		{
 			label: 'Описание',
-			href: '/company-description'
+			href: '/about'
 		}
 	]
 
 	const usefulLinks = [
 		{
 			label: 'Поддержка',
-			href: '/support'
+			href: `mailto:${env.support_email}`
 		},
 		{
 			label: 'Контакты',
-			href: '/contacts'
+			href: `mailto:${env.contacts_email}`
 		}
 	]
 

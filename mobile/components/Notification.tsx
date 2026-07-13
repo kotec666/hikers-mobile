@@ -52,9 +52,9 @@ export function Notification({ text, type, onPress, clearErrorCallback }: IProps
 	const [isShown, setIsShown] = useState<boolean>(false)
 	const isDismissingRef = useRef<boolean>(false)
 	const isSwipeRef = useRef(false)
-	const animatedValue = useRef(new Animated.Value(-100)).current
-	const pan = useRef(new Animated.ValueXY()).current
 	const direction = useRef<'x' | 'y' | null>(null)
+	const [animatedValue] = useState(() => new Animated.Value(-100))
+	const [pan] = useState(() => new Animated.ValueXY())
 
 	const isGlassAvailable = Platform.OS === 'ios' && isLiquidGlassAvailable()
 
@@ -83,6 +83,7 @@ export function Notification({ text, type, onPress, clearErrorCallback }: IProps
 	}, [animatedValue, clearErrorCallback, pan])
 
 	const panResponder = useRef(
+		// eslint-disable-next-line react-hooks/refs -- колбэки PanResponder выполняются только при реальном жесте, не при рендере
 		PanResponder.create({
 			onMoveShouldSetPanResponder: (_, gesture) => {
 				if (isDismissingRef.current) return false
@@ -136,6 +137,7 @@ export function Notification({ text, type, onPress, clearErrorCallback }: IProps
 	useEffect(() => {
 		if (!text) return
 
+		// eslint-disable-next-line react-hooks/set-state-in-effect -- setIsShown здесь неразрывно связан с запуском анимации и таймера, а не просто выводится из пропсов
 		setIsShown(true)
 		onEnter()
 
@@ -150,6 +152,7 @@ export function Notification({ text, type, onPress, clearErrorCallback }: IProps
 
 	return (
 		<Animated.View
+			// eslint-disable-next-line react-hooks/refs
 			{...panResponder.panHandlers}
 			style={[
 				styles.container,

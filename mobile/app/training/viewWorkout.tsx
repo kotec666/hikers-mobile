@@ -72,12 +72,12 @@ const getWorkoutParams = ({
 	creatorMetrics,
 	myMetrics
 }: {
-	mode: VIEWWORKOUT_MODE
+	mode: VIEW_WORKOUT_MODE
 	results: IWorkoutResultsStore
 	creatorMetrics?: ITrainingMetrics
 	myMetrics?: ITrainingMetrics
 }): [Param[], Param[]] => {
-	if (mode === VIEWWORKOUT_MODE.VIEW) {
+	if (mode === VIEW_WORKOUT_MODE.VIEW) {
 		return [
 			[
 				{ label: 'Время', value: results.metrics?.totalTimeFormatted },
@@ -92,7 +92,7 @@ const getWorkoutParams = ({
 		]
 	}
 
-	const metrics = mode === VIEWWORKOUT_MODE.FROM_HISTORY ? myMetrics : creatorMetrics
+	const metrics = mode === VIEW_WORKOUT_MODE.FROM_HISTORY ? myMetrics : creatorMetrics
 
 	return [
 		[
@@ -143,7 +143,7 @@ const data = [
 	}
 ]
 
-export enum VIEWWORKOUT_MODE {
+export enum VIEW_WORKOUT_MODE {
 	VIEW = 'view',
 	EDIT = 'edit',
 	FROM_HISTORY = 'from_history'
@@ -155,14 +155,14 @@ export default function ViewWorkout() {
 	const insets = useSafeAreaInsets()
 	const toast = useToast()
 	const { mode, editPostId, historyTrainingId, unsavedStartedAt } = useLocalSearchParams<{
-		mode: VIEWWORKOUT_MODE
+		mode: VIEW_WORKOUT_MODE
 		editPostId?: string
 		historyTrainingId?: string
 		unsavedStartedAt?: string
 	}>()
-	const isView = mode === VIEWWORKOUT_MODE.VIEW
-	const isEdit = mode === VIEWWORKOUT_MODE.EDIT
-	const isFromHistory = mode === VIEWWORKOUT_MODE.FROM_HISTORY
+	const isView = mode === VIEW_WORKOUT_MODE.VIEW
+	const isEdit = mode === VIEW_WORKOUT_MODE.EDIT
+	const isFromHistory = mode === VIEW_WORKOUT_MODE.FROM_HISTORY
 
 	const { handleSubmit, control, setValue } = useForm<IPostFormState>()
 	const { ErrorMessages } = useErrorMessage()
@@ -172,14 +172,15 @@ export default function ViewWorkout() {
 	const { mutateAsync: updatePostMutation, isPending: isPendingUpdate } = useUpdatePostMutation()
 
 	const results = useWorkoutResultsAfterFinishStore((state) => state)
-	const pointsRef = useRef(results.points || [])
+	const [frozenPoints] = useState(() => results.points || [])
 	const descriptionRef = useRef<TextInput>(null)
 	const [isPhotoModalOpen, setIsPhotoModalOpen] = useState(false)
 	const [isExitWithoutCreatePostModal, setIsExitWithoutCreatePostModal] = useState(false)
 	const [deletedImages, setDeletedImages] = useState<string[]>([]) // только для редактирования
 	const [existingImages, setExistingImages] = useState<string[]>([]) // только для редактирования
 	const [postImages, setPostImages] = useState<string[]>([])
-	const [isTrainingAuthor, setIsTrainingAuthor] = useState<boolean>(false)
+	const [viewedAt] = useState(() => Date.now())
+
 	const [state, setState] = useState<{
 		switchChartView: 'map' | 'chart'
 		editPost: null | IPost
@@ -199,7 +200,7 @@ export default function ViewWorkout() {
 
 	useEffect(() => {
 		if (editPost) {
-			// setIsTrainingAuthor(true)
+			// eslint-disable-next-line react-hooks/set-state-in-effect -- инициализация локальных полей формы данными асинхронного запроса
 			setExistingImages(editPost.fileNames)
 			setValue('title', editPost.title)
 			setValue('description', editPost.description || '')
@@ -208,28 +209,20 @@ export default function ViewWorkout() {
 
 	useEffect(() => {
 		if (postFromTraining) {
-			if (postFromTraining?.training?.creatorId === user?.id) {
-				setIsTrainingAuthor(true)
-			} else {
-				setIsTrainingAuthor(false)
-			}
+			// eslint-disable-next-line react-hooks/set-state-in-effect -- инициализация локальных полей формы данными асинхронного запроса
 			setExistingImages(postFromTraining.fileNames)
 			setValue('title', postFromTraining.title)
 			setValue('description', postFromTraining.description || '')
 		}
-	}, [postFromTraining, setValue, user?.id])
+	}, [postFromTraining, setValue])
 
 	const { data: extendedTrainingDetails } = useExtendedDetailsWorkoutQuery(historyTrainingId)
 
-	useEffect(() => {
-		if (extendedTrainingDetails) {
-			if (extendedTrainingDetails?.creatorId === user?.id) {
-				setIsTrainingAuthor(true)
-			} else {
-				setIsTrainingAuthor(false)
-			}
-		}
-	}, [extendedTrainingDetails, setValue, user?.id])
+	const isTrainingAuthor = useMemo(() => {
+		if (postFromTraining) return postFromTraining.training?.creatorId === user?.id
+		if (extendedTrainingDetails) return extendedTrainingDetails.creatorId === user?.id
+		return false
+	}, [postFromTraining, extendedTrainingDetails, user?.id])
 
 	const handlePostImages = (postImages: string[], formData: FormData) => {
 		postImages.forEach((postImage) => {
@@ -366,10 +359,10 @@ export default function ViewWorkout() {
 		: formatDistance((isEdit ? creatorMetrics : myMetrics)?.distanceM || 0)
 
 	const dateText = isView
-		? `Сегодня, ${results.startedAt ? format(results.startedAt, 'HH:mm') : ''} - ${format(Date.now(), 'HH:mm')}`
+		? `Сегодня, ${results.startedAt ? format(results.startedAt, 'HH:mm') : ''} - ${format(viewedAt, 'HH:mm')}`
 		: formatRelativeDate(isEdit ? existPost?.createdAt : extendedTrainingDetails?.createdAt)
 
-	const mapLocations = isView ? pointsRef.current : isEdit ? adaptedLocations : adaptedLocationsFromHistory
+	const mapLocations = isView ? frozenPoints : isEdit ? adaptedLocations : adaptedLocationsFromHistory
 	const chartPoints = isView ? results.points : isEdit ? adaptedLocations : adaptedLocationsFromHistory
 
 	const canPublish = useMemo(() => {

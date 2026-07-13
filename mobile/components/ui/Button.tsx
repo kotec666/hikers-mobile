@@ -1,4 +1,4 @@
-import { PropsWithChildren, useRef } from 'react'
+import { PropsWithChildren, useState } from 'react'
 import { cn } from '@/helpers/cn'
 import { fontFamily } from '@/constants/Fonts'
 import { ActivityIndicator, Animated, GestureResponderEvent, PressableProps } from 'react-native'
@@ -58,7 +58,7 @@ export function Button(props: Props & PressableProps) {
 	const { children, className, buttonContainerClassName, variant, isLoading, buttonHeight, disabled, ...restProps } =
 		props
 
-	const animatedValue = useRef(new Animated.Value(0)).current
+	const [animatedValue] = useState(() => new Animated.Value(0))
 	const colors = variantColors[variant]
 
 	const btnColor = animatedValue.interpolate({

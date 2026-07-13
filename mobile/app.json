@@ -119,7 +119,8 @@
 			"react-native-maps",
 			"@bacons/apple-targets",
 			"./plugins/with-live-activity-widget-embed-fix",
-			"expo-status-bar"
+			"expo-status-bar",
+			["expo-native-sheet-emojis", { "searchLocales": ["en", "ru"] }]
 		],
 		"experiments": {
 			"typedRoutes": true

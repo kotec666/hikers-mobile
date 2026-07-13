@@ -8,7 +8,7 @@ import { fontFamily } from '@/constants/Fonts'
 import PeopleListItem from '@/components/find-people/PeopleListItem'
 import { Button } from '@/components/ui/Button'
 import PostSearchResult from '@/components/ui/Post/PostSearchResult'
-import { LegendList, LegendListRef } from '@legendapp/list'
+import { LegendList, LegendListRef } from '@legendapp/list/react-native'
 import { IPost } from '@/api/posts'
 import { Colors } from '@/constants/Colors'
 import { useFocusEffect, useLocalSearchParams } from 'expo-router'
@@ -112,7 +112,7 @@ const PostsPage = () => {
 
 	useEffect(() => {
 		if (params.quickAction !== 'search') return
-
+		// eslint-disable-next-line react-hooks/set-state-in-effect -- реакция на quickAction из роутера (внешний источник), плюс императивный фокус инпута через ref
 		activateSearch()
 
 		const timeoutId = setTimeout(() => {

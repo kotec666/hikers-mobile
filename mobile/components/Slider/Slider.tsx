@@ -71,7 +71,7 @@ export function Slider({ itemList, children }: SliderProps) {
 		}
 	}
 
-	const viewabilityConfigCallbackPairs = useRef([{ viewabilityConfig, onViewableItemsChanged }])
+	const [viewabilityConfigCallbackPairs] = useState(() => [{ viewabilityConfig, onViewableItemsChanged }])
 
 	return (
 		<View className="flex-1">
@@ -87,7 +87,7 @@ export function Slider({ itemList, children }: SliderProps) {
 				pagingEnabled
 				onScroll={onScrollHandler}
 				scrollEventThrottle={16}
-				viewabilityConfigCallbackPairs={viewabilityConfigCallbackPairs.current}
+				viewabilityConfigCallbackPairs={viewabilityConfigCallbackPairs}
 				onEndReached={() => setData([...data, ...itemList])}
 				onEndReachedThreshold={0.5}
 				onScrollBeginDrag={() => setIsAutoPlay(false)}

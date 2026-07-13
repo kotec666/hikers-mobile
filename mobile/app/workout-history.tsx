@@ -11,7 +11,7 @@ import { ru } from 'date-fns/locale'
 import SaveUnsavedTrainingSvg from '@/components/svg/SaveUnsavedTrainingSvg'
 import DeleteTrashSvg from '@/components/svg/DeleteTrashSvg'
 import SwipeableProvider from '@/components/providers/SwipeableProvider'
-import { LegendList, LegendListRef } from '@legendapp/list'
+import { LegendList, LegendListRef } from '@legendapp/list/react-native'
 import { Colors } from '@/constants/Colors'
 import CheckMarkIconSvg from '@/components/svg/CheckMarkIconSvg'
 import TrainingsEmpty from '@/components/ui/Post/TrainingsEmpty'
@@ -148,9 +148,9 @@ const WorkoutHistory = () => {
 		}
 	}
 
-	const handleSelectType = (type: string) => {
+	const handleSelectType = async (type: string) => {
 		setSelectedType(type)
-		listRef.current?.scrollToOffset({
+		await listRef.current?.scrollToOffset({
 			offset: 0,
 			animated: false
 		})

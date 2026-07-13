@@ -8,6 +8,8 @@ export interface IUser {
 	id: string
 	name: null | string
 	username: string
+	color: string
+	badge: string | null
 	avatarFilename: null | string
 }
 

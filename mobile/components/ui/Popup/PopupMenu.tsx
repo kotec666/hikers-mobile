@@ -184,10 +184,13 @@ export default function PopupMenu({
 	return (
 		<>
 			<View ref={triggerRef} collapsable={false}>
-				{trigger({
-					open,
-					close
-				})}
+				{
+					// eslint-disable-next-line react-hooks/refs -- open/close не читают ref при рендере, вызываются позже в обработчиках
+					trigger({
+						open,
+						close
+					})
+				}
 			</View>
 
 			<Modal visible={visible} transparent animationType="fade" onRequestClose={close}>

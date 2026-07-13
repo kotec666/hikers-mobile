@@ -1,7 +1,7 @@
 import { Image, ImageStyle } from 'expo-image'
 import { StyleProp, View, ViewStyle } from 'react-native'
 import PeopleSvg from '@/components/svg/PeopleSvg'
-import React, { useEffect, useState } from 'react'
+import React, { useState } from 'react'
 import { cn } from '@/helpers/cn'
 import PenSvg from '@/components/svg/PenSvg'
 
@@ -16,10 +16,12 @@ export interface IProps {
 
 export function UserAvatar(props: IProps) {
 	const [imageError, setImageError] = useState(false)
+	const [prevImageUrl, setPrevImageUrl] = useState(props.avatar)
 
-	useEffect(() => {
+	if (props.avatar !== prevImageUrl) {
+		setPrevImageUrl(props.avatar)
 		setImageError(false)
-	}, [props.avatar])
+	}
 
 	if (
 		typeof props.avatar === 'string' &&

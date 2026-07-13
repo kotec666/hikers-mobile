@@ -37,6 +37,7 @@ const AchievementsPage = () => {
 		const targetAchievement = allAchievements.find((a) => a.id === id)
 
 		if (targetAchievement) {
+			// eslint-disable-next-line react-hooks/set-state-in-effect -- реакция на query-параметр из роутера и асинхронные данные запроса, плюс императивный вызов bottomSheetRef.openSheet()
 			openBottomSheet(<AchievementDetailed achievement={targetAchievement} />)
 		}
 	}, [id, isLoading, allAchievements, openBottomSheet])

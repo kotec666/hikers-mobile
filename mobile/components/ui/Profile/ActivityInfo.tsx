@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react'
+import React, { useEffect, useMemo } from 'react'
 import { FlatList, Text, View } from 'react-native'
 import { fontFamily } from '@/constants/Fonts'
 import WorkoutStats from '@/components/ui/Profile/WorkoutStats'
@@ -29,17 +29,13 @@ const ActivityInfo = (props: IProps) => {
 	}
 
 	const positions: SharedValue<PositionsMap> = useSharedValue(
-		Object.assign({}, ...props.activities.map((item, index) => ({ [index]: index })))
-	)
-	const [orderMap, setOrderMap] = useState<Record<number, IActivity>>( // { index -> itemUniqueName }
-		Object.assign({}, ...props.activities.map((item, index) => ({ [index]: item })))
+		Object.assign({}, ...props.activities.map((_item, index) => ({ [index]: index })))
 	)
 
-	useEffect(() => {
-		const map = Object.assign({}, ...props.activities.map((item, index) => ({ [index]: item })))
-
-		setOrderMap(map)
-	}, [props.activities])
+	const orderMap = useMemo<Record<number, IActivity>>(
+		() => Object.assign({}, ...props.activities.map((item, index) => ({ [index]: item }))), // { index -> itemUniqueName }
+		[props.activities]
+	)
 
 	useEffect(() => {
 		positions.value = Object.assign({}, ...props.activities.map((_, index) => ({ [index]: index })))
