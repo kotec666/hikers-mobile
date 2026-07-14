@@ -60,7 +60,7 @@
 ### 3.1. email:
 
 - ERRORS.INVALID_LENGTH
-- ERRORS.INVALID_EMAIL // Строка не формата почты
+- ERRORS.INVALID_EMAIL // Строка не формата почты или почта фейковая/на неверном домене
 - ERRORS.ALREADY_EXISTS // Почта уже зарегана
 
 ### 3.2. password:
@@ -174,21 +174,21 @@
 
 ## 11. POST /auth/confirm-password-recovery
 
-### Общие ошибки:
+### 11.0. Общие ошибки:
 
 - ERRORS.NOT_FOUND // Запрос не найден или устарел
 
-### 10.1. email:
+### 11.1. email:
 
 - ERRORS.INVALID_EMAIL // Строка не формата почты
 
-### 10.2. code:
+### 11.2. code:
 
 - ERRORS.INVALID_LENGTH
 
 ## 12. POST /auth/recover-password
 
-### Общие ошибки:
+### 12.0. Общие ошибки:
 
 - ERRORS.NOT_FOUND // Подтверждение не найдено
 - ERRORS.FORBIDDEN // Подтверждение не пройдено
@@ -216,7 +216,7 @@
 
 ## 13. POST /auth/request-confirm-email
 
-### Общие ошибки:
+### 13.0. Общие ошибки:
 
 - ERRORS.NOT_FOUND // Такой юзер не найден
 - ERRORS.EMAIL_ALREADY_CONFIRMED // Почта уже подтверждена
@@ -228,7 +228,7 @@
 
 ## 14. POST /auth/confirm-email
 
-### Общие ошибки:
+### 14.0. Общие ошибки:
 
 - ERRORS.NOT_FOUND // Запрос не найден или устарел
 
@@ -258,3 +258,17 @@
 ### 15.4. files:
 
 - ERRORS.BAD_REQUEST // Если с каким-то из файлов что-то не так. Не верный формат/Слишком много весит/Слишком много файлов. (все лимиты в shared/constants.ts)
+
+## 16. PATCH /profile/set-badge
+
+### 16.1. badge?:
+
+- ERRORS.MISMATCH // Если строка это не один эмодзи
+- ERRORS.FORBIDDEN // Если этот значок недоступен юзеру (нет подписки или типо того)
+
+## 17. PATCH /profile/set-сolor
+
+### 17.1. color:
+
+- ERRORS.MISMATCH // Если строка не формата цвета ( rgb(123,123,123) )
+- ERRORS.FORBIDDEN // Если этот цвет недоступен юзеру (нет подписки или типо того)

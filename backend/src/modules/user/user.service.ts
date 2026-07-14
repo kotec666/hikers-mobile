@@ -19,7 +19,7 @@ import {
 	users,
 	userSubscribers,
 } from '../database/schema';
-import { and, eq, ilike, ne, or, sql } from 'drizzle-orm';
+import { and, eq, ilike, InferInsertModel, ne, or, sql } from 'drizzle-orm';
 import { comparePassword, hashPassword } from './user.helpers';
 import { ERRORS } from '@shared/errors';
 import { EventEmitter2 } from '@nestjs/event-emitter';
@@ -49,6 +49,8 @@ export class UserService {
 				id: users.id,
 				name: users.name,
 				username: users.username,
+				color: users.color,
+				badge: users.badge,
 				avatarFilename: users.avatarFilename,
 			});
 		if (!user) {
@@ -60,13 +62,16 @@ export class UserService {
 		return user;
 	}
 
-	public async updateUser(id: string, dto: Partial<Omit<UserDto.Entity, 'id'>>): Promise<UserDto.Entity> {
+	public async updateUser(id: string, dto: Partial<InferInsertModel<typeof users>>): Promise<UserDto.Entity> {
 		if (dto['id']) delete dto['id'];
+		if (dto['password']) delete dto['password'];
 
 		const [user] = await this.db.db.update(users).set(dto).where(eq(users.id, id)).returning({
 			id: users.id,
 			name: users.name,
 			username: users.username,
+			color: users.color,
+			badge: users.badge,
 			avatarFilename: users.avatarFilename,
 		});
 		if (!user) {
@@ -82,6 +87,8 @@ export class UserService {
 				id: users.id,
 				name: users.name,
 				username: users.username,
+				color: users.color,
+				badge: users.badge,
 				avatarFilename: users.avatarFilename,
 				password: users.password,
 			})
@@ -101,6 +108,8 @@ export class UserService {
 			id: user.id,
 			name: user.name,
 			username: user.username,
+			color: user.color,
+			badge: user.badge,
 			avatarFilename: user.avatarFilename,
 		};
 	}
@@ -111,6 +120,8 @@ export class UserService {
 				id: users.id,
 				name: users.name,
 				username: users.username,
+				color: users.color,
+				badge: users.badge,
 				email: users.email,
 				avatarFilename: users.avatarFilename,
 			})
@@ -130,6 +141,8 @@ export class UserService {
 				id: users.id,
 				name: users.name,
 				username: users.username,
+				color: users.color,
+				badge: users.badge,
 				avatarFilename: users.avatarFilename,
 			})
 			.from(users)
@@ -148,6 +161,8 @@ export class UserService {
 				id: users.id,
 				name: users.name,
 				username: users.username,
+				color: users.color,
+				badge: users.badge,
 				avatarFilename: users.avatarFilename,
 				password: users.password,
 			})
@@ -175,6 +190,8 @@ export class UserService {
 				id: users.id,
 				name: users.name,
 				username: users.username,
+				color: users.color,
+				badge: users.badge,
 				avatarFilename: users.avatarFilename,
 			});
 
@@ -276,6 +293,8 @@ export class UserService {
 				id: users.id,
 				name: users.name,
 				username: users.username,
+				color: users.color,
+				badge: users.badge,
 				avatarFilename: users.avatarFilename,
 				email: users.email,
 				isEmailConfirmed: sql<boolean>`${users.emailConfirmedAt} IS NOT NULL`,
@@ -296,6 +315,8 @@ export class UserService {
 				id: users.id,
 				name: users.name,
 				username: users.username,
+				color: users.color,
+				badge: users.badge,
 				avatarFilename: users.avatarFilename,
 			})
 			.from(users)
@@ -326,6 +347,8 @@ export class UserService {
 				id: users.id,
 				name: users.name,
 				username: users.username,
+				color: users.color,
+				badge: users.badge,
 				avatarFilename: users.avatarFilename,
 			})
 			.from(users);
@@ -339,6 +362,8 @@ export class UserService {
 				id: users.id,
 				name: users.name,
 				username: users.username,
+				color: users.color,
+				badge: users.badge,
 				avatarFilename: users.avatarFilename,
 			})
 			.from(users)

@@ -16,6 +16,7 @@ import { ProfileDto } from './profile.dto';
 import { MAX_FILE_SIZE_MEGABYTES, VALID_IMAGE_MIME_TYPES } from '@shared/constants';
 import { ERRORS } from '@shared/errors';
 import { IsUUID } from '@validation/parameter-decorators';
+import { CommonDto } from '../../common/dto/common.dto';
 
 @Controller('profile')
 @UseInterceptors(UserInterceptor)
@@ -29,7 +30,7 @@ export class ProfileController {
 	 */
 	@Get()
 	public async getMe(@User() user: UserData): Promise<ProfileDto.MyEntity> {
-		return await this.service.getProfile(user.id);
+		return this.service.getProfile(user.id);
 	}
 
 	/**
@@ -42,7 +43,7 @@ export class ProfileController {
 		@User() user: UserData,
 		@IsUUID('userId') @Param('userId') userId: string,
 	): Promise<ProfileDto.Entity> {
-		return await this.service.getOtherProfileById(user.id, userId);
+		return this.service.getOtherProfileById(user.id, userId);
 	}
 
 	/**
@@ -55,7 +56,33 @@ export class ProfileController {
 		@User() user: UserData,
 		@Param('username') username: string,
 	): Promise<ProfileDto.Entity> {
-		return await this.service.getOtherProfileByUsername(user.id, username);
+		return this.service.getOtherProfileByUsername(user.id, username);
+	}
+
+	/**
+	 * @tag Profile
+	 * @summary Выбор эмодзи в профиле
+	 * @security token
+	 */
+	@Patch('/set-badge')
+	public async setBadge(
+		@User() user: UserData,
+		@Body() body: ProfileDto.SetBadge,
+	): Promise<CommonDto.BooleanResponse> {
+		return this.service.setBadge(user.id, body.badge);
+	}
+
+	/**
+	 * @tag Profile
+	 * @summary Выбор своего цвета
+	 * @security token
+	 */
+	@Patch('/set-color')
+	public async setColor(
+		@User() user: UserData,
+		@Body() body: ProfileDto.SetColor,
+	): Promise<CommonDto.BooleanResponse> {
+		return this.service.setColor(user.id, body.colorRgb);
 	}
 
 	/**
@@ -83,7 +110,7 @@ export class ProfileController {
 		@Body() body: ProfileDto.Edit,
 		@UploadedFile() avatarFilename?: Express.Multer.File,
 	): Promise<ProfileDto.Entity> {
-		return await this.service.edit(user.id, {
+		return this.service.edit(user.id, {
 			...body,
 			avatarFilename: typeof body.avatarFilename === 'string' ? body.avatarFilename : avatarFilename,
 		});

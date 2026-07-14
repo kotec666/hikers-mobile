@@ -94,6 +94,8 @@ export const users = pgTable(
 		password: varchar('password', { length: 255 }).notNull(),
 		name: varchar('name', { length: 255 }),
 		username: varchar('username', { length: 63 }).unique(),
+		color: varchar('color', { length: 20 }).default('rgb(34,203,90)').notNull(),
+		badge: varchar('badge', { length: 12 }),
 		avatarFilename: varchar('avatar_filename', { length: 255 }).references(() => media.filename),
 		termsAcceptedAt: timestamp('terms_accepted_at'),
 		// @TODO если будет смена почты, то обязательно СБРАСЫВАТЬ это поле!
@@ -223,7 +225,6 @@ export const trainingParticipants = pgTable(
 		trainingId: uuid('training_id')
 			.notNull()
 			.references(() => training.id),
-		colorHex: varchar('color_hex', { length: 7 }),
 	},
 	(table) => [uniqueIndex('trn_part_idx').on(table.userId, table.trainingId)],
 );
