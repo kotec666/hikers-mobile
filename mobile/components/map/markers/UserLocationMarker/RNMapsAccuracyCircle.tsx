@@ -15,6 +15,7 @@ export interface RNMapsAccuracyCircleHandle {
 	setCircleCenter: (center: IPoint | null) => void
 	hideCircle: (hidden: boolean) => void
 	setAccuracy: (accuracy: number | null) => void
+	setColor: (color: string) => void
 }
 
 type CircleRef = React.ComponentRef<typeof Circle>
@@ -24,6 +25,7 @@ const RNMapsAccuracyCircle = forwardRef<RNMapsAccuracyCircleHandle, IProps>((pro
 	const circleRef = useRef<CircleRef | null>(null)
 	const radiusRef = useRef(0)
 	const opacityRef = useRef(0.2)
+	const currentColorRef = useRef(props.color ?? 'rgb(0, 200, 100)')
 
 	const setHiddenCircle = useCallback(
 		(hidden: boolean) => {
@@ -60,7 +62,13 @@ const RNMapsAccuracyCircle = forwardRef<RNMapsAccuracyCircleHandle, IProps>((pro
 			})
 		},
 
-		hideCircle: (hidden) => setHiddenCircle(hidden)
+		hideCircle: (hidden) => setHiddenCircle(hidden),
+
+		setColor: (color: string) => {
+			currentColorRef.current = color
+			const fillColor = setRgbaOpacity(color, opacityRef.current || 0.2)
+			circleRef.current?.setNativeProps({ fillColor })
+		}
 	}))
 
 	if (!initialPoint?.lat || !initialPoint?.lon) return null

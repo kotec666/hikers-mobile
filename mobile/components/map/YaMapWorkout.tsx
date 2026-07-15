@@ -14,11 +14,11 @@ import YaMapUserLocationMarker, {
 import { useWorkoutPath } from '@/hooks/useWorkoutPath'
 import YaMapFinishLocationMarker from '@/components/map/markers/FinishLocationMarker/YaMapFinishLocationMarker'
 import { cn } from '@/helpers/cn'
-import { useAuthStore } from '@/store/authStore'
 
 export interface IYaMapWorkoutProps {
 	rounded?: number
 	bordered?: boolean
+	routeColor?: string
 	needSaveCenter?: boolean
 	needFinishMarker?: boolean
 	needFitInitialRoute?: boolean
@@ -44,7 +44,6 @@ export interface YaMapWorkoutHandle {
 }
 
 const YaMapWorkout = forwardRef<YaMapWorkoutHandle, IYaMapWorkoutProps>((props, ref) => {
-	const { user } = useAuthStore()
 	const mapRef = useRef<YamapRef>(null)
 	const isAnimationBlockedRef = useRef<boolean>(false)
 	const mapInitialRegionSettingsRef = useRef<InitialRegion>(getYaMapSettings())
@@ -55,7 +54,8 @@ const YaMapWorkout = forwardRef<YaMapWorkoutHandle, IYaMapWorkoutProps>((props, 
 			segment.polylineRef.current?.setNativeProps({
 				points
 			})
-		}
+		},
+		routeColor: props.routeColor
 	})
 
 	useImperativeHandle(ref, () => ({
@@ -188,10 +188,10 @@ const YaMapWorkout = forwardRef<YaMapWorkoutHandle, IYaMapWorkoutProps>((props, 
 				<YaMapUserLocationMarker
 					ref={props.userLocationMarkerRef}
 					initialPosition={markerPosition}
-					color={user?.color}
+					color={props.routeColor}
 				/>
 
-				{startPosition && <YaMapStartLocationMarker position={startPosition} color={user?.color} />}
+				{startPosition && <YaMapStartLocationMarker position={startPosition} color={props.routeColor} />}
 
 				{segmentsRef.current.map((seg, idx) => (
 					<PolylineCustom
@@ -205,13 +205,15 @@ const YaMapWorkout = forwardRef<YaMapWorkoutHandle, IYaMapWorkoutProps>((props, 
 
 				{transitionMarkersRef.current.map((tm) =>
 					tm.type === 'pause' ? (
-						<YaMapPauseLocationMarker key={tm.id} position={tm.position} color={user?.color} />
+						<YaMapPauseLocationMarker key={tm.id} position={tm.position} color={props.routeColor} />
 					) : (
-						<YaMapResumeLocationMarker key={tm.id} position={tm.position} color={user?.color} />
+						<YaMapResumeLocationMarker key={tm.id} position={tm.position} color={props.routeColor} />
 					)
 				)}
 
-				{props.needFinishMarker && <YaMapFinishLocationMarker position={finishPosition} color={user?.color} />}
+				{props.needFinishMarker && (
+					<YaMapFinishLocationMarker position={finishPosition} color={props.routeColor} />
+				)}
 			</Yamap>
 		</View>
 	)

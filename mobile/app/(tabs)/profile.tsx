@@ -163,6 +163,7 @@ const Profile = () => {
 							needFinishMarker
 							needFitInitialRoute
 							interactiveDisabled
+							routeColor={item.userCreator.color}
 							initialLocations={adaptLocations(item.training.participants[0].route.points)}
 						/>
 					}

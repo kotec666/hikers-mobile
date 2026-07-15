@@ -1,4 +1,4 @@
-import React from 'react'
+import React, { forwardRef, useImperativeHandle, useRef } from 'react'
 import { View } from 'react-native'
 import MapView, { Polyline } from 'react-native-maps'
 import {
@@ -12,15 +12,18 @@ import {
 	fifthPoint,
 	sixthPoint
 } from '@/constants/RNMap'
-import Animated from 'react-native-reanimated'
 import { MapPolylineProps } from 'react-native-maps/dist/src/MapPolyline'
-import RNMapsUserLocationMarker from '@/components/map/markers/UserLocationMarker/RNMapsUserLocationMarker'
+import RNMapsUserLocationMarker, {
+	RNMapsUserLocationMarkerHandle
+} from '@/components/map/markers/UserLocationMarker/RNMapsUserLocationMarker'
 import RNMapsStartLocationMarker from '@/components/map/markers/StartLocationMarker/RNMapsStartLocationMarker'
 import RNMapsPauseLocationMarker from '@/components/map/markers/PauseLocationMarker/RNMapsPauseLocationMarker'
 import RNMapsResumeLocationMarker from '@/components/map/markers/ResumeLocationMarker/RNMapsResumeLocationMarker'
 import RNMapsFinishLocationMarker from '@/components/map/markers/FinishLocationMarker/RNMapsFinishLocationMarker'
+import { setRgbaOpacity } from '@/helpers/colors/setRgbaOpacity'
 
 export interface IRNMapComponentColorPickProps {
+	rnMapUserLocationMarkerRef: React.RefObject<RNMapsUserLocationMarkerHandle | null>
 	activeColor?: string
 	interactiveDisabled?: boolean
 	maxContainerHeight?: number
@@ -35,8 +38,23 @@ export interface IRNMapComponentColorPickProps {
 	animatedFillColorWithOpacityProps?: Partial<{ fillColor: string }>
 }
 
-export const AnimatedPolyline = Animated.createAnimatedComponent(Polyline)
-const RNMapComponentColorPick = (props: IRNMapComponentColorPickProps) => {
+export interface RNMapColorPickHandle {
+	setRNMapColor: (color: string) => void
+}
+
+const RNMapComponentColorPick = forwardRef<RNMapColorPickHandle, IRNMapComponentColorPickProps>((props, ref) => {
+	const polylineRef1 = useRef<React.ComponentRef<typeof Polyline>>(null)
+	const polylineRef2 = useRef<React.ComponentRef<typeof Polyline>>(null)
+	const polylineRef3 = useRef<React.ComponentRef<typeof Polyline>>(null)
+
+	useImperativeHandle(ref, () => ({
+		setRNMapColor: (color: string) => {
+			polylineRef1.current?.setNativeProps({ strokeColor: color })
+			polylineRef2.current?.setNativeProps({ strokeColor: setRgbaOpacity(color, 0.5) })
+			polylineRef3.current?.setNativeProps({ strokeColor: color })
+		}
+	}))
+
 	return (
 		<View
 			pointerEvents={props.interactiveDisabled ? 'none' : 'auto'}
@@ -65,37 +83,41 @@ const RNMapComponentColorPick = (props: IRNMapComponentColorPickProps) => {
 				showsScale
 			>
 				<RNMapsUserLocationMarker
+					ref={props.rnMapUserLocationMarkerRef}
 					initialPosition={mapCenter}
 					debugAccuracyM={20}
 					animatedFillProps={props.animatedFillProps}
 					animatedFillColorWithOpacityProps={props.animatedFillColorWithOpacityProps}
 				/>
 
-				<AnimatedPolyline
+				<Polyline
+					ref={polylineRef1}
 					strokeWidth={4}
+					strokeColor={props.activeColor ?? 'rgb(0, 200, 100)'}
 					coordinates={[
 						{ latitude: firstPoint.lat, longitude: firstPoint.lon },
 						{ latitude: secondPoint.lat, longitude: secondPoint.lon }
 					]}
-					animatedProps={props.animatedStrokeColorProps}
 				/>
 
-				<AnimatedPolyline
+				<Polyline
+					ref={polylineRef2}
 					strokeWidth={4}
+					strokeColor={setRgbaOpacity(props.activeColor ?? 'rgb(0, 200, 100)', 0.5)}
 					coordinates={[
 						{ latitude: thirdPoint.lat, longitude: thirdPoint.lon },
 						{ latitude: fourthPoint.lat, longitude: fourthPoint.lon }
 					]}
-					animatedProps={props.animatedStrokeColorWithOpacityProps}
 				/>
 
-				<AnimatedPolyline
+				<Polyline
+					ref={polylineRef3}
 					strokeWidth={4}
+					strokeColor={props.activeColor ?? 'rgb(0, 200, 100)'}
 					coordinates={[
 						{ latitude: fifthPoint.lat, longitude: fifthPoint.lon },
 						{ latitude: sixthPoint.lat, longitude: sixthPoint.lon }
 					]}
-					animatedProps={props.animatedStrokeColorProps}
 				/>
 				<RNMapsStartLocationMarker position={firstPoint} animatedStrokeProps={props.animatedStrokeProps} />
 				<RNMapsPauseLocationMarker position={secondPoint} animatedFillProps={props.animatedFillProps} />
@@ -104,7 +126,9 @@ const RNMapComponentColorPick = (props: IRNMapComponentColorPickProps) => {
 			</MapView>
 		</View>
 	)
-}
+})
+
+RNMapComponentColorPick.displayName = 'RNMapComponentColorPick'
 
 export default React.memo(RNMapComponentColorPick, (prev, next) => {
 	return (

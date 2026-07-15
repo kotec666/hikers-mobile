@@ -16,6 +16,9 @@ import { KeyboardAwareScrollView } from 'react-native-keyboard-controller'
 import MapComponentColorPick from '@/components/map/MapComponentColorPick'
 import { useAnimatedColorPickProps } from '@/hooks/useAnimatedColorPickProps'
 import { useProfileQuery, useUpdateProfileColorMutation } from '@/queries/my-profile'
+import { RNMapColorPickHandle } from '@/components/map/RNMapComponentColorPick'
+import { scheduleOnRN } from 'react-native-worklets'
+import { RNMapsUserLocationMarkerHandle } from '@/components/map/markers/UserLocationMarker/RNMapsUserLocationMarker'
 
 const { height } = Dimensions.get('screen')
 const { width } = Dimensions.get('window')
@@ -44,6 +47,9 @@ const SettingsPickAColorPage = () => {
 	const router = useRouter()
 
 	const isChangedRef = useRef(false)
+	const RNMapComponentRef = useRef<RNMapColorPickHandle>(null)
+	const rnMapUserLocationMarkerRef = useRef<RNMapsUserLocationMarkerHandle>(null)
+
 	const { data: profileData, isFetching: isProfileFetching } = useProfileQuery()
 	const { mutateAsync: updateProfileColor, isPending } = useUpdateProfileColorMutation()
 
@@ -92,14 +98,21 @@ const SettingsPickAColorPage = () => {
 	const animatedFillColorProps = useAnimatedColorPickProps('fillColor', false, currentColor, 1)
 	const animatedFillColorWithOpacityProps = useAnimatedColorPickProps('fillColor', true, currentColor, 0.2)
 
+	const setColorOnMap = (rgb: string) => {
+		RNMapComponentRef.current?.setRNMapColor(rgb)
+		rnMapUserLocationMarkerRef.current?.setAccuracyCircleColor(rgb)
+	}
+
 	// runs on the js thread on color pick
 	const onColorPick = (color: string | ColorFormatsObject) => {
 		isChangedRef.current = true
 		if (typeof color === 'string') {
 			currentColor.value = color
 			setColor(color)
+			RNMapComponentRef.current?.setRNMapColor(color)
 		} else {
 			setColor(color.rgb)
+			RNMapComponentRef.current?.setRNMapColor(color.rgb)
 		}
 	}
 
@@ -107,6 +120,7 @@ const SettingsPickAColorPage = () => {
 	const onColorChange = (color: ColorFormatsObject) => {
 		'worklet'
 		currentColor.value = color.rgb
+		scheduleOnRN(setColorOnMap, color.rgb)
 	}
 
 	const colorBoxSize = (width - CONTAINER_PADDING * 2 - GAP * (COLUMNS - 1)) / COLUMNS
@@ -157,6 +171,8 @@ const SettingsPickAColorPage = () => {
 							</Animated.Text>
 						</HeaderBack>
 						<MapComponentColorPick
+							rnMapColorPickRef={RNMapComponentRef}
+							rnMapUserLocationMarkerRef={rnMapUserLocationMarkerRef}
 							rounded={25}
 							activeColor={color}
 							// interactiveDisabled

@@ -25,6 +25,7 @@ export interface RNMapsUserLocationMarkerHandle {
 	setAccuracy: (accuracy: number | null) => void
 	setMarkerPosition: (newCoords: IPoint | null, durationInMs?: number) => void
 	setMarkerHeading: (heading: number | null, durationInMs?: number) => void
+	setAccuracyCircleColor: (color: string) => void
 }
 
 type MarkerRef = React.ComponentRef<typeof Marker>
@@ -73,7 +74,10 @@ const RNMapsUserLocationMarker = forwardRef<RNMapsUserLocationMarkerHandle, IPro
 		() => ({
 			setAccuracy: handleSetAccuracy,
 			setMarkerPosition: handleSetMarkerPosition,
-			setMarkerHeading: handleSetMarkerHeading
+			setMarkerHeading: handleSetMarkerHeading,
+			setAccuracyCircleColor: (color: string) => {
+				accuracyRef?.current?.setColor(color)
+			}
 		}),
 		[handleSetAccuracy, handleSetMarkerPosition, handleSetMarkerHeading]
 	)

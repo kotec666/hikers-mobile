@@ -30,7 +30,7 @@ const PeopleListItem = (props: IProps) => {
 				}}
 				className="flex-1"
 			>
-				<View className="flex-row gap-[15px] items-center">
+				<View className="flex-row gap-[15px] items-center pt-1">
 					<UserAvatar avatar={props.avatar} />
 					<Text style={{ fontFamily: fontFamily.medium }} className="text-gray-ab text-base">
 						{props.id === user?.id ? 'Вы' : `${props.name || props.username || '-'}`}

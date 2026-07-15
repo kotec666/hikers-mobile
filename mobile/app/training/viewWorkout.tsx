@@ -551,6 +551,7 @@ export default function ViewWorkout() {
 								rounded={25}
 								needFinishMarker
 								needFitInitialRoute
+								routeColor={user?.color}
 								maxContainerHeight={320}
 								initialLocations={mapLocations}
 							/>

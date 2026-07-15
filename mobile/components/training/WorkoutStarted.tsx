@@ -19,6 +19,7 @@ import { YaMapUserLocationMarkerHandle } from '@/components/map/markers/UserLoca
 import { RNMapWorkoutHandle } from '@/components/map/RNMapWorkout'
 import { RNMapsUserLocationMarkerHandle } from '@/components/map/markers/UserLocationMarker/RNMapsUserLocationMarker'
 import WorkoutMap from '@/components/map/WorkoutMap'
+import { useAuthStore } from '@/store/authStore'
 
 interface IProps {
 	initialMarkerLocation?: Point | null
@@ -47,6 +48,7 @@ interface IProps {
 const { height } = Dimensions.get('screen')
 
 const WorkoutStarted = (props: IProps) => {
+	const { user } = useAuthStore()
 	const insets = useSafeAreaInsets()
 	const maxMapHeight = useMemo(() => height / 2 - 40 - insets.top, [insets.top])
 	const [peopleListHidden, setPeopleListHidden] = useState(true)
@@ -70,6 +72,7 @@ const WorkoutStarted = (props: IProps) => {
 				</Text>
 			</Container>
 			<WorkoutMap
+				routeColor={user?.color}
 				rnMapComponentRef={props.rnMapComponentRef}
 				yaMapComponentRef={props.yaMapComponentRef}
 				rnMapUserLocationMarkerRef={props.rnMapUserLocationMarkerRef}
