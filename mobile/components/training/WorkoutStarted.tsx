@@ -72,6 +72,7 @@ const WorkoutStarted = (props: IProps) => {
 				</Text>
 			</Container>
 			<WorkoutMap
+				key={user?.color}
 				routeColor={user?.color}
 				rnMapComponentRef={props.rnMapComponentRef}
 				yaMapComponentRef={props.yaMapComponentRef}

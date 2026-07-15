@@ -52,6 +52,7 @@ export const useAuthStore = create<AuthStore>((set, get) => ({
 
 	setUser: (user: IUser) => {
 		set({ user })
+		void setAuthData({ user })
 	},
 
 	logout: async () => {

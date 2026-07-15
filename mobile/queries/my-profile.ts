@@ -51,6 +51,7 @@ export const useUpdateProfileColorMutation = () => {
 			await queryClient.cancelQueries({ queryKey: QUERY_KEYS.MY_PROFILE })
 
 			const prevMyProfile = queryClient.getQueryData<IProfile>(QUERY_KEYS.MY_PROFILE)
+			const prevColor = user?.color
 
 			// Мой профиль
 			queryClient.setQueryData<IProfile>(QUERY_KEYS.MY_PROFILE, (old) => {
@@ -65,12 +66,15 @@ export const useUpdateProfileColorMutation = () => {
 				setUser({ ...user, color })
 			}
 
-			return { prevMyProfile }
+			return { prevMyProfile, prevColor }
 		},
 		onError: async (e, _color, context) => {
 			await getFieldsErrors(e)
 			if (context?.prevMyProfile) {
 				queryClient.setQueryData(QUERY_KEYS.MY_PROFILE, context.prevMyProfile)
+			}
+			if (user && context?.prevColor) {
+				setUser({ ...user, color: context.prevColor })
 			}
 		},
 		onSuccess: async () => {

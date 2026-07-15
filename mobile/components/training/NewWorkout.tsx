@@ -250,6 +250,7 @@ const NewWorkout = memo(
 					<HeaderBack>Новая тренировка</HeaderBack>
 				</Container>
 				<WorkoutMap
+					key={user?.color}
 					routeColor={user?.color}
 					rnMapComponentRef={props.rnMapComponentRef}
 					yaMapComponentRef={props.yaMapComponentRef}
