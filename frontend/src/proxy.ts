@@ -88,7 +88,7 @@ export function proxy(request: NextRequest) {
     default-src 'self';
     script-src ${scriptSrc} ${yandexDomains};
     script-src-elem 'self' 'unsafe-inline' ${yandexDomains};
-    style-src 'self' 'unsafe-inline';
+    style-src 'self' 'unsafe-inline' ${yandexDomains};
     media-src 'self';
     img-src 'self' blob: data: https://*;
     font-src 'self';
