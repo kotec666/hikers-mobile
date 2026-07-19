@@ -14,13 +14,18 @@ interface IProps {
 	children: ReactNode
 }
 
-export const BackButton = memo(({ onPress }: { onPress: () => void }) => {
+interface IRoundedButtonProps {
+	onPress: () => void
+	icon?: React.JSX.Element
+}
+
+export const RoundedButton = memo(({ onPress, icon }: IRoundedButtonProps) => {
 	const isIos = Platform.OS === 'ios'
 	const isGlassAvailable = isIos && isLiquidGlassAvailable()
 
 	const buttonContent = (
 		<Motion.View
-			className={cn('w-[50px] h-[50px] items-center justify-center', {
+			className={cn('w-[50px] h-[50px] items-center justify-center ', {
 				'border border-black-44 rounded-full': !isGlassAvailable,
 				'bg-black-0d': !isIos
 			})}
@@ -31,7 +36,7 @@ export const BackButton = memo(({ onPress }: { onPress: () => void }) => {
 				stiffness: 400
 			}}
 		>
-			<ArrowDownSvg style={{ transform: [{ rotate: '90deg' }] }} size={20} />
+			{icon ? icon : <ArrowDownSvg style={{ transform: [{ rotate: '90deg' }] }} size={20} />}
 		</Motion.View>
 	)
 
@@ -44,7 +49,7 @@ export const BackButton = memo(({ onPress }: { onPress: () => void }) => {
 	)
 
 	if (isGlassAvailable) {
-		return renderWithEffect(GlassView, {})
+		return renderWithEffect(GlassView, { colorScheme: 'dark' })
 	}
 
 	if (isIos) {
@@ -54,7 +59,7 @@ export const BackButton = memo(({ onPress }: { onPress: () => void }) => {
 	return <Motion.Pressable onPress={onPress}>{buttonContent}</Motion.Pressable>
 })
 
-BackButton.displayName = 'BackButton'
+RoundedButton.displayName = 'RoundedButton'
 
 const HeaderBack = memo((props: IProps) => {
 	const router = useRouter()
@@ -69,7 +74,7 @@ const HeaderBack = memo((props: IProps) => {
 
 	return (
 		<View className={cn('flex-row items-center gap-x-[16px]', props.className)}>
-			<BackButton onPress={handleClickBack} />
+			<RoundedButton onPress={handleClickBack} />
 			<Text className="text-[20px] text-white" style={{ fontFamily: fontFamily.bold }}>
 				{props.children}
 			</Text>

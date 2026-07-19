@@ -8,23 +8,23 @@ import { fontFamily } from '@/constants/Fonts'
 import PeopleListItem from '@/components/find-people/PeopleListItem'
 import { Button } from '@/components/ui/Button'
 import PostSearchResult from '@/components/ui/Post/PostSearchResult'
-import { LegendList, LegendListRef } from '@legendapp/list'
+import { LegendList, LegendListRef } from '@legendapp/list/react-native'
 import { IPost } from '@/api/posts'
 import { Colors } from '@/constants/Colors'
 import { useFocusEffect, useLocalSearchParams } from 'expo-router'
-import MapComponent from '@/components/map/MapComponent'
 import { adaptLocations } from '@/helpers/adaptPointsToIWorkoutLocationStorageItem'
 import TrainingsEmpty from '@/components/ui/Post/TrainingsEmpty'
 import { SearchType } from '@/shared/enums'
 import { IFoundPost, IFoundUser } from '@/api/search'
 import { PATH_TO_IMAGE } from '@/constants/PATH_TO_FILES'
-import { BackButton } from '@/components/ui/HeaderBack'
+import { RoundedButton } from '@/components/ui/HeaderBack'
 import { useFeedPostsQuery } from '@/queries/posts'
 import { useSearchQuery } from '@/queries/search'
 import { Page } from '@/components/ui/Page'
 import { KeyboardAvoidingView } from 'react-native-keyboard-controller'
 import { refetchAndHaptics } from '@/helpers/refetchAndHaptics'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
+import WorkoutMap from '@/components/map/WorkoutMap'
 
 const isUser = (item: IFoundUser | IFoundPost): item is IFoundUser => {
 	return 'username' in item
@@ -112,7 +112,7 @@ const PostsPage = () => {
 
 	useEffect(() => {
 		if (params.quickAction !== 'search') return
-
+		// eslint-disable-next-line react-hooks/set-state-in-effect -- реакция на quickAction из роутера (внешний источник), плюс императивный фокус инпута через ref
 		activateSearch()
 
 		const timeoutId = setTimeout(() => {
@@ -158,11 +158,14 @@ const PostsPage = () => {
 				isLiked={item.isLiked}
 				likesCount={item.likesCount}
 				mapComponent={
-					<MapComponent
+					<WorkoutMap
+						bordered
 						rounded={25}
 						needFinishMarker
+						needFitInitialRoute
 						interactiveDisabled
-						initialLocations={{ current: adaptLocations(item.training.participants[0].route.points) }}
+						routeColor={item.userCreator.color}
+						initialLocations={adaptLocations(item.training.participants[0].route.points)}
 					/>
 				}
 			/>
@@ -193,7 +196,7 @@ const PostsPage = () => {
 				<View style={{ flex: 1 }}>
 					<Container className="gap-[20px] flex-1">
 						<View className="flex-row justify-center items-center gap-[10px] w-full">
-							<BackButton
+							<RoundedButton
 								onPress={() => {
 									Keyboard.dismiss()
 									setState((s) => ({ ...s, isSearchActive: false }))
@@ -304,7 +307,7 @@ const PostsPage = () => {
 									}
 									contentContainerStyle={{
 										flexGrow: 1,
-										paddingBottom: insets.bottom + Platform.OS === 'android' ? 100 : 40,
+										paddingBottom: insets.bottom + (Platform.OS === 'android' ? 100 : 40),
 										paddingTop: 10
 									}}
 									showsVerticalScrollIndicator={false}
@@ -361,7 +364,7 @@ const PostsPage = () => {
 								/>
 							}
 							contentContainerStyle={{
-								paddingBottom: insets.bottom + Platform.OS === 'android' ? 100 : 40,
+								paddingBottom: insets.bottom + (Platform.OS === 'android' ? 100 : 40),
 								flexGrow: 1
 							}}
 							showsVerticalScrollIndicator={false}

@@ -13,15 +13,15 @@ import { Point } from 'react-native-yamap-plus'
 import { MetricDistanceHandle } from '@/components/training/tabs/metrics/MetricDistance'
 import { MetricCaloriesHandle } from '@/components/training/tabs/metrics/MetricCalories'
 import { MetricHeightHandle } from '@/components/training/tabs/metrics/MetricHeight'
-import MapComponentSegments, { YaMapComponentSegmentsHandle } from '@/components/map/MapComponentSegments'
 import { MetricAvgSpeedHandle } from '@/components/training/tabs/metrics/MetricAvgSpeed'
+import { YaMapWorkoutHandle } from '@/components/map/YaMapWorkout'
 import { YaMapUserLocationMarkerHandle } from '@/components/map/markers/UserLocationMarker/YaMapUserLocationMarker'
+import { RNMapWorkoutHandle } from '@/components/map/RNMapWorkout'
+import { RNMapsUserLocationMarkerHandle } from '@/components/map/markers/UserLocationMarker/RNMapsUserLocationMarker'
+import WorkoutMap from '@/components/map/WorkoutMap'
+import { useAuthStore } from '@/store/authStore'
 
 interface IProps {
-	// headingDebug: number | null
-	// accuracyDebug: number | null
-	// altitudeDebug: number | null
-	// altitudeAccuracyDebug: number | null
 	initialMarkerLocation?: Point | null
 	latestUserMarkerLocationRef?: RefObject<Point | null>
 	initialLocationsState: IWorkoutLocationStorageItem[]
@@ -31,8 +31,11 @@ interface IProps {
 	handleClickOpenEndModal: () => void
 	workoutType: TrainingType
 
-	yaMapComponentRef: React.RefObject<YaMapComponentSegmentsHandle | null>
+	yaMapComponentRef: React.RefObject<YaMapWorkoutHandle | null>
 	yaMapUserLocationMarkerRef: React.RefObject<YaMapUserLocationMarkerHandle | null>
+
+	rnMapComponentRef: React.RefObject<RNMapWorkoutHandle | null>
+	rnMapUserLocationMarkerRef: React.RefObject<RNMapsUserLocationMarkerHandle | null>
 
 	metricAvgSpeedRef: React.RefObject<MetricAvgSpeedHandle | null>
 	metricSpeedRef: React.RefObject<MetricSpeedHandle | null>
@@ -45,6 +48,7 @@ interface IProps {
 const { height } = Dimensions.get('screen')
 
 const WorkoutStarted = (props: IProps) => {
+	const { user } = useAuthStore()
 	const insets = useSafeAreaInsets()
 	const maxMapHeight = useMemo(() => height / 2 - 40 - insets.top, [insets.top])
 	const [peopleListHidden, setPeopleListHidden] = useState(true)
@@ -62,26 +66,23 @@ const WorkoutStarted = (props: IProps) => {
 
 	return (
 		<>
-			{/*<CompassDebug*/}
-			{/*	heading={props.headingDebug || 0}*/}
-			{/*	accuracy={props.accuracyDebug || 0}*/}
-			{/*	altitude={props.altitudeDebug || 0}*/}
-			{/*	altitudeAccuracy={props.altitudeAccuracyDebug || 0}*/}
-			{/*	position="bottom-right"*/}
-			{/*/>*/}
 			<Container>
 				<Text className="mb-[20px] text-white text-[20px]" style={{ fontFamily: fontFamily.bold }}>
 					Тренировка
 				</Text>
 			</Container>
-			<MapComponentSegments
-				ref={props.yaMapComponentRef}
-				userLocationMarkerRef={props.yaMapUserLocationMarkerRef}
+			<WorkoutMap
+				key={user?.color}
+				routeColor={user?.color}
+				rnMapComponentRef={props.rnMapComponentRef}
+				yaMapComponentRef={props.yaMapComponentRef}
+				rnMapUserLocationMarkerRef={props.rnMapUserLocationMarkerRef}
+				yaMapUserLocationMarkerRef={props.yaMapUserLocationMarkerRef}
+				needSaveCenter
 				latestUserMarkerLocationRef={props.latestUserMarkerLocationRef}
 				initialMarkerLocation={props.initialMarkerLocation}
 				initialLocations={props.initialLocationsState}
 				maxContainerHeight={mapViewHidden ? maxMapHeight : 0}
-				maxMapHeight={mapViewHidden ? maxMapHeight : 0}
 			/>
 			<Container style={{ paddingBottom: insets.bottom + 35 }} className="flex-1 w-full pt-[16px]">
 				<View className="flex-1 justify-between gap-[16px]">

@@ -2,25 +2,30 @@ import React, { forwardRef, useImperativeHandle, useCallback, useRef } from 'rea
 import { setRgbaOpacity } from '@/helpers/colors/setRgbaOpacity'
 import { Circle } from 'react-native-maps'
 import { IPoint } from '@/types/interfaces'
+import Animated from 'react-native-reanimated'
 
 interface IProps {
 	initialPosition: IPoint
 	color?: string
 	debugAccuracyM?: number
+	animatedFillColorWithOpacityProps?: Partial<{ fillColor: string }>
 }
 
 export interface RNMapsAccuracyCircleHandle {
 	setCircleCenter: (center: IPoint | null) => void
 	hideCircle: (hidden: boolean) => void
 	setAccuracy: (accuracy: number | null) => void
+	setColor: (color: string) => void
 }
 
 type CircleRef = React.ComponentRef<typeof Circle>
+const AnimatedCircle = Animated.createAnimatedComponent(Circle)
 const RNMapsAccuracyCircle = forwardRef<RNMapsAccuracyCircleHandle, IProps>((props, ref) => {
 	const initialPoint = useRef(props.initialPosition).current
 	const circleRef = useRef<CircleRef | null>(null)
 	const radiusRef = useRef(0)
 	const opacityRef = useRef(0.2)
+	const currentColorRef = useRef(props.color ?? 'rgb(0, 200, 100)')
 
 	const setHiddenCircle = useCallback(
 		(hidden: boolean) => {
@@ -57,19 +62,27 @@ const RNMapsAccuracyCircle = forwardRef<RNMapsAccuracyCircleHandle, IProps>((pro
 			})
 		},
 
-		hideCircle: (hidden) => setHiddenCircle(hidden)
+		hideCircle: (hidden) => setHiddenCircle(hidden),
+
+		setColor: (color: string) => {
+			currentColorRef.current = color
+			const fillColor = setRgbaOpacity(color, opacityRef.current || 0.2)
+			circleRef.current?.setNativeProps({ fillColor })
+		}
 	}))
 
 	if (!initialPoint?.lat || !initialPoint?.lon) return null
 	return (
-		<Circle
+		<AnimatedCircle
 			ref={circleRef}
 			center={{
 				latitude: initialPoint.lat,
 				longitude: initialPoint.lon
 			}}
 			radius={props.debugAccuracyM ?? radiusRef.current}
-			fillColor={setRgbaOpacity(props.color ?? 'rgb(0, 200, 100)', opacityRef.current)}
+			//fillColor={setRgbaOpacity(props.color ?? 'rgb(0, 200, 100)', opacityRef.current)}
+			fillColor={props.color ?? 'rgba(0, 200, 100, 0.2)'}
+			animatedProps={props.animatedFillColorWithOpacityProps}
 			strokeColor="transparent"
 			strokeWidth={0}
 			style={{

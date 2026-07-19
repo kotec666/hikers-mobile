@@ -1,4 +1,4 @@
-import { StyleSheet, View } from 'react-native'
+import { View } from 'react-native'
 import MapView, { Polyline, Camera, EdgePadding } from 'react-native-maps'
 import React, { forwardRef, useCallback, useImperativeHandle, useMemo, useRef } from 'react'
 import RNMapsStartLocationMarker from '@/components/map/markers/StartLocationMarker/RNMapsStartLocationMarker'
@@ -13,23 +13,34 @@ import { IPoint } from '@/types/interfaces'
 import RNMapsUserLocationMarker, {
 	RNMapsUserLocationMarkerHandle
 } from '@/components/map/markers/UserLocationMarker/RNMapsUserLocationMarker'
+import { DEFAULT_APPLE_LEGAL_POSITION, DEFAULT_APPLE_LOGO_POSITION } from '@/constants/RNMap'
+import RNSegmentPolyline from '@/components/map/polyline/RNSegmentPolyline'
+import { cn } from '@/helpers/cn'
 
-export enum MapAnimationType {
+export enum RNMapAnimationType {
 	SMOOTH = 'smooth',
 	LINEAR = 'linear'
 }
 
 type PolylineRef = React.ComponentRef<typeof Polyline>
 
-export interface MapComponentSegmentsHandle {
-	fitAllMarkers: () => void
-	setMapCenter: (center: IPoint | null, zoomInMeters?: number, animationType?: MapAnimationType) => void
+export interface RNMapWorkoutHandle {
+	setMapCenter: (newCenter: {
+		center: IPoint | null
+		zoomInMeters?: number
+		animationType?: RNMapAnimationType
+	}) => void
 	updatePath: (newItem: IWorkoutLocationStorageItem[]) => void
 }
 
-interface IProps {
+export interface IRNMapWorkoutProps {
 	rounded?: number
+	bordered?: boolean
+	routeColor?: string
+	needSaveCenter?: boolean
 	needFinishMarker?: boolean
+	needFitInitialRoute?: boolean
+	interactiveDisabled?: boolean
 	maxContainerHeight?: number
 	appleLogoPosition?: EdgePadding
 	appleLegalPosition?: EdgePadding
@@ -39,10 +50,7 @@ interface IProps {
 	latestUserMarkerLocationRef?: React.RefObject<IPoint | null> | undefined
 }
 
-const DEFAULT_APPLE_LOGO_POSITION = { top: 2, right: 48, bottom: 0, left: 0 }
-const DEFAULT_APPLE_LEGAL_POSITION = { top: 17, right: 10, bottom: 0, left: 0 }
-
-const RNMapWorkout = forwardRef<MapComponentSegmentsHandle, IProps>((props, ref) => {
+const RNMapWorkout = forwardRef<RNMapWorkoutHandle, IRNMapWorkoutProps>((props, ref) => {
 	const mapRef = useRef<MapView | null>(null)
 	const isAnimationBlockedRef = useRef<boolean>(false)
 	const mapInitialCameraSettingsRef = useRef<Camera>(getRNMapSettings())
@@ -52,7 +60,7 @@ const RNMapWorkout = forwardRef<MapComponentSegmentsHandle, IProps>((props, ref)
 		isAnimationBlockedRef.current = needBlock
 	}, [])
 
-	const { segmentsRef, transitionMarkersRef, updatePath } = useWorkoutPath<PolylineRef>({
+	const { segmentsRef, transitionMarkersRef, updatePath, initPath } = useWorkoutPath<PolylineRef>({
 		createPolylineRef: () => React.createRef<PolylineRef>(),
 		onNativeUpdate: (segment, points) => {
 			segment.polylineRef.current?.setNativeProps({
@@ -61,13 +69,14 @@ const RNMapWorkout = forwardRef<MapComponentSegmentsHandle, IProps>((props, ref)
 					longitude: p.lon
 				}))
 			})
-		}
+		},
+		routeColor: props.routeColor
 	})
 
 	const changeMapCenter = async (
 		center: IPoint | null,
 		zoomInMeters?: number,
-		animationType: MapAnimationType = MapAnimationType.SMOOTH
+		animationType: RNMapAnimationType = RNMapAnimationType.SMOOTH
 	) => {
 		if (isAnimationBlockedRef.current) return
 		if (!center) return
@@ -76,26 +85,42 @@ const RNMapWorkout = forwardRef<MapComponentSegmentsHandle, IProps>((props, ref)
 		const cameraPosition = await mapRef.current.getCamera()
 		const newCameraPosition = {
 			...cameraPosition,
-			altitude: zoomInMeters ?? 500, // аналог zoom (в метрах)
+			altitude: zoomInMeters, //  ?? 500 аналог zoom (в метрах)
 			center: { latitude: center.lat, longitude: center.lon }
 		}
-		if (animationType === MapAnimationType.SMOOTH) {
+		if (animationType === RNMapAnimationType.SMOOTH) {
 			return mapRef.current.animateCamera(newCameraPosition)
 		} else {
 			return mapRef.current.setCamera(newCameraPosition)
 		}
 	}
 
-	const fitAllMarkers = () => {
-		if (!mapRef.current) return
-		mapRef.current.fitToElements()
-	}
-
 	useImperativeHandle(ref, () => ({
-		fitAllMarkers,
-		setMapCenter: (center, zoomInMeters, animationType) => changeMapCenter(center, zoomInMeters, animationType),
+		setMapCenter: (newCenter) => changeMapCenter(newCenter.center, newCenter.zoomInMeters, newCenter.animationType),
 		updatePath: (newItems) => updatePath(newItems)
 	}))
+
+	const fitInitialRoute = () => {
+		if (!mapRef.current) return
+		const initialLocations = props.initialLocations
+		if (!initialLocations || initialLocations.length === 0) return
+		const edgePaddingValue = 60
+		mapRef.current.fitToCoordinates(
+			initialLocations.map((loc) => ({
+				latitude: loc.locationObject.coords.latitude,
+				longitude: loc.locationObject.coords.longitude
+			})),
+			{
+				edgePadding: {
+					top: edgePaddingValue,
+					left: edgePaddingValue,
+					right: edgePaddingValue,
+					bottom: edgePaddingValue
+				},
+				animated: false
+			}
+		)
+	}
 
 	const startPosition = useMemo(() => {
 		if (props.initialLocations && props.initialLocations.length > 0) {
@@ -120,21 +145,30 @@ const RNMapWorkout = forwardRef<MapComponentSegmentsHandle, IProps>((props, ref)
 
 	return (
 		<View
+			pointerEvents={props.interactiveDisabled ? 'none' : 'auto'}
+			className={cn('overflow-hidden', {
+				'border-[1px] border-white/20': props.bordered
+			})}
 			style={{
-				flex: 1,
-				overflow: 'hidden',
+				width: '100%',
+				height: '100%',
 				borderRadius: props.rounded || 0,
 				maxHeight: props.maxContainerHeight ?? 'auto'
 			}}
 		>
 			<MapView
 				ref={mapRef}
-				style={StyleSheet.absoluteFill}
 				userInterfaceStyle="dark"
+				style={{ height: '100%', width: '100%' }} // style={{ flex: 1 }}
+				scrollEnabled={!props.interactiveDisabled}
+				zoomEnabled={!props.interactiveDisabled}
+				rotateEnabled={!props.interactiveDisabled}
+				pitchEnabled={!props.interactiveDisabled}
 				onRegionChangeStart={() => handleBlockAnimation(true)}
 				onRegionChangeComplete={() => {
 					handleBlockAnimation(false)
 
+					if (!props.needSaveCenter) return
 					const currentMap = mapRef.current
 					if (!currentMap) return
 
@@ -149,35 +183,44 @@ const RNMapWorkout = forwardRef<MapComponentSegmentsHandle, IProps>((props, ref)
 						})
 						.catch(() => {})
 				}}
+				onMapReady={() => {
+					if (!props.needFitInitialRoute) return
+					const initialLocations = props.initialLocations
+					if (initialLocations?.length) {
+						initPath(initialLocations)
+					}
+
+					fitInitialRoute()
+				}}
 				showsScale
 				showsCompass={false}
 				initialCamera={mapInitialCameraSettingsRef.current}
 				appleLogoInsets={props.appleLogoPosition || DEFAULT_APPLE_LOGO_POSITION}
 				legalLabelInsets={props.appleLegalPosition || DEFAULT_APPLE_LEGAL_POSITION}
 			>
-				<RNMapsUserLocationMarker ref={props.userLocationMarkerRef} initialPosition={markerPosition} />
+				<RNMapsUserLocationMarker
+					ref={props.userLocationMarkerRef}
+					initialPosition={markerPosition}
+					color={props.routeColor}
+				/>
 
-				{startPosition && <RNMapsStartLocationMarker position={startPosition} />}
+				{startPosition && <RNMapsStartLocationMarker position={startPosition} color={props.routeColor} />}
 
 				{segmentsRef.current.map((seg, idx) => (
-					<Polyline
-						key={idx}
-						ref={seg.polylineRef}
-						strokeWidth={4}
-						strokeColor={seg.color}
-						coordinates={seg.points.map((p) => ({ latitude: p.lat, longitude: p.lon }))}
-					/>
+					<RNSegmentPolyline key={idx} polylineRef={seg.polylineRef} color={seg.color} points={seg.points} />
 				))}
 
 				{transitionMarkersRef.current.map((tm) =>
 					tm.type === 'pause' ? (
-						<RNMapsPauseLocationMarker key={tm.id} position={tm.position} />
+						<RNMapsPauseLocationMarker key={tm.id} position={tm.position} color={props.routeColor} />
 					) : (
-						<RNMapsResumeLocationMarker key={tm.id} position={tm.position} />
+						<RNMapsResumeLocationMarker key={tm.id} position={tm.position} color={props.routeColor} />
 					)
 				)}
 
-				{props.needFinishMarker && <RNMapsFinishLocationMarker position={finishPosition} />}
+				{props.needFinishMarker && (
+					<RNMapsFinishLocationMarker position={finishPosition} color={props.routeColor} />
+				)}
 			</MapView>
 		</View>
 	)
@@ -202,7 +245,11 @@ const isEdgePaddingEqual = (a?: EdgePadding, b?: EdgePadding) => {
 export default React.memo(RNMapWorkout, (prev, next) => {
 	const layoutPropsEqual =
 		prev.rounded === next.rounded &&
+		prev.bordered === next.bordered &&
+		prev.needSaveCenter === next.needSaveCenter &&
 		prev.needFinishMarker === next.needFinishMarker &&
+		prev.needFitInitialRoute === next.needFitInitialRoute &&
+		prev.interactiveDisabled === next.interactiveDisabled &&
 		prev.maxContainerHeight === next.maxContainerHeight &&
 		prev.userLocationMarkerRef === next.userLocationMarkerRef &&
 		prev.latestUserMarkerLocationRef === next.latestUserMarkerLocationRef &&

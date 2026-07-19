@@ -13,6 +13,7 @@ module.exports = defineConfig([
 			'@typescript-eslint/explicit-module-boundary-types': 'off',
 			'@typescript-eslint/no-explicit-any': 'off',
 			'@typescript-eslint/no-namespace': 'off',
+			'react-hooks/immutability': 'off',
 			'no-var': 'off',
 			'max-len': 'off'
 		}

@@ -1,33 +1,43 @@
 import { Container } from '@/components/ui/Container'
 import HeaderBack from '@/components/ui/HeaderBack'
-import { ScrollView, View, Pressable, Platform, StyleSheet, Dimensions } from 'react-native'
+import { View, Pressable, Platform, StyleSheet, Dimensions } from 'react-native'
 import { Colors } from '@/constants/Colors'
-import React, { useState } from 'react'
+import React, { useRef, useState } from 'react'
 import { fontFamily } from '@/constants/Fonts'
 import ColorPicker, { ColorFormatsObject, HueSlider, InputWidget, Panel1 } from 'reanimated-color-picker'
 import Animated, { useAnimatedStyle, useSharedValue } from 'react-native-reanimated'
 import { Button } from '@/components/ui/Button'
-import MapComponentColorPick from '@/components/map/MapComponentColorPick'
 import { FREE_COLORS } from '@shared/constants'
 import Modal from '@/components/ui/Modal/Modal'
 import { useRouter } from 'expo-router'
 import BlurProvider from '@/components/providers/BlurProvider'
 import { Page } from '@/components/ui/Page'
 import { KeyboardAwareScrollView } from 'react-native-keyboard-controller'
+import MapComponentColorPick from '@/components/map/MapComponentColorPick'
+import { useAnimatedColorPickProps } from '@/hooks/useAnimatedColorPickProps'
+import { useProfileQuery, useUpdateProfileColorMutation } from '@/queries/my-profile'
+import { RNMapColorPickHandle } from '@/components/map/RNMapComponentColorPick'
+import { scheduleOnRN } from 'react-native-worklets'
+import { RNMapsUserLocationMarkerHandle } from '@/components/map/markers/UserLocationMarker/RNMapsUserLocationMarker'
 
 const { height } = Dimensions.get('screen')
+const { width } = Dimensions.get('window')
+
+const GAP = 15
+const COLUMNS = 7
+const CONTAINER_PADDING = 16
 const MAP_HEIGHT = height / 3.2
 
 const Divider = () => {
 	return <View style={{ height: 1, backgroundColor: Colors['gray-3a'] }} />
 }
 
-const ColorBox = ({ color, onPress }: { color: string; onPress?: (color: string) => void }) => {
+const ColorBox = ({ color, size, onPress }: { color: string; size: number; onPress?: (color: string) => void }) => {
 	return (
 		<Pressable
 			onPress={() => onPress?.(color)}
 			className="w-[40px] h-[40px] border-2 border-white rounded-[4px]"
-			style={{ backgroundColor: color }}
+			style={{ backgroundColor: color, width: size, height: size }}
 		/>
 	)
 }
@@ -35,6 +45,17 @@ const ColorBox = ({ color, onPress }: { color: string; onPress?: (color: string)
 const SettingsPickAColorPage = () => {
 	const [notSavedModal, setNotSavedModal] = useState(false)
 	const router = useRouter()
+
+	const isChangedRef = useRef(false)
+	const RNMapComponentRef = useRef<RNMapColorPickHandle>(null)
+	const rnMapUserLocationMarkerRef = useRef<RNMapsUserLocationMarkerHandle>(null)
+
+	const { data: profileData, isFetching: isProfileFetching } = useProfileQuery()
+	const { mutateAsync: updateProfileColor, isPending } = useUpdateProfileColorMutation()
+
+	const currentSavedColor = profileData?.user.color
+
+	const isFreeMode = false
 
 	const handleCloseNotSavedModal = () => {
 		setNotSavedModal(false)
@@ -53,8 +74,16 @@ const SettingsPickAColorPage = () => {
 		}
 	}
 
-	const [color, setColor] = useState<string>('rgb(0, 200, 100)') // rgb(0,200,100) // alpha ,0.2
-	const currentColor = useSharedValue('rgb(0, 200, 100)')
+	const handleGoBack = () => {
+		if (isChangedRef.current) {
+			handleOpenNotSavedModal()
+		} else {
+			exitWithoutSave()
+		}
+	}
+
+	const [color, setColor] = useState<string>(currentSavedColor || 'rgb(0, 200, 100)')
+	const currentColor = useSharedValue(currentSavedColor || 'rgb(0, 200, 100)')
 
 	const animatedTextStyle = useAnimatedStyle(() => {
 		return {
@@ -62,13 +91,28 @@ const SettingsPickAColorPage = () => {
 		}
 	})
 
+	const animatedStrokeColorProps = useAnimatedColorPickProps('strokeColor', true, currentColor, 1)
+	const animatedStrokeColorWithOpacityProps = useAnimatedColorPickProps('strokeColor', true, currentColor, 0.5)
+	const animatedStrokeProps = useAnimatedColorPickProps('stroke', false, currentColor, 1)
+	const animatedFillProps = useAnimatedColorPickProps('fill', false, currentColor, 1)
+	const animatedFillColorProps = useAnimatedColorPickProps('fillColor', false, currentColor, 1)
+	const animatedFillColorWithOpacityProps = useAnimatedColorPickProps('fillColor', true, currentColor, 0.2)
+
+	const setColorOnMap = (rgb: string) => {
+		RNMapComponentRef.current?.setRNMapColor(rgb)
+		rnMapUserLocationMarkerRef.current?.setAccuracyCircleColor(rgb)
+	}
+
 	// runs on the js thread on color pick
 	const onColorPick = (color: string | ColorFormatsObject) => {
+		isChangedRef.current = true
 		if (typeof color === 'string') {
 			currentColor.value = color
 			setColor(color)
+			RNMapComponentRef.current?.setRNMapColor(color)
 		} else {
 			setColor(color.rgb)
+			RNMapComponentRef.current?.setRNMapColor(color.rgb)
 		}
 	}
 
@@ -76,9 +120,15 @@ const SettingsPickAColorPage = () => {
 	const onColorChange = (color: ColorFormatsObject) => {
 		'worklet'
 		currentColor.value = color.rgb
+		scheduleOnRN(setColorOnMap, color.rgb)
 	}
 
-	const isFreeMode = false
+	const colorBoxSize = (width - CONTAINER_PADDING * 2 - GAP * (COLUMNS - 1)) / COLUMNS
+
+	const onPressSaveColor = async () => {
+		isChangedRef.current = false
+		await updateProfileColor(color)
+	}
 
 	return (
 		<Page>
@@ -110,8 +160,8 @@ const SettingsPickAColorPage = () => {
 					keyboardShouldPersistTaps="handled"
 					bottomOffset={50}
 				>
-					<Container className="gap-[20px]">
-						<HeaderBack returnCallback={handleOpenNotSavedModal}>
+					<Container className="gap-[20px] flex-1">
+						<HeaderBack returnCallback={handleGoBack}>
 							Выбор{' '}
 							<Animated.Text
 								className="text-[20px]"
@@ -121,11 +171,18 @@ const SettingsPickAColorPage = () => {
 							</Animated.Text>
 						</HeaderBack>
 						<MapComponentColorPick
-							minMapHeight={MAP_HEIGHT}
-							maxMapHeight={MAP_HEIGHT}
+							rnMapColorPickRef={RNMapComponentRef}
+							rnMapUserLocationMarkerRef={rnMapUserLocationMarkerRef}
 							rounded={25}
-							// interactiveDisabled
 							activeColor={color}
+							// interactiveDisabled
+							maxContainerHeight={MAP_HEIGHT}
+							animatedStrokeColorProps={animatedStrokeColorProps}
+							animatedStrokeColorWithOpacityProps={animatedStrokeColorWithOpacityProps}
+							animatedStrokeProps={animatedStrokeProps}
+							animatedFillProps={animatedFillProps}
+							animatedFillColorProps={animatedFillColorProps}
+							animatedFillColorWithOpacityProps={animatedFillColorWithOpacityProps}
 						/>
 						{isFreeMode ? (
 							<View style={colorPickerStyle.pickerContainer}>
@@ -151,21 +208,28 @@ const SettingsPickAColorPage = () => {
 								</ColorPicker>
 							</View>
 						) : (
-							<ScrollView>
-								<View className="flex-row flex-wrap gap-[16px]">
-									{Object.values(FREE_COLORS).map((color) => {
-										return (
-											<ColorBox
-												key={color}
-												color={color}
-												onPress={(newColor) => onColorPick(newColor)}
-											/>
-										)
-									})}
-								</View>
-							</ScrollView>
+							<View className="flex-row flex-wrap" style={{ gap: GAP }}>
+								{Object.values(FREE_COLORS).map((color) => {
+									return (
+										<ColorBox
+											key={color}
+											color={color}
+											size={colorBoxSize}
+											onPress={(newColor) => onColorPick(newColor)}
+										/>
+									)
+								})}
+							</View>
 						)}
-						<Button variant="white">Сохранить</Button>
+						<View className="flex-1 justify-end">
+							<Button
+								variant="white"
+								onPress={onPressSaveColor}
+								isLoading={isPending || isProfileFetching}
+							>
+								Сохранить
+							</Button>
+						</View>
 					</Container>
 				</KeyboardAwareScrollView>
 			</BlurProvider>

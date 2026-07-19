@@ -11,7 +11,6 @@ export interface ISuccess {
 export interface IParticipant {
 	id: string
 	user: IUser
-	colorHex: null | string
 	route: ITrainingRoute
 	metrics: ITrainingMetrics
 }

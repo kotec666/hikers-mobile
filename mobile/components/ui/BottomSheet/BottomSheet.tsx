@@ -203,8 +203,8 @@ export default BottomSheet
 const styles = StyleSheet.create({
 	container: {
 		position: 'absolute',
-		borderTopLeftRadius: 50,
-		borderTopRightRadius: 50,
+		borderTopLeftRadius: 25,
+		borderTopRightRadius: 25,
 		left: 0,
 		right: 0,
 		bottom: 0,

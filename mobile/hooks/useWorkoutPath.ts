@@ -1,7 +1,7 @@
 import React, { useCallback, useRef, useState } from 'react'
-import { Colors } from '@/constants/Colors'
 import { IWorkoutLocationStorageItem } from '@/store/workoutStorage'
 import { IPoint } from '@/types/interfaces'
+import { setRgbaOpacity } from '@/helpers/colors/setRgbaOpacity'
 
 export interface Segment<TRef = unknown> {
 	points: IPoint[]
@@ -18,9 +18,13 @@ export interface TransitionMarker {
 interface Params<TRef> {
 	createPolylineRef: () => React.RefObject<TRef | null>
 	onNativeUpdate?: (segment: Segment<TRef>, points: IPoint[]) => void
+	routeColor?: string
 }
 
-export function useWorkoutPath<TRef>({ createPolylineRef, onNativeUpdate }: Params<TRef>) {
+export function useWorkoutPath<TRef>({ createPolylineRef, onNativeUpdate, routeColor }: Params<TRef>) {
+	const activeColor = routeColor || 'rgb(0, 200, 100)'
+	const pausedColor = setRgbaOpacity(activeColor, 0.5)
+
 	// Используем useState только для триггера рендера при добавлении НОВЫХ сегментов
 	const [, forceRender] = useState(0)
 
@@ -52,8 +56,8 @@ export function useWorkoutPath<TRef>({ createPolylineRef, onNativeUpdate }: Para
 			const newLocations = locations.slice(processedCount)
 			processedLocationCountRef.current = locations.length
 
-			const activeLineColor = Colors['green-main']
-			const pausedLineColor = Colors['gray-ab']
+			const activeLineColor = activeColor
+			const pausedLineColor = pausedColor
 
 			let hasStructureChanged = false
 
@@ -157,12 +161,21 @@ export function useWorkoutPath<TRef>({ createPolylineRef, onNativeUpdate }: Para
 				onNativeUpdate?.(lastSegment, workingPoints)
 			}
 		},
-		[createPolylineRef, onNativeUpdate]
+		[activeColor, createPolylineRef, onNativeUpdate, pausedColor]
+	)
+
+	const initPath = useCallback(
+		(locations: IWorkoutLocationStorageItem[]) => {
+			if (processedLocationCountRef.current > 0) return
+			updatePath(locations)
+		},
+		[updatePath]
 	)
 
 	return {
 		segmentsRef,
 		transitionMarkersRef,
-		updatePath
+		updatePath,
+		initPath
 	}
 }

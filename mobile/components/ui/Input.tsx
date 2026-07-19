@@ -8,7 +8,6 @@ import ErrorMessage from '@/components/ErrorMessage'
 
 export interface Props extends TextInputProps {
 	containerClassName?: string
-	className?: string
 	svg?: ReactNode
 	error?: string | boolean
 	isFind?: boolean
@@ -23,23 +22,19 @@ export const Input = forwardRef<TextInput, Props>(function Input(props, ref) {
 				ref={ref}
 				style={[
 					styles.input,
-					error
-						? { borderColor: Colors['red-8b'], color: Colors['red-ff'], backgroundColor: Colors['red-55'] }
-						: { borderColor: Colors['black-44'], color: 'white', backgroundColor: 'transparent' },
-					isFind ? { paddingRight: 42 } : { paddingRight: 16 },
-					restProps.multiline ? { height: 200, paddingVertical: 16, textAlignVertical: 'top' } : {},
-					{ paddingLeft: 16 }
-				]}
-				className={cn(
-					'border relative placeholder:text-gray-ab placeholder:text-[15px]',
 					{
-						'text-red-ff bg-red-55': error,
-						'text-white bg-black-25': !error,
-						'h-[50px] rounded-full': !restProps.multiline,
-						'rounded-[8px]': restProps.multiline
+						borderWidth: 1,
+						position: 'relative',
+						paddingLeft: 16,
+						paddingRight: isFind ? 42 : 16,
+						borderColor: error ? Colors['red-8b'] : Colors['black-44'],
+						backgroundColor: error ? Colors['red-55'] : 'transparent',
+						color: error ? Colors['red-ff'] : 'white',
+						height: restProps.multiline ? 200 : 50,
+						borderRadius: restProps.multiline ? 8 : 999
 					},
-					className
-				)}
+					restProps.multiline ? { paddingVertical: 16, textAlignVertical: 'top' } : {}
+				]}
 				selectionColor={Colors['yellow-main']}
 				placeholderTextColor={Colors['black-5c']}
 				{...restProps}

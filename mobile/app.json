@@ -25,6 +25,7 @@
 			},
 			"package": "run.hikers.app",
 			"permissions": [
+				"android.permission.REQUEST_IGNORE_BATTERY_OPTIMIZATIONS",
 				"android.permission.ACCESS_COARSE_LOCATION",
 				"android.permission.ACCESS_FINE_LOCATION",
 				"android.permission.ACCESS_BACKGROUND_LOCATION",
@@ -50,6 +51,10 @@
 						},
 						"quick_action_search": {
 							"foregroundImage": "./assets/quick-actions/search.png",
+							"backgroundColor": "#FFFFFF"
+						},
+						"quick_action_report_a_problem": {
+							"foregroundImage": "./assets/quick-actions/report-a-problem.png",
 							"backgroundColor": "#FFFFFF"
 						}
 					}
@@ -114,7 +119,9 @@
 			"expo-secure-store",
 			"react-native-maps",
 			"@bacons/apple-targets",
-			"./plugins/with-live-activity-widget-embed-fix"
+			"./plugins/with-live-activity-widget-embed-fix",
+			"expo-status-bar",
+			["expo-native-sheet-emojis", { "searchLocales": ["en", "ru"] }]
 		],
 		"experiments": {
 			"typedRoutes": true

@@ -59,6 +59,24 @@ export const editProfileData = async (data: BodyInit): Promise<IProfile> => {
 	).json()
 }
 
+// Выбор своего цвета
+export const editProfileColor = async (colorRgb: string): Promise<ISuccess> => {
+	return (
+		await fetcher.patch('profile/set-color', {
+			json: { colorRgb }
+		})
+	).json()
+}
+
+// Выбор эмодзи в профиле
+export const editProfileBadge = async (badge: string): Promise<ISuccess> => {
+	return (
+		await fetcher.patch('profile/set-badge', {
+			json: { badge }
+		})
+	).json()
+}
+
 // Удаление своего аккаунта
 export const deleteMyAccount = async (): Promise<ISuccess> => {
 	return (await fetcher.delete('user/me')).json()

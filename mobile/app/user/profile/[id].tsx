@@ -11,10 +11,9 @@ import { PATH_TO_IMAGE } from '@/constants/PATH_TO_FILES'
 import Modal from '@/components/ui/Modal/Modal'
 import { FriendStatus } from '@shared/enums'
 import { AnimatedProfilePicture } from '@/components/ui/Profile/AnimatedProfilePicture'
-import { LegendList, LegendListRef } from '@legendapp/list'
+import { LegendList, LegendListRef } from '@legendapp/list/react-native'
 import { IPost } from '@/api/posts'
 import { Colors } from '@/constants/Colors'
-import MapComponent from '@/components/map/MapComponent'
 import { adaptLocations } from '@/helpers/adaptPointsToIWorkoutLocationStorageItem'
 import BlurProvider from '@/components/providers/BlurProvider'
 import HeaderBack from '@/components/ui/HeaderBack'
@@ -30,6 +29,7 @@ import { useToggleSubscribeMutation } from '@/queries/subscriptions'
 import { Page } from '@/components/ui/Page'
 import { refetchAndHaptics } from '@/helpers/refetchAndHaptics'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
+import WorkoutMap from '@/components/map/WorkoutMap'
 
 /**
  *
@@ -46,9 +46,9 @@ const friendStatusLabel = {
 
 const UserProfilePage = () => {
 	const router = useRouter()
+	const insets = useSafeAreaInsets()
 	const { id } = useLocalSearchParams<{ id: string }>()
 	const legendListRef = useRef<LegendListRef>(null)
-	const insets = useSafeAreaInsets()
 
 	const [isDeleteModalOpened, setIsDeleteModalOpened] = useState<boolean>(false)
 
@@ -171,11 +171,14 @@ const UserProfilePage = () => {
 				likesCount={item.likesCount}
 				participants={item.training.participants}
 				mapComponent={
-					<MapComponent
+					<WorkoutMap
+						bordered
 						rounded={25}
-						interactiveDisabled
 						needFinishMarker
-						initialLocations={{ current: adaptLocations(item.training.participants[0].route.points) }}
+						needFitInitialRoute
+						interactiveDisabled
+						routeColor={item.userCreator.color}
+						initialLocations={adaptLocations(item.training.participants[0].route.points)}
 					/>
 				}
 			/>
@@ -264,25 +267,39 @@ const UserProfilePage = () => {
 													bordered
 													imageUrl={`${PATH_TO_IMAGE}${profileData?.user?.avatarFilename}`}
 												/>
-												{/*<MoreOptionsButton*/}
-												{/*	icon={<MoreOptionsSvg />}*/}
-												{/*	params={[*/}
-												{/*		{ label: 'Редактировать профиль', action: () => {} },*/}
-												{/*		{ label: 'Политика конфиденциальности', action: () => {} },*/}
-												{/*		{ label: 'Политика обработки персональных данных', action: () => {} },*/}
-												{/*		{ label: 'Выход', action: () => {} }*/}
-												{/*	]}*/}
-												{/*/>*/}
+												{/*<PopupMenu*/}
+												{/*	menuWidth={200}*/}
+												{/*	menuHeight={300}*/}
+												{/*	trigger={({ open }) => (*/}
+												{/*		<RoundedButton onPress={open} icon={<SettingsSvg />} />*/}
+												{/*	)}*/}
+												{/*>*/}
+												{/*	<PopupMenuItem*/}
+												{/*		title="Настройки"*/}
+												{/*		onPress={() => handleClickRedirect(ALLOWED_ROUTES.SETTINGS)}*/}
+												{/*	/>*/}
+												{/*	<PopupMenuItem title="Выход" onPress={handleClickExit} />*/}
+												{/*</PopupMenu>*/}
 											</View>
 											<View>
-												{profileData?.user?.name && (
-													<Text
-														className="text-[19px] text-white"
-														style={{ fontFamily: fontFamily.bold }}
-													>
-														{profileData?.user?.name}
-													</Text>
-												)}
+												<View className="flex-row items-center gap-3">
+													{profileData?.user?.name && (
+														<Text
+															className="text-[19px] text-white"
+															style={{ fontFamily: fontFamily.bold }}
+														>
+															{profileData?.user?.name}
+														</Text>
+													)}
+													{profileData?.user?.badge && (
+														<Text
+															className="text-xl"
+															style={{ fontFamily: fontFamily.bold }}
+														>
+															{profileData.user.badge}
+														</Text>
+													)}
+												</View>
 												{profileData?.user?.username && (
 													<Text
 														className="text-base text-gray-ab"
@@ -348,7 +365,7 @@ const UserProfilePage = () => {
 						</>
 					}
 					contentContainerStyle={{
-						paddingBottom: insets.bottom + Platform.OS === 'android' ? 100 : 40,
+						paddingBottom: insets.bottom + (Platform.OS === 'android' ? 100 : 40),
 						paddingHorizontal: 16
 					}}
 				/>

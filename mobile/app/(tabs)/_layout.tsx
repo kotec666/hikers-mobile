@@ -26,6 +26,14 @@ const QUICK_ACTION_ITEMS: RouterAction<string>[] = [
 		params: {
 			href: '/posts?quickAction=search'
 		}
+	},
+	{
+		id: 'report-a-problem',
+		title: 'Сообщить о проблеме',
+		icon: Platform.select({ ios: 'compose', android: 'quick_action_report_a_problem' }),
+		params: {
+			href: '/(about)/report-a-problem'
+		}
 	}
 ]
 

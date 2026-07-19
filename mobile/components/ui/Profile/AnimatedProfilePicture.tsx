@@ -1,6 +1,7 @@
+/* eslint-disable react-hooks/refs */ // ложное срабатывание
 import { BlurView } from 'expo-blur'
 import { Image } from 'expo-image'
-import React, { useCallback, useEffect, useState } from 'react'
+import React, { useCallback, useState } from 'react'
 import { Dimensions, Text, TouchableOpacity, View, StyleSheet, StyleProp, ViewStyle, Platform } from 'react-native'
 import { Gesture, GestureDetector } from 'react-native-gesture-handler'
 import Animated, {
@@ -55,10 +56,12 @@ export const AnimatedProfilePicture = ({ size = 40, imageUrl, bordered }: Props)
 	const blurTargetRef = useBlurContext()
 
 	const [imageError, setImageError] = useState(false)
+	const [prevImageUrl, setPrevImageUrl] = useState(imageUrl)
 
-	useEffect(() => {
+	if (imageUrl !== prevImageUrl) {
+		setPrevImageUrl(imageUrl)
 		setImageError(false)
-	}, [imageUrl])
+	}
 
 	const isOpen = useSharedValue(false)
 

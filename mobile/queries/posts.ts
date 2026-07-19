@@ -105,7 +105,7 @@ export const usePostByTrainingQuery = (trainingId?: string) =>
 			try {
 				return await getPostByTrainingId(trainingId!)
 			} catch (e) {
-				await getFieldsErrors(e)
+				// await getFieldsErrors(e)
 				throw e
 			}
 		},

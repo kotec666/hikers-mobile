@@ -3,7 +3,6 @@ import { Dimensions, Pressable, FlatList, Modal, View, Text } from 'react-native
 import Animated, { useAnimatedScrollHandler, useSharedValue } from 'react-native-reanimated'
 import PostSliderItem from '@/components/ui/Post/PostSliderItem'
 import { Image } from 'expo-image'
-import { Feather } from '@expo/vector-icons'
 import { PATH_TO_IMAGE } from '@/constants/PATH_TO_FILES'
 import { Colors } from '@/constants/Colors'
 import { GestureViewer, useGestureViewerController, useGestureViewerState } from 'react-native-gesture-image-viewer'
@@ -11,9 +10,14 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context'
 import CloseFullscreenModeButton from '@/components/ui/CloseFullscreenModeButton'
 import { useFullscreenMap } from '@/hooks/useFullscreenMap'
 import FullscreenMap from '@/components/map/FullscreenMap'
+import ArrowDownSvg from '@/components/svg/ArrowDownSvg'
+import { IYaMapWorkoutProps } from '@/components/map/YaMapWorkout'
+import { IRNMapWorkoutProps } from '@/components/map/RNMapWorkout'
+
+type MapElement = React.ReactElement<IYaMapWorkoutProps> | React.ReactElement<IRNMapWorkoutProps>
 
 interface IProps {
-	firstElement?: React.ReactNode
+	firstElement?: MapElement | null
 	images?: string[]
 }
 type FlatListItem = { id: string; isCustom: true } | string
@@ -152,27 +156,17 @@ const PostListItemSlider = (props: IProps) => {
 									alignItems: 'center'
 								}}
 							>
-								<Feather.Button
-									backgroundColor="transparent"
-									name="chevron-left"
-									size={30}
-									iconStyle={{ marginRight: 0 }}
-									color="white"
-									onPress={goToPrevious}
-								/>
+								<Pressable onPress={goToPrevious}>
+									<ArrowDownSvg style={{ transform: [{ rotate: '90deg' }] }} size={30} />
+								</Pressable>
 
 								<Text style={{ color: 'white' }}>
 									{currentIndex + 1} / {totalCount}
 								</Text>
 
-								<Feather.Button
-									backgroundColor="transparent"
-									name="chevron-right"
-									size={30}
-									iconStyle={{ marginRight: 0 }}
-									color="white"
-									onPress={goToNext}
-								/>
+								<Pressable onPress={goToNext}>
+									<ArrowDownSvg style={{ transform: [{ rotate: '270deg' }] }} size={30} />
+								</Pressable>
 							</View>
 						</View>
 					)}

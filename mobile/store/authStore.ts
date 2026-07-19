@@ -7,9 +7,9 @@ import { setIsAccountExist } from '@/store/authStorage'
 export interface IUser {
 	id: string
 	name: null | string
-	email: string
-	isEmailConfirmed: null | true
 	username: string
+	color: string
+	badge: string | null
 	avatarFilename: null | string
 }
 
@@ -52,6 +52,7 @@ export const useAuthStore = create<AuthStore>((set, get) => ({
 
 	setUser: (user: IUser) => {
 		set({ user })
+		void setAuthData({ user })
 	},
 
 	logout: async () => {

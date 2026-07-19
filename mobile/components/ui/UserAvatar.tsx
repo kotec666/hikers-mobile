@@ -1,7 +1,7 @@
 import { Image, ImageStyle } from 'expo-image'
 import { StyleProp, View, ViewStyle } from 'react-native'
 import PeopleSvg from '@/components/svg/PeopleSvg'
-import React, { useEffect, useState } from 'react'
+import React, { useState } from 'react'
 import { cn } from '@/helpers/cn'
 import PenSvg from '@/components/svg/PenSvg'
 
@@ -16,10 +16,12 @@ export interface IProps {
 
 export function UserAvatar(props: IProps) {
 	const [imageError, setImageError] = useState(false)
+	const [prevImageUrl, setPrevImageUrl] = useState(props.avatar)
 
-	useEffect(() => {
+	if (props.avatar !== prevImageUrl) {
+		setPrevImageUrl(props.avatar)
 		setImageError(false)
-	}, [props.avatar])
+	}
 
 	if (
 		typeof props.avatar === 'string' &&
@@ -28,24 +30,27 @@ export function UserAvatar(props: IProps) {
 		!imageError
 	) {
 		return (
-			<View
-				className={cn('relative h-[50px] w-[50px] rounded-full', props.className, {
-					'border-[1px] border-white/20': props.bordered
-				})}
-				style={[
-					props.style as StyleProp<ViewStyle>,
-					{ borderRadius: 999 },
-					props.bordered && { borderWidth: 1, borderColor: 'rgba(255, 255, 255, 0.4)' }
-				]}
-			>
-				<Image
-					source={{ uri: props.avatar }}
-					style={{ width: '100%', height: '100%', borderRadius: 999 }}
-					onError={() => setImageError(true)}
-				/>
+			<View className="relative self-start">
+				<View
+					className={cn('relative h-[50px] w-[50px] rounded-full', props.className, {
+						'border-[1px] border-white/20': props.bordered
+					})}
+					style={[
+						props.style as StyleProp<ViewStyle>,
+						{ borderRadius: 999, overflow: 'hidden' },
+						props.bordered && { borderWidth: 1, borderColor: 'rgba(255, 255, 255, 0.4)' }
+					]}
+				>
+					<Image
+						source={{ uri: props.avatar }}
+						style={{ width: '100%', height: '100%' }}
+						contentFit="cover"
+						onError={() => setImageError(true)}
+					/>
+				</View>
 				{props.isEditMode && (
 					<View
-						className="absolute right-0 bg-white rounded-full w-[25px] h-[25px] items-center justify-center"
+						className="absolute right-0 bg-white rounded-full w-[25px] h-[25px] items-center justify-center overflow-hidden"
 						style={{ bottom: 10 }}
 					>
 						<PenSvg />
@@ -55,21 +60,23 @@ export function UserAvatar(props: IProps) {
 		)
 	}
 	return (
-		<View
-			className={cn(
-				'relative h-[50px] w-[50px] rounded-full justify-center items-center bg-blue-98',
-				props.className
-			)}
-			style={[
-				props.style as StyleProp<ViewStyle>,
-				{ borderRadius: 999 },
-				props.bordered && { borderWidth: 1, borderColor: 'rgba(255, 255, 255, 0.4)' }
-			]}
-		>
-			<PeopleSvg height={props?.iconSize?.height} width={props?.iconSize?.width} />
+		<View className="relative self-start">
+			<View
+				className={cn(
+					'relative h-[50px] w-[50px] rounded-full justify-center items-center bg-blue-98',
+					props.className
+				)}
+				style={[
+					props.style as StyleProp<ViewStyle>,
+					{ borderRadius: 999, overflow: 'hidden' },
+					props.bordered && { borderWidth: 1, borderColor: 'rgba(255, 255, 255, 0.4)' }
+				]}
+			>
+				<PeopleSvg height={props?.iconSize?.height} width={props?.iconSize?.width} />
+			</View>
 			{props.isEditMode && (
 				<View
-					className="absolute right-0 bg-white rounded-full w-[25px] h-[25px] items-center justify-center"
+					className="absolute right-0 bg-white rounded-full w-[25px] h-[25px] items-center justify-center overflow-hidden"
 					style={{ bottom: 10 }}
 				>
 					<PenSvg />

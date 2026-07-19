@@ -1,4 +1,4 @@
-import React, { useEffect } from 'react'
+import React, { useCallback, useEffect } from 'react'
 import { StyleSheet, View, Pressable, Platform } from 'react-native'
 import Animated, { useSharedValue, useAnimatedStyle, withTiming, interpolateColor } from 'react-native-reanimated'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
@@ -64,14 +64,17 @@ const NavBar = () => {
 
 	const activeId = getActiveId()
 
-	const handlePress = (href: string) => {
-		const isSameRoute = pathname.startsWith(href)
+	const handlePress = useCallback(
+		(href: string) => {
+			const isSameRoute = pathname.startsWith(href)
 
-		push({
-			pathname: href as RelativePathString,
-			params: isSameRoute ? { scrollToTop: Date.now() } : {}
-		})
-	}
+			push({
+				pathname: href as RelativePathString,
+				params: isSameRoute ? { scrollToTop: Date.now() } : {}
+			})
+		},
+		[pathname, push]
+	)
 
 	// Костыль, потому что на странице новой тренировки из-за NativeTabs нельзя перетаскивать BottomSheetResizable
 	const isGlassAvailable = Platform.OS === 'ios' && isLiquidGlassAvailable()

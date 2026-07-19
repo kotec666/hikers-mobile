@@ -49,7 +49,6 @@ export interface ITrainingRoute {
 export interface IParticipantTrainingRoute {
 	id: string
 	user: ITrainingParticipant
-	colorHex: string
 	route: ITrainingRoute
 	metrics: ITrainingMetrics
 }
@@ -81,11 +80,7 @@ export const getTrainingInfo = async (trainingId: string): Promise<ITraining[]> 
 }
 
 // Начать тренировку
-export const startTraining = async (data: {
-	type: TrainingType
-	colorHex: string
-	ts?: number
-}): Promise<ITraining> => {
+export const startTraining = async (data: { type: TrainingType; ts?: number }): Promise<ITraining> => {
 	return (
 		await fetcher.post(`trainings/start`, {
 			json: data
@@ -96,7 +91,6 @@ export const startTraining = async (data: {
 // Создать оффлайн тренировку (для загрузки имеющихся данных о тренировке) (только для тех, у которых ещё нет id)
 export const createOfflineTraining = async (data: {
 	type: TrainingType
-	colorHex: string
 	startedAt: number
 	finishedAt: number
 }): Promise<ITraining> => {

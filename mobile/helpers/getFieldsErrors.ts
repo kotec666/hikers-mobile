@@ -100,6 +100,10 @@ const errorFields: ErrorFields = {
 	[ERRORS.TOO_MANY_REQUESTS]: {
 		field: 'field_name',
 		message: 'Слишком много попыток'
+	},
+	[ERRORS.EMAIL_DOMAIN_NOT_ALLOWED]: {
+		field: 'field_name',
+		message: 'Почтовый домен не разрешен'
 	}
 }
 /* prettier-ignore */
@@ -159,7 +163,8 @@ const personalErrorFields: PersonalErrorFields = {
 		[ERRORS.NOT_FOUND]: 'Такой email не зарегистрирован',
 		[ERRORS.INVALID_EMAIL]: 'Некорректный email',
 		[ERRORS.ALREADY_EXISTS]: 'Такой email уже зарегистрирован',
-		[ERRORS.EMAIL_ALREADY_CONFIRMED]: 'Этот email уже подтвержден'
+		[ERRORS.EMAIL_ALREADY_CONFIRMED]: 'Этот email уже подтвержден',
+		[ERRORS.EMAIL_DOMAIN_NOT_ALLOWED]: 'Доступны только ру-почты'
 	},
 	password: {
 		[ERRORS.DIGIT_REQUIRED]: 'Пароль должен содержать цифры',
@@ -311,7 +316,7 @@ export const getFieldsErrors = async (e: unknown): Promise<FieldErrors> => {
 			// 	{ icon: false },
 			// )
 
-			const errorMessage = errorFields[errorObject.message as keyof ErrorFields]?.message
+			const errorMessage = errorFields[errorObject?.message as keyof ErrorFields]?.message
 
 			if (errorMessage) {
 				showNotification(errorMessage, NotificationInAppType.ERROR)

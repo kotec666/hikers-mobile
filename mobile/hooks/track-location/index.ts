@@ -7,20 +7,22 @@ import {
 	getWorkoutMeta,
 	IWorkoutLocationStorageItem
 } from '@/store/workoutStorage'
-import { YaMapUserLocationMarkerHandle } from '@/components/map/markers/UserLocationMarker/YaMapUserLocationMarker'
 import { locationEmitter } from '@/hooks/track-location/locationEmitter'
 import { Point } from 'react-native-yamap-plus'
 import { MetricSpeedHandle } from '@/components/training/tabs/metrics/MetricSpeed'
 import { useLatest } from '@/hooks/useLatest'
-import { AppState, AppStateStatus } from 'react-native'
+import { AppState, AppStateStatus, Platform } from 'react-native'
 import { TrainingType } from '@/shared/enums'
 import { MetricDistanceHandle } from '@/components/training/tabs/metrics/MetricDistance'
 import { MetricCaloriesHandle } from '@/components/training/tabs/metrics/MetricCalories'
 import { MetricHeightHandle } from '@/components/training/tabs/metrics/MetricHeight'
-import { YaMapComponentSegmentsHandle } from '@/components/map/MapComponentSegments'
 import { MetricAvgSpeedHandle } from '@/components/training/tabs/metrics/MetricAvgSpeed'
 import { useAuthStore } from '@/store/authStore'
 import { calculateAverageSpeedKmh, getWorkoutElapsedMs } from '@/helpers/workoutMetrics'
+import { YaMapWorkoutHandle } from '@/components/map/YaMapWorkout'
+import { YaMapUserLocationMarkerHandle } from '@/components/map/markers/UserLocationMarker/YaMapUserLocationMarker'
+import { RNMapAnimationType, RNMapWorkoutHandle } from '@/components/map/RNMapWorkout'
+import { RNMapsUserLocationMarkerHandle } from '@/components/map/markers/UserLocationMarker/RNMapsUserLocationMarker'
 
 export function useLocationTracking() {
 	const onStartTracking = useCallback(async () => {
@@ -51,10 +53,14 @@ export function useLocationData(
 	workoutType: TrainingType
 ) {
 	const { user } = useAuthStore()
+	// Platform
+	const isIOS = Platform.OS === 'ios'
 
 	// Refs для UI
-	const yaMapComponentRef = useRef<YaMapComponentSegmentsHandle>(null)
+	const yaMapComponentRef = useRef<YaMapWorkoutHandle>(null)
 	const yaMapUserLocationMarkerRef = useRef<YaMapUserLocationMarkerHandle>(null)
+	const rnMapComponentRef = useRef<RNMapWorkoutHandle>(null)
+	const rnMapUserLocationMarkerRef = useRef<RNMapsUserLocationMarkerHandle>(null)
 	const latestUserMarkerLocationRef = useRef<Point>(null)
 	const isMountedRef = useRef<boolean>(true)
 
@@ -225,12 +231,25 @@ export function useLocationData(
 			saveInitialLocations(pointsRef.current)
 
 			// UI updates
-			yaMapUserLocationMarkerRef.current?.setAccuracy(accuracy)
-			yaMapUserLocationMarkerRef.current?.setMarkerPosition(newLatLon)
+			if (isIOS) {
+				rnMapUserLocationMarkerRef.current?.setAccuracy(accuracy)
+				rnMapUserLocationMarkerRef.current?.setMarkerPosition(newLatLon)
+			} else {
+				yaMapUserLocationMarkerRef.current?.setAccuracy(accuracy)
+				yaMapUserLocationMarkerRef.current?.setMarkerPosition(newLatLon)
+			}
 			latestUserMarkerLocationRef.current = newLatLon
-			yaMapComponentRef.current?.updatePath(pointsRef.current)
+			if (isIOS) {
+				rnMapComponentRef.current?.updatePath(pointsRef.current)
+			} else {
+				yaMapComponentRef.current?.updatePath(pointsRef.current)
+			}
 			// Центрируем карту
-			yaMapComponentRef.current?.setMapCenter(newLatLon, 1.2)
+			if (isIOS) {
+				rnMapComponentRef.current?.setMapCenter({ center: newLatLon })
+			} else {
+				yaMapComponentRef.current?.setMapCenter(newLatLon, 1.2)
+			}
 
 			// Обновляем метрики
 			if (!isPausedRef.current) {
@@ -238,7 +257,7 @@ export function useLocationData(
 				updateRealtimeMetrics(speed ?? 0)
 			}
 		},
-		[addPointToMap, saveInitialLocations, saveInitialMarkerLocation, updateRealtimeMetrics, isPausedRef]
+		[addPointToMap, saveInitialLocations, saveInitialMarkerLocation, updateRealtimeMetrics, isPausedRef, isIOS]
 	)
 
 	// Callback, который подписка locationEmitter будет вызывать.
@@ -321,13 +340,28 @@ export function useLocationData(
 					initialDataLoadedSetRef.current = true
 				} else if (pointsRef.current.length > 0 && isMountedRef.current) {
 					// Fallback: если вью уже была запущена (крайний случай)
-					yaMapComponentRef.current?.updatePath(pointsRef.current)
+					if (isIOS) {
+						rnMapComponentRef.current?.updatePath(pointsRef.current)
+					} else {
+						yaMapComponentRef.current?.updatePath(pointsRef.current)
+					}
 					const last = pointsRef.current[pointsRef.current.length - 1]
 					const { latitude, longitude } = last.locationObject.coords
 					const pos = { lat: latitude, lon: longitude }
-					yaMapUserLocationMarkerRef.current?.setMarkerPosition(pos)
+					if (isIOS) {
+						rnMapUserLocationMarkerRef.current?.setMarkerPosition(pos)
+					} else {
+						yaMapUserLocationMarkerRef.current?.setMarkerPosition(pos)
+					}
 					latestUserMarkerLocationRef.current = pos
-					yaMapComponentRef.current?.setMapCenter(pos, 0)
+					if (isIOS) {
+						rnMapComponentRef.current?.setMapCenter({
+							center: pos,
+							animationType: RNMapAnimationType.LINEAR
+						})
+					} else {
+						yaMapComponentRef.current?.setMapCenter(pos, 0)
+					}
 				}
 			}
 			// Сценарий 2: Догрузка после background (упрощенно)
@@ -360,14 +394,23 @@ export function useLocationData(
 					pointsRef.current.push(...newPoints)
 
 					// Обновляем карту и метрики
-					yaMapComponentRef.current?.updatePath(pointsRef.current)
+					if (isIOS) {
+						rnMapComponentRef.current?.updatePath(pointsRef.current)
+					} else {
+						yaMapComponentRef.current?.updatePath(pointsRef.current)
+					}
 
 					const lastNewPoint = newPoints[newPoints.length - 1]
 					const { latitude, longitude, speed, accuracy } = lastNewPoint.locationObject.coords
 					const pos = { lat: latitude, lon: longitude }
 
-					yaMapUserLocationMarkerRef.current?.setAccuracy(accuracy)
-					yaMapUserLocationMarkerRef.current?.setMarkerPosition(pos)
+					if (isIOS) {
+						rnMapUserLocationMarkerRef.current?.setAccuracy(accuracy)
+						rnMapUserLocationMarkerRef.current?.setMarkerPosition(pos)
+					} else {
+						yaMapUserLocationMarkerRef.current?.setAccuracy(accuracy)
+						yaMapUserLocationMarkerRef.current?.setMarkerPosition(pos)
+					}
 					latestUserMarkerLocationRef.current = pos
 
 					updateRealtimeMetrics(speed ?? 0)
@@ -391,7 +434,8 @@ export function useLocationData(
 		updateRealtimeMetrics,
 		syncAccumulatedDistanceFromStorage,
 		processPoints,
-		addPointToMap
+		addPointToMap,
+		isIOS
 	])
 
 	/**
@@ -419,7 +463,11 @@ export function useLocationData(
 		setIsPaused(false)
 
 		// 3. Очистка карты (важно для удаления полилайна)
-		yaMapComponentRef.current?.updatePath([])
+		if (isIOS) {
+			rnMapComponentRef.current?.updatePath([])
+		} else {
+			yaMapComponentRef.current?.updatePath([])
+		}
 
 		// 4. Сброс метрик
 		metricSpeedRef.current?.setSpeed(0)
@@ -427,7 +475,7 @@ export function useLocationData(
 		metricDistanceRef.current?.setDistance(0)
 		metricCaloriesRef.current?.updateCalories(0, 0, workoutType)
 		metricHeightRef.current?.updateHeight([])
-	}, [workoutType])
+	}, [workoutType, isIOS])
 
 	// Эффект — при монтировании: resolver + начальная загрузка истории (один раз)
 	useEffect(() => {
@@ -517,6 +565,8 @@ export function useLocationData(
 	}, [isWorkoutStarted, updateRealtimeMetrics])
 
 	return {
+		rnMapComponentRef,
+		rnMapUserLocationMarkerRef,
 		yaMapComponentRef,
 		yaMapUserLocationMarkerRef,
 		latestUserMarkerLocationRef,

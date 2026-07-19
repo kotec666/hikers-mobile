@@ -7,7 +7,6 @@ import React, { useEffect, useMemo, useRef, useState } from 'react'
 import { fontFamily } from '@/constants/Fonts'
 import Parameter from '@/components/training/Parameter'
 import { Button } from '@/components/ui/Button'
-import MapComponent from '@/components/map/MapComponent'
 import PeopleListItem from '@/components/find-people/PeopleListItem'
 import EyeSvg from '@/components/svg/EyeSvg'
 import { Colors } from '@/constants/Colors'
@@ -42,12 +41,14 @@ import { formatTimeFromSecondsCompact } from '@/helpers/formatTime'
 import { mpsToKmph } from '@/helpers/mpsToKmph'
 import { formatBackendPace } from '@/helpers/formatBackendPace'
 import { saveSingleWorkout, WorkoutSource } from '@/helpers/saveUnsavedTraining'
-import { BackButton } from '@/components/ui/HeaderBack'
+import { RoundedButton } from '@/components/ui/HeaderBack'
 import { useCreatePostMutation, usePostByTrainingQuery, usePostQuery, useUpdatePostMutation } from '@/queries/posts'
 import { useExtendedDetailsWorkoutQuery, useFinishWorkoutMutation } from '@/queries/workout'
 import { Page } from '@/components/ui/Page'
 import { DEFAULT_PADDING_TOP } from '@/constants/Variables'
 import { KeyboardAwareScrollView } from 'react-native-keyboard-controller'
+import WorkoutMap from '@/components/map/WorkoutMap'
+import { File } from 'expo-file-system'
 
 type Param = {
 	label: string
@@ -71,12 +72,12 @@ const getWorkoutParams = ({
 	creatorMetrics,
 	myMetrics
 }: {
-	mode: VIEWWORKOUT_MODE
+	mode: VIEW_WORKOUT_MODE
 	results: IWorkoutResultsStore
 	creatorMetrics?: ITrainingMetrics
 	myMetrics?: ITrainingMetrics
 }): [Param[], Param[]] => {
-	if (mode === VIEWWORKOUT_MODE.VIEW) {
+	if (mode === VIEW_WORKOUT_MODE.VIEW) {
 		return [
 			[
 				{ label: 'Время', value: results.metrics?.totalTimeFormatted },
@@ -91,7 +92,7 @@ const getWorkoutParams = ({
 		]
 	}
 
-	const metrics = mode === VIEWWORKOUT_MODE.FROM_HISTORY ? myMetrics : creatorMetrics
+	const metrics = mode === VIEW_WORKOUT_MODE.FROM_HISTORY ? myMetrics : creatorMetrics
 
 	return [
 		[
@@ -142,7 +143,7 @@ const data = [
 	}
 ]
 
-export enum VIEWWORKOUT_MODE {
+export enum VIEW_WORKOUT_MODE {
 	VIEW = 'view',
 	EDIT = 'edit',
 	FROM_HISTORY = 'from_history'
@@ -154,16 +155,14 @@ export default function ViewWorkout() {
 	const insets = useSafeAreaInsets()
 	const toast = useToast()
 	const { mode, editPostId, historyTrainingId, unsavedStartedAt } = useLocalSearchParams<{
-		mode: VIEWWORKOUT_MODE
+		mode: VIEW_WORKOUT_MODE
 		editPostId?: string
 		historyTrainingId?: string
 		unsavedStartedAt?: string
 	}>()
-	const isView = mode === VIEWWORKOUT_MODE.VIEW
-	const isEdit = mode === VIEWWORKOUT_MODE.EDIT
-	const isFromHistory = mode === VIEWWORKOUT_MODE.FROM_HISTORY
-
-	const [existPost, setExistPost] = useState<IPost | null>(null)
+	const isView = mode === VIEW_WORKOUT_MODE.VIEW
+	const isEdit = mode === VIEW_WORKOUT_MODE.EDIT
+	const isFromHistory = mode === VIEW_WORKOUT_MODE.FROM_HISTORY
 
 	const { handleSubmit, control, setValue } = useForm<IPostFormState>()
 	const { ErrorMessages } = useErrorMessage()
@@ -173,14 +172,15 @@ export default function ViewWorkout() {
 	const { mutateAsync: updatePostMutation, isPending: isPendingUpdate } = useUpdatePostMutation()
 
 	const results = useWorkoutResultsAfterFinishStore((state) => state)
-	const pointsRef = useRef(results.points || [])
+	const [frozenPoints] = useState(() => results.points || [])
 	const descriptionRef = useRef<TextInput>(null)
 	const [isPhotoModalOpen, setIsPhotoModalOpen] = useState(false)
 	const [isExitWithoutCreatePostModal, setIsExitWithoutCreatePostModal] = useState(false)
 	const [deletedImages, setDeletedImages] = useState<string[]>([]) // только для редактирования
 	const [existingImages, setExistingImages] = useState<string[]>([]) // только для редактирования
 	const [postImages, setPostImages] = useState<string[]>([])
-	const [isTrainingAuthor, setIsTrainingAuthor] = useState<boolean>(false)
+	const [viewedAt] = useState(() => Date.now())
+
 	const [state, setState] = useState<{
 		switchChartView: 'map' | 'chart'
 		editPost: null | IPost
@@ -192,71 +192,42 @@ export default function ViewWorkout() {
 	})
 
 	const { data: editPost } = usePostQuery(editPostId)
+	const { data: postFromTraining } = usePostByTrainingQuery(historyTrainingId) // id тренировки может существовать, но поста может не существовать
+
+	const existPost = useMemo(() => {
+		return editPost ?? postFromTraining ?? null
+	}, [editPost, postFromTraining])
 
 	useEffect(() => {
 		if (editPost) {
-			// setIsTrainingAuthor(true)
-			setExistPost(editPost)
+			// eslint-disable-next-line react-hooks/set-state-in-effect -- инициализация локальных полей формы данными асинхронного запроса
 			setExistingImages(editPost.fileNames)
 			setValue('title', editPost.title)
 			setValue('description', editPost.description || '')
 		}
 	}, [editPost, setValue])
 
-	const { data: postFromTraining } = usePostByTrainingQuery(historyTrainingId) // id тренировки может существовать, но поста может не существовать
-
 	useEffect(() => {
 		if (postFromTraining) {
-			if (postFromTraining?.training?.creatorId === user?.id) {
-				setIsTrainingAuthor(true)
-			} else {
-				setIsTrainingAuthor(false)
-			}
-			setExistPost(postFromTraining)
+			// eslint-disable-next-line react-hooks/set-state-in-effect -- инициализация локальных полей формы данными асинхронного запроса
 			setExistingImages(postFromTraining.fileNames)
 			setValue('title', postFromTraining.title)
 			setValue('description', postFromTraining.description || '')
 		}
-	}, [postFromTraining, setValue, user?.id])
+	}, [postFromTraining, setValue])
 
 	const { data: extendedTrainingDetails } = useExtendedDetailsWorkoutQuery(historyTrainingId)
 
-	useEffect(() => {
-		if (extendedTrainingDetails) {
-			if (extendedTrainingDetails?.creatorId === user?.id) {
-				setIsTrainingAuthor(true)
-			} else {
-				setIsTrainingAuthor(false)
-			}
-		}
-	}, [extendedTrainingDetails, setValue, user?.id])
+	const isTrainingAuthor = useMemo(() => {
+		if (postFromTraining) return postFromTraining.training?.creatorId === user?.id
+		if (extendedTrainingDetails) return extendedTrainingDetails.creatorId === user?.id
+		return false
+	}, [postFromTraining, extendedTrainingDetails, user?.id])
 
 	const handlePostImages = (postImages: string[], formData: FormData) => {
-		if (postImages.length) {
-			const filesArray: any[] = []
-
-			postImages.forEach((postImage, index) => {
-				if (postImage.startsWith('file://')) {
-					const filename = postImage.split('/').pop()
-					const match = /\.(\w+)$/.exec(filename || '')
-					const type = match ? `image/${match[1]}` : 'image/jpeg'
-
-					filesArray.push({
-						uri: postImage,
-						type,
-						name: filename || `post-image-${index}.jpg`
-					})
-				} else {
-					// Если это уже загруженное изображение (URL), отправляем как строку
-					// Для URL просто добавляем строку в массив
-					filesArray.push(postImage)
-				}
-			})
-
-			for (let i = 0; i < filesArray.length; i++) {
-				formData.append('files', filesArray[i])
-			}
-		}
+		postImages.forEach((postImage) => {
+			formData.append('files', new File(postImage))
+		})
 	}
 
 	const saveWorkoutBeforeSubmit = async (): Promise<string | null> => {
@@ -388,10 +359,10 @@ export default function ViewWorkout() {
 		: formatDistance((isEdit ? creatorMetrics : myMetrics)?.distanceM || 0)
 
 	const dateText = isView
-		? `Сегодня, ${results.startedAt ? format(results.startedAt, 'HH:mm') : ''} - ${format(Date.now(), 'HH:mm')}`
+		? `Сегодня, ${results.startedAt ? format(results.startedAt, 'HH:mm') : ''} - ${format(viewedAt, 'HH:mm')}`
 		: formatRelativeDate(isEdit ? existPost?.createdAt : extendedTrainingDetails?.createdAt)
 
-	const mapLocations = isView ? pointsRef : { current: isEdit ? adaptedLocations : adaptedLocationsFromHistory }
+	const mapLocations = isView ? frozenPoints : isEdit ? adaptedLocations : adaptedLocationsFromHistory
 	const chartPoints = isView ? results.points : isEdit ? adaptedLocations : adaptedLocationsFromHistory
 
 	const canPublish = useMemo(() => {
@@ -518,7 +489,7 @@ export default function ViewWorkout() {
 						className="absolute w-full h-full inset-0 justify-between pb-4"
 						style={{ paddingTop: insets.top + DEFAULT_PADDING_TOP }}
 					>
-						<BackButton onPress={handlePressGoBack} />
+						<RoundedButton onPress={handlePressGoBack} />
 						<View className="flex-row w-full justify-between items-center">
 							<View className="flex-row items-center gap-[10px]">
 								<View className="bg-white rounded-xl items-center justify-center w-[40px] h-[40px]">
@@ -557,7 +528,6 @@ export default function ViewWorkout() {
 								</View>
 							</View>
 						</View>
-
 						<View className="flex-row gap-[10px]">
 							<Button
 								onPress={() => setState((s) => ({ ...s, switchChartView: 'map' }))}
@@ -575,12 +545,14 @@ export default function ViewWorkout() {
 							</Button>
 						</View>
 						{state.switchChartView === 'map' && (
-							<MapComponent
-								deferInitialRouteRender
-								minMapHeight={320}
-								maxContainerHeight={320}
+							<WorkoutMap
+								key={mapLocations.length || 0} // какое-то время points undefined
+								bordered
 								rounded={25}
 								needFinishMarker
+								needFitInitialRoute
+								routeColor={user?.color}
+								maxContainerHeight={320}
 								initialLocations={mapLocations}
 							/>
 						)}

@@ -1,4 +1,4 @@
-import React, { useEffect, useRef } from 'react'
+import React, { useEffect, useState } from 'react'
 import { Animated, Text } from 'react-native'
 import { Container } from '@/components/ui/Container'
 import { fontFamily } from '@/constants/Fonts'
@@ -8,8 +8,8 @@ interface ErrorMessageProps {
 }
 
 const ErrorMessage = ({ error }: ErrorMessageProps) => {
-	const opacity = useRef(new Animated.Value(0)).current
-	const height = useRef(new Animated.Value(0)).current
+	const [opacity] = useState(() => new Animated.Value(0))
+	const [height] = useState(() => new Animated.Value(0))
 
 	useEffect(() => {
 		if (error) {

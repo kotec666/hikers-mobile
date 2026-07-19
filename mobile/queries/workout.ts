@@ -100,6 +100,9 @@ export const useFinishWorkoutMutation = () => {
 			await queryClient.invalidateQueries({
 				queryKey: QUERY_KEYS.WORKOUT_HISTORY
 			})
+			await queryClient.invalidateQueries({
+				queryKey: QUERY_KEYS.MY_PROFILE // активности, достижения
+			})
 		}
 		// намеренно без обработки ошибок
 	})

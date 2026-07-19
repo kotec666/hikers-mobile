@@ -6,7 +6,7 @@ import PeopleListItem from '@/components/find-people/PeopleListItem'
 import { Colors } from '@/constants/Colors'
 import { ITrainingMember } from '@/api/posts'
 import { useLocalSearchParams } from 'expo-router'
-import { LegendList } from '@legendapp/list'
+import { LegendList } from '@legendapp/list/react-native'
 import RoundedCheckMarkSvg from '@/components/svg/RoundedCheckMark'
 import RoundedPlusSvg from '@/components/svg/RoundedPlusSvg'
 import { PATH_TO_IMAGE } from '@/constants/PATH_TO_FILES'
@@ -33,9 +33,9 @@ const MemberItem = ({ item, currentUserId }: { item: ITrainingMember; currentUse
 	let icon = null
 	if (needIcon) {
 		icon = item.isSubscribed ? (
-			<RoundedCheckMarkSvg color={item.colorHex} width={28} height={28} />
+			<RoundedCheckMarkSvg color={item.user.color} width={28} height={28} />
 		) : (
-			<RoundedPlusSvg color={item.colorHex} width={28} height={28} />
+			<RoundedPlusSvg color={item.user.color} width={28} height={28} />
 		)
 	}
 

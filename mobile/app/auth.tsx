@@ -13,21 +13,26 @@ import { useLocalSearchParams } from 'expo-router'
 import { Controller, useForm } from 'react-hook-form'
 import { useErrorMessage } from '@/hooks/useErrorMessage'
 import { FieldErrors, getFieldsErrors } from '@/helpers/getFieldsErrors'
-import { loginUser, registrationUser, requestConfirmEmailCode } from '@/api/auth'
+import { loginUser, registrationUser } from '@/api/auth'
 import { cn } from '@/helpers/cn'
 import { lengths } from '@shared/lengths'
 import * as Haptics from 'expo-haptics'
 import { Page } from '@/components/ui/Page'
-import { useSafeNavigation } from '@/hooks/useSafeNavigation'
-import { createTimer, TimerType } from '@/store/timerStorage'
+import { createTimer, isRateLimited, TimerType } from '@/store/timerStorage'
 import { KeyboardAwareScrollView, KeyboardStickyView } from 'react-native-keyboard-controller'
 import EmailSvg from '@/components/svg/EmailSvg'
-import { useKeyboardAnimation } from '@/hooks/useKeyboardAnimation'
-import Animated from 'react-native-reanimated'
+import { useKeyboardHeight } from '@/hooks/useKeyboardHeight'
+import MailConfirmation from '@/components/auth/mail-confirmation'
+import { Colors } from '@/constants/Colors'
 
 export enum AUTH_MODE {
 	AUTH = 'auth',
 	REGISTRATION = 'registration'
+}
+
+export enum REGISTRATION_STEP {
+	FIRST = 'enter_data',
+	SECOND = 'mail_confirm'
 }
 
 interface IAuthFormState {
@@ -40,22 +45,29 @@ interface IAuthFormState {
 const AuthPage = () => {
 	const { login } = useAuthStore()
 	const { mode } = useLocalSearchParams<{ mode: AUTH_MODE }>()
-	const { push } = useSafeNavigation()
+
 	const {
 		handleSubmit,
 		control,
 		formState: { errors }
-	} = useForm<IAuthFormState>()
+	} = useForm<IAuthFormState>({
+		mode: 'onChange'
+	})
 	const { ErrorMessages } = useErrorMessage()
+	const keyboardHeight = useKeyboardHeight()
 
 	const [data, setData] = useState<{
 		mode: AUTH_MODE
+		registrationStep: REGISTRATION_STEP
 		notificationText?: string | boolean
+		currentEmail: string | null
 		isLoading: boolean
 		errors?: FieldErrors
 	}>({
 		mode: mode || AUTH_MODE.REGISTRATION,
+		registrationStep: REGISTRATION_STEP.FIRST,
 		notificationText: undefined,
+		currentEmail: null,
 		isLoading: false,
 		errors: {} as FieldErrors
 	})
@@ -88,22 +100,28 @@ const AuthPage = () => {
 
 		if (data.mode === AUTH_MODE.REGISTRATION) {
 			try {
-				const regData = await registrationUser({
-					email: authFormState.email,
-					username: authFormState.username,
-					password: authFormState.password,
-					isTermsAccepted: authFormState.agree
-				})
-				const { token, ...restParameters } = regData
+				const isLimited = isRateLimited(TimerType.EMAIL_CONFIRMATION, authFormState.email)
 
-				await login(regData.token, restParameters)
-				// запрос кода на подтверждение почты
-				const requestCodeResult = await requestConfirmEmailCode()
-				createTimer(TimerType.EMAIL_CONFIRMATION, authFormState.email, requestCodeResult.waitMs)
-				push(`/mail-confirmation?email=${authFormState.email}`)
+				// если таймер уже существует —
+				// НЕ шлём новый код
+				if (!isLimited) {
+					const requestCodeResult = await registrationUser({
+						email: authFormState.email,
+						username: authFormState.username,
+						password: authFormState.password,
+						isTermsAccepted: authFormState.agree
+					})
+					createTimer(TimerType.EMAIL_CONFIRMATION, authFormState.email, requestCodeResult.waitMs)
+				}
+
+				setData((s) => ({
+					...s,
+					registrationStep: REGISTRATION_STEP.SECOND,
+					currentEmail: authFormState.email
+				}))
 			} catch (e: unknown) {
 				const formattedErrors = await getFieldsErrors(e)
-				setData((s) => ({ ...s, errors: formattedErrors }))
+				setData((s) => ({ ...s, errors: formattedErrors, currentEmail: null }))
 				Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error)
 				// Alert.alert('Ошибка', 'Неверные учетные данные')
 			} finally {
@@ -112,20 +130,24 @@ const AuthPage = () => {
 		}
 	}
 
-	const isAuth = data.mode === AUTH_MODE.AUTH
+	const handlePressBackOnMailConfirm = () => {
+		setData((s) => ({ ...s, registrationStep: REGISTRATION_STEP.FIRST }))
+	}
 
-	const { animatedKeyboardStyle } = useKeyboardAnimation({
-		enabled: !isAuth,
-		mode: 'shift',
-		type: 'translate',
-		offset: {
-			opened: 60
-		}
-	})
+	const isAuth = data.mode === AUTH_MODE.AUTH
+	const hasSoftKeyboard = keyboardHeight > 80
+
+	if (
+		data.currentEmail !== null &&
+		data.registrationStep === REGISTRATION_STEP.SECOND &&
+		data.mode === AUTH_MODE.REGISTRATION
+	) {
+		return <MailConfirmation email={data.currentEmail} handlePressBack={handlePressBackOnMailConfirm} />
+	}
 
 	return (
 		<Page style={{ paddingBottom: 20 }}>
-			<Animated.View style={animatedKeyboardStyle} className="flex-1">
+			<View className="flex-1">
 				<KeyboardAwareScrollView
 					keyboardShouldPersistTaps="handled"
 					contentContainerStyle={{
@@ -198,6 +220,12 @@ const AuthPage = () => {
 										required: {
 											value: true,
 											message: ErrorMessages.required
+										},
+										pattern: {
+											value: /^[A-Za-z0-9_]+$/,
+											message: ErrorMessages.customMessage(
+												'Никнейм содержит недопустимые символы'
+											)
 										},
 										minLength: {
 											value: lengths.user.username.min,
@@ -279,7 +307,9 @@ const AuthPage = () => {
 								<LinkCustom
 									href="/(password-restore)/firstStep"
 									text="Забыли пароль?"
-									className="text-blue-3d"
+									style={{
+										color: Colors['blue-3d']
+									}}
 								/>
 							)}
 						</View>
@@ -316,19 +346,17 @@ const AuthPage = () => {
 										<LinkCustom
 											href="/document"
 											text="условиями обработки"
-											className={cn('', {
-												'text-blue-3d': !errors.agree?.message,
-												'text-red-500': errors.agree?.message
-											})}
+											style={{
+												color: errors.agree?.message ? Colors['red-ff4'] : Colors['blue-3d']
+											}}
 										/>{' '}
 										персональных данных и{' '}
 										<LinkCustom
 											href="/document"
 											text="политикой конфиденциальности"
-											className={cn('', {
-												'text-blue-3d': !errors.agree?.message,
-												'text-red-500': errors.agree?.message
-											})}
+											style={{
+												color: errors.agree?.message ? Colors['red-ff4'] : Colors['blue-3d']
+											}}
 										/>
 									</Text>
 								</View>
@@ -336,8 +364,8 @@ const AuthPage = () => {
 						</View>
 					</Container>
 				</KeyboardAwareScrollView>
-			</Animated.View>
-			<KeyboardStickyView offset={{ opened: 90, closed: -10 }}>
+			</View>
+			<KeyboardStickyView offset={hasSoftKeyboard ? { opened: 90, closed: 0 } : {}} style={{ paddingBottom: 10 }}>
 				<Container>
 					<Button
 						variant="white"

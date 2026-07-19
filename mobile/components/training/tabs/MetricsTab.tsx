@@ -1,3 +1,4 @@
+/* eslint-disable react-hooks/refs */ // -- ref используется компонентом через forwardRef/useImperativeHandle, не читается при рендере
 import { View } from 'react-native'
 import { cn } from '@/helpers/cn'
 import React, { memo } from 'react'
