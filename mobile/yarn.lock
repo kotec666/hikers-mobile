@@ -4320,6 +4320,11 @@ expo-asset@~57.0.3:
     "@expo/image-utils" "^0.11.1"
     expo-constants "~57.0.3"
 
+expo-battery@~57.0.1:
+  version "57.0.1"
+  resolved "https://registry.yarnpkg.com/expo-battery/-/expo-battery-57.0.1.tgz#d2646db9fe8aca36bde0628feea081a56e49ba19"
+  integrity sha512-Q8WE1JedCs7XMFGLzShdtnGKC4ETjoV13DWXgN0lyWgicmIXOYN9+VlKm2g/lYzMObMP/r+psbPdnnOJhljZ/A==
+
 expo-blur@~57.0.0:
   version "57.0.0"
   resolved "https://registry.yarnpkg.com/expo-blur/-/expo-blur-57.0.0.tgz#971431708bb4f26acbbfd3dbc5ff172a7c8cf328"
@@ -4425,6 +4430,11 @@ expo-image@~57.0.0:
   integrity sha512-vR7q07izYiPzUDBCBZf9t6EmtCPp9mIvWimX0TqWQb17AKg/wZytuJD6VWLQxnUlzqXsVBysNcz1jnXkBBQrIg==
   dependencies:
     sf-symbols-typescript "^2.2.0"
+
+expo-intent-launcher@~57.0.1:
+  version "57.0.1"
+  resolved "https://registry.yarnpkg.com/expo-intent-launcher/-/expo-intent-launcher-57.0.1.tgz#8da5f5f1f9517e56333206d306e63e7ee070ccec"
+  integrity sha512-BYiPEOUeW3AkW/uxEESbS2UBw9LasJ8Heb6A8kF9Ueh6pqrXQHMNJFHzfrOP8qZfv9G2e8CTzrtzpN5p0vH5fA==
 
 expo-json-utils@~57.0.0:
   version "57.0.0"

@@ -198,6 +198,10 @@ const Profile = () => {
 					data={posts}
 					renderItem={renderPostItem}
 					keyExtractor={(item) => item.id}
+					recycleItems
+					estimatedItemSize={320} // @TODO перепроверить размер + на главной странице + в чужом профиле
+					drawDistance={600}
+					maintainVisibleContentPosition
 					onEndReached={() => {
 						if (postsHasNextPage && !postsIsFetchingNextPage) {
 							fetchNextPostsPage()

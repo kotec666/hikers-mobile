@@ -39,6 +39,7 @@ import { RNMapWorkoutHandle } from '@/components/map/RNMapWorkout'
 import { YaMapUserLocationMarkerHandle } from '@/components/map/markers/UserLocationMarker/YaMapUserLocationMarker'
 import { RNMapsUserLocationMarkerHandle } from '@/components/map/markers/UserLocationMarker/RNMapsUserLocationMarker'
 import WorkoutMap from '@/components/map/WorkoutMap'
+import BatteryOptimizationBanner from '@/components/training/BatteryOptimizationBanner'
 
 export interface IWorkoutModeElement {
 	name: string
@@ -249,6 +250,7 @@ const NewWorkout = memo(
 				<Container className="mb-[20px]">
 					<HeaderBack>Новая тренировка</HeaderBack>
 				</Container>
+				<BatteryOptimizationBanner />
 				<WorkoutMap
 					key={user?.color}
 					routeColor={user?.color}
