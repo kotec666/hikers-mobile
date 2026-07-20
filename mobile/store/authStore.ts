@@ -66,9 +66,9 @@ export const useAuthStore = create<AuthStore>((set, get) => ({
 	},
 
 	refreshAccessToken: async () => {
-		const { user } = get()
 		const authData = await getAuthData()
 		const accessToken = authData?.accessToken
+		const user = authData?.user ?? get().user
 		if (!accessToken) return false
 
 		try {
@@ -84,7 +84,9 @@ export const useAuthStore = create<AuthStore>((set, get) => ({
 
 			set({
 				// accessToken: newToken.token,
-				accessTokenExpiration: expiration
+				accessTokenExpiration: expiration,
+				isAuthenticated: true,
+				user
 			})
 
 			return true
@@ -108,9 +110,9 @@ export const useAuthStore = create<AuthStore>((set, get) => ({
 			return
 		}
 
-		await get().refreshAccessToken()
+		const ok = await get().refreshAccessToken()
 
-		set({ isAuthChecked: true })
+		set({ isAuthChecked: true, isAuthenticated: ok })
 	}
 }))
 
