@@ -6,7 +6,6 @@ import { fontFamily } from '@/constants/Fonts'
 import { NotificationListItem } from '@/components/ui/Notifications/NotificationListItem'
 import { Button } from '@/components/ui/Button'
 import SwipeableProvider from '@/components/providers/SwipeableProvider'
-import { LegendList } from '@legendapp/list/react-native'
 import { Colors } from '@/constants/Colors'
 import { INotification } from '@/api/notifications'
 import { useReadNotificationsOnView } from '@/hooks/useReadNotificationsOnView'
@@ -17,6 +16,7 @@ import {
 } from '@/queries/notifications'
 import { Page } from '@/components/ui/Page'
 import { refetchAndHaptics } from '@/helpers/refetchAndHaptics'
+import { FlashList } from '@shopify/flash-list'
 
 const NotificationsPage = () => {
 	const {
@@ -69,7 +69,7 @@ const NotificationsPage = () => {
 					)}
 				</Container>
 				<View className="gap-[20px] mt-[20px] flex-1">
-					<LegendList
+					<FlashList
 						data={notificationsData}
 						ListEmptyComponent={renderEmpty}
 						onViewableItemsChanged={onViewableItemsChanged}

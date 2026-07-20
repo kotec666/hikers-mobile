@@ -8,7 +8,6 @@ import { fontFamily } from '@/constants/Fonts'
 import PeopleListItem from '@/components/find-people/PeopleListItem'
 import { Button } from '@/components/ui/Button'
 import PostSearchResult from '@/components/ui/Post/PostSearchResult'
-import { LegendList, LegendListRef } from '@legendapp/list/react-native'
 import { IPost } from '@/api/posts'
 import { Colors } from '@/constants/Colors'
 import { useFocusEffect, useLocalSearchParams } from 'expo-router'
@@ -25,6 +24,7 @@ import { KeyboardAvoidingView } from 'react-native-keyboard-controller'
 import { refetchAndHaptics } from '@/helpers/refetchAndHaptics'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
 import WorkoutMap from '@/components/map/WorkoutMap'
+import { FlashList, FlashListRef } from '@shopify/flash-list'
 
 const isUser = (item: IFoundUser | IFoundPost): item is IFoundUser => {
 	return 'username' in item
@@ -75,7 +75,7 @@ const PostsPage = () => {
 		isFetching
 	} = useFeedPostsQuery()
 
-	const legendListRef = useRef<LegendListRef>(null)
+	const flashListRef = useRef<FlashListRef<IPost>>(null)
 	const searchInputRef = useRef<TextInput>(null)
 	const params = useLocalSearchParams<{
 		scrollToTop?: string
@@ -124,8 +124,8 @@ const PostsPage = () => {
 
 	// Если пользователь кликнет на ту же страницу, то пойдёт скролл вверх. Навбар передаст params при переходе на эту же страницу
 	useEffect(() => {
-		if (params.scrollToTop && legendListRef.current) {
-			legendListRef.current.scrollToOffset({ offset: 0, animated: true })
+		if (params.scrollToTop && flashListRef.current) {
+			flashListRef.current.scrollToOffset({ offset: 0, animated: true })
 		}
 	}, [params.scrollToTop])
 
@@ -247,7 +247,7 @@ const PostsPage = () => {
 										{state.searchMode === SearchType.USERS ? 'Люди' : 'Посты'}
 									</Text>
 								</View>
-								<LegendList
+								<FlashList
 									// key={`${state.searchMode}`}
 									data={searchData}
 									ListEmptyComponent={
@@ -341,8 +341,8 @@ const PostsPage = () => {
 					</View>
 
 					<View style={{ flex: 1 }}>
-						<LegendList
-							ref={legendListRef}
+						<FlashList
+							ref={flashListRef}
 							data={posts}
 							style={{ flex: 1 }}
 							renderItem={renderPostItem}

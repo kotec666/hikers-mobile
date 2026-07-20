@@ -11,7 +11,6 @@ import { PATH_TO_IMAGE } from '@/constants/PATH_TO_FILES'
 import Modal from '@/components/ui/Modal/Modal'
 import { FriendStatus } from '@shared/enums'
 import { AnimatedProfilePicture } from '@/components/ui/Profile/AnimatedProfilePicture'
-import { LegendList, LegendListRef } from '@legendapp/list/react-native'
 import { IPost } from '@/api/posts'
 import { Colors } from '@/constants/Colors'
 import { adaptLocations } from '@/helpers/adaptPointsToIWorkoutLocationStorageItem'
@@ -30,6 +29,7 @@ import { Page } from '@/components/ui/Page'
 import { refetchAndHaptics } from '@/helpers/refetchAndHaptics'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
 import WorkoutMap from '@/components/map/WorkoutMap'
+import { FlashList, FlashListRef } from '@shopify/flash-list'
 
 /**
  *
@@ -48,7 +48,7 @@ const UserProfilePage = () => {
 	const router = useRouter()
 	const insets = useSafeAreaInsets()
 	const { id } = useLocalSearchParams<{ id: string }>()
-	const legendListRef = useRef<LegendListRef>(null)
+	const flashListRef = useRef<FlashListRef<IPost>>(null)
 
 	const [isDeleteModalOpened, setIsDeleteModalOpened] = useState<boolean>(false)
 
@@ -206,8 +206,8 @@ const UserProfilePage = () => {
 	return (
 		<Page edges={['top']}>
 			<BlurProvider>
-				<LegendList
-					ref={legendListRef}
+				<FlashList
+					ref={flashListRef}
 					data={posts}
 					renderItem={renderPostItem}
 					keyExtractor={(item) => item.id}

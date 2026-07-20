@@ -52,7 +52,7 @@ const PostBodyWrapper = (props: IProps) => {
 						/>
 					</TouchableOpacity>
 					<View>
-						<PostListItemSlider images={props.images} firstElement={MapSlide} />
+						<PostListItemSlider images={props.images} firstElement={MapSlide} postId={props.postId} />
 					</View>
 				</>
 			) : (

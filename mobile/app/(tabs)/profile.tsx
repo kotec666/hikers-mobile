@@ -11,7 +11,6 @@ import { RelativePathString, useLocalSearchParams, useRouter } from 'expo-router
 import { useAuthStore } from '@/store/authStore'
 import { PATH_TO_IMAGE } from '@/constants/PATH_TO_FILES'
 import { AnimatedProfilePicture } from '@/components/ui/Profile/AnimatedProfilePicture'
-import { LegendList, LegendListRef } from '@legendapp/list/react-native'
 import { IPost } from '@/api/posts'
 import { Colors } from '@/constants/Colors'
 import { adaptLocations } from '@/helpers/adaptPointsToIWorkoutLocationStorageItem'
@@ -30,6 +29,7 @@ import { RoundedButton } from '@/components/ui/HeaderBack'
 import PopupMenuItem from '@/components/ui/Popup/PopupMenuItem'
 import PopupMenu from '@/components/ui/Popup/PopupMenu'
 import { EmojiSheetModule } from 'expo-native-sheet-emojis'
+import { FlashList, FlashListRef } from '@shopify/flash-list'
 
 /**
  *
@@ -53,7 +53,7 @@ const Profile = () => {
 	const { push } = useSafeNavigation()
 	const { user, logout } = useAuthStore()
 	const params = useLocalSearchParams()
-	const legendListRef = useRef<LegendListRef>(null)
+	const flashListRef = useRef<FlashListRef<IPost>>(null)
 
 	const { data: profileData, isFetching: isProfileFetching, refetch: refetchProfile } = useProfileQuery()
 	const { mutateAsync: updateProfileBadge } = useUpdateProfileBadgeMutation()
@@ -70,8 +70,8 @@ const Profile = () => {
 
 	// Если пользователь кликнет на ту же страницу, то пойдёт скролл вверх. Навбар передаст params при переходе на эту же страницу
 	useEffect(() => {
-		if (params.scrollToTop && legendListRef.current) {
-			legendListRef.current.scrollToOffset({ offset: 0, animated: true })
+		if (params.scrollToTop && flashListRef.current) {
+			flashListRef.current.scrollToOffset({ offset: 0, animated: true })
 		}
 	}, [params.scrollToTop])
 
@@ -190,25 +190,23 @@ const Profile = () => {
 		return <TrainingsEmpty text="Постов еще не существует, опубликуйте пост после тренировки" />
 	}, [postsIsFetching])
 
+	const SEPARATOR = () => <View style={{ height: 16 }} />
+
 	return (
 		<Page edges={['top']}>
 			<BlurProvider>
-				<LegendList
-					ref={legendListRef}
+				<FlashList
+					ref={flashListRef}
 					data={posts}
 					renderItem={renderPostItem}
 					keyExtractor={(item) => item.id}
-					recycleItems
-					estimatedItemSize={320} // @TODO перепроверить размер + на главной странице + в чужом профиле
-					drawDistance={600}
-					maintainVisibleContentPosition
 					onEndReached={() => {
 						if (postsHasNextPage && !postsIsFetchingNextPage) {
 							fetchNextPostsPage()
 						}
 					}}
 					onEndReachedThreshold={0.4}
-					ItemSeparatorComponent={() => <View style={{ height: 16 }} />}
+					ItemSeparatorComponent={SEPARATOR}
 					ListEmptyComponent={renderEmpty}
 					ListFooterComponent={renderFooter}
 					refreshControl={
@@ -319,7 +317,6 @@ const Profile = () => {
 						</View>
 					}
 					contentContainerStyle={{
-						flexGrow: 1,
 						paddingBottom: insets.bottom + (Platform.OS === 'android' ? 100 : 40),
 						paddingHorizontal: 16
 					}}

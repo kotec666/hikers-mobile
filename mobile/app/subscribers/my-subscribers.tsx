@@ -6,11 +6,11 @@ import PeopleListItem from '@/components/find-people/PeopleListItem'
 import { fontFamily } from '@/constants/Fonts'
 import { ISubscribe } from '@/api/subscribers'
 import { PATH_TO_IMAGE } from '@/constants/PATH_TO_FILES'
-import { LegendList } from '@legendapp/list/react-native'
 import { Colors } from '@/constants/Colors'
 import { useMySubscribersQuery } from '@/queries/subscribers'
 import { Page } from '@/components/ui/Page'
 import { refetchAndHaptics } from '@/helpers/refetchAndHaptics'
+import { FlashList } from '@shopify/flash-list'
 
 /**
  * Мои подписчики, кто подписан на меня
@@ -63,7 +63,7 @@ const MySubscribersPage = () => {
 		<Page>
 			<Container className="gap-[20px] flex-1">
 				<HeaderBack>Подписчики</HeaderBack>
-				<LegendList
+				<FlashList
 					data={subscribers}
 					renderItem={renderItem}
 					keyExtractor={(item) => item.user.id}

@@ -10,13 +10,13 @@ import Modal from '@/components/ui/Modal/Modal'
 import { useToast } from '@/hooks/useToast'
 import { IUser } from '@/store/authStore'
 import { PATH_TO_IMAGE } from '@/constants/PATH_TO_FILES'
-import { LegendList } from '@legendapp/list/react-native'
 import { Colors } from '@/constants/Colors'
 import { useSafeNavigation } from '@/hooks/useSafeNavigation'
 import BlurProvider from '@/components/providers/BlurProvider'
 import { useMyFriendsQuery, useRemoveFriendMutation } from '@/queries/friends'
 import { Page } from '@/components/ui/Page'
 import { refetchAndHaptics } from '@/helpers/refetchAndHaptics'
+import { FlashList } from '@shopify/flash-list'
 
 const MyFriendsPage = () => {
 	const { push } = useSafeNavigation()
@@ -124,7 +124,7 @@ const MyFriendsPage = () => {
 					<Container className="gap-[20px] flex-1" style={{ paddingBottom: 10 }}>
 						<HeaderBack>Друзья</HeaderBack>
 
-						<LegendList
+						<FlashList
 							data={friends}
 							renderItem={({ item }) => (
 								<PeopleListItem

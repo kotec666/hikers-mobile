@@ -11,7 +11,6 @@ import { ru } from 'date-fns/locale'
 import SaveUnsavedTrainingSvg from '@/components/svg/SaveUnsavedTrainingSvg'
 import DeleteTrashSvg from '@/components/svg/DeleteTrashSvg'
 import SwipeableProvider from '@/components/providers/SwipeableProvider'
-import { LegendList, LegendListRef } from '@legendapp/list/react-native'
 import { Colors } from '@/constants/Colors'
 import CheckMarkIconSvg from '@/components/svg/CheckMarkIconSvg'
 import TrainingsEmpty from '@/components/ui/Post/TrainingsEmpty'
@@ -27,6 +26,7 @@ import { BottomSheetHandle } from '@/components/ui/BottomSheet/types'
 import ArrowDownSvg from '@/components/svg/ArrowDownSvg'
 import BaseWheelPicker from '@/components/ui/wheel-picker/base-wheel-picker'
 import { refetchAndHaptics } from '@/helpers/refetchAndHaptics'
+import { FlashList, FlashListRef } from '@shopify/flash-list'
 
 interface WorkoutItem {
 	id: string
@@ -54,7 +54,7 @@ const { height: SCREEN_HEIGHT } = Dimensions.get('screen')
 
 const WorkoutHistory = () => {
 	const toast = useToast()
-	const listRef = useRef<LegendListRef>(null)
+	const listRef = useRef<FlashListRef<WorkoutHistoryRow>>(null)
 	const bottomSheetRef = useRef<BottomSheetHandle>(null)
 
 	const { notSavedWorkouts, syncingIds, enqueueWorkoutSync, deleteWorkout } = useUnsavedWorkoutSync()
@@ -150,7 +150,7 @@ const WorkoutHistory = () => {
 
 	const handleSelectType = async (type: string) => {
 		setSelectedType(type)
-		await listRef.current?.scrollToOffset({
+		listRef.current?.scrollToOffset({
 			offset: 0,
 			animated: false
 		})
@@ -231,7 +231,7 @@ const WorkoutHistory = () => {
 						</Text>
 						<ArrowDownSvg />
 					</Pressable>
-					<LegendList
+					<FlashList
 						ref={listRef}
 						style={{ flex: 1 }}
 						data={itemsWithHeaders}

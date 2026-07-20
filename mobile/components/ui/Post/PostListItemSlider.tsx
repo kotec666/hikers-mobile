@@ -17,6 +17,7 @@ import { IRNMapWorkoutProps } from '@/components/map/RNMapWorkout'
 type MapElement = React.ReactElement<IYaMapWorkoutProps> | React.ReactElement<IRNMapWorkoutProps>
 
 interface IProps {
+	postId?: string
 	firstElement?: MapElement | null
 	images?: string[]
 }
@@ -86,6 +87,7 @@ const PostListItemSlider = (props: IProps) => {
 		return (
 			<PostSliderItem
 				key={index}
+				postId={props.postId}
 				image={item as string}
 				width={width - minusWidth}
 				SLIDE_ASPECT_RATIO={SLIDE_ASPECT_RATIO}

@@ -10,7 +10,7 @@ import React, {
 } from 'react'
 import { Container } from '@/components/ui/Container'
 import HeaderBack from '@/components/ui/HeaderBack'
-import { Dimensions, FlatList, Platform, View } from 'react-native'
+import { Dimensions, Platform, View } from 'react-native'
 import MapActionButton from '@/components/map/MapActionButton'
 import StartButton from '@/components/map/StartButton'
 import PeopleAddSvg from '@/components/svg/PeopleAddSvg'
@@ -40,6 +40,7 @@ import { YaMapUserLocationMarkerHandle } from '@/components/map/markers/UserLoca
 import { RNMapsUserLocationMarkerHandle } from '@/components/map/markers/UserLocationMarker/RNMapsUserLocationMarker'
 import WorkoutMap from '@/components/map/WorkoutMap'
 import BatteryOptimizationBanner from '@/components/training/BatteryOptimizationBanner'
+import { FlashList } from '@shopify/flash-list'
 
 export interface IWorkoutModeElement {
 	name: string
@@ -312,7 +313,7 @@ const NewWorkout = memo(
 				<BottomSheetResizable ref={bottomSheetResizableRef} blurDisabled={Platform.OS === 'android'}>
 					{sheetContent === 'workouts' && (
 						<Container className="flex-1">
-							<FlatList
+							<FlashList
 								data={props.WorkoutTypesData}
 								renderItem={({ item }) => (
 									<WorkoutType

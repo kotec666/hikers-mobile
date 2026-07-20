@@ -116,6 +116,7 @@ const Post = () => {
 									workoutType={post?.training?.type}
 								/>
 								<PostBodyWrapper
+									postId={post?.id}
 									mode={PostType.POST_ITEM}
 									title={post?.title}
 									description={post?.description}

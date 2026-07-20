@@ -6,7 +6,7 @@ import PeopleListItem from '@/components/find-people/PeopleListItem'
 import { Colors } from '@/constants/Colors'
 import { ITrainingMember } from '@/api/posts'
 import { useLocalSearchParams } from 'expo-router'
-import { LegendList } from '@legendapp/list/react-native'
+import { FlashList } from '@shopify/flash-list'
 import RoundedCheckMarkSvg from '@/components/svg/RoundedCheckMark'
 import RoundedPlusSvg from '@/components/svg/RoundedPlusSvg'
 import { PATH_TO_IMAGE } from '@/constants/PATH_TO_FILES'
@@ -85,7 +85,7 @@ const Members = () => {
 		<Page>
 			<Container className="gap-[20px] flex-1">
 				<HeaderBack>Участники тренировки</HeaderBack>
-				<LegendList
+				<FlashList
 					data={members}
 					renderItem={renderMemberItem}
 					keyExtractor={(item) => item.id}

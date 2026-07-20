@@ -4,6 +4,7 @@ import { Image } from 'expo-image'
 import { PATH_TO_IMAGE } from '@/constants/PATH_TO_FILES'
 
 const PostSliderItem = (props: {
+	postId?: string
 	image: string
 	isOnlyOneInList: boolean
 	width: number
@@ -23,6 +24,8 @@ const PostSliderItem = (props: {
 						borderWidth: 1,
 						borderColor: 'rgba(255, 255, 255, 0.2)'
 					}}
+					cachePolicy="memory-disk"
+					recyclingKey={props.postId || props.image}
 					source={{ uri: `${PATH_TO_IMAGE}${props.image}` }}
 					contentFit="cover"
 				/>

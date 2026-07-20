@@ -7,11 +7,11 @@ import { fontFamily } from '@/constants/Fonts'
 import RoundedMinusSvg from '@/components/svg/RoundedMinusSvg'
 import { ISubscribe } from '@/api/subscribers'
 import { PATH_TO_IMAGE } from '@/constants/PATH_TO_FILES'
-import { LegendList } from '@legendapp/list/react-native'
 import { Colors } from '@/constants/Colors'
 import { useMySubscriptionsQuery, useToggleSubscribeMutation } from '@/queries/subscriptions'
 import { Page } from '@/components/ui/Page'
 import { refetchAndHaptics } from '@/helpers/refetchAndHaptics'
+import { FlashList } from '@shopify/flash-list'
 
 /**
  * Мои подписки, на кого подписан я
@@ -81,7 +81,7 @@ const MySubscriptionsPage = () => {
 			<View style={{ flex: 1 }}>
 				<Container className="gap-[20px] flex-1">
 					<HeaderBack>Подписки</HeaderBack>
-					<LegendList
+					<FlashList
 						data={subscriptions}
 						renderItem={renderItem}
 						keyExtractor={(item) => item.user.id}

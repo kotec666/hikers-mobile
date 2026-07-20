@@ -7,11 +7,11 @@ import { fontFamily } from '@/constants/Fonts'
 import RoundedPlusSvg from '@/components/svg/RoundedPlusSvg'
 import RoundedMinusSvg from '@/components/svg/RoundedMinusSvg'
 import { PATH_TO_IMAGE } from '@/constants/PATH_TO_FILES'
-import { LegendList } from '@legendapp/list/react-native'
 import { Colors } from '@/constants/Colors'
 import { useAcceptFriendRequestMutation, useMyFriendRequestsQuery, useRejectFriendMutation } from '@/queries/friends'
 import { Page } from '@/components/ui/Page'
 import { refetchAndHaptics } from '@/helpers/refetchAndHaptics'
+import { FlashList } from '@shopify/flash-list'
 
 const FriendRequestsPage = () => {
 	const {
@@ -69,7 +69,7 @@ const FriendRequestsPage = () => {
 		<Page>
 			<Container className="gap-[20px] flex-1">
 				<HeaderBack>Запросы в друзья</HeaderBack>
-				<LegendList
+				<FlashList
 					data={friendRequests}
 					renderItem={({ item }) => (
 						<PeopleListItem
