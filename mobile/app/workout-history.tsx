@@ -1,5 +1,5 @@
 import React, { useCallback, useMemo, useRef, useState } from 'react'
-import { View, Text, RefreshControl, ActivityIndicator, Dimensions, Pressable } from 'react-native'
+import { View, Text, RefreshControl, ActivityIndicator, Pressable } from 'react-native'
 import HeaderBack from '@/components/ui/HeaderBack'
 import { Container } from '@/components/ui/Container'
 import PeopleRunningSvg from '@/components/svg/PeopleRunningSvg'
@@ -21,12 +21,11 @@ import { formatDistance } from '@/helpers/distance'
 import { useWorkoutsQuery } from '@/queries/workout'
 import { Page } from '@/components/ui/Page'
 import BlurProvider from '@/components/providers/BlurProvider'
-import BottomSheet from '@/components/ui/BottomSheet/BottomSheet'
-import { BottomSheetHandle } from '@/components/ui/BottomSheet/types'
 import ArrowDownSvg from '@/components/svg/ArrowDownSvg'
 import BaseWheelPicker from '@/components/ui/wheel-picker/base-wheel-picker'
 import { refetchAndHaptics } from '@/helpers/refetchAndHaptics'
 import { FlashList, FlashListRef } from '@shopify/flash-list'
+import TrueBottomSheet, { BottomSheetHandle } from '@/components/ui/BottomSheet/TrueBottomSheet'
 
 interface WorkoutItem {
 	id: string
@@ -49,8 +48,6 @@ type WorkoutHistoryRow =
 	| ({
 			rowType: 'workout'
 	  } & WorkoutItem)
-
-const { height: SCREEN_HEIGHT } = Dimensions.get('screen')
 
 const WorkoutHistory = () => {
 	const toast = useToast()
@@ -185,12 +182,13 @@ const WorkoutHistory = () => {
 	return (
 		<Page>
 			<BlurProvider>
-				<BottomSheet
+				<TrueBottomSheet
 					ref={bottomSheetRef}
-					activeHeight={SCREEN_HEIGHT * 0.5}
+					scrollable
+					dimmed={false}
 					onDone={() => {
-						handleSelectType(temporarySelectedType)
 						bottomSheetRef.current?.closeSheet()
+						handleSelectType(temporarySelectedType)
 					}}
 				>
 					<BaseWheelPicker
@@ -213,7 +211,7 @@ const WorkoutHistory = () => {
 							)
 						}}
 					/>
-				</BottomSheet>
+				</TrueBottomSheet>
 				<Container className="gap-[20px] flex-1">
 					<HeaderBack>История тренировок</HeaderBack>
 					<Pressable

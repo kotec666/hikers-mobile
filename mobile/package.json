@@ -22,6 +22,7 @@
 		"@bacons/apple-targets": "^4.0.6",
 		"@expo/ui": "~57.0.4",
 		"@legendapp/motion": "^2.5.3",
+		"@lodev09/react-native-true-sheet": "^3.11.9",
 		"@quidone/react-native-wheel-picker": "^1.7.0",
 		"@shopify/flash-list": "^2.3.2",
 		"@shopify/react-native-skia": "2.6.2",

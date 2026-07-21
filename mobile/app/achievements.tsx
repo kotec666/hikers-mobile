@@ -1,18 +1,15 @@
-import { Dimensions, ScrollView, Text, View } from 'react-native'
+import { ScrollView, Text, View } from 'react-native'
 import { Container } from '@/components/ui/Container'
 import HeaderBack from '@/components/ui/HeaderBack'
 import React, { useCallback, useEffect, useRef, useState } from 'react'
 import AchievementsListItem from '@/components/ui/Achievements/AchievementsListItem'
 import { fontFamily } from '@/constants/Fonts'
-import BottomSheet from '@/components/ui/BottomSheet/BottomSheet'
-import { BottomSheetHandle } from '@/components/ui/BottomSheet/types'
 import AchievementDetailed from '@/components/BottomSheets/AchievementDetailed'
 import BlurProvider from '@/components/providers/BlurProvider'
 import { useLocalSearchParams } from 'expo-router'
 import { useAchievementsQuery } from '@/queries/achievements'
 import { Page } from '@/components/ui/Page'
-
-const { height: screenHeight } = Dimensions.get('screen')
+import TrueBottomSheet, { BottomSheetHandle } from '@/components/ui/BottomSheet/TrueBottomSheet'
 
 const AchievementsPage = () => {
 	const { id } = useLocalSearchParams<{ id?: string }>()
@@ -97,9 +94,10 @@ const AchievementsPage = () => {
 						</View>
 					</ScrollView>
 				</Container>
-				<BottomSheet ref={bottomSheetRef} activeHeight={screenHeight * 0.5}>
-					{bottomSheetContent}
-				</BottomSheet>
+				{/*<BottomSheet ref={bottomSheetRef} activeHeight={screenHeight * 0.5}>*/}
+				{/*	{bottomSheetContent}*/}
+				{/*</BottomSheet>*/}
+				<TrueBottomSheet ref={bottomSheetRef}>{bottomSheetContent}</TrueBottomSheet>
 			</BlurProvider>
 		</Page>
 	)

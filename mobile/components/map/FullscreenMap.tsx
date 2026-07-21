@@ -20,6 +20,7 @@ const FullscreenMap = ({ visible, onClose, map }: Props) => {
 		const yaMapProps: IYaMapWorkoutProps = {
 			rounded: 0,
 			bordered: false,
+			maxContainerHeight: undefined,
 			interactiveDisabled: false,
 			logoPosition: {
 				horizontal: 'right',
@@ -34,6 +35,7 @@ const FullscreenMap = ({ visible, onClose, map }: Props) => {
 		const rnMapProps: IRNMapWorkoutProps = {
 			rounded: 0,
 			bordered: false,
+			maxContainerHeight: undefined,
 			interactiveDisabled: false,
 			appleLogoPosition: { top: 0, bottom: 40, left: 40, right: 0 },
 			appleLegalPosition: { top: 0, bottom: 53, left: 100, right: 0 }

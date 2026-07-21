@@ -38,7 +38,7 @@ const AchievementDetailed = (props: IProps) => {
 	const notTransparentLocations: readonly [number, number, ...number[]] = [0, 0.7, 1, 1]
 
 	return (
-		<View className="flex-1 items-center justify-start p-[16px] gap-[40px] w-full">
+		<View className="items-center justify-start p-[16px] gap-[40px] w-full">
 			<View className="items-center gap-[20px] w-full">
 				<View className="relative overflow-hidden p-[16px] items-center justify-center border-white/20 border-[1px] rounded-[16px] h-[80px] w-[80px]">
 					<LinearGradient
@@ -61,14 +61,14 @@ const AchievementDetailed = (props: IProps) => {
 
 				<View className="items-center mt-[15px] gap-[20px]">
 					<View className="items-center">
-						<Text style={{ fontFamily: fontFamily.bold }} className="text-white text-lg">
+						<Text style={{ fontFamily: fontFamily.bold }} className="text-white text-xl">
 							{achievement.title}
 						</Text>
-						<Text style={{ fontFamily: fontFamily.medium }} className="text-gray-ab text-xs">
+						<Text style={{ fontFamily: fontFamily.medium }} className="text-gray-ab text-sm">
 							Есть у {achievement.claimedPercent ?? 0}% пользователей
 						</Text>
 					</View>
-					<Text style={{ fontFamily: fontFamily.medium }} className="text-gray-ab text-base">
+					<Text style={{ fontFamily: fontFamily.medium }} className="text-gray-ab text-base text-center">
 						{achievement.description || ''}
 					</Text>
 				</View>

@@ -59,9 +59,9 @@ const Post = () => {
 		}
 	}
 
-	const creatorMetrics = post?.training.participants.find(
-		(participant) => participant.user.id === post?.userCreator.id
-	)?.metrics
+	const postCreator = post?.training.participants.find((participant) => participant.user.id === post?.userCreator.id)
+	const creatorMetrics = postCreator?.metrics
+	const creatorColor = postCreator?.user.color
 
 	if (isFetching) {
 		return (
@@ -124,12 +124,12 @@ const Post = () => {
 									isDetail
 									mapComponent={
 										<WorkoutMap
-											key={post?.training?.participants?.[0]?.route?.points?.length || 0} // какое-то время points undefined
 											bordered
 											rounded={25}
 											needFinishMarker
 											needFitInitialRoute
 											interactiveDisabled
+											routeColor={creatorColor}
 											maxContainerHeight={SLIDE_ASPECT_RATIO}
 											initialLocations={adaptLocations(
 												post?.training?.participants?.[0]?.route?.points || []

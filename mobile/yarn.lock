@@ -1595,6 +1595,11 @@
   resolved "https://registry.yarnpkg.com/@legendapp/tools/-/tools-2.0.1.tgz#995fe6cb3e2398b939f645505aa8e1abc84bd07f"
   integrity sha512-Kxt0HWvWElRK6oybHRzcYxdgaKGwuaiRNreS7usW7QuHXRIHaH4yMcW2YNRG4DHE5fpefv+Bno/BohQcCE4FaA==
 
+"@lodev09/react-native-true-sheet@^3.11.9":
+  version "3.11.9"
+  resolved "https://registry.yarnpkg.com/@lodev09/react-native-true-sheet/-/react-native-true-sheet-3.11.9.tgz#d669d168085c4db8ceada6c58933cf67fa91c57c"
+  integrity sha512-nDvaw7w5UF0XGQnKpKvThmuz6WB4pHDUPImILhWRMIem6tkj2dVqp7j+r3/+Sc0l+p/Xnr6Pfpp8lFa4T+29+w==
+
 "@napi-rs/wasm-runtime@^0.2.11":
   version "0.2.12"
   resolved "https://registry.yarnpkg.com/@napi-rs/wasm-runtime/-/wasm-runtime-0.2.12.tgz#3e78a8b96e6c33a6c517e1894efbd5385a7cb6f2"
