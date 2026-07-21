@@ -25,7 +25,8 @@ const TrueBottomSheet = forwardRef<BottomSheetHandle, BottomSheetProps>((props, 
 	const { blurDisabled, onDone, children, ...restProps } = props
 	const bottomSheetRef = useRef<TrueSheet | null>(null)
 	const blurTargetRef = useBlurContext()
-	const isGlassAvailable = Platform.OS === 'ios' && isLiquidGlassAvailable()
+	const isIOS = Platform.OS === 'ios'
+	const isGlassAvailable = isIOS && isLiquidGlassAvailable()
 
 	const closedPositionY = screenHeight
 
@@ -38,13 +39,31 @@ const TrueBottomSheet = forwardRef<BottomSheetHandle, BottomSheetProps>((props, 
 			return (
 				<GlassView
 					colorScheme="dark"
-					style={[StyleSheet.absoluteFill, { borderTopLeftRadius: 50, borderTopRightRadius: 50 }]}
+					style={[
+						StyleSheet.absoluteFill,
+						{
+							height: screenHeight,
+							borderTopLeftRadius: 50,
+							borderTopRightRadius: 50
+						}
+					]}
 				/>
 			)
 		}
 
 		if (Platform.OS === 'ios') {
-			return <BlurView tint="dark" style={StyleSheet.absoluteFill} intensity={10} />
+			return (
+				<BlurView
+					tint="dark"
+					style={[
+						StyleSheet.absoluteFill,
+						{
+							height: screenHeight
+						}
+					]}
+					intensity={23}
+				/>
+			)
 		}
 
 		return (
@@ -88,8 +107,9 @@ const TrueBottomSheet = forwardRef<BottomSheetHandle, BottomSheetProps>((props, 
 		const opacity = interpolate(sheetPosition.value, [closedPositionY - 50, screenHeight * 0.5], [0, 1])
 		const isClosed = sheetPosition.value > closedPositionY - 10
 
+		const buttonPosition = isIOS ? 180 : 150
 		return {
-			top: isClosed ? screenHeight + 20 : sheetPosition.value - 150,
+			top: isClosed ? screenHeight + 20 : sheetPosition.value - buttonPosition,
 			opacity,
 			transform: [
 				{
@@ -126,6 +146,7 @@ const TrueBottomSheet = forwardRef<BottomSheetHandle, BottomSheetProps>((props, 
 				backgroundColor={blurDisabled ? 'rgba(0, 0, 0, 1)' : 'transparent'}
 				detents={restProps.detents ?? [0.5]}
 				grabberOptions={{
+					topMargin: 10,
 					color: Colors['gray-d9'],
 					adaptive: false
 				}}
