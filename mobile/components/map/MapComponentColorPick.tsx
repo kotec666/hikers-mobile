@@ -16,7 +16,6 @@ type WorkoutMapProps = Omit<IRNMapComponentColorPickProps, 'appleLogoPosition' |
 		animatedStrokeProps?: Partial<{ stroke: string }>
 		animatedFillProps?: Partial<{ fill: string }>
 		animatedFillColorProps?: Partial<{ fillColor: string }>
-		animatedFillColorWithOpacityProps?: Partial<{ fillColor: string }>
 	}
 
 const MapComponentColorPick = (props: WorkoutMapProps) => {

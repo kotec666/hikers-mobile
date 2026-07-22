@@ -35,7 +35,6 @@ export interface IRNMapComponentColorPickProps {
 	animatedStrokeProps?: Partial<{ stroke: string }>
 	animatedFillProps?: Partial<{ fill: string }>
 	animatedFillColorProps?: Partial<{ fillColor: string }>
-	animatedFillColorWithOpacityProps?: Partial<{ fillColor: string }>
 }
 
 export interface RNMapColorPickHandle {
@@ -86,8 +85,8 @@ const RNMapComponentColorPick = forwardRef<RNMapColorPickHandle, IRNMapComponent
 					ref={props.rnMapUserLocationMarkerRef}
 					initialPosition={mapCenter}
 					debugAccuracyM={20}
+					color={props.activeColor}
 					animatedFillProps={props.animatedFillProps}
-					animatedFillColorWithOpacityProps={props.animatedFillColorWithOpacityProps}
 				/>
 
 				<Polyline

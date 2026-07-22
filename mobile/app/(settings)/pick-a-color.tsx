@@ -50,6 +50,8 @@ const SettingsPickAColorPage = () => {
 	const RNMapComponentRef = useRef<RNMapColorPickHandle>(null)
 	const rnMapUserLocationMarkerRef = useRef<RNMapsUserLocationMarkerHandle>(null)
 
+	const isIOS = Platform.OS === 'ios'
+
 	const { data: profileData, isFetching: isProfileFetching } = useProfileQuery()
 	const { mutateAsync: updateProfileColor, isPending } = useUpdateProfileColorMutation()
 
@@ -96,7 +98,6 @@ const SettingsPickAColorPage = () => {
 	const animatedStrokeProps = useAnimatedColorPickProps('stroke', false, currentColor, 1)
 	const animatedFillProps = useAnimatedColorPickProps('fill', false, currentColor, 1)
 	const animatedFillColorProps = useAnimatedColorPickProps('fillColor', false, currentColor, 1)
-	const animatedFillColorWithOpacityProps = useAnimatedColorPickProps('fillColor', true, currentColor, 0.2)
 
 	const setColorOnMap = (rgb: string) => {
 		RNMapComponentRef.current?.setRNMapColor(rgb)
@@ -109,10 +110,14 @@ const SettingsPickAColorPage = () => {
 		if (typeof color === 'string') {
 			currentColor.value = color
 			setColor(color)
-			RNMapComponentRef.current?.setRNMapColor(color)
+			if (isIOS) {
+				setColorOnMap(color)
+			}
 		} else {
 			setColor(color.rgb)
-			RNMapComponentRef.current?.setRNMapColor(color.rgb)
+			if (isIOS) {
+				setColorOnMap(color.rgb)
+			}
 		}
 	}
 
@@ -182,7 +187,6 @@ const SettingsPickAColorPage = () => {
 							animatedStrokeProps={animatedStrokeProps}
 							animatedFillProps={animatedFillProps}
 							animatedFillColorProps={animatedFillColorProps}
-							animatedFillColorWithOpacityProps={animatedFillColorWithOpacityProps}
 						/>
 						{isFreeMode ? (
 							<View style={colorPickerStyle.pickerContainer}>
