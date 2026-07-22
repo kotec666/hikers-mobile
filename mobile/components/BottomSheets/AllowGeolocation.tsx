@@ -6,7 +6,7 @@ import { Button } from '@/components/ui/Button'
 
 const AllowGeolocation = (props: { allow: () => void; close: () => void }) => {
 	return (
-		<View className="flex-1 items-center justify-start p-[16px] gap-[40px] w-full">
+		<View className="items-center justify-start p-[16px] gap-[40px] w-full">
 			<View className="items-center gap-[20px]">
 				<GeolocationPermissionSvg />
 				<Text style={{ fontFamily: fontFamily.bold }} className="text-white text-lg">

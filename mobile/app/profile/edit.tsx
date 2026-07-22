@@ -1,6 +1,6 @@
 import React, { useCallback, useMemo, useRef, useState } from 'react'
 import { Container } from '@/components/ui/Container'
-import { Keyboard, Pressable, TouchableOpacity, View, Text, Dimensions, TextInput } from 'react-native'
+import { Keyboard, Pressable, TouchableOpacity, View, Text, TextInput } from 'react-native'
 import { UserAvatar } from '@/components/ui/UserAvatar'
 import { Button } from '@/components/ui/Button'
 import ActivityInfo from '@/components/ui/Profile/ActivityInfo'
@@ -22,12 +22,11 @@ import BlurProvider from '@/components/providers/BlurProvider'
 import { lengths } from '@shared/lengths'
 import { useProfileQuery, useUpdateProfileMutation } from '@/queries/my-profile'
 import { Page } from '@/components/ui/Page'
-import BottomSheet from '@/components/ui/BottomSheet/BottomSheet'
-import { BottomSheetHandle } from '@/components/ui/BottomSheet/types'
 import BaseWheelPicker from '@/components/ui/wheel-picker/base-wheel-picker'
 import { cn } from '@/helpers/cn'
 import { KeyboardAwareScrollView } from 'react-native-keyboard-controller'
 import { File } from 'expo-file-system'
+import BottomSheet, { BottomSheetHandle } from '@/components/ui/BottomSheet/BottomSheet'
 
 interface IEditProfileFormState {
 	name: string
@@ -35,9 +34,6 @@ interface IEditProfileFormState {
 	weight: number
 	avatarFilename?: string | null
 }
-
-const { height: SCREEN_HEIGHT } = Dimensions.get('screen')
-const FormData = global.FormData
 
 const ProfileEdit = () => {
 	const router = useRouter()
@@ -172,16 +168,16 @@ const ProfileEdit = () => {
 		}
 	}
 
-	const openBottomSheet = useCallback(() => {
+	const openBottomSheet = useCallback(async () => {
 		setTemporaryWeight(weight)
 
 		if (bottomSheetRef.current) {
-			bottomSheetRef.current.openSheet()
+			await bottomSheetRef.current.openSheet()
 		}
 	}, [weight])
 
-	const handlePressWeightField = () => {
-		openBottomSheet()
+	const handlePressWeightField = async () => {
+		await openBottomSheet()
 	}
 
 	const sourceArray = newActivitiesOrder?.length ? newActivitiesOrder : (profileData?.activities ?? [])
@@ -205,13 +201,13 @@ const ProfileEdit = () => {
 			<BlurProvider>
 				<BottomSheet
 					ref={bottomSheetRef}
-					activeHeight={SCREEN_HEIGHT * 0.5}
+					scrollable
+					dimmed={false}
 					onDone={() => {
+						bottomSheetRef.current?.closeSheet()
 						setValue('weight', temporaryWeight, {
 							shouldDirty: true
 						})
-
-						bottomSheetRef.current?.closeSheet()
 					}}
 				>
 					<BaseWheelPicker

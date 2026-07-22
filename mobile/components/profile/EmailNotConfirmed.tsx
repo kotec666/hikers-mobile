@@ -11,6 +11,7 @@ import { createTimer, isRateLimited, TimerType } from '@/store/timerStorage'
 import { GlassView, isLiquidGlassAvailable } from 'expo-glass-effect'
 import { getFieldsErrors } from '@/helpers/getFieldsErrors'
 import * as Haptics from 'expo-haptics'
+import { RelativePathString } from 'expo-router'
 
 const EmailNotConfirmed = ({ isVisible, email }: { isVisible: boolean; email?: string }) => {
 	const toast = useToast()
@@ -26,14 +27,14 @@ const EmailNotConfirmed = ({ isVisible, email }: { isVisible: boolean; email?: s
 		const hasActiveTimer = isRateLimited(TimerType.EMAIL_CONFIRMATION, email)
 
 		if (hasActiveTimer) {
-			return push(`/mail-confirmation?email=${email}`)
+			return push(`/mail-confirmation?email=${email}` as RelativePathString)
 		}
 
 		try {
-			const requestCodeResult = await requestConfirmEmailCode()
+			const requestCodeResult = await requestConfirmEmailCode(email)
 			createTimer(TimerType.EMAIL_CONFIRMATION, email, requestCodeResult.waitMs)
 
-			return push(`/mail-confirmation?email=${email}`)
+			return push(`/mail-confirmation?email=${email}` as RelativePathString)
 		} catch (e) {
 			toast.error('Произошла ошибка')
 			await getFieldsErrors(e)

@@ -1,15 +1,13 @@
 import React, { forwardRef, useCallback, useEffect, useImperativeHandle, useRef, useState } from 'react'
-import { BottomSheetHandle } from '@/components/ui/BottomSheet/types'
 import AllowGeolocation from '@/components/BottomSheets/AllowGeolocation'
-import BottomSheet from '@/components/ui/BottomSheet/BottomSheet'
-import { Alert, AppState, Dimensions, Linking, Platform } from 'react-native'
+import { Alert, AppState, Linking, Platform } from 'react-native'
 import EnableGPS from '@/components/BottomSheets/EnableGPS'
 import AllowBackgroundGeolocation from '@/components/BottomSheets/AllowBackgroundGeolocation'
 import AllowDeniedGeolocation from '@/components/BottomSheets/AllowDeniedGeolocation'
 import * as Location from 'expo-location'
 import * as Application from 'expo-application'
+import BottomSheet, { BottomSheetHandle } from '@/components/ui/BottomSheet/BottomSheet'
 
-const { height: screenHeight } = Dimensions.get('screen')
 const IOS_LOCATION_SERVICES_ALERT_COOLDOWN_MS = 1500
 
 let isIOSLocationServicesAlertVisible = false
@@ -47,13 +45,13 @@ const AllGeolocationPermissions = forwardRef<AllGeolocationPermissionsHandle, IP
 		const openBottomSheet = useCallback((newContent: React.ReactNode) => {
 			setBottomSheetContent(newContent)
 			if (bottomSheetRef.current) {
-				requestAnimationFrame(() => bottomSheetRef.current?.openSheet())
+				requestAnimationFrame(async () => await bottomSheetRef.current?.openSheet())
 			}
 		}, [])
 
-		const closeBottomSheet = useCallback(() => {
+		const closeBottomSheet = useCallback(async () => {
 			if (bottomSheetRef.current) {
-				bottomSheetRef.current?.closeSheet(() => {
+				await bottomSheetRef.current?.closeSheet(() => {
 					setBottomSheetContent(null)
 				})
 			}
@@ -61,7 +59,7 @@ const AllGeolocationPermissions = forwardRef<AllGeolocationPermissionsHandle, IP
 
 		const openAppSettings = useCallback(
 			async (isNotificationSetting = false) => {
-				closeBottomSheet()
+				await closeBottomSheet()
 				wasInSettingsRef.current = true
 				try {
 					if (Platform.OS === 'ios') {
@@ -84,7 +82,7 @@ const AllGeolocationPermissions = forwardRef<AllGeolocationPermissionsHandle, IP
 			[appId, closeBottomSheet]
 		)
 
-		const showIOSLocationServicesAlert = useCallback(() => {
+		const showIOSLocationServicesAlert = useCallback(async () => {
 			const now = Date.now()
 
 			if (
@@ -96,7 +94,7 @@ const AllGeolocationPermissions = forwardRef<AllGeolocationPermissionsHandle, IP
 
 			isIOSLocationServicesAlertVisible = true
 			lastIOSLocationServicesAlertShownAt = now
-			closeBottomSheet()
+			await closeBottomSheet()
 			Alert.alert(
 				'Службы геолокации выключены',
 				'Откройте Настройки > Конфиденциальность и безопасность > Службы геолокации и включите переключатель.',
@@ -136,7 +134,7 @@ const AllGeolocationPermissions = forwardRef<AllGeolocationPermissionsHandle, IP
 		)
 
 		const allowGPS = useCallback(async () => {
-			closeBottomSheet()
+			await closeBottomSheet()
 			try {
 				await Location.enableNetworkProviderAsync() // android only
 				const servicesEnabled = await Location.hasServicesEnabledAsync()
@@ -170,7 +168,7 @@ const AllGeolocationPermissions = forwardRef<AllGeolocationPermissionsHandle, IP
 
 		const allowBackgroundLocationPermission = useCallback(async () => {
 			const { status: backgroundStatus } = await Location.requestBackgroundPermissionsAsync() // ios + android
-			closeBottomSheet()
+			await closeBottomSheet()
 
 			if (backgroundStatus === 'granted') {
 				return checkIsGPSEnabled()
@@ -210,7 +208,7 @@ const AllGeolocationPermissions = forwardRef<AllGeolocationPermissionsHandle, IP
 
 		const allowForegroundLocationPermission = useCallback(async () => {
 			const { status: foregroundStatus } = await Location.requestForegroundPermissionsAsync() // ios + android
-			closeBottomSheet()
+			await closeBottomSheet()
 
 			if (foregroundStatus === 'granted') {
 				await checkBackgroundPermission()
@@ -347,11 +345,7 @@ const AllGeolocationPermissions = forwardRef<AllGeolocationPermissionsHandle, IP
 		)
 
 		return (
-			<BottomSheet
-				blurDisabled={Platform.OS === 'android'}
-				ref={bottomSheetRef}
-				activeHeight={screenHeight * 0.5}
-			>
+			<BottomSheet ref={bottomSheetRef} blurDisabled={Platform.OS === 'android'}>
 				{bottomSheetContent}
 			</BottomSheet>
 		)

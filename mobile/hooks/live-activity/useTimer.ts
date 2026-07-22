@@ -23,9 +23,9 @@ export interface UseTimerReturn {
 export function useTimer({ initialElapsedTime = 0, onUpdate }: UseTimerOptions = {}): UseTimerReturn {
 	const [elapsedTime, setElapsedTime] = useState<number>(initialElapsedTime)
 	const [state, setState] = useState<TimerState>('idle')
-	const timerRef = useRef<NodeJS.Timeout | null>(null)
+	const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
 	const lastTimeRef = useRef<number>(0)
-	const lastSyncRef = useRef<number>(Date.now())
+	const lastSyncRef = useRef<number>(0)
 	const isSyncingRef = useRef<boolean>(false)
 
 	const formatTime = (timeInSeconds: number): string => {
@@ -39,6 +39,10 @@ export function useTimer({ initialElapsedTime = 0, onUpdate }: UseTimerOptions =
 			seconds.toString().padStart(2, '0')
 		].join('')
 	}
+
+	useEffect(() => {
+		lastSyncRef.current = Date.now()
+	}, [])
 
 	useEffect(() => {
 		return () => {

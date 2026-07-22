@@ -68,6 +68,7 @@ const UnsavedTrainingsDetails = ({
 
 	const isDeletingDisabled = !notSavedWorkouts.length || syncingIds.length > 0
 
+	// @TODO flex-1 ?
 	return (
 		<View className="flex-1 w-full p-[16px]">
 			<FlashList

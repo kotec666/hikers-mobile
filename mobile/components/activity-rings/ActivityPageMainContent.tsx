@@ -14,9 +14,9 @@ import DistanceSvg from '@/components/svg/DistanceSvg'
 import { Button } from '@/components/ui/Button'
 
 interface IProps {
-	handlePressChangeGoalToday: () => void
-	handlePressChangeGoalSchedule: () => void
-	handlePressChangeGoal: () => void
+	handlePressChangeGoalToday: () => Promise<void>
+	handlePressChangeGoalSchedule: () => Promise<void>
+	handlePressChangeGoal: () => Promise<void>
 	isToday?: boolean
 }
 

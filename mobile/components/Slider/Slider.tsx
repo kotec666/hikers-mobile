@@ -30,7 +30,7 @@ export function Slider({ itemList, children }: SliderProps) {
 	const [data, setData] = useState(itemList)
 	const flatListRef = useAnimatedRef<Animated.FlatList<any>>()
 	const [isAutoPlay, setIsAutoPlay] = useState(true)
-	const interval = useRef<NodeJS.Timeout | undefined>(undefined)
+	const interval = useRef<ReturnType<typeof setTimeout> | undefined>(undefined)
 	const offset = useSharedValue(0)
 	const AUTOPLAY_INTERVAL = 5000
 

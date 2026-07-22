@@ -9,7 +9,7 @@ import BlurProvider from '@/components/providers/BlurProvider'
 import { useLocalSearchParams } from 'expo-router'
 import { useAchievementsQuery } from '@/queries/achievements'
 import { Page } from '@/components/ui/Page'
-import TrueBottomSheet, { BottomSheetHandle } from '@/components/ui/BottomSheet/TrueBottomSheet'
+import BottomSheet, { BottomSheetHandle } from '@/components/ui/BottomSheet/BottomSheet'
 
 const AchievementsPage = () => {
 	const { id } = useLocalSearchParams<{ id?: string }>()
@@ -22,9 +22,9 @@ const AchievementsPage = () => {
 	const unClaimedAchievements = data.unclaimed
 	const allAchievements = data.all
 
-	const openBottomSheet = useCallback((newContent: React.ReactNode) => {
+	const openBottomSheet = useCallback(async (newContent: React.ReactNode) => {
 		setBottomSheetContent(newContent)
-		bottomSheetRef.current?.openSheet()
+		await bottomSheetRef.current?.openSheet()
 	}, [])
 
 	// открытие по query param
@@ -39,11 +39,11 @@ const AchievementsPage = () => {
 		}
 	}, [id, isLoading, allAchievements, openBottomSheet])
 
-	const handlePressAchievement = (achievementId: string) => {
+	const handlePressAchievement = async (achievementId: string) => {
 		const achievement = allAchievements.find((a) => a.id === achievementId)
 
 		if (achievement) {
-			openBottomSheet(<AchievementDetailed achievement={achievement} />)
+			await openBottomSheet(<AchievementDetailed achievement={achievement} />)
 		}
 	}
 
@@ -94,10 +94,7 @@ const AchievementsPage = () => {
 						</View>
 					</ScrollView>
 				</Container>
-				{/*<BottomSheet ref={bottomSheetRef} activeHeight={screenHeight * 0.5}>*/}
-				{/*	{bottomSheetContent}*/}
-				{/*</BottomSheet>*/}
-				<TrueBottomSheet ref={bottomSheetRef}>{bottomSheetContent}</TrueBottomSheet>
+				<BottomSheet ref={bottomSheetRef}>{bottomSheetContent}</BottomSheet>
 			</BlurProvider>
 		</Page>
 	)

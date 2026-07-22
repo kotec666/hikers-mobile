@@ -25,7 +25,7 @@ import ArrowDownSvg from '@/components/svg/ArrowDownSvg'
 import BaseWheelPicker from '@/components/ui/wheel-picker/base-wheel-picker'
 import { refetchAndHaptics } from '@/helpers/refetchAndHaptics'
 import { FlashList, FlashListRef } from '@shopify/flash-list'
-import TrueBottomSheet, { BottomSheetHandle } from '@/components/ui/BottomSheet/TrueBottomSheet'
+import BottomSheet, { BottomSheetHandle } from '@/components/ui/BottomSheet/BottomSheet'
 
 interface WorkoutItem {
 	id: string
@@ -153,10 +153,10 @@ const WorkoutHistory = () => {
 		})
 	}
 
-	const openBottomSheet = useCallback(() => {
+	const openBottomSheet = useCallback(async () => {
 		setTemporarySelectedType(selectedType)
 		if (bottomSheetRef.current) {
-			bottomSheetRef.current.openSheet()
+			await bottomSheetRef.current.openSheet()
 		}
 	}, [selectedType])
 
@@ -182,13 +182,13 @@ const WorkoutHistory = () => {
 	return (
 		<Page>
 			<BlurProvider>
-				<TrueBottomSheet
+				<BottomSheet
 					ref={bottomSheetRef}
 					scrollable
 					dimmed={false}
-					onDone={() => {
+					onDone={async () => {
 						bottomSheetRef.current?.closeSheet()
-						handleSelectType(temporarySelectedType)
+						await handleSelectType(temporarySelectedType)
 					}}
 				>
 					<BaseWheelPicker
@@ -211,7 +211,7 @@ const WorkoutHistory = () => {
 							)
 						}}
 					/>
-				</TrueBottomSheet>
+				</BottomSheet>
 				<Container className="gap-[20px] flex-1">
 					<HeaderBack>История тренировок</HeaderBack>
 					<Pressable

@@ -24,14 +24,16 @@ export const useReadNotificationsOnView = <T extends Identifiable>(
 		[isRead]
 	)
 
-	flushRef.current = () => {
-		const ids = Array.from(bufferRef.current)
+	useEffect(() => {
+		flushRef.current = () => {
+			const ids = Array.from(bufferRef.current)
 
-		if (!ids.length) return
+			if (!ids.length) return
 
-		bufferRef.current.clear()
-		return readNotificationsByIds(ids)
-	}
+			bufferRef.current.clear()
+			return readNotificationsByIds(ids)
+		}
+	}, [readNotificationsByIds])
 
 	useFocusEffect(
 		useCallback(() => {

@@ -1,5 +1,5 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react'
-import { View, Dimensions } from 'react-native'
+import { View } from 'react-native'
 import { Page } from '@/components/ui/Page'
 import { Container } from '@/components/ui/Container'
 import BlurProvider from '@/components/providers/BlurProvider'
@@ -8,17 +8,12 @@ import ActivityGoalEveryDay from '@/components/activity-rings/bottom-sheets/Acti
 import ActivityGoalToday from '@/components/activity-rings/bottom-sheets/ActivityGoalToday'
 import { generateMonthsRange } from '@/helpers/calendar'
 import ActivityGoalPerMonth from '@/components/activity-rings/bottom-sheets/ActivityGoalPerMonth'
-import BottomSheet from '@/components/ui/BottomSheet/BottomSheet'
-import BottomSheetResizable, {
-	BottomSheetResizableRef,
-	SNAP_POINT_INDEX
-} from '@/components/ui/BottomSheetResizable/BottomSheetResizable'
-import { BottomSheetHandle } from '@/components/ui/BottomSheet/types'
 import PagerView from 'react-native-pager-view'
 import { canGoNextDay, canGoNextWeek, TODAY } from '@/helpers/date'
 import { addDays, addWeeks, isAfter, isSameDay } from 'date-fns'
 import ActivityRingsHeader from '@/components/activity-rings/ActivityRingsHeader'
 import ActivityPageMainContent from '@/components/activity-rings/ActivityPageMainContent'
+import BottomSheet, { BottomSheetHandle } from '@/components/ui/BottomSheet/BottomSheet'
 
 export interface DayGoal {
 	day: string
@@ -42,8 +37,6 @@ const LOAD_MORE_STEP = 6
 const MIN_CALORIE_LIMIT = 10
 const MAX_CALORIE_LIMIT = 9990
 
-const { height: screenHeight } = Dimensions.get('screen')
-
 const SCHEDULE_INITIAL_DATA = [
 	{ day: 'Пн', label: 'Понедельник', goal: 200 },
 	{ day: 'Вт', label: 'Вторник', goal: 200 },
@@ -58,7 +51,6 @@ const Kcal = () => {
 	const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null)
 
 	const bottomSheetRef = useRef<BottomSheetHandle>(null)
-	const bottomSheetResizableRef = useRef<BottomSheetResizableRef>(null)
 
 	const weekPagerRef = useRef<PagerView>(null)
 	const dayPagerRef = useRef<PagerView>(null)
@@ -146,32 +138,28 @@ const Kcal = () => {
 		setPastMonthsCount((prev) => prev + LOAD_MORE_STEP)
 	}
 
-	const openBottomSheet = useCallback(() => {
-		bottomSheetRef.current?.openSheet()
-	}, [])
-
-	const openResizableBottomSheet = useCallback(() => {
-		bottomSheetResizableRef.current?.open()
+	const openBottomSheet = useCallback(async () => {
+		await bottomSheetRef.current?.openSheet()
 	}, [])
 
 	const handlePressHeaderCalendar = async () => {
 		setBottomSheetType(BottomSheetTypes.PER_MONTH)
-		openResizableBottomSheet()
+		await openBottomSheet()
 	}
 
-	const handlePressChangeGoal = () => {
+	const handlePressChangeGoal = async () => {
 		setBottomSheetType(BottomSheetTypes.EVERY_DAY)
-		openBottomSheet()
+		await openBottomSheet()
 	}
 
-	const handlePressChangeGoalToday = () => {
+	const handlePressChangeGoalToday = async () => {
 		setBottomSheetType(BottomSheetTypes.TODAY)
-		openBottomSheet()
+		await openBottomSheet()
 	}
 
-	const handlePressChangeGoalSchedule = () => {
+	const handlePressChangeGoalSchedule = async () => {
 		setBottomSheetType(BottomSheetTypes.SCHEDULE)
-		openResizableBottomSheet()
+		await openBottomSheet()
 	}
 
 	const updateGoal = (index: number, delta: number) => {
@@ -229,10 +217,11 @@ const Kcal = () => {
 
 	const renderEmptyPage = (key: string) => <View key={key} style={{ width: '100%', height: '100%' }} />
 
+	const isBigSheet = bottomSheetType === BottomSheetTypes.PER_MONTH || bottomSheetType === BottomSheetTypes.SCHEDULE
 	return (
 		<Page edges={['bottom']}>
 			<BlurProvider>
-				<BottomSheet ref={bottomSheetRef} activeHeight={screenHeight * 0.5}>
+				<BottomSheet ref={bottomSheetRef} detents={isBigSheet ? [1] : [0.5]} scrollable={isBigSheet}>
 					{bottomSheetType === BottomSheetTypes.TODAY && (
 						<ActivityGoalToday
 							currentGoal={schedule[0].goal}
@@ -250,8 +239,7 @@ const Kcal = () => {
 							onLongPressStop={onLongPressStop}
 						/>
 					)}
-				</BottomSheet>
-				<BottomSheetResizable ref={bottomSheetResizableRef} initialSnapIndex={SNAP_POINT_INDEX.MAX}>
+
 					<ActivityGoalPerMonth
 						months={months}
 						currentMonthIndex={currentMonthIndex}
@@ -266,7 +254,7 @@ const Kcal = () => {
 						onLongPressStop={onLongPressStop}
 						isVisible={bottomSheetType === BottomSheetTypes.SCHEDULE}
 					/>
-				</BottomSheetResizable>
+				</BottomSheet>
 
 				<ActivityRingsHeader
 					weekPagerRef={weekPagerRef}

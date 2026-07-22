@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useState } from 'react'
+import { useCallback, useMemo, useState } from 'react'
 import { Platform } from 'react-native'
 import type {
 	ActivityInfo,
@@ -69,9 +69,37 @@ interface UseLiveActivityReturn {
 
 const isIOS = Platform.OS === 'ios'
 
+function getInitialLiveActivityState(): {
+	liveActivityState: LiveActivityState
+	activeActivities: ActivityInfo[]
+} {
+	if (!isIOS) {
+		return { liveActivityState: 'unsupported', activeActivities: [] }
+	}
+
+	try {
+		const available = liveActivities.isLiveActivityAvailable()
+		if (!available) {
+			return { liveActivityState: 'unavailable', activeActivities: [] }
+		}
+
+		try {
+			const activities = liveActivities.getActiveActivities()
+			return { liveActivityState: 'supported', activeActivities: activities }
+		} catch (error) {
+			console.error('Error getting active activities:', error)
+			return { liveActivityState: 'supported', activeActivities: [] }
+		}
+	} catch (error) {
+		console.error('Error checking Live Activity availability:', error)
+		return { liveActivityState: 'unavailable', activeActivities: [] }
+	}
+}
+
 // @TODO не используется
 export function useLiveActivity(): UseLiveActivityReturn {
-	const [liveActivityState, setLiveActivityState] = useState<LiveActivityState>('unknown')
+	const [initial] = useState(getInitialLiveActivityState)
+	const [liveActivityState] = useState<LiveActivityState>(initial.liveActivityState)
 	const [liveActivityId, setLiveActivityId] = useState<string | null>(null)
 	const [activeActivities, setActiveActivities] = useState<ActivityInfo[]>([])
 	const [timerStatus, setTimerStatus] = useState<TimerStatus>({
@@ -106,24 +134,6 @@ export function useLiveActivity(): UseLiveActivityReturn {
 			return []
 		}
 	}, [liveActivityState])
-
-	const checkAvailability = useCallback(async () => {
-		if (!isIOS) {
-			setLiveActivityState('unsupported')
-			return
-		}
-
-		try {
-			const available = liveActivities.isLiveActivityAvailable()
-			setLiveActivityState(available ? 'supported' : 'unavailable')
-			if (available) {
-				updateActiveActivities()
-			}
-		} catch (error) {
-			console.error('Error checking Live Activity availability:', error)
-			setLiveActivityState('unavailable')
-		}
-	}, [updateActiveActivities])
 
 	const updateStatus = useCallback(async (): Promise<TimerStatus> => {
 		if (!isIOS || liveActivityState !== 'supported') {
@@ -294,10 +304,6 @@ export function useLiveActivity(): UseLiveActivityReturn {
 
 	const getElapsedTime = useCallback(() => timerStatus.elapsedTime, [timerStatus])
 	const isRunning = useCallback(() => timerStatus.state === 'active', [timerStatus])
-
-	useEffect(() => {
-		checkAvailability()
-	}, [checkAvailability])
 
 	return {
 		isSupported,

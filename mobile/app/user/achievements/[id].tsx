@@ -1,37 +1,34 @@
-import { Dimensions, ScrollView, Text, View } from 'react-native'
+import { ScrollView, Text, View } from 'react-native'
 import { Container } from '@/components/ui/Container'
 import HeaderBack from '@/components/ui/HeaderBack'
 import React, { useCallback, useRef, useState } from 'react'
 import AchievementsListItem from '@/components/ui/Achievements/AchievementsListItem'
 import { fontFamily } from '@/constants/Fonts'
-import BottomSheet from '@/components/ui/BottomSheet/BottomSheet'
-import { BottomSheetHandle } from '@/components/ui/BottomSheet/types'
 import AchievementDetailed from '@/components/BottomSheets/AchievementDetailed'
 import { useLocalSearchParams } from 'expo-router'
 import BlurProvider from '@/components/providers/BlurProvider'
 import { useUserAchievementsQuery } from '@/queries/achievements'
 import { Page } from '@/components/ui/Page'
-
-const { height: screenHeight } = Dimensions.get('screen')
+import BottomSheet, { BottomSheetHandle } from '@/components/ui/BottomSheet/BottomSheet'
 
 const UserAchievementsPage = () => {
 	const { id } = useLocalSearchParams<{ id: string }>()
 	const bottomSheetRef = useRef<BottomSheetHandle>(null)
 	const [bottomSheetContent, setBottomSheetContent] = useState<React.ReactNode>(null)
 
-	const openBottomSheet = useCallback((newContent: React.ReactNode) => {
+	const openBottomSheet = useCallback(async (newContent: React.ReactNode) => {
 		setBottomSheetContent(newContent)
 		if (bottomSheetRef.current) {
-			bottomSheetRef.current.openSheet()
+			await bottomSheetRef.current.openSheet()
 		}
 	}, [])
 
 	const { data: userAchievements = [] } = useUserAchievementsQuery(id)
 
-	const handleClickAchievement = (achievementId: string) => {
+	const handleClickAchievement = async (achievementId: string) => {
 		const clickedAchievement = userAchievements.find((achievement) => achievement.id === achievementId)
 		if (clickedAchievement) {
-			openBottomSheet(<AchievementDetailed achievement={clickedAchievement} />)
+			await openBottomSheet(<AchievementDetailed achievement={clickedAchievement} />)
 		}
 	}
 
@@ -42,7 +39,7 @@ const UserAchievementsPage = () => {
 					<HeaderBack>Достижения</HeaderBack>
 					<ScrollView style={{ flex: 1, width: '100%' }} contentContainerStyle={{ paddingBottom: 50 }}>
 						<View className="gap-[10px]">
-							{userAchievements.length && (
+							{userAchievements.length > 0 && (
 								<Text className="text-base text-white" style={{ fontFamily: fontFamily.bold }}>
 									Полученные
 								</Text>
@@ -61,9 +58,7 @@ const UserAchievementsPage = () => {
 						</View>
 					</ScrollView>
 				</Container>
-				<BottomSheet ref={bottomSheetRef} activeHeight={screenHeight * 0.5}>
-					{bottomSheetContent}
-				</BottomSheet>
+				<BottomSheet ref={bottomSheetRef}>{bottomSheetContent}</BottomSheet>
 			</BlurProvider>
 		</Page>
 	)
