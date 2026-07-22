@@ -6,17 +6,18 @@ type Props = {
 	title?: string
 	onPress?: () => void
 	closeMenu?: () => void
+	disabled?: boolean
 	children?: ReactNode
 }
 
-export default function PopupMenuItem({ title, onPress, closeMenu, children }: Props) {
+export default function PopupMenuItem({ title, onPress, closeMenu, children, disabled }: Props) {
 	return (
 		<Pressable
 			onPress={() => {
 				onPress?.()
 				closeMenu?.()
 			}}
-			className=""
+			disabled={disabled}
 		>
 			{children || (
 				<Text

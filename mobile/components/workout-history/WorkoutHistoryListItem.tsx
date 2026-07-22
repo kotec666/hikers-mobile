@@ -42,7 +42,7 @@ const WorkoutHistoryListItemContent = (props: IProps) => {
 			{props.isLoading ? (
 				<ActivityIndicator size="small" color={Colors['green-main']} />
 			) : props.actionIcon && Array.isArray(props.actionIcon) ? (
-				<View className="flex-row gap-3">
+				<View className="flex-row items-center gap-3">
 					{props.actionIcon.map((iconItem, index) => (
 						<TouchableOpacity
 							key={index}

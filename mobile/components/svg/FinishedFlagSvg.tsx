@@ -5,17 +5,16 @@ import Animated from 'react-native-reanimated'
 
 interface IProps {
 	color?: string
-	width?: number
-	height?: number
+	size?: number
 	animatedStrokeProps?: Partial<{ stroke: string }>
 }
 
 const AnimatedPath = Animated.createAnimatedComponent(Path)
 const SvgComponent = (props: IProps) => {
-	const { width = 14, height = 14, animatedStrokeProps, color = Colors['green-main'] } = props
+	const { size = 14, animatedStrokeProps, color = Colors['green-main'] } = props
 
 	return (
-		<Svg width={width} height={height} fill="none" viewBox="0 0 14 14">
+		<Svg width={size} height={size} fill="none" viewBox="0 0 14 14">
 			<AnimatedPath
 				stroke={color}
 				animatedProps={animatedStrokeProps}

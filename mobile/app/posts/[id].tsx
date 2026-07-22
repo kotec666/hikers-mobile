@@ -1,5 +1,5 @@
 import React, { useCallback, useEffect, useState } from 'react'
-import { View, ScrollView, Dimensions, ActivityIndicator } from 'react-native'
+import { View, ScrollView, Dimensions, ActivityIndicator, Text } from 'react-native'
 import { Container } from '@/components/ui/Container'
 import PostListItemHeader from '@/components/ui/Post/PostListItemHeader'
 import HeaderBack, { RoundedButton } from '@/components/ui/HeaderBack'
@@ -20,6 +20,8 @@ import { Page } from '@/components/ui/Page'
 import WorkoutMap from '@/components/map/WorkoutMap'
 import PopupMenuItem from '@/components/ui/Popup/PopupMenuItem'
 import PopupMenu from '@/components/ui/Popup/PopupMenu'
+import EditSvg from '@/components/svg/EditSvg'
+import DeleteTrashSvg from '@/components/svg/DeleteTrashSvg'
 
 const { height } = Dimensions.get('screen')
 const SLIDE_ASPECT_RATIO = height / 3.6
@@ -85,19 +87,30 @@ const Post = () => {
 							<HeaderBack returnCallback={handleClickBack}>Просмотр поста</HeaderBack>
 							{post?.userCreator?.id === user?.id && (
 								<PopupMenu
-									menuWidth={150}
+									menuWidth={170}
 									menuHeight={150}
 									trigger={({ open }) => <RoundedButton onPress={open} icon={<MoreOptionsSvg />} />}
 								>
 									<PopupMenuItem
-										title="Редактировать"
 										onPress={() =>
 											push(
 												`/training/viewWorkout?mode=${VIEW_WORKOUT_MODE.EDIT}&editPostId=${post?.id}`
 											)
 										}
-									/>
-									<PopupMenuItem title="Удалить" onPress={handleOpenDeleteModal} />
+									>
+										<View className="flex-row items-center gap-3">
+											<EditSvg size={18} color="white" />
+											<Text className="text-white text-base">Редактировать</Text>
+										</View>
+									</PopupMenuItem>
+									<PopupMenuItem onPress={handleOpenDeleteModal}>
+										<View className="flex-row items-center gap-3">
+											<DeleteTrashSvg size={18} color={Colors['red-ff4']} />
+											<Text className="text-base" style={{ color: Colors['red-ff4'] }}>
+												Удалить
+											</Text>
+										</View>
+									</PopupMenuItem>
 								</PopupMenu>
 							)}
 						</View>
@@ -114,6 +127,7 @@ const Post = () => {
 									authorName={post?.userCreator?.name}
 									createdAt={post?.createdAt}
 									workoutType={post?.training?.type}
+									postId={post?.id}
 								/>
 								<PostBodyWrapper
 									postId={post?.id}

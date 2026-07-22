@@ -65,13 +65,13 @@ const ActivityPageMainContent = ({
 								)}
 							>
 								<PopupMenuItem onPress={handlePressChangeGoalToday}>
-									<View className="flex-row gap-3">
+									<View className="flex-row items-center gap-3">
 										<CircleSvg />
 										<Text className="text-white text-base">Изменить цель на сегодня</Text>
 									</View>
 								</PopupMenuItem>
 								<PopupMenuItem onPress={handlePressChangeGoalSchedule}>
-									<View className="flex-row gap-3">
+									<View className="flex-row items-center gap-3">
 										<CalendarSvg />
 										<Text className="text-white text-base">Изменить расписание</Text>
 									</View>

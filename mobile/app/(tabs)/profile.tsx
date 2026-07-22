@@ -30,6 +30,9 @@ import PopupMenuItem from '@/components/ui/Popup/PopupMenuItem'
 import PopupMenu from '@/components/ui/Popup/PopupMenu'
 import { EmojiSheetModule } from 'expo-native-sheet-emojis'
 import { FlashList, FlashListRef } from '@shopify/flash-list'
+import EditSvg from '@/components/svg/EditSvg'
+import ExitSvg from '@/components/svg/ExitSvg'
+import AboutSvg from '@/components/svg/AboutSvg'
 
 /**
  *
@@ -232,7 +235,7 @@ const Profile = () => {
 										/>
 
 										<PopupMenu
-											menuWidth={200}
+											menuWidth={230}
 											menuHeight={300}
 											trigger={({ open }) => (
 												<RoundedButton onPress={open} icon={<SettingsSvg />} />
@@ -241,20 +244,40 @@ const Profile = () => {
 											<PopupMenuItem
 												title="Редактировать профиль"
 												onPress={() => handleClickRedirect(ALLOWED_ROUTES.EDIT_PROFILE)}
-											/>
+											>
+												<View className="flex-row items-center gap-3">
+													<EditSvg size={18} color="white" />
+													<Text className="text-white text-base">Редактировать профиль</Text>
+												</View>
+											</PopupMenuItem>
 											<PopupMenuItem
 												title="О приложении"
 												onPress={() => handleClickRedirect(ALLOWED_ROUTES.ABOUT)}
-											/>
+											>
+												<View className="flex-row items-center gap-3">
+													<AboutSvg size={18} color="white" />
+													<Text className="text-white text-base">О приложении</Text>
+												</View>
+											</PopupMenuItem>
 											<PopupMenuItem
 												title="Настройки"
 												onPress={() => handleClickRedirect(ALLOWED_ROUTES.SETTINGS)}
-											/>
-											<PopupMenuItem
-												title="results page"
-												onPress={() => handleClickRedirect(ALLOWED_ROUTES.RESULTS_PAGE)}
-											/>
-											<PopupMenuItem title="Выход" onPress={handleClickExit} />
+											>
+												<View className="flex-row items-center gap-3">
+													<SettingsSvg size={18} color="white" />
+													<Text className="text-white text-base">Настройки</Text>
+												</View>
+											</PopupMenuItem>
+											{/*<PopupMenuItem*/}
+											{/*	title="results page"*/}
+											{/*	onPress={() => handleClickRedirect(ALLOWED_ROUTES.RESULTS_PAGE)}*/}
+											{/*/>*/}
+											<PopupMenuItem title="Выход" onPress={handleClickExit}>
+												<View className="flex-row items-center gap-3">
+													<ExitSvg size={18} color="white" />
+													<Text className="text-white text-base">Выход</Text>
+												</View>
+											</PopupMenuItem>
 										</PopupMenu>
 									</View>
 									<View>
