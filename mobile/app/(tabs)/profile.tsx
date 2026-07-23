@@ -268,10 +268,10 @@ const Profile = () => {
 													<Text className="text-white text-base">Настройки</Text>
 												</View>
 											</PopupMenuItem>
-											{/*<PopupMenuItem*/}
-											{/*	title="results page"*/}
-											{/*	onPress={() => handleClickRedirect(ALLOWED_ROUTES.RESULTS_PAGE)}*/}
-											{/*/>*/}
+											<PopupMenuItem
+												title="results page"
+												onPress={() => handleClickRedirect(ALLOWED_ROUTES.RESULTS_PAGE)}
+											/>
 											<PopupMenuItem title="Выход" onPress={handleClickExit}>
 												<View className="flex-row items-center gap-3">
 													<ExitSvg size={18} color="white" />

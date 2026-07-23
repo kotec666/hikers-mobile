@@ -23,7 +23,7 @@ const YaMapUserLocationMarker = forwardRef<YaMapUserLocationMarkerHandle, IProps
 	const initialPoint = props.initialPosition
 	const markerRef = useRef<MarkerRef>(null)
 	const accuracyRef = useRef<YaMapAccuracyCircleHandle>(null)
-	const timeoutRef = useRef<NodeJS.Timeout | null>(null)
+	const timeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null)
 
 	const animatedMoveTo = useCallback((point: Point | null, durationInMs: number = 1500) => {
 		if (!markerRef.current || !point) return

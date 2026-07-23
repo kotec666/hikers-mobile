@@ -1,10 +1,10 @@
 import React from 'react'
 import { View, Text, StyleSheet, Modal as RNModal, ModalProps, Platform } from 'react-native'
 import { KeyboardStickyView } from 'react-native-keyboard-controller'
-import CloseCross from '@/components/ui/CloseCross'
 import { useBlurContext } from '@/components/providers/BlurProvider'
 import { GlassView, isLiquidGlassAvailable } from 'expo-glass-effect'
 import { BlurView } from 'expo-blur'
+import RoundedMiniButton from '@/components/ui/RoundedMiniButton'
 
 type PROPS = ModalProps & {
 	label?: string
@@ -70,7 +70,7 @@ const Modal = ({ isOpen, withInput, handleClose, label, labelSize, children, blu
 	const header = () => (
 		<View style={styles.header}>
 			<Text style={[styles.label, { fontSize: labelSize || 12 }]}>{label}</Text>
-			<CloseCross blurDisabled={blurDisabled} handleClose={handleClose} />
+			<RoundedMiniButton blurDisabled={blurDisabled} onPress={handleClose} />
 		</View>
 	)
 

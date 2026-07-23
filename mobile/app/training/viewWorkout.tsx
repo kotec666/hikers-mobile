@@ -1,4 +1,4 @@
-import { Text, TextInput, View } from 'react-native'
+import { ActivityIndicator, Platform, Text, TextInput, View } from 'react-native'
 import { Image } from 'expo-image'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
 import { Container } from '@/components/ui/Container'
@@ -11,7 +11,7 @@ import PeopleListItem from '@/components/find-people/PeopleListItem'
 import EyeSvg from '@/components/svg/EyeSvg'
 import { Colors } from '@/constants/Colors'
 import { Input } from '@/components/ui/Input'
-import CloseCross from '@/components/ui/CloseCross'
+import RoundedMiniButton from '@/components/ui/RoundedMiniButton'
 import { IWorkoutResultsStore, useWorkoutResultsAfterFinishStore } from '@/store/workoutResultsAfterFinishStore'
 import { format } from 'date-fns'
 import { lengths } from '@/shared/lengths'
@@ -48,7 +48,12 @@ import { Page } from '@/components/ui/Page'
 import { DEFAULT_PADDING_TOP } from '@/constants/Variables'
 import { KeyboardAwareScrollView } from 'react-native-keyboard-controller'
 import WorkoutMap from '@/components/map/WorkoutMap'
-import { File } from 'expo-file-system'
+import { File, Paths } from 'expo-file-system'
+import { ImageEditorResult } from '@/components/image-editor/types'
+import { ImageEditor } from '@/components/image-editor/ImageEditor'
+import PenSvg from '@/components/svg/PenSvg'
+import { POST_MAX_FILES_COUNT } from '@shared/constants'
+import { getNoun } from '@/helpers/getNoun'
 
 type Param = {
 	label: string
@@ -149,8 +154,13 @@ export enum VIEW_WORKOUT_MODE {
 	FROM_HISTORY = 'from_history'
 }
 
+type PostImageItem = { id: string; kind: 'existing'; fileName: string } | { id: string; kind: 'new'; uri: string }
+
+const generateId = () => `${Date.now()}-${Math.random().toString(36).slice(2)}`
+
 export default function ViewWorkout() {
 	const { user } = useAuthStore()
+	const isIOS = Platform.OS === 'ios'
 	const router = useRouter()
 	const insets = useSafeAreaInsets()
 	const toast = useToast()
@@ -172,13 +182,16 @@ export default function ViewWorkout() {
 	const { mutateAsync: updatePostMutation, isPending: isPendingUpdate } = useUpdatePostMutation()
 
 	const results = useWorkoutResultsAfterFinishStore((state) => state)
-	const [frozenPoints] = useState(() => results.points || [])
 	const descriptionRef = useRef<TextInput>(null)
+
+	const [frozenPoints] = useState(() => results.points || [])
 	const [isPhotoModalOpen, setIsPhotoModalOpen] = useState(false)
 	const [isExitWithoutCreatePostModal, setIsExitWithoutCreatePostModal] = useState(false)
-	const [deletedImages, setDeletedImages] = useState<string[]>([]) // только для редактирования
-	const [existingImages, setExistingImages] = useState<string[]>([]) // только для редактирования
-	const [postImages, setPostImages] = useState<string[]>([])
+	const [imageItems, setImageItems] = useState<PostImageItem[]>([])
+	const [deletedImages, setDeletedImages] = useState<string[]>([]) // остаётся как было, для submit
+	const [imageEditingUri, setImageEditingUri] = useState<string | null>(null)
+	const [editingItemId, setEditingItemId] = useState<string | null>(null)
+	const [preparingItemId, setPreparingItemId] = useState<string | null>(null) // скачивание existing-файла перед редактором
 	const [viewedAt] = useState(() => Date.now())
 
 	const [state, setState] = useState<{
@@ -201,7 +214,7 @@ export default function ViewWorkout() {
 	useEffect(() => {
 		if (editPost) {
 			// eslint-disable-next-line react-hooks/set-state-in-effect -- инициализация локальных полей формы данными асинхронного запроса
-			setExistingImages(editPost.fileNames)
+			setImageItems(editPost.fileNames.map((fileName) => ({ id: fileName, kind: 'existing' as const, fileName })))
 			setValue('title', editPost.title)
 			setValue('description', editPost.description || '')
 		}
@@ -210,7 +223,9 @@ export default function ViewWorkout() {
 	useEffect(() => {
 		if (postFromTraining) {
 			// eslint-disable-next-line react-hooks/set-state-in-effect -- инициализация локальных полей формы данными асинхронного запроса
-			setExistingImages(postFromTraining.fileNames)
+			setImageItems(
+				postFromTraining.fileNames.map((fileName) => ({ id: fileName, kind: 'existing' as const, fileName }))
+			)
 			setValue('title', postFromTraining.title)
 			setValue('description', postFromTraining.description || '')
 		}
@@ -265,7 +280,11 @@ export default function ViewWorkout() {
 				formData.append('description', postFormState.description)
 			}
 
-			handlePostImages(postImages, formData)
+			const newFilesToUpload = imageItems
+				.filter((i): i is Extract<PostImageItem, { kind: 'new' }> => i.kind === 'new')
+				.map((i) => i.uri)
+			handlePostImages(newFilesToUpload, formData)
+
 			if (isView) {
 				await createPostMutation(formData)
 			}
@@ -302,8 +321,10 @@ export default function ViewWorkout() {
 				await ImagePicker.requestMediaLibraryPermissionsAsync()
 				result = await ImagePicker.launchImageLibraryAsync({
 					mediaTypes: ['images'],
-					allowsEditing: true,
-					quality: 0.7
+					// allowsEditing: true,
+					quality: 0.7,
+					selectionLimit: POST_MAX_FILES_COUNT,
+					allowsMultipleSelection: true
 				})
 			} else {
 				await ImagePicker.requestCameraPermissionsAsync()
@@ -314,33 +335,49 @@ export default function ViewWorkout() {
 			}
 
 			if (result.canceled || !result.assets?.length) return
-			const pickedUri = result.assets[0].uri
 
-			if (!pickedUri) {
-				toast.error('Невалидный файл')
+			const images = result.assets.map((a) => a.uri)
+
+			const availableSlots = POST_MAX_FILES_COUNT - imageItems.length
+			if (availableSlots <= 0) {
+				const { number, word } = getNoun(POST_MAX_FILES_COUNT, 'файла', 'файлов', 'файлов')
+				toast.error(`Нельзя загружать больше ${number} ${word}`)
 				return
 			}
 
-			const { isValid, errorMessage } = validateFile(pickedUri, postImages.length + existingImages.length)
+			const imagesToAdd = images.slice(0, availableSlots)
+			const skippedCount = images.length - imagesToAdd.length
+
+			const { isValid, errorMessage } = validateFile(imagesToAdd)
 
 			if (!isValid) {
 				toast.error(errorMessage || 'Файл не прошёл проверку')
 				return
 			}
 
-			setPostImages((prev) => [...prev, pickedUri])
+			setImageItems((prev) => [
+				...prev,
+				...imagesToAdd.map((uri) => ({ id: generateId(), kind: 'new' as const, uri }))
+			])
+
+			if (skippedCount > 0) {
+				const { number, word } = getNoun(POST_MAX_FILES_COUNT, 'файла', 'файлов', 'файлов')
+				const { number: skippedNumber, word: skippedWord } = getNoun(skippedCount, 'файл', 'файла', 'файлов')
+				toast.error(
+					`Добавлено ${imagesToAdd.length} из ${images.length} — лимит ${number} ${word} на пост. ${skippedNumber} ${skippedWord} не добавлено`
+				)
+			}
 		} catch {
 			toast.error('Ошибка при загрузке изображения')
 		}
 	}
 
-	const handleDeletePostImage = (index: number) => {
-		setPostImages((prev) => prev.filter((_, i) => i !== index))
-	}
-
-	const handleDeleteExistingImage = (fileName: string) => {
-		setDeletedImages((prev) => [...prev, fileName])
-		setExistingImages((prev) => prev.filter((f) => f !== fileName))
+	const handleDeleteImageItem = (id: string) => {
+		const item = imageItems.find((i) => i.id === id)
+		if (item?.kind === 'existing') {
+			setDeletedImages((prev) => [...prev, item.fileName])
+		}
+		setImageItems((prev) => prev.filter((i) => i.id !== id))
 	}
 
 	const myParticipant = extendedTrainingDetails?.participants.find((p) => p.user.id === user?.id)
@@ -424,6 +461,45 @@ export default function ViewWorkout() {
 		})
 	}
 
+	const startEditingImageItem = async (item: PostImageItem) => {
+		if (item.kind === 'new') {
+			setImageEditingUri(item.uri)
+			setEditingItemId(item.id)
+			return
+		}
+
+		setPreparingItemId(item.id)
+		try {
+			const remoteUrl = `${PATH_TO_IMAGE}${item.fileName}`
+			const localFile = await File.downloadFileAsync(
+				remoteUrl,
+				new File(Paths.cache, `edit-${generateId()}-${item.fileName}`)
+			)
+			setImageEditingUri(localFile.uri)
+			setEditingItemId(item.id)
+		} catch {
+			toast.error('Не удалось загрузить изображение для редактирования')
+		} finally {
+			setPreparingItemId(null)
+		}
+	}
+
+	const handleDoneImageEdit = (result: ImageEditorResult) => {
+		const target = imageItems.find((item) => item.id === editingItemId)
+
+		if (target?.kind === 'existing') {
+			setDeletedImages((prev) => [...prev, target.fileName])
+		}
+		if (target) {
+			setImageItems((prev) =>
+				prev.map((item) => (item.id === target.id ? { id: item.id, kind: 'new', uri: result.uri } : item))
+			)
+		}
+
+		setImageEditingUri(null)
+		setEditingItemId(null)
+	}
+
 	return (
 		<Page edges={['bottom']}>
 			<Modal
@@ -475,6 +551,19 @@ export default function ViewWorkout() {
 					</View>
 				</View>
 			</Modal>
+			<ImageEditor
+				visible={!!imageEditingUri}
+				sourceUri={imageEditingUri}
+				onCancel={() => {
+					setImageEditingUri(null)
+					setEditingItemId(null)
+				}}
+				onDone={handleDoneImageEdit}
+				finalizeOptions={{
+					resize: { width: 1440 }, // высота посчитается автоматически
+					compress: 0.85
+				}}
+			/>
 			<KeyboardAwareScrollView>
 				<View className="relative" style={{ height: 300 }}>
 					<Image
@@ -666,12 +755,16 @@ export default function ViewWorkout() {
 								/>
 							</View>
 							<View className="flex-row flex-wrap -mx-[7.5px] gap-y-[15px] mt-[10px]">
-								{canManageExistingImages &&
-									Boolean(existingImages.length) &&
-									existingImages.map((fileName) => (
-										<View key={fileName} className="w-1/2 px-[7.5px] relative">
+								{imageItems.map((item) => {
+									const isExisting = item.kind === 'existing'
+									const canManageThis = isExisting ? canManageExistingImages : true
+									const uri = isExisting ? `${PATH_TO_IMAGE}${item.fileName}` : item.uri
+									const isPreparing = preparingItemId === item.id
+
+									return (
+										<View key={item.id} className="w-1/2 px-[7.5px] relative">
 											<Image
-												source={{ uri: `${PATH_TO_IMAGE}${fileName}` }}
+												source={{ uri }}
 												style={{
 													width: '100%',
 													aspectRatio: 1,
@@ -682,30 +775,31 @@ export default function ViewWorkout() {
 												}}
 												contentFit="cover"
 											/>
-											<View className="absolute right-[12px] top-[12px] rounded-full w-[28px] h-[28px] bg-black/40 items-center justify-center">
-												<CloseCross handleClose={() => handleDeleteExistingImage(fileName)} />
-											</View>
+											{canManageThis && (
+												<View className="absolute left-[18px] top-[10px] rounded-full w-[28px] h-[28px] bg-black/40 items-center justify-center">
+													{isPreparing ? (
+														<ActivityIndicator size="small" color="white" />
+													) : (
+														<RoundedMiniButton
+															onPress={() => startEditingImageItem(item)}
+															blurDisabled={!isIOS}
+														>
+															<PenSvg color="white" />
+														</RoundedMiniButton>
+													)}
+												</View>
+											)}
+											{canManageThis && (
+												<View className="absolute right-[18px] top-[10px] rounded-full w-[28px] h-[28px] bg-black/40 items-center justify-center">
+													<RoundedMiniButton
+														onPress={() => handleDeleteImageItem(item.id)}
+														blurDisabled={!isIOS}
+													/>
+												</View>
+											)}
 										</View>
-									))}
-								{postImages.map((uri, index) => (
-									<View key={uri} className="w-1/2 px-[7.5px] relative">
-										<Image
-											source={{ uri }}
-											style={{
-												width: '100%',
-												aspectRatio: 1,
-												borderRadius: 15,
-												borderWidth: 1,
-												borderColor: 'rgba(255, 255, 255, 0.2)',
-												overflow: 'hidden'
-											}}
-											contentFit="cover"
-										/>
-										<View className="absolute right-[12px] top-[12px] rounded-full w-[28px] h-[28px] bg-black/40 items-center justify-center">
-											<CloseCross handleClose={() => handleDeletePostImage(index)} />
-										</View>
-									</View>
-								))}
+									)
+								})}
 							</View>
 							<View className="gap-[10px] mt-[15px]">
 								<Button variant="white" onPress={() => setIsPhotoModalOpen(true)}>
