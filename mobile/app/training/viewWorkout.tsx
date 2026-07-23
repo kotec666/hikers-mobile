@@ -1,4 +1,4 @@
-import { ActivityIndicator, Platform, Text, TextInput, View } from 'react-native'
+import { ActivityIndicator, Platform, Pressable, Text, TextInput, View } from 'react-native'
 import { Image } from 'expo-image'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
 import { Container } from '@/components/ui/Container'
@@ -54,6 +54,7 @@ import { ImageEditor } from '@/components/image-editor/ImageEditor'
 import PenSvg from '@/components/svg/PenSvg'
 import { POST_MAX_FILES_COUNT } from '@shared/constants'
 import { getNoun } from '@/helpers/getNoun'
+import { useFullscreenImageViewer } from '@/hooks/useFullscreenImageViewer'
 
 type Param = {
 	label: string
@@ -176,6 +177,7 @@ export default function ViewWorkout() {
 
 	const { handleSubmit, control, setValue } = useForm<IPostFormState>()
 	const { ErrorMessages } = useErrorMessage()
+	const { open, viewer } = useFullscreenImageViewer()
 
 	const { mutateAsync: finishWorkout } = useFinishWorkoutMutation()
 	const { mutateAsync: createPostMutation, isPending: isPendingCreate } = useCreatePostMutation()
@@ -755,26 +757,31 @@ export default function ViewWorkout() {
 								/>
 							</View>
 							<View className="flex-row flex-wrap -mx-[7.5px] gap-y-[15px] mt-[10px]">
-								{imageItems.map((item) => {
+								{imageItems.map((item, index) => {
 									const isExisting = item.kind === 'existing'
 									const canManageThis = isExisting ? canManageExistingImages : true
 									const uri = isExisting ? `${PATH_TO_IMAGE}${item.fileName}` : item.uri
 									const isPreparing = preparingItemId === item.id
+									const previewImages = imageItems.map((item) =>
+										item.kind === 'existing' ? `${PATH_TO_IMAGE}${item.fileName}` : item.uri
+									)
 
 									return (
 										<View key={item.id} className="w-1/2 px-[7.5px] relative">
-											<Image
-												source={{ uri }}
-												style={{
-													width: '100%',
-													aspectRatio: 1,
-													borderRadius: 15,
-													borderWidth: 1,
-													borderColor: 'rgba(255, 255, 255, 0.2)',
-													overflow: 'hidden'
-												}}
-												contentFit="cover"
-											/>
+											<Pressable onPress={() => open(previewImages, index)}>
+												<Image
+													source={{ uri }}
+													style={{
+														width: '100%',
+														aspectRatio: 1,
+														borderRadius: 15,
+														borderWidth: 1,
+														borderColor: 'rgba(255, 255, 255, 0.2)',
+														overflow: 'hidden'
+													}}
+													contentFit="cover"
+												/>
+											</Pressable>
 											{canManageThis && (
 												<View className="absolute left-[18px] top-[10px] rounded-full w-[28px] h-[28px] bg-black/40 items-center justify-center">
 													{isPreparing ? (
@@ -826,6 +833,7 @@ export default function ViewWorkout() {
 					)}
 				</Container>
 			</KeyboardAwareScrollView>
+			{viewer}
 		</Page>
 	)
 }
