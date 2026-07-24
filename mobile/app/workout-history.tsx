@@ -184,7 +184,6 @@ const WorkoutHistory = () => {
 			<BlurProvider>
 				<BottomSheet
 					ref={bottomSheetRef}
-					scrollable
 					dimmed={false}
 					onDone={async () => {
 						bottomSheetRef.current?.closeSheet()

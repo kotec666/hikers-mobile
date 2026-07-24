@@ -278,6 +278,7 @@ export default function NewTraining() {
 			activeLocationSubscriptionRef.current = await Location.watchPositionAsync(
 				{
 					accuracy: Location.Accuracy.Balanced,
+					timeInterval: 1000,
 					distanceInterval: 1
 				},
 				(location) => {

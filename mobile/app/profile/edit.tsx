@@ -201,7 +201,6 @@ const ProfileEdit = () => {
 			<BlurProvider>
 				<BottomSheet
 					ref={bottomSheetRef}
-					scrollable
 					dimmed={false}
 					onDone={() => {
 						bottomSheetRef.current?.closeSheet()
