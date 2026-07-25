@@ -5,6 +5,7 @@ import { training, trainingParticipants, users } from '../../modules/database/sc
 import { and, eq, isNotNull } from 'drizzle-orm';
 import { ERRORS } from '@shared/errors';
 import * as dns from 'dns/promises';
+import { lower } from '../../modules/database/helpers';
 
 @Injectable()
 @ValidatorConstraint({ async: true })
@@ -50,7 +51,7 @@ export class UniqueUsernameValidator implements ValidatorConstraintInterface {
 		const [user] = await this.db.db
 			.select({ id: users.id })
 			.from(users)
-			.where(eq(users.username, username))
+			.where(eq(lower(users.username), username.toLowerCase()))
 			.limit(1);
 		return !user;
 	}
