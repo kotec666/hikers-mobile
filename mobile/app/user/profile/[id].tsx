@@ -59,7 +59,8 @@ const UserProfilePage = () => {
 		error,
 		isError: isProfileError,
 		isLoading: isProfileLoading,
-		refetch: refetchProfile
+		refetch: refetchProfile,
+		isFetching: isProfileFetching
 	} = useUserProfileQuery(id)
 
 	const { mutateAsync: acceptFriend, isPending: isAcceptPending } = useAcceptFriendRequestMutation()

@@ -1,7 +1,7 @@
 import ky from 'ky'
 import { Platform } from 'react-native'
 import { api } from '@/constants/Variables'
-import { getAuthData, removeAuthData } from '@/services/tokenService'
+import { getAuthData } from '@/services/tokenService'
 import { authStore } from '@/store/authStore'
 import { EXPIRATION_BUFFER_MS } from '@/helpers/getTokenExpirationTime'
 
@@ -38,7 +38,7 @@ const ensureFreshToken = async (): Promise<string | null | undefined> => {
 	const ok = await refreshPromise
 
 	if (!ok) {
-		await removeAuthData()
+		await authStore.getState().logout()
 		return null
 	}
 

@@ -3,6 +3,7 @@ import { getAuthData, removeAuthData, setAuthData } from '@/services/tokenServic
 import { refreshTokenAPI } from '@/api/refresh'
 import { getTokenExpirationTime } from '@/helpers/getTokenExpirationTime'
 import { setIsAccountExist } from '@/store/authStorage'
+import { queryClient } from '@/queries/queryClient'
 
 export interface IUser {
 	id: string
@@ -57,6 +58,8 @@ export const useAuthStore = create<AuthStore>((set, get) => ({
 
 	logout: async () => {
 		await removeAuthData()
+		await queryClient.cancelQueries()
+		queryClient.clear()
 		set({
 			isAuthenticated: false,
 			// accessToken: null,

@@ -20,7 +20,6 @@ import BlurProvider from '@/components/providers/BlurProvider'
 import { useProfilePostsQuery } from '@/queries/posts'
 import { useProfileQuery, useUpdateProfileBadgeMutation } from '@/queries/my-profile'
 import { Page } from '@/components/ui/Page'
-import { useQueryClient } from '@tanstack/react-query'
 import { refetchAndHaptics } from '@/helpers/refetchAndHaptics'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
 import WorkoutMap from '@/components/map/WorkoutMap'
@@ -53,7 +52,6 @@ type AllowedRoute = (typeof ALLOWED_ROUTES)[keyof typeof ALLOWED_ROUTES]
 
 const Profile = () => {
 	const router = useRouter()
-	const queryClient = useQueryClient()
 	const insets = useSafeAreaInsets()
 	const { push } = useSafeNavigation()
 	const { user, logout } = useAuthStore()
@@ -94,7 +92,6 @@ const Profile = () => {
 
 	const handleClickExit = async () => {
 		await logout()
-		queryClient.clear()
 		router.replace('/')
 	}
 

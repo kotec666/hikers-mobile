@@ -142,14 +142,12 @@ export const useConfirmEmailMutation = () => {
 }
 
 export const useDeleteProfileMutation = () => {
-	const queryClient = useQueryClient()
 	const toast = useToast()
 
 	return useMutation({
 		mutationFn: deleteMyAccount,
 		onSuccess: () => {
 			toast.success('Аккаунт успешно удален')
-			queryClient.clear()
 		},
 		onError: async (e) => {
 			await getFieldsErrors(e)

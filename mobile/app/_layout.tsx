@@ -9,24 +9,12 @@ import { NotificationProvider } from '@/components/providers/NotificationProvide
 import { GestureHandlerRootView } from 'react-native-gesture-handler'
 import PortalProvider from '@/components/Portal/PortalProvider'
 import { Colors } from '@/constants/Colors'
-import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
+import { QueryClientProvider } from '@tanstack/react-query'
 import './../global.css'
 import { SafeAreaProvider } from 'react-native-safe-area-context'
 import { clearExpiredTimers } from '@/store/timerStorage'
 import { KeyboardProvider } from 'react-native-keyboard-controller'
-
-const queryClient = new QueryClient({
-	defaultOptions: {
-		queries: {
-			staleTime: 5 * 60 * 1000, // 5 минут
-			gcTime: 10 * 60 * 1000, // 10 минут
-			refetchOnMount: false, // Не перезапрашивать при монтировании
-			refetchOnWindowFocus: false, // Не перезапрашивать при фокусе окна
-			refetchOnReconnect: false, // Не перезапрашивать при переподключении
-			retry: 1
-		}
-	}
-})
+import { queryClient } from '@/queries/queryClient'
 
 SplashScreen.preventAutoHideAsync()
 
