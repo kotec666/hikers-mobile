@@ -1,5 +1,15 @@
 import React, { useState } from 'react'
-import { ActivityIndicator, Image, Modal, Pressable, StyleSheet, Text, useWindowDimensions, View } from 'react-native'
+import {
+	ActivityIndicator,
+	Image,
+	Modal,
+	Pressable,
+	ScrollView,
+	StyleSheet,
+	Text,
+	useWindowDimensions,
+	View
+} from 'react-native'
 import { GestureHandlerRootView } from 'react-native-gesture-handler'
 import { useImageEditor } from './useImageEditor'
 import { CropOverlay } from './CropOverlay'
@@ -83,7 +93,7 @@ function ImageEditorContent({
 	const busy = editor.isProcessing || isSaving
 
 	return (
-		<View style={styles.root}>
+		<ScrollView style={styles.root}>
 			<View style={styles.header}>
 				<Pressable onPress={onCancel} hitSlop={12}>
 					<Text style={styles.headerAction}>Отмена</Text>
@@ -164,7 +174,7 @@ function ImageEditorContent({
 					</View>
 				)}
 			</View>
-		</View>
+		</ScrollView>
 	)
 }
 

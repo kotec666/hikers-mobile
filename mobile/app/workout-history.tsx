@@ -26,6 +26,8 @@ import BaseWheelPicker from '@/components/ui/wheel-picker/base-wheel-picker'
 import { refetchAndHaptics } from '@/helpers/refetchAndHaptics'
 import { FlashList, FlashListRef } from '@shopify/flash-list'
 import BottomSheet, { BottomSheetHandle } from '@/components/ui/BottomSheet/BottomSheet'
+import LoadQueryErrorRetry from '@/components/LoadQueryErrorRetry'
+import { WorkoutHistoryListSkeleton } from '@/components/ui/skeleton'
 
 interface WorkoutItem {
 	id: string
@@ -66,12 +68,14 @@ const WorkoutHistory = () => {
 		fetchNextPage,
 		refetch,
 		isLoading,
-		isFetching,
+		isError,
 		hasNextPage,
 		isFetchingNextPage
 	} = useWorkoutsQuery(selectedType)
 
-	const isInitialLoading = isLoading || (isFetching && history.length === 0)
+	const handleRetry = useCallback(() => {
+		return refetch()
+	}, [refetch])
 
 	const data: WorkoutItem[] = history
 		.filter((item) => !deletedWorkoutIds.includes(item.id))
@@ -111,16 +115,6 @@ const WorkoutHistory = () => {
 
 		itemsWithHeaders.push({ ...item, rowType: 'workout' })
 	})
-
-	// Функция рендеринга индикатора загрузки
-	const renderFooter = useCallback(() => {
-		if (!isFetchingNextPage) return null
-		return (
-			<View style={{ padding: 20 }}>
-				<ActivityIndicator size="small" color={Colors['green-main']} />
-			</View>
-		)
-	}, [isFetchingNextPage])
 
 	const workoutTypeMap = useMemo(() => Object.fromEntries(WorkoutTypesData.map((t) => [t.type, t])), [])
 
@@ -179,6 +173,29 @@ const WorkoutHistory = () => {
 		return Object.fromEntries(workoutTypePickerWheelData.map((item) => [item.value, item.label]))
 	}, [workoutTypePickerWheelData])
 
+	// Функция рендеринга индикатора загрузки
+	const renderFooter = useCallback(() => {
+		if (isError && data.length > 0) {
+			return <LoadQueryErrorRetry text="Не удалось загрузить ещё" buttonText="Повторить" onRetry={handleRetry} />
+		}
+		if (!isFetchingNextPage) return null
+		return (
+			<View style={{ padding: 20 }}>
+				<ActivityIndicator size="small" color={Colors['green-main']} />
+			</View>
+		)
+	}, [isFetchingNextPage, isError, data.length, handleRetry])
+
+	const renderEmpty = useCallback(() => {
+		if (isLoading || notSavedWorkouts.length > 0) return <WorkoutHistoryListSkeleton />
+
+		if (isError) {
+			return <LoadQueryErrorRetry text="Не удалось загрузить историю тренировок" onRetry={handleRetry} />
+		}
+
+		return <TrainingsEmpty text="К сожалению, тренировок еще не существует" />
+	}, [isLoading, notSavedWorkouts.length, isError, handleRetry])
+
 	return (
 		<Page>
 			<BlurProvider>
@@ -232,15 +249,11 @@ const WorkoutHistory = () => {
 						ref={listRef}
 						style={{ flex: 1 }}
 						data={itemsWithHeaders}
-						ListEmptyComponent={
-							!isInitialLoading && !notSavedWorkouts.length ? (
-								<TrainingsEmpty text="К сожалению, тренировок еще не существует" />
-							) : null
-						}
+						ListEmptyComponent={renderEmpty}
 						refreshControl={
 							<RefreshControl
 								refreshing={isRefetching}
-								onRefresh={() => refetchAndHaptics(refetch)}
+								onRefresh={() => refetchAndHaptics(handleRetry)}
 								tintColor={Colors['green-main']}
 							/>
 						}

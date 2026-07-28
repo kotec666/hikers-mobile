@@ -1,4 +1,4 @@
-import React, { useState } from 'react'
+import React, { useCallback, useState } from 'react'
 import { View, Text, RefreshControl, ActivityIndicator } from 'react-native'
 import { Container } from '@/components/ui/Container'
 import HeaderBack from '@/components/ui/HeaderBack'
@@ -17,6 +17,8 @@ import { useMyFriendsQuery, useRemoveFriendMutation } from '@/queries/friends'
 import { Page } from '@/components/ui/Page'
 import { refetchAndHaptics } from '@/helpers/refetchAndHaptics'
 import { FlashList } from '@shopify/flash-list'
+import LoadQueryErrorRetry from '@/components/LoadQueryErrorRetry'
+import { UserListSkeleton } from '@/components/ui/skeleton'
 
 const MyFriendsPage = () => {
 	const { push } = useSafeNavigation()
@@ -33,10 +35,15 @@ const MyFriendsPage = () => {
 		isFetchingNextPage,
 		refetch,
 		isRefetching,
-		isFetching
+		isLoading,
+		isError
 	} = useMyFriendsQuery()
 
 	const { mutateAsync: deleteFriend, isPending: isDeleteFriendPending } = useRemoveFriendMutation()
+
+	const handleRetry = useCallback(() => {
+		return refetch()
+	}, [refetch])
 
 	const handleOpenDeleteModal = (user: IUser) => {
 		setDeleteUser(user)
@@ -69,8 +76,15 @@ const MyFriendsPage = () => {
 		return isDeleteFriendPending && deleteUser?.id === friendId
 	}
 
-	const EmptyListComponent = () => {
-		if (isFetching) return null
+	const renderEmpty = useCallback(() => {
+		if (isLoading) {
+			return <UserListSkeleton count={12} />
+		}
+
+		if (isError) {
+			return <LoadQueryErrorRetry text="Не удалось загрузить список друзей" onRetry={handleRetry} />
+		}
+
 		return (
 			<View style={{ flex: 1 }} className="items-center justify-center">
 				<Text style={{ fontFamily: fontFamily.regular }} className="text-gray-ab text-base">
@@ -78,17 +92,19 @@ const MyFriendsPage = () => {
 				</Text>
 			</View>
 		)
-	}
+	}, [isLoading, isError, handleRetry])
 
-	const renderFooter = () => {
+	const renderFooter = useCallback(() => {
+		if (isError && friends.length > 0) {
+			return <LoadQueryErrorRetry text="Не удалось загрузить ещё" buttonText="Повторить" onRetry={handleRetry} />
+		}
 		if (!isFetchingNextPage) return null
-
 		return (
 			<View style={{ padding: 20 }}>
 				<ActivityIndicator size="small" color={Colors['green-main']} />
 			</View>
 		)
-	}
+	}, [isFetchingNextPage, isError, friends.length, handleRetry])
 
 	return (
 		<Page>
@@ -149,12 +165,12 @@ const MyFriendsPage = () => {
 							}}
 							onEndReachedThreshold={0.5}
 							ItemSeparatorComponent={() => <View style={{ height: 15 }} />}
-							ListEmptyComponent={EmptyListComponent}
+							ListEmptyComponent={renderEmpty}
 							ListFooterComponent={renderFooter}
 							refreshControl={
 								<RefreshControl
 									refreshing={isRefetching}
-									onRefresh={() => refetchAndHaptics(refetch)}
+									onRefresh={() => refetchAndHaptics(handleRetry)}
 									tintColor={Colors['green-main']}
 								/>
 							}

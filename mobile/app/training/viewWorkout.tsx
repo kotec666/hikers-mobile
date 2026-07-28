@@ -194,6 +194,7 @@ export default function ViewWorkout() {
 	const [imageEditingUri, setImageEditingUri] = useState<string | null>(null)
 	const [editingItemId, setEditingItemId] = useState<string | null>(null)
 	const [preparingItemId, setPreparingItemId] = useState<string | null>(null) // скачивание existing-файла перед редактором
+	const [tempDownloadedUri, setTempDownloadedUri] = useState<string | null>(null) // временный файл
 	const [viewedAt] = useState(() => Date.now())
 
 	const [state, setState] = useState<{
@@ -463,6 +464,16 @@ export default function ViewWorkout() {
 		})
 	}
 
+	const deleteFileQuietly = async (uri: string | null) => {
+		if (!uri) return
+		try {
+			const file = new File(uri)
+			if (file.exists) await file.delete()
+		} catch {
+			// не критично — не должно ронять UX
+		}
+	}
+
 	const startEditingImageItem = async (item: PostImageItem) => {
 		if (item.kind === 'new') {
 			setImageEditingUri(item.uri)
@@ -479,11 +490,19 @@ export default function ViewWorkout() {
 			)
 			setImageEditingUri(localFile.uri)
 			setEditingItemId(item.id)
+			setTempDownloadedUri(localFile.uri)
 		} catch {
 			toast.error('Не удалось загрузить изображение для редактирования')
 		} finally {
 			setPreparingItemId(null)
 		}
+	}
+
+	const closeImageEditor = () => {
+		void deleteFileQuietly(tempDownloadedUri)
+		setTempDownloadedUri(null)
+		setImageEditingUri(null)
+		setEditingItemId(null)
 	}
 
 	const handleDoneImageEdit = (result: ImageEditorResult) => {
@@ -498,8 +517,7 @@ export default function ViewWorkout() {
 			)
 		}
 
-		setImageEditingUri(null)
-		setEditingItemId(null)
+		closeImageEditor()
 	}
 
 	return (
@@ -556,14 +574,10 @@ export default function ViewWorkout() {
 			<ImageEditor
 				visible={!!imageEditingUri}
 				sourceUri={imageEditingUri}
-				onCancel={() => {
-					setImageEditingUri(null)
-					setEditingItemId(null)
-				}}
+				onCancel={closeImageEditor}
 				onDone={handleDoneImageEdit}
 				finalizeOptions={{
-					resize: { width: 1440 }, // высота посчитается автоматически
-					compress: 0.85
+					resize: { width: 1440 } // высота посчитается автоматически
 				}}
 			/>
 			<KeyboardAwareScrollView>

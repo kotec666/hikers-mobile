@@ -1,5 +1,5 @@
 import React, { useCallback, useEffect, useState } from 'react'
-import { View, ScrollView, Dimensions, ActivityIndicator, Text } from 'react-native'
+import { View, ScrollView, Dimensions, Text } from 'react-native'
 import { Container } from '@/components/ui/Container'
 import PostListItemHeader from '@/components/ui/Post/PostListItemHeader'
 import HeaderBack, { RoundedButton } from '@/components/ui/HeaderBack'
@@ -22,6 +22,8 @@ import PopupMenuItem from '@/components/ui/Popup/PopupMenuItem'
 import PopupMenu from '@/components/ui/Popup/PopupMenu'
 import EditSvg from '@/components/svg/EditSvg'
 import DeleteTrashSvg from '@/components/svg/DeleteTrashSvg'
+import LoadQueryErrorRetry from '@/components/LoadQueryErrorRetry'
+import { PostItemSkeleton } from '@/components/ui/skeleton'
 
 const { height } = Dimensions.get('screen')
 const SLIDE_ASPECT_RATIO = height / 3.6
@@ -34,7 +36,11 @@ const Post = () => {
 
 	const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false)
 
-	const { data: post, error, isError, isFetching } = usePostQuery(id)
+	const { data: post, error, isError, isLoading, refetch: refetchPost } = usePostQuery(id)
+
+	const handleRetryPost = useCallback(() => {
+		return refetchPost()
+	}, [refetchPost])
 
 	const handleClickBack = useCallback(() => {
 		if (router.canGoBack()) {
@@ -45,9 +51,17 @@ const Post = () => {
 	}, [router])
 
 	useEffect(() => {
-		if (!isError) return
-		handleClickBack()
-	}, [error, isError, handleClickBack])
+		if (!isError || !error) return
+
+		// Если пост не найден / нет доступа — уходим назад
+		// Если это временная/сетевая ошибка — не редиректим, покажем retry
+		const status = (error as any)?.response?.status
+		const isNotFoundOrForbidden = status === 404 || status === 403
+
+		if (isNotFoundOrForbidden) {
+			handleClickBack()
+		}
+	}, [error, handleClickBack, isError, router])
 
 	const handleOpenDeleteModal = () => {
 		return setIsDeleteModalOpen((prevState) => !prevState)
@@ -65,11 +79,26 @@ const Post = () => {
 	const creatorMetrics = postCreator?.metrics
 	const creatorColor = postCreator?.user.color
 
-	if (isFetching) {
+	if (isError && !post) {
 		return (
-			<View className="flex-1 items-center justify-center">
-				<ActivityIndicator size="large" color={Colors['green-main']} />
+			<View className="flex-1 items-center justify-center px-4">
+				<LoadQueryErrorRetry text="Не удалось загрузить пост" onRetry={handleRetryPost} />
 			</View>
+		)
+	}
+
+	if (isLoading) {
+		return (
+			<Page>
+				<View style={{ flex: 1 }}>
+					<Container className="gap-[20px] flex-1">
+						<HeaderBack returnCallback={handleClickBack}>Просмотр поста</HeaderBack>
+						<ScrollView style={{ flex: 1, width: '100%' }} contentContainerStyle={{ paddingBottom: 20 }}>
+							<PostItemSkeleton />
+						</ScrollView>
+					</Container>
+				</View>
+			</Page>
 		)
 	}
 

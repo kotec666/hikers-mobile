@@ -17,20 +17,27 @@ import {
 import { Page } from '@/components/ui/Page'
 import { refetchAndHaptics } from '@/helpers/refetchAndHaptics'
 import { FlashList } from '@shopify/flash-list'
+import LoadQueryErrorRetry from '@/components/LoadQueryErrorRetry'
+import { NotificationsListSkeleton } from '@/components/ui/skeleton'
 
 const NotificationsPage = () => {
 	const {
 		data: notificationsData = [],
 		fetchNextPage,
 		hasNextPage,
+		isLoading,
 		isFetchingNextPage,
 		refetch,
 		isRefetching,
-		isFetching
+		isError
 	} = useNotificationsListQuery()
 
 	const { mutate: deleteNotifications } = useDeleteNotificationsMutation()
 	const { mutate: markAsRead } = useMarkNotificationsAsReadMutation()
+
+	const handleRetry = useCallback(() => {
+		return refetch()
+	}, [refetch])
 
 	const handleDeleteNotification = async (id?: string) => {
 		deleteNotifications(id ? [id] : [])
@@ -46,7 +53,17 @@ const NotificationsPage = () => {
 	)
 
 	const renderEmpty = useCallback(() => {
-		if (isFetching) return null
+		if (isLoading) {
+			return (
+				<Container>
+					<NotificationsListSkeleton />
+				</Container>
+			)
+		}
+
+		if (isError) {
+			return <LoadQueryErrorRetry text="Не удалось загрузить уведомления" onRetry={handleRetry} />
+		}
 
 		return (
 			<View style={{ flex: 1 }} className="items-center justify-center">
@@ -55,14 +72,26 @@ const NotificationsPage = () => {
 				</Text>
 			</View>
 		)
-	}, [isFetching])
+	}, [isLoading, isError, handleRetry])
+
+	const renderFooter = useCallback(() => {
+		if (isError && notificationsData.length > 0) {
+			return <LoadQueryErrorRetry text="Не удалось загрузить ещё" buttonText="Повторить" onRetry={handleRetry} />
+		}
+		if (!isFetchingNextPage) return null
+		return (
+			<View style={{ padding: 20 }}>
+				<ActivityIndicator size="small" color={Colors['green-main']} />
+			</View>
+		)
+	}, [isFetchingNextPage, isError, notificationsData.length, handleRetry])
 
 	return (
 		<Page>
 			<View style={{ flex: 1 }}>
 				<Container className="gap-[20px]">
 					<HeaderBack>Уведомления</HeaderBack>
-					{!notificationsData.length || isFetching ? null : (
+					{!notificationsData.length || isLoading ? null : (
 						<Button variant="white" onPress={() => handleDeleteNotification()}>
 							Очистить все уведомления
 						</Button>
@@ -71,7 +100,6 @@ const NotificationsPage = () => {
 				<View className="gap-[20px] mt-[20px] flex-1">
 					<FlashList
 						data={notificationsData}
-						ListEmptyComponent={renderEmpty}
 						onViewableItemsChanged={onViewableItemsChanged}
 						viewabilityConfig={{
 							itemVisiblePercentThreshold: 50
@@ -92,23 +120,17 @@ const NotificationsPage = () => {
 						refreshControl={
 							<RefreshControl
 								refreshing={isRefetching}
-								onRefresh={() => refetchAndHaptics(refetch)}
+								onRefresh={() => refetchAndHaptics(handleRetry)}
 								tintColor={Colors['green-main']}
 							/>
 						}
 						onEndReachedThreshold={0.4}
 						keyExtractor={(item) => item.id}
 						contentContainerStyle={{
-							flexGrow: 1,
 							paddingBottom: 50
 						}}
-						ListFooterComponent={
-							isFetchingNextPage ? (
-								<View style={{ padding: 20 }}>
-									<ActivityIndicator size="small" color={Colors['green-main']} />
-								</View>
-							) : null
-						}
+						ListFooterComponent={renderFooter}
+						ListEmptyComponent={renderEmpty}
 						showsVerticalScrollIndicator={false}
 					/>
 				</View>

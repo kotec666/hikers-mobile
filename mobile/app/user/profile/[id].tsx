@@ -30,6 +30,8 @@ import { refetchAndHaptics } from '@/helpers/refetchAndHaptics'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
 import WorkoutMap from '@/components/map/WorkoutMap'
 import { FlashList, FlashListRef } from '@shopify/flash-list'
+import LoadQueryErrorRetry from '@/components/LoadQueryErrorRetry'
+import { PostListItemSkeleton, ProfileHeaderSkeleton } from '@/components/ui/skeleton'
 
 /**
  *
@@ -55,8 +57,8 @@ const UserProfilePage = () => {
 	const {
 		data: profileData,
 		error,
-		isError,
-		isFetching: isProfileFetching,
+		isError: isProfileError,
+		isLoading: isProfileLoading,
 		refetch: refetchProfile
 	} = useUserProfileQuery(id)
 
@@ -75,28 +77,41 @@ const UserProfilePage = () => {
 		hasNextPage: hasNextPostsPage,
 		isFetchingNextPage: isFetchingPostsNextPage,
 		refetch: postsRefetch,
-		isRefetching: postsIsRefetching
+		isRefetching: postsIsRefetching,
+		isLoading: isPostsLoading,
+		isError: isPostsError
 	} = useNotMyProfilePostsQuery(id)
 
 	const { mutateAsync: toggleSubscribe, isPending: isPendingSubscribe } = useToggleSubscribeMutation()
 
 	useEffect(() => {
-		if (!isError || !error) return
+		if (!isProfileError || !error) return
 
-		const handleError = async () => {
+		// Если профиль не найден / нет доступа — уходим назад
+		// Если это временная/сетевая ошибка — не редиректим, покажем retry
+		const status = (error as any)?.response?.status
+		const isNotFoundOrForbidden = status === 404 || status === 403
+
+		if (isNotFoundOrForbidden) {
 			if (router.canGoBack()) {
 				router.back()
 			} else {
 				router.push('/(tabs)/profile')
 			}
 		}
-
-		handleError()
-	}, [error, isError, router])
+	}, [error, isProfileError, router])
 
 	const onRefreshAll = useCallback(async () => {
 		await Promise.all([refetchProfile(), postsRefetch()])
 	}, [refetchProfile, postsRefetch])
+
+	const handleRetryProfile = useCallback(() => {
+		return refetchProfile()
+	}, [refetchProfile])
+
+	const handleRetryPosts = useCallback(() => {
+		return postsRefetch()
+	}, [postsRefetch])
 
 	const handleDeleteFromFriends = async () => {
 		try {
@@ -195,13 +210,39 @@ const UserProfilePage = () => {
 	}
 
 	const renderFooter = useCallback(() => {
+		if (isPostsError && posts.length > 0) {
+			return (
+				<LoadQueryErrorRetry
+					text="Не удалось загрузить ещё"
+					buttonText="Повторить"
+					onRetry={handleRetryPosts}
+				/>
+			)
+		}
 		if (!isFetchingPostsNextPage) return null
 		return (
 			<View style={{ padding: 20 }}>
 				<ActivityIndicator size="small" color={Colors['green-main']} />
 			</View>
 		)
-	}, [isFetchingPostsNextPage])
+	}, [isFetchingPostsNextPage, isPostsError, posts.length, handleRetryPosts])
+
+	const renderEmpty = useCallback(() => {
+		if (isPostsLoading) {
+			return (
+				<View className="gap-8">
+					<PostListItemSkeleton />
+					<PostListItemSkeleton />
+				</View>
+			)
+		}
+
+		if (isPostsError) {
+			return <LoadQueryErrorRetry onRetry={handleRetryPosts} />
+		}
+
+		return null
+	}, [isPostsLoading, isPostsError, handleRetryPosts])
 
 	return (
 		<Page edges={['top']}>
@@ -219,6 +260,7 @@ const UserProfilePage = () => {
 					onEndReachedThreshold={0.5}
 					ItemSeparatorComponent={() => <View style={{ height: 16 }} />}
 					ListFooterComponent={renderFooter}
+					ListEmptyComponent={renderEmpty}
 					refreshControl={
 						<RefreshControl
 							refreshing={isProfileFetching || postsIsRefetching}
@@ -258,109 +300,131 @@ const UserProfilePage = () => {
 							</Modal>
 							<View className="gap-[20px] mb-[16px]">
 								<HeaderBack>Профиль</HeaderBack>
-								<View className="gap-[20px]">
+
+								{isProfileLoading ? (
 									<View className="gap-[20px]">
-										<View className="gap-[16px]">
-											<View className="flex-row justify-between w-full">
-												<AnimatedProfilePicture
-													size={117}
-													bordered
-													imageUrl={`${PATH_TO_IMAGE}${profileData?.user?.avatarFilename}`}
-												/>
-												{/*<PopupMenu*/}
-												{/*	menuWidth={200}*/}
-												{/*	menuHeight={300}*/}
-												{/*	trigger={({ open }) => (*/}
-												{/*		<RoundedButton onPress={open} icon={<SettingsSvg />} />*/}
-												{/*	)}*/}
-												{/*>*/}
-												{/*	<PopupMenuItem*/}
-												{/*		title="Настройки"*/}
-												{/*		onPress={() => handleClickRedirect(ALLOWED_ROUTES.SETTINGS)}*/}
-												{/*	/>*/}
-												{/*	<PopupMenuItem title="Выход" onPress={handleClickExit} />*/}
-												{/*</PopupMenu>*/}
-											</View>
-											<View>
-												<View className="flex-row items-center gap-3">
-													{profileData?.user?.name && (
-														<Text
-															className="text-[19px] text-white"
-															style={{ fontFamily: fontFamily.bold }}
-														>
-															{profileData?.user?.name}
-														</Text>
-													)}
-													{profileData?.user?.badge && (
-														<Text
-															className="text-xl"
-															style={{ fontFamily: fontFamily.bold }}
-														>
-															{profileData.user.badge}
-														</Text>
-													)}
-												</View>
-												{profileData?.user?.username && (
-													<Text
-														className="text-base text-gray-ab"
-														style={{ fontFamily: fontFamily.medium }}
-													>
-														@{profileData?.user?.username}
-													</Text>
-												)}
-											</View>
-										</View>
-										<View className="flex-row justify-between gap-[20px]">
-											<SocialStats
-												label="Подписчики"
-												content={profileData?.subscribers}
-												// hrefTo="/subscribers/my-subscribers"
-											/>
-											<SocialStats
-												label="Друзья"
-												content={profileData?.friends}
-												// hrefTo="/friends/my-friends"
-											/>
-											<SocialStats
-												label="Подписки"
-												content={profileData?.subscriptions}
-												// hrefTo="/subscribers/my-subscriptions"
-											/>
-										</View>
-										<View className="flex-row gap-[10px]">
-											<Button
-												variant={profileData?.isSubscribed ? 'black' : 'white'}
-												buttonContainerClassName="flex-1"
-												onPress={async () => {
-													if (!profileData?.user?.id) return
-													await handleSubscribe(profileData.user.id, profileData.isSubscribed)
-												}}
-												disabled={isPendingSubscribe}
-											>
-												{profileData?.isSubscribed ? 'Отписаться' : 'Подписаться'}
-											</Button>
-											<Button
-												variant={getButtonVariant()}
-												buttonContainerClassName="flex-1"
-												onPress={handleFriendAction}
-												isLoading={isFriendActionPending}
-											>
-												{profileData && friendStatusLabel[profileData?.isFriend]}
-											</Button>
-										</View>
-										<RedirectAchievementsInfo
-											achievements={profileData?.achievements}
-											userId={id}
-										/>
-										<ActivityInfo label="Активности" activities={profileData?.activities || []} />
+										<ProfileHeaderSkeleton />
 									</View>
-								</View>
-								<Text
-									className="text-base text-white border-b-[1px] border-b-black-44 py-[20px]"
-									style={{ fontFamily: fontFamily.bold }}
-								>
-									Лента
-								</Text>
+								) : isProfileError && !profileData ? (
+									<View className="flex-1 items-center justify-center px-4">
+										<LoadQueryErrorRetry
+											text="Не удалось загрузить профиль"
+											onRetry={handleRetryProfile}
+										/>
+									</View>
+								) : (
+									<>
+										<View className="gap-[20px]">
+											<View className="gap-[20px]">
+												<View className="gap-[16px]">
+													<View className="flex-row justify-between w-full">
+														<AnimatedProfilePicture
+															size={117}
+															bordered
+															imageUrl={`${PATH_TO_IMAGE}${profileData?.user?.avatarFilename}`}
+														/>
+														{/*<PopupMenu*/}
+														{/*	menuWidth={200}*/}
+														{/*	menuHeight={300}*/}
+														{/*	trigger={({ open }) => (*/}
+														{/*		<RoundedButton onPress={open} icon={<SettingsSvg />} />*/}
+														{/*	)}*/}
+														{/*>*/}
+														{/*	<PopupMenuItem*/}
+														{/*		title="Настройки"*/}
+														{/*		onPress={() => handleClickRedirect(ALLOWED_ROUTES.SETTINGS)}*/}
+														{/*	/>*/}
+														{/*	<PopupMenuItem title="Выход" onPress={handleClickExit} />*/}
+														{/*</PopupMenu>*/}
+													</View>
+													<View>
+														<View className="flex-row items-center gap-3">
+															{profileData?.user?.name && (
+																<Text
+																	className="text-[19px] text-white"
+																	style={{ fontFamily: fontFamily.bold }}
+																>
+																	{profileData?.user?.name}
+																</Text>
+															)}
+															{profileData?.user?.badge && (
+																<Text
+																	className="text-xl"
+																	style={{ fontFamily: fontFamily.bold }}
+																>
+																	{profileData.user.badge}
+																</Text>
+															)}
+														</View>
+														{profileData?.user?.username && (
+															<Text
+																className="text-base text-gray-ab"
+																style={{ fontFamily: fontFamily.medium }}
+															>
+																@{profileData?.user?.username}
+															</Text>
+														)}
+													</View>
+												</View>
+												<View className="flex-row justify-between gap-[20px]">
+													<SocialStats
+														label="Подписчики"
+														content={profileData?.subscribers}
+														// hrefTo="/subscribers/my-subscribers"
+													/>
+													<SocialStats
+														label="Друзья"
+														content={profileData?.friends}
+														// hrefTo="/friends/my-friends"
+													/>
+													<SocialStats
+														label="Подписки"
+														content={profileData?.subscriptions}
+														// hrefTo="/subscribers/my-subscriptions"
+													/>
+												</View>
+												<View className="flex-row gap-[10px]">
+													<Button
+														variant={profileData?.isSubscribed ? 'black' : 'white'}
+														buttonContainerClassName="flex-1"
+														onPress={async () => {
+															if (!profileData?.user?.id) return
+															await handleSubscribe(
+																profileData.user.id,
+																profileData.isSubscribed
+															)
+														}}
+														disabled={isPendingSubscribe}
+													>
+														{profileData?.isSubscribed ? 'Отписаться' : 'Подписаться'}
+													</Button>
+													<Button
+														variant={getButtonVariant()}
+														buttonContainerClassName="flex-1"
+														onPress={handleFriendAction}
+														isLoading={isFriendActionPending}
+													>
+														{profileData && friendStatusLabel[profileData?.isFriend]}
+													</Button>
+												</View>
+												<RedirectAchievementsInfo
+													achievements={profileData?.achievements}
+													userId={id}
+												/>
+												<ActivityInfo
+													label="Активности"
+													activities={profileData?.activities || []}
+												/>
+											</View>
+										</View>
+										<Text
+											className="text-base text-white border-b-[1px] border-b-black-44 py-[20px]"
+											style={{ fontFamily: fontFamily.bold }}
+										>
+											Лента
+										</Text>
+									</>
+								)}
 							</View>
 						</>
 					}

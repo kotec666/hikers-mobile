@@ -12,6 +12,8 @@ import { useMySubscriptionsQuery, useToggleSubscribeMutation } from '@/queries/s
 import { Page } from '@/components/ui/Page'
 import { refetchAndHaptics } from '@/helpers/refetchAndHaptics'
 import { FlashList } from '@shopify/flash-list'
+import LoadQueryErrorRetry from '@/components/LoadQueryErrorRetry'
+import { UserListSkeleton } from '@/components/ui/skeleton'
 
 /**
  * Мои подписки, на кого подписан я
@@ -24,10 +26,15 @@ const MySubscriptionsPage = () => {
 		isFetchingNextPage,
 		refetch,
 		isRefetching,
-		isFetching
+		isLoading,
+		isError
 	} = useMySubscriptionsQuery()
 
 	const { mutateAsync: toggleSubscribe, isPending: isPendingSubscribe } = useToggleSubscribeMutation()
+
+	const handleRetry = useCallback(() => {
+		return refetch()
+	}, [refetch])
 
 	const handleSubscribe = useCallback(
 		async (userId: string, isSubscribed: boolean) => {
@@ -56,17 +63,27 @@ const MySubscriptionsPage = () => {
 		[handleSubscribe, isPendingSubscribe]
 	)
 
-	const renderFooter = () => {
+	const renderFooter = useCallback(() => {
+		if (isError && subscriptions.length > 0) {
+			return <LoadQueryErrorRetry text="Не удалось загрузить ещё" buttonText="Повторить" onRetry={handleRetry} />
+		}
 		if (!isFetchingNextPage) return null
 		return (
 			<View style={{ padding: 20 }}>
 				<ActivityIndicator size="small" color={Colors['green-main']} />
 			</View>
 		)
-	}
+	}, [isFetchingNextPage, isError, subscriptions.length, handleRetry])
 
-	const EmptyListComponent = () => {
-		if (isFetching) return null
+	const renderEmpty = useCallback(() => {
+		if (isLoading) {
+			return <UserListSkeleton count={12} />
+		}
+
+		if (isError) {
+			return <LoadQueryErrorRetry text="Не удалось загрузить подписки" onRetry={handleRetry} />
+		}
+
 		return (
 			<View style={{ flex: 1 }} className="items-center justify-center">
 				<Text style={{ fontFamily: fontFamily.regular }} className="text-gray-ab text-base">
@@ -74,7 +91,7 @@ const MySubscriptionsPage = () => {
 				</Text>
 			</View>
 		)
-	}
+	}, [isLoading, isError, handleRetry])
 
 	return (
 		<Page>
@@ -95,12 +112,12 @@ const MySubscriptionsPage = () => {
 						refreshControl={
 							<RefreshControl
 								refreshing={isRefetching}
-								onRefresh={() => refetchAndHaptics(refetch)}
+								onRefresh={() => refetchAndHaptics(handleRetry)}
 								tintColor={Colors['green-main']}
 							/>
 						}
 						ListFooterComponent={renderFooter}
-						ListEmptyComponent={EmptyListComponent}
+						ListEmptyComponent={renderEmpty}
 						contentContainerStyle={{
 							paddingBottom: 50,
 							paddingTop: 10,

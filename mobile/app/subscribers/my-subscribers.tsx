@@ -11,6 +11,8 @@ import { useMySubscribersQuery } from '@/queries/subscribers'
 import { Page } from '@/components/ui/Page'
 import { refetchAndHaptics } from '@/helpers/refetchAndHaptics'
 import { FlashList } from '@shopify/flash-list'
+import LoadQueryErrorRetry from '@/components/LoadQueryErrorRetry'
+import { UserListSkeleton } from '@/components/ui/skeleton'
 
 /**
  * Мои подписчики, кто подписан на меня
@@ -23,11 +25,23 @@ const MySubscribersPage = () => {
 		isFetchingNextPage,
 		refetch,
 		isRefetching,
-		isFetching
+		isLoading,
+		isError
 	} = useMySubscribersQuery()
 
-	const EmptyListComponent = () => {
-		if (isFetching) return null
+	const handleRetry = useCallback(() => {
+		return refetch()
+	}, [refetch])
+
+	const renderEmpty = useCallback(() => {
+		if (isLoading) {
+			return <UserListSkeleton count={12} actionsCount={0} />
+		}
+
+		if (isError) {
+			return <LoadQueryErrorRetry text="Не удалось загрузить подписчиков" onRetry={handleRetry} />
+		}
+
 		return (
 			<View style={{ flex: 1 }} className="items-center justify-center">
 				<Text style={{ fontFamily: fontFamily.regular }} className="text-gray-ab text-base">
@@ -35,18 +49,19 @@ const MySubscribersPage = () => {
 				</Text>
 			</View>
 		)
-	}
+	}, [isLoading, isError, handleRetry])
 
-	const renderFooter = () => {
-		// if (!loading) return null
-
+	const renderFooter = useCallback(() => {
+		if (isError && subscribers.length > 0) {
+			return <LoadQueryErrorRetry text="Не удалось загрузить ещё" buttonText="Повторить" onRetry={handleRetry} />
+		}
 		if (!isFetchingNextPage) return null
 		return (
 			<View style={{ padding: 20 }}>
 				<ActivityIndicator size="small" color={Colors['green-main']} />
 			</View>
 		)
-	}
+	}, [isFetchingNextPage, isError, subscribers.length, handleRetry])
 
 	const renderItem = useCallback(({ item }: { item: ISubscribe }) => {
 		return (
@@ -77,12 +92,12 @@ const MySubscribersPage = () => {
 					refreshControl={
 						<RefreshControl
 							refreshing={isRefetching}
-							onRefresh={() => refetchAndHaptics(refetch)}
+							onRefresh={() => refetchAndHaptics(handleRetry)}
 							tintColor={Colors['green-main']}
 						/>
 					}
 					ListFooterComponent={renderFooter}
-					ListEmptyComponent={EmptyListComponent}
+					ListEmptyComponent={renderEmpty}
 					contentContainerStyle={{
 						paddingBottom: 50,
 						paddingTop: 10,

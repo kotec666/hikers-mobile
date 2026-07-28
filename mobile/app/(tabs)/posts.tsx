@@ -25,6 +25,8 @@ import { refetchAndHaptics } from '@/helpers/refetchAndHaptics'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
 import WorkoutMap from '@/components/map/WorkoutMap'
 import { FlashList, FlashListRef } from '@shopify/flash-list'
+import LoadQueryErrorRetry from '@/components/LoadQueryErrorRetry'
+import { PostListItemSkeleton } from '@/components/ui/skeleton'
 
 const isUser = (item: IFoundUser | IFoundPost): item is IFoundUser => {
 	return 'username' in item
@@ -54,8 +56,14 @@ const PostsPage = () => {
 		hasNextPage: hasNextSearchPage,
 		isFetchingNextPage: isFetchingNextSearchPage,
 		refetch: refetchSearch,
-		isRefetching: isRefetchingSearch
+		isRefetching: isRefetchingSearch,
+		isFetching: isFetchingSearch,
+		error: isSearchError
 	} = useSearchQuery(debouncedSearchWord, state.searchMode)
+
+	const handleRetrySearch = useCallback(() => {
+		return refetchSearch()
+	}, [refetchSearch])
 
 	useEffect(() => {
 		const handler = setTimeout(() => {
@@ -70,9 +78,10 @@ const PostsPage = () => {
 		fetchNextPage,
 		hasNextPage,
 		isFetchingNextPage,
-		refetch,
+		refetch: refetchPostsFeed,
 		isRefetching,
-		isFetching
+		isLoading: isPostsFeedLoading,
+		error: isPostsFeedError
 	} = useFeedPostsQuery()
 
 	const flashListRef = useRef<FlashListRef<IPost>>(null)
@@ -82,6 +91,10 @@ const PostsPage = () => {
 		quickAction?: string
 		quickActionAt?: string
 	}>()
+
+	const handleRetryFeed = useCallback(() => {
+		return refetchPostsFeed()
+	}, [refetchPostsFeed])
 
 	const activateSearch = useCallback(() => {
 		setState((s) => (s.isSearchActive ? s : { ...s, isSearchActive: true }))
@@ -174,6 +187,11 @@ const PostsPage = () => {
 
 	// Функция рендеринга индикатора загрузки
 	const renderFooter = useCallback(() => {
+		if (isPostsFeedError && posts.length > 0) {
+			return (
+				<LoadQueryErrorRetry text="Не удалось загрузить ещё" buttonText="Повторить" onRetry={handleRetryFeed} />
+			)
+		}
 		if (!isFetchingNextPage) return null
 
 		return (
@@ -181,14 +199,59 @@ const PostsPage = () => {
 				<ActivityIndicator size="small" color={Colors['green-main']} />
 			</View>
 		)
-	}, [isFetchingNextPage])
+	}, [isFetchingNextPage, isPostsFeedError, posts.length, handleRetryFeed])
 
 	// Функция рендеринга пустого состояния
 	const renderEmpty = useCallback(() => {
-		if (isFetching) return null
+		if (isPostsFeedLoading) {
+			return (
+				<View className="gap-8">
+					<PostListItemSkeleton />
+					<PostListItemSkeleton />
+				</View>
+			)
+		}
+
+		if (isPostsFeedError) {
+			return <LoadQueryErrorRetry onRetry={handleRetryFeed} />
+		}
 
 		return <TrainingsEmpty text="К сожалению, постов еще не существует, опубликуйте пост после тренировки" />
-	}, [isFetching])
+	}, [isPostsFeedLoading, isPostsFeedError, handleRetryFeed])
+
+	const renderSearchEmpty = useCallback(() => {
+		if (isFetchingSearch) return null
+
+		if (isSearchError) {
+			return <LoadQueryErrorRetry text="Не удалось выполнить поиск" onRetry={handleRetrySearch} />
+		}
+
+		return (
+			<View className="flex-1 justify-center items-center">
+				<Text className="text-gray-ab text-center text-[19px]" style={{ fontFamily: fontFamily.regular }}>
+					{searchWord.trim().length < 2 ? 'Введите хотя бы 2 символа' : 'Ничего не нашлось'}
+				</Text>
+			</View>
+		)
+	}, [isFetchingSearch, isSearchError, handleRetrySearch, searchWord])
+
+	const renderSearchFooter = useCallback(() => {
+		if (isSearchError && searchData.length > 0) {
+			return (
+				<LoadQueryErrorRetry
+					text="Не удалось загрузить ещё"
+					buttonText="Повторить"
+					onRetry={handleRetrySearch}
+				/>
+			)
+		}
+		if (!isFetchingNextSearchPage) return null
+		return (
+			<View style={{ padding: 20 }}>
+				<ActivityIndicator size="small" color={Colors['green-main']} />
+			</View>
+		)
+	}, [isFetchingNextSearchPage, isSearchError, searchData.length, handleRetrySearch])
 
 	if (state.isSearchActive) {
 		return (
@@ -250,18 +313,7 @@ const PostsPage = () => {
 								<FlashList
 									// key={`${state.searchMode}`}
 									data={searchData}
-									ListEmptyComponent={
-										<View className="flex-1 justify-center items-center">
-											<Text
-												className="text-gray-ab text-center text-[19px]"
-												style={{ fontFamily: fontFamily.regular }}
-											>
-												{searchWord.trim().length < 2
-													? 'Введите хотя бы 2 символа'
-													: 'Ничего не нашлось'}
-											</Text>
-										</View>
-									}
+									ListEmptyComponent={renderSearchEmpty}
 									renderItem={({ item }) => {
 										if (state.searchMode === SearchType.USERS && isUser(item)) {
 											return (
@@ -292,19 +344,13 @@ const PostsPage = () => {
 									refreshControl={
 										<RefreshControl
 											refreshing={isRefetchingSearch}
-											onRefresh={() => refetchAndHaptics(refetchSearch)}
+											onRefresh={() => refetchAndHaptics(handleRetrySearch)}
 											tintColor={Colors['green-main']}
 										/>
 									}
 									onEndReachedThreshold={0.4}
 									ItemSeparatorComponent={() => <View style={{ height: 15 }} />}
-									ListFooterComponent={
-										isFetchingNextSearchPage ? (
-											<View style={{ padding: 20 }}>
-												<ActivityIndicator size="small" color={Colors['green-main']} />
-											</View>
-										) : null
-									}
+									ListFooterComponent={renderSearchFooter}
 									contentContainerStyle={{
 										flexGrow: 1,
 										paddingBottom: insets.bottom + (Platform.OS === 'android' ? 100 : 40),
@@ -359,7 +405,7 @@ const PostsPage = () => {
 							refreshControl={
 								<RefreshControl
 									refreshing={isRefetching}
-									onRefresh={() => refetchAndHaptics(refetch)}
+									onRefresh={() => refetchAndHaptics(handleRetryFeed)}
 									tintColor={Colors['green-main']}
 								/>
 							}

@@ -1,7 +1,8 @@
-import { useCallback, useEffect, useMemo, useState } from 'react'
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { Image as RNImage } from 'react-native'
 import { useSharedValue } from 'react-native-reanimated'
 import { FlipType, ImageManipulator, SaveFormat } from 'expo-image-manipulator'
+import { File } from 'expo-file-system'
 import { CropFrame, ImageEditorFinalizeOptions, ImageEditorResult, MIN_CROP_SIZE, Rect } from './types'
 
 type UseImageEditorParams = {
@@ -14,6 +15,16 @@ type UseImageEditorParams = {
 }
 
 const clamp = (value: number, min: number, max: number) => Math.min(Math.max(value, min), max)
+
+/** Удаляет файл, если он существует, без падения на ошибке — используем для чистки промежуточных рендеров */
+const deleteFileQuietly = async (uri: string) => {
+	try {
+		const file = new File(uri)
+		if (file.exists) await file.delete()
+	} catch {
+		// не критично — не должно ронять UX редактирования
+	}
+}
 
 /**
  * Вычисляет прямоугольник, в который изображение вписывается по принципу "contain"
@@ -114,10 +125,30 @@ export function useImageEditor({ sourceUri, containerWidth, containerHeight, fra
 		// eslint-disable-next-line react-hooks/exhaustive-deps
 	}, [workingUri, containerWidth, containerHeight, aspectLock, workingWidth, workingHeight])
 
+	// Последний рендер после rotate/flip никогда не "перекрывается" следующим вызовом
+	// applyManipulation (раз редактор закрывают) — чистим его сами при размонтировании.
+	// sourceUri не трогаем: это чужой файл, вызывающий код сам решает, что с ним делать.
+	const workingUriRef = useRef(workingUri)
+
+	// Синхронизация рефа вынесена в отдельный эффект без массива зависимостей — он выполняется
+	// после каждого рендера, но уже не во время самого рендера, поэтому не нарушает react-hooks/refs
+	useEffect(() => {
+		workingUriRef.current = workingUri
+	})
+
+	useEffect(() => {
+		return () => {
+			if (workingUriRef.current !== sourceUri) {
+				void deleteFileQuietly(workingUriRef.current)
+			}
+		}
+	}, [sourceUri])
+
 	const applyManipulation = useCallback(
 		async (apply: (ctx: ReturnType<typeof ImageManipulator.manipulate>) => void) => {
 			setIsProcessing(true)
 			try {
+				const previousUri = workingUri
 				const ctx = ImageManipulator.manipulate(workingUri)
 				apply(ctx)
 				const rendered = await ctx.renderAsync()
@@ -125,11 +156,17 @@ export function useImageEditor({ sourceUri, containerWidth, containerHeight, fra
 				setWorkingUri(result.uri)
 				setWorkingWidth(result.width)
 				setWorkingHeight(result.height)
+
+				// Предыдущий рендер (после rotate/flip) больше никому не нужен — чистим,
+				// но не трогаем самый первый sourceUri: это чужой файл, мы его не создавали
+				if (previousUri !== sourceUri) {
+					void deleteFileQuietly(previousUri)
+				}
 			} finally {
 				setIsProcessing(false)
 			}
 		},
-		[workingUri]
+		[workingUri, sourceUri]
 	)
 
 	const rotate = useCallback(

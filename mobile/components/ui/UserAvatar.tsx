@@ -1,9 +1,10 @@
-import { Image, ImageStyle } from 'expo-image'
+import { ImageStyle } from 'expo-image'
 import { StyleProp, View, ViewStyle } from 'react-native'
 import PeopleSvg from '@/components/svg/PeopleSvg'
 import React, { useState } from 'react'
 import { cn } from '@/helpers/cn'
 import PenSvg from '@/components/svg/PenSvg'
+import SmartImage from '@/components/ui/SmartImage'
 
 export interface IProps {
 	avatar?: string | null
@@ -41,7 +42,7 @@ export function UserAvatar(props: IProps) {
 						props.bordered && { borderWidth: 1, borderColor: 'rgba(255, 255, 255, 0.4)' }
 					]}
 				>
-					<Image
+					<SmartImage
 						source={{ uri: props.avatar }}
 						style={{ width: '100%', height: '100%' }}
 						contentFit="cover"
