@@ -1,4 +1,4 @@
-import React, { forwardRef, useImperativeHandle, useRef, useCallback, useEffect } from 'react'
+import React, { forwardRef, useImperativeHandle, useRef, useCallback } from 'react'
 import UserWithCircleSvg from '@/components/svg/UserWithCircleSvg'
 import { AnimatedMarker, useAnimatedCoordinate } from '@/hooks/useAnimatedCoordinate'
 import Animated from 'react-native-reanimated'
@@ -8,10 +8,6 @@ import RNMapsAccuracyCircle, {
 	RNMapsAccuracyCircleHandle
 } from '@/components/map/markers/UserLocationMarker/RNMapsAccuracyCircle'
 import { IPoint } from '@/types/interfaces'
-import {
-	getSmoothMarkerMoveDurationMs,
-	SmoothMarkerPositionInput
-} from '@/components/map/markers/UserLocationMarker/smoothMarkerMovement'
 
 interface IProps {
 	initialPosition?: {
@@ -26,7 +22,7 @@ interface IProps {
 
 export interface RNMapsUserLocationMarkerHandle {
 	setAccuracy: (accuracy: number | null) => void
-	setMarkerPosition: (newCoords: IPoint | null, options?: SmoothMarkerPositionInput) => number | null
+	setMarkerPosition: (newCoords: IPoint | null, durationInMs?: number) => void
 	setMarkerHeading: (heading: number | null, durationInMs?: number) => void
 	setAccuracyCircleColor: (color: string) => void
 }
@@ -36,10 +32,6 @@ const RNMapsUserLocationMarker = forwardRef<RNMapsUserLocationMarkerHandle, IPro
 	const initialPoint = props.initialPosition
 	const markerRef = useRef<MarkerRef>(null)
 	const accuracyRef = useRef<RNMapsAccuracyCircleHandle>(null)
-	const lastTargetRef = useRef<IPoint | null>(initialPoint ? { lat: initialPoint.lat, lon: initialPoint.lon } : null)
-	const lastTimestampRef = useRef<number | null>(null)
-	const lastReceivedAtRef = useRef<number | null>(null)
-	const pendingPositionRef = useRef<{ point: IPoint; options?: SmoothMarkerPositionInput } | null>(null)
 	const animated = useAnimatedCoordinate({
 		latitude: initialPoint?.lat || 0,
 		longitude: initialPoint?.lon || 0
@@ -50,58 +42,19 @@ const RNMapsUserLocationMarker = forwardRef<RNMapsUserLocationMarkerHandle, IPro
 	}, [])
 
 	const handleSetMarkerPosition = useCallback(
-		(newCoords: IPoint | null, options?: SmoothMarkerPositionInput) => {
-			if (!newCoords) {
-				accuracyRef.current?.hideCircle(true)
-				return 0
-			}
-			if (!initialPoint) {
-				pendingPositionRef.current = { point: newCoords, options }
-			}
-			if (
-				typeof options === 'object' &&
-				typeof options.timestamp === 'number' &&
-				typeof lastTimestampRef.current === 'number' &&
-				options.timestamp <= lastTimestampRef.current
-			) {
-				return null
-			}
-
-			const now = Date.now()
-			const durationMs = getSmoothMarkerMoveDurationMs({
-				from: lastTargetRef.current,
-				to: newCoords,
-				input: options,
-				lastReceivedAt: lastReceivedAtRef.current,
-				lastTimestamp: lastTimestampRef.current,
-				now
-			})
-
-			lastTargetRef.current = newCoords
-			lastReceivedAtRef.current = now
-			if (typeof options === 'object' && typeof options.timestamp === 'number') {
-				lastTimestampRef.current = options.timestamp
-			}
-
+		(newCoords: IPoint | null, durationMs = 500) => {
+			accuracyRef.current?.setCircleCenter(newCoords)
+			accuracyRef.current?.hideCircle(true)
+			if (!newCoords) return
 			animated.animatePosition({
 				latitude: newCoords.lat,
 				longitude: newCoords.lon,
-				durationMs
+				durationMs,
+				onFinish: () => accuracyRef.current?.hideCircle(false)
 			})
-
-			return durationMs
 		},
-		[animated, initialPoint]
+		[animated]
 	)
-
-	useEffect(() => {
-		if (!initialPoint) return
-		const pendingPosition = pendingPositionRef.current
-		if (!pendingPosition) return
-
-		pendingPositionRef.current = null
-		handleSetMarkerPosition(pendingPosition.point, pendingPosition.options)
-	}, [handleSetMarkerPosition, initialPoint])
 
 	const handleSetMarkerHeading = useCallback(
 		(heading: number | null, durationMs = 500) => {
@@ -159,7 +112,6 @@ const RNMapsUserLocationMarker = forwardRef<RNMapsUserLocationMarkerHandle, IPro
 			<RNMapsAccuracyCircle
 				ref={accuracyRef}
 				initialPosition={initialPoint}
-				animatedProps={animated.circleAnimatedProps}
 				debugAccuracyM={props.debugAccuracyM}
 				color={props.color}
 			/>

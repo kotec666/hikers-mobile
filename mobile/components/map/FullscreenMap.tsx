@@ -42,9 +42,9 @@ const FullscreenMap = ({ visible, onClose, map }: Props) => {
 		}
 
 		if (isIOS) {
-			return React.cloneElement(map, rnMapProps)
+			return React.cloneElement(map as React.ReactElement<IRNMapWorkoutProps>, rnMapProps)
 		} else {
-			return React.cloneElement(map, yaMapProps)
+			return React.cloneElement(map as React.ReactElement<IYaMapWorkoutProps>, yaMapProps)
 		}
 	}, [map, insets.bottom, isIOS])
 

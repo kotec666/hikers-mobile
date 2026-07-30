@@ -1,4 +1,4 @@
-import React, { forwardRef, useImperativeHandle, useCallback, useRef } from 'react'
+import React, { forwardRef, useImperativeHandle, useCallback, useRef, useEffect } from 'react'
 import { Point } from 'react-native-yamap-plus'
 import { CircleComponentInstanceRef, CircleCustom } from '@/components/map/CircleCustom'
 import { CircleNativeProps } from 'react-native-yamap-plus/src/spec/CircleNativeComponent'
@@ -98,7 +98,7 @@ const YaMapAccuracyCircle = forwardRef<YaMapAccuracyCircleHandle, IProps>((props
 		hideCircle: (hidden) => setHiddenCircle(hidden)
 	}))
 
-	React.useEffect(() => {
+	useEffect(() => {
 		return () => {
 			if (animationFrameRef.current !== null) cancelAnimationFrame(animationFrameRef.current)
 		}

@@ -287,13 +287,8 @@ export default function NewTraining() {
 					const markerMoveOptions = { speedMps: speed, timestamp: location.timestamp }
 					saveInitialMarkerLocation({ lat, lon })
 					if (isIOS) {
-						const durationMs = rnMapUserLocationMarkerRef.current?.setMarkerPosition(
-							{ lat, lon },
-							markerMoveOptions
-						)
-						if (durationMs !== null) {
-							rnMapComponentRef.current?.setMapCenter({ center: { lat, lon }, durationMs })
-						}
+						rnMapComponentRef.current?.setMapCenter({ center: { lat, lon } })
+						rnMapUserLocationMarkerRef.current?.setMarkerPosition({ lat, lon })
 						rnMapUserLocationMarkerRef.current?.setAccuracy(accuracy)
 					} else {
 						const durationMs = yaMapUserLocationMarkerRef.current?.setMarkerPosition(
@@ -535,7 +530,7 @@ export default function NewTraining() {
 			if (rnMapUserLocationMarkerRef.current) {
 				rnMapUserLocationMarkerRef.current.setAccuracy(accuracy)
 				rnMapUserLocationMarkerRef.current.setMarkerHeading(heading)
-				rnMapUserLocationMarkerRef.current.setMarkerPosition({ lat, lon }, markerMoveOptions)
+				rnMapUserLocationMarkerRef.current.setMarkerPosition({ lat, lon })
 			}
 		} else {
 			if (yaMapUserLocationMarkerRef.current) {

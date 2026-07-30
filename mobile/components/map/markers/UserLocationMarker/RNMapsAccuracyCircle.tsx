@@ -2,13 +2,11 @@ import React, { forwardRef, useImperativeHandle, useCallback, useRef } from 'rea
 import { setRgbaOpacity } from '@/helpers/colors/setRgbaOpacity'
 import { Circle } from 'react-native-maps'
 import { IPoint } from '@/types/interfaces'
-import { AnimatedCircle } from '@/hooks/useAnimatedCoordinate'
 
 interface IProps {
 	initialPosition: IPoint
 	color?: string
 	debugAccuracyM?: number
-	animatedProps?: React.ComponentProps<typeof AnimatedCircle>['animatedProps']
 }
 
 export interface RNMapsAccuracyCircleHandle {
@@ -72,13 +70,12 @@ const RNMapsAccuracyCircle = forwardRef<RNMapsAccuracyCircleHandle, IProps>((pro
 
 	if (!initialPoint?.lat || !initialPoint?.lon) return null
 	return (
-		<AnimatedCircle
+		<Circle
 			ref={circleRef}
 			center={{
 				latitude: initialPoint.lat,
 				longitude: initialPoint.lon
 			}}
-			animatedProps={props.animatedProps}
 			radius={props.debugAccuracyM ?? radiusRef.current}
 			fillColor={setRgbaOpacity(props.color ?? 'rgb(0, 200, 100)', opacityRef.current)}
 			strokeColor="transparent"

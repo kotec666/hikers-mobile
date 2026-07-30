@@ -235,10 +235,7 @@ export function useLocationData(
 			let markerMoveDurationMs: number | null | undefined
 			if (isIOS) {
 				rnMapUserLocationMarkerRef.current?.setAccuracy(accuracy)
-				markerMoveDurationMs = rnMapUserLocationMarkerRef.current?.setMarkerPosition(
-					newLatLon,
-					markerMoveOptions
-				)
+				rnMapUserLocationMarkerRef.current?.setMarkerPosition(newLatLon)
 			} else {
 				yaMapUserLocationMarkerRef.current?.setAccuracy(accuracy)
 				markerMoveDurationMs = yaMapUserLocationMarkerRef.current?.setMarkerPosition(
@@ -256,7 +253,7 @@ export function useLocationData(
 			if (markerMoveDurationMs === null) return
 
 			if (isIOS) {
-				rnMapComponentRef.current?.setMapCenter({ center: newLatLon, durationMs: markerMoveDurationMs })
+				rnMapComponentRef.current?.setMapCenter({ center: newLatLon })
 			} else {
 				yaMapComponentRef.current?.setMapCenter(
 					newLatLon,
@@ -363,7 +360,7 @@ export function useLocationData(
 					const markerMoveOptions = { immediate: true, timestamp: last.locationObject.timestamp }
 					const pos = { lat: latitude, lon: longitude }
 					if (isIOS) {
-						rnMapUserLocationMarkerRef.current?.setMarkerPosition(pos, markerMoveOptions)
+						rnMapUserLocationMarkerRef.current?.setMarkerPosition(pos)
 					} else {
 						yaMapUserLocationMarkerRef.current?.setMarkerPosition(pos, markerMoveOptions)
 					}
@@ -422,10 +419,7 @@ export function useLocationData(
 					let markerMoveDurationMs: number | null | undefined
 					if (isIOS) {
 						rnMapUserLocationMarkerRef.current?.setAccuracy(accuracy)
-						markerMoveDurationMs = rnMapUserLocationMarkerRef.current?.setMarkerPosition(
-							pos,
-							markerMoveOptions
-						)
+						rnMapUserLocationMarkerRef.current?.setMarkerPosition(pos)
 					} else {
 						yaMapUserLocationMarkerRef.current?.setAccuracy(accuracy)
 						markerMoveDurationMs = yaMapUserLocationMarkerRef.current?.setMarkerPosition(
@@ -437,7 +431,7 @@ export function useLocationData(
 					if (markerMoveDurationMs === null) return
 
 					if (isIOS) {
-						rnMapComponentRef.current?.setMapCenter({ center: pos, durationMs: markerMoveDurationMs })
+						rnMapComponentRef.current?.setMapCenter({ center: pos })
 					} else {
 						yaMapComponentRef.current?.setMapCenter(
 							pos,
