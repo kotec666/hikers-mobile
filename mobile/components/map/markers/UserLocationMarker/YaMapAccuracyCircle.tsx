@@ -12,7 +12,7 @@ interface IProps {
 }
 
 export interface YaMapAccuracyCircleHandle {
-	setCircleCenter: (center: Point | null) => void
+	setCircleCenter: (center: Point | null, durationMs?: number) => void
 	hideCircle: (hidden: boolean) => void
 	setAccuracy: (accuracy: number | null) => void
 }
@@ -22,6 +22,46 @@ const YaMapAccuracyCircle = forwardRef<YaMapAccuracyCircleHandle, IProps>((props
 	const circleRef = useRef<CircleComponentInstanceRef | null>(null)
 	const radiusRef = useRef(0)
 	const opacityRef = useRef(0.2)
+	const centerRef = useRef<Point>(initialPoint)
+	const animationFrameRef = useRef<number | null>(null)
+
+	const setNativeCenter = useCallback((center: Point) => {
+		centerRef.current = center
+		circleRef.current?.setNativeProps({
+			center
+		} as Partial<CircleNativeProps>)
+	}, [])
+
+	const animateCenter = useCallback(
+		(center: Point, durationMs = 0) => {
+			if (animationFrameRef.current !== null) cancelAnimationFrame(animationFrameRef.current)
+
+			if (durationMs <= 0) {
+				setNativeCenter(center)
+				return
+			}
+
+			const startedAt = Date.now()
+			const from = centerRef.current
+
+			const animate = () => {
+				const progress = Math.min((Date.now() - startedAt) / durationMs, 1)
+				const nextCenter = {
+					lat: from.lat + (center.lat - from.lat) * progress,
+					lon: from.lon + (center.lon - from.lon) * progress
+				}
+
+				setNativeCenter(nextCenter)
+
+				if (progress < 1) {
+					animationFrameRef.current = requestAnimationFrame(animate)
+				}
+			}
+
+			animationFrameRef.current = requestAnimationFrame(animate)
+		},
+		[setNativeCenter]
+	)
 
 	const setHiddenCircle = useCallback(
 		(hidden: boolean) => {
@@ -38,15 +78,13 @@ const YaMapAccuracyCircle = forwardRef<YaMapAccuracyCircleHandle, IProps>((props
 	)
 
 	useImperativeHandle(ref, () => ({
-		setCircleCenter: (center) => {
+		setCircleCenter: (center, durationMs) => {
 			if (center === null) {
 				setHiddenCircle(true)
 				return
 			}
 
-			circleRef.current?.setNativeProps({
-				center
-			} as Partial<CircleNativeProps>)
+			animateCenter(center, durationMs)
 		},
 
 		setAccuracy: (accuracy) => {
@@ -59,6 +97,12 @@ const YaMapAccuracyCircle = forwardRef<YaMapAccuracyCircleHandle, IProps>((props
 
 		hideCircle: (hidden) => setHiddenCircle(hidden)
 	}))
+
+	React.useEffect(() => {
+		return () => {
+			if (animationFrameRef.current !== null) cancelAnimationFrame(animationFrameRef.current)
+		}
+	}, [])
 
 	if (!initialPoint?.lat || !initialPoint?.lon) return null
 	return (

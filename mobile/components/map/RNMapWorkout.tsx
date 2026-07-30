@@ -29,6 +29,7 @@ export interface RNMapWorkoutHandle {
 		center: IPoint | null
 		zoomInMeters?: number
 		animationType?: RNMapAnimationType
+		durationMs?: number
 	}) => void
 	updatePath: (newItem: IWorkoutLocationStorageItem[]) => void
 }
@@ -76,7 +77,8 @@ const RNMapWorkout = forwardRef<RNMapWorkoutHandle, IRNMapWorkoutProps>((props, 
 	const changeMapCenter = async (
 		center: IPoint | null,
 		zoomInMeters?: number,
-		animationType: RNMapAnimationType = RNMapAnimationType.SMOOTH
+		animationType: RNMapAnimationType = RNMapAnimationType.SMOOTH,
+		durationMs?: number
 	) => {
 		if (isAnimationBlockedRef.current) return
 		if (!center) return
@@ -89,14 +91,18 @@ const RNMapWorkout = forwardRef<RNMapWorkoutHandle, IRNMapWorkoutProps>((props, 
 			center: { latitude: center.lat, longitude: center.lon }
 		}
 		if (animationType === RNMapAnimationType.SMOOTH) {
-			return mapRef.current.animateCamera(newCameraPosition)
+			return mapRef.current.animateCamera(
+				newCameraPosition,
+				typeof durationMs === 'number' ? { duration: Math.max(0, Math.round(durationMs)) } : undefined
+			)
 		} else {
 			return mapRef.current.setCamera(newCameraPosition)
 		}
 	}
 
 	useImperativeHandle(ref, () => ({
-		setMapCenter: (newCenter) => changeMapCenter(newCenter.center, newCenter.zoomInMeters, newCenter.animationType),
+		setMapCenter: (newCenter) =>
+			changeMapCenter(newCenter.center, newCenter.zoomInMeters, newCenter.animationType, newCenter.durationMs),
 		updatePath: (newItems) => updatePath(newItems)
 	}))
 

@@ -27,7 +27,6 @@ const shortestAngle = (from: number, to: number) => {
 
 export const AnimatedMarker = Animated.createAnimatedComponent(Marker)
 export const AnimatedCircle = Animated.createAnimatedComponent(Circle)
-
 export const useAnimatedCoordinate = (initialPosition: LatLng) => {
 	const coords = useSharedValue({
 		latitude: initialPosition.latitude,
@@ -65,7 +64,7 @@ export const useAnimatedCoordinate = (initialPosition: LatLng) => {
 				{ latitude, longitude },
 				{
 					duration: durationMs,
-					easing: Easing.inOut(Easing.cubic)
+					easing: Easing.linear
 				},
 				(finished) => {
 					if (finished && onFinish) {

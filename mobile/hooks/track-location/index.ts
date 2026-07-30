@@ -225,18 +225,26 @@ export function useLocationData(
 			if (!lastLocation) return
 
 			const { latitude: lat, longitude: lon, accuracy, speed } = lastLocation.locationObject.coords
+			const markerMoveOptions = { speedMps: speed, timestamp: lastLocation.locationObject.timestamp }
 			const newLatLon = { lat, lon }
 
 			saveInitialMarkerLocation(newLatLon)
 			saveInitialLocations(pointsRef.current)
 
 			// UI updates
+			let markerMoveDurationMs: number | null | undefined
 			if (isIOS) {
 				rnMapUserLocationMarkerRef.current?.setAccuracy(accuracy)
-				rnMapUserLocationMarkerRef.current?.setMarkerPosition(newLatLon)
+				markerMoveDurationMs = rnMapUserLocationMarkerRef.current?.setMarkerPosition(
+					newLatLon,
+					markerMoveOptions
+				)
 			} else {
 				yaMapUserLocationMarkerRef.current?.setAccuracy(accuracy)
-				yaMapUserLocationMarkerRef.current?.setMarkerPosition(newLatLon)
+				markerMoveDurationMs = yaMapUserLocationMarkerRef.current?.setMarkerPosition(
+					newLatLon,
+					markerMoveOptions
+				)
 			}
 			latestUserMarkerLocationRef.current = newLatLon
 			if (isIOS) {
@@ -245,10 +253,15 @@ export function useLocationData(
 				yaMapComponentRef.current?.updatePath(pointsRef.current)
 			}
 			// Центрируем карту
+			if (markerMoveDurationMs === null) return
+
 			if (isIOS) {
-				rnMapComponentRef.current?.setMapCenter({ center: newLatLon })
+				rnMapComponentRef.current?.setMapCenter({ center: newLatLon, durationMs: markerMoveDurationMs })
 			} else {
-				yaMapComponentRef.current?.setMapCenter(newLatLon, 1.2)
+				yaMapComponentRef.current?.setMapCenter(
+					newLatLon,
+					markerMoveDurationMs ? markerMoveDurationMs / 1000 : undefined
+				)
 			}
 
 			// Обновляем метрики
@@ -347,11 +360,12 @@ export function useLocationData(
 					}
 					const last = pointsRef.current[pointsRef.current.length - 1]
 					const { latitude, longitude } = last.locationObject.coords
+					const markerMoveOptions = { immediate: true, timestamp: last.locationObject.timestamp }
 					const pos = { lat: latitude, lon: longitude }
 					if (isIOS) {
-						rnMapUserLocationMarkerRef.current?.setMarkerPosition(pos)
+						rnMapUserLocationMarkerRef.current?.setMarkerPosition(pos, markerMoveOptions)
 					} else {
-						yaMapUserLocationMarkerRef.current?.setMarkerPosition(pos)
+						yaMapUserLocationMarkerRef.current?.setMarkerPosition(pos, markerMoveOptions)
 					}
 					latestUserMarkerLocationRef.current = pos
 					if (isIOS) {
@@ -402,16 +416,34 @@ export function useLocationData(
 
 					const lastNewPoint = newPoints[newPoints.length - 1]
 					const { latitude, longitude, speed, accuracy } = lastNewPoint.locationObject.coords
+					const markerMoveOptions = { speedMps: speed, timestamp: lastNewPoint.locationObject.timestamp }
 					const pos = { lat: latitude, lon: longitude }
 
+					let markerMoveDurationMs: number | null | undefined
 					if (isIOS) {
 						rnMapUserLocationMarkerRef.current?.setAccuracy(accuracy)
-						rnMapUserLocationMarkerRef.current?.setMarkerPosition(pos)
+						markerMoveDurationMs = rnMapUserLocationMarkerRef.current?.setMarkerPosition(
+							pos,
+							markerMoveOptions
+						)
 					} else {
 						yaMapUserLocationMarkerRef.current?.setAccuracy(accuracy)
-						yaMapUserLocationMarkerRef.current?.setMarkerPosition(pos)
+						markerMoveDurationMs = yaMapUserLocationMarkerRef.current?.setMarkerPosition(
+							pos,
+							markerMoveOptions
+						)
 					}
 					latestUserMarkerLocationRef.current = pos
+					if (markerMoveDurationMs === null) return
+
+					if (isIOS) {
+						rnMapComponentRef.current?.setMapCenter({ center: pos, durationMs: markerMoveDurationMs })
+					} else {
+						yaMapComponentRef.current?.setMapCenter(
+							pos,
+							markerMoveDurationMs ? markerMoveDurationMs / 1000 : undefined
+						)
+					}
 
 					updateRealtimeMetrics(speed ?? 0)
 				}
