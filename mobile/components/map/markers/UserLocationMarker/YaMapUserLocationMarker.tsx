@@ -5,6 +5,10 @@ import UserWithCircleSvg from '@/components/svg/UserWithCircleSvg'
 import YaMapAccuracyCircle, {
 	YaMapAccuracyCircleHandle
 } from '@/components/map/markers/UserLocationMarker/YaMapAccuracyCircle'
+import {
+	getSmoothMarkerMoveDurationMs,
+	SmoothMarkerPositionInput
+} from '@/components/map/markers/UserLocationMarker/smoothMarkerMovement'
 
 interface IProps {
 	color?: string
@@ -15,7 +19,7 @@ interface IProps {
 
 export interface YaMapUserLocationMarkerHandle {
 	setAccuracy: (accuracy: number | null) => void
-	setMarkerPosition: (point: Point | null, durationInMs?: number) => void
+	setMarkerPosition: (point: Point | null, options?: SmoothMarkerPositionInput) => number | null
 	setMarkerHeading: (heading: number | null, durationInSeconds?: number) => void
 }
 
@@ -23,19 +27,46 @@ const YaMapUserLocationMarker = forwardRef<YaMapUserLocationMarkerHandle, IProps
 	const initialPoint = props.initialPosition
 	const markerRef = useRef<MarkerRef>(null)
 	const accuracyRef = useRef<YaMapAccuracyCircleHandle>(null)
-	const timeoutRef = useRef<NodeJS.Timeout | null>(null)
+	const lastTargetRef = useRef<Point | null>(initialPoint ? { lat: initialPoint.lat, lon: initialPoint.lon } : null)
+	const lastTimestampRef = useRef<number | null>(null)
+	const lastReceivedAtRef = useRef<number | null>(null)
+	const pendingPositionRef = useRef<{ point: Point; options?: SmoothMarkerPositionInput } | null>(null)
 
-	const animatedMoveTo = useCallback((point: Point | null, durationInMs: number = 1500) => {
-		if (!markerRef.current || !point) return
+	const animatedMoveTo = useCallback((point: Point | null, options?: SmoothMarkerPositionInput) => {
+		if (!point) return 0
+		if (!markerRef.current) {
+			pendingPositionRef.current = { point, options }
+			return 0
+		}
+		if (
+			typeof options === 'object' &&
+			typeof options.timestamp === 'number' &&
+			typeof lastTimestampRef.current === 'number' &&
+			options.timestamp <= lastTimestampRef.current
+		) {
+			return null
+		}
 
-		accuracyRef.current?.hideCircle(true)
-		if (timeoutRef.current) clearTimeout(timeoutRef.current)
+		const now = Date.now()
+		const durationInMs = getSmoothMarkerMoveDurationMs({
+			from: lastTargetRef.current,
+			to: point,
+			input: options,
+			lastReceivedAt: lastReceivedAtRef.current,
+			lastTimestamp: lastTimestampRef.current,
+			now
+		})
+
+		lastTargetRef.current = point
+		lastReceivedAtRef.current = now
+		if (typeof options === 'object' && typeof options.timestamp === 'number') {
+			lastTimestampRef.current = options.timestamp
+		}
 
 		markerRef.current.animatedMoveTo(point, durationInMs)
-		timeoutRef.current = setTimeout(() => {
-			accuracyRef.current?.setCircleCenter(point)
-			accuracyRef.current?.hideCircle(false)
-		}, durationInMs)
+		accuracyRef.current?.setCircleCenter(point, durationInMs)
+
+		return durationInMs
 	}, [])
 
 	const animatedRotateTo = useCallback((angle: number | null, durationInMs: number = 250) => {
@@ -48,9 +79,8 @@ const YaMapUserLocationMarker = forwardRef<YaMapUserLocationMarkerHandle, IProps
 	}, [])
 
 	const handleSetMarkerPosition = useCallback(
-		(point: Point | null, durationInMs?: number) => {
-			animatedMoveTo(point, durationInMs)
-			accuracyRef.current?.setCircleCenter(point)
+		(point: Point | null, options?: SmoothMarkerPositionInput) => {
+			return animatedMoveTo(point, options)
 		},
 		[animatedMoveTo]
 	)
@@ -73,10 +103,12 @@ const YaMapUserLocationMarker = forwardRef<YaMapUserLocationMarkerHandle, IProps
 	)
 
 	useEffect(() => {
-		return () => {
-			if (timeoutRef.current) clearTimeout(timeoutRef.current)
+		const pendingPosition = pendingPositionRef.current
+		if (pendingPosition) {
+			pendingPositionRef.current = null
+			animatedMoveTo(pendingPosition.point, pendingPosition.options)
 		}
-	}, [])
+	}, [animatedMoveTo, initialPoint])
 
 	if (!initialPoint || initialPoint.lat == null || initialPoint.lon == null) return null
 

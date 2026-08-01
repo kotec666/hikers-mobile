@@ -10,6 +10,7 @@ export const env = {
 	vk_link: process.env.NEXT_PUBLIC_VK_LINK,
 	tg_link: process.env.NEXT_PUBLIC_TG_LINK,
 	tt_link: process.env.NEXT_PUBLIC_TT_LINK,
+	ig_link: process.env.NEXT_PUBLIC_IG_LINK,
 	support_email: process.env.NEXT_PUBLIC_SUPPORT_EMAIL,
 	contacts_email: process.env.NEXT_PUBLIC_CONTACTS_EMAIL
 }

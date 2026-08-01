@@ -15,6 +15,18 @@ import { prepareLocationsForSync } from '@/helpers/prepareLocationsForSync'
 import { getFieldsErrors } from '@/helpers/getFieldsErrors'
 import { UseMutateAsyncFunction } from '@tanstack/react-query'
 
+type FinishWorkoutMutation = UseMutateAsyncFunction<
+	{
+		success: boolean
+	},
+	Error,
+	{
+		workoutId?: string | undefined
+		ts?: number | undefined
+	},
+	unknown
+>
+
 export enum WorkoutSource {
 	ACTIVE = 'active',
 	UNSAVED = 'unsaved'
@@ -87,20 +99,28 @@ export const syncWorkoutPoints = async ({
 	}
 }
 
+function getWorkoutFinishTs(workout: IWorkout) {
+	const lastLocation = workout.locations.at(-1)
+	const lastLocationTs = lastLocation ? lastLocation.relTs + workout.startedAt : Date.now()
+
+	return Math.max(workout.startedAt, lastLocationTs, Date.now())
+}
+
+async function finishWorkoutWithServerTimeFallback(finishWorkout: FinishWorkoutMutation, ts: number) {
+	try {
+		return await finishWorkout({ ts })
+	} catch (e) {
+		const status = typeof e === 'object' && e !== null && 'response' in e ? (e as any).response?.status : null
+		if (status !== 409) throw e
+
+		return await finishWorkout({})
+	}
+}
+
 export const saveSingleWorkout = async (
 	source: WorkoutSource,
 	startedAt: number,
-	finishWorkout: UseMutateAsyncFunction<
-		{
-			success: boolean
-		},
-		Error,
-		{
-			workoutId?: string | undefined
-			ts?: number | undefined
-		},
-		unknown
-	>,
+	finishWorkout: FinishWorkoutMutation,
 	userId?: string
 ): Promise<null | string> => {
 	let workout: IWorkout | null
@@ -125,7 +145,7 @@ export const saveSingleWorkout = async (
 		const newTraining = await createOfflineTraining({
 			type: workout.type,
 			startedAt: workout.startedAt,
-			finishedAt: workout.locations.at(-1)!.relTs + workout.startedAt
+			finishedAt: getWorkoutFinishTs(workout)
 		})
 
 		if (!newTraining?.id) {
@@ -183,10 +203,7 @@ export const saveSingleWorkout = async (
 	}
 	if (!updated) return null
 
-	// const result = await finishTraining({
-	// 	ts: updated.locations.at(-1)!.relTs + updated.startedAt
-	// })
-	const result = await finishWorkout({ ts: updated.locations.at(-1)!.relTs + updated.startedAt })
+	const result = await finishWorkoutWithServerTimeFallback(finishWorkout, getWorkoutFinishTs(updated))
 
 	if (!result?.success) {
 		throw new Error('Ошибка finish')

@@ -1,54 +1,16 @@
 import { HeartSvg } from '@/components/svg'
 import { TrainingType } from '@shared/enums'
 import { WorkoutTypesMap } from '@/consts/workout-types'
-import Image from 'next/image'
 import { formatRelativeDate } from '@/helpers/formatRelativeDate'
 import { IGuestPost } from '@/api/posts'
 import { formatDistance } from '@/helpers/formatDistance'
 import { formatTimeFromSecondsCompact } from '@/helpers/formatTime'
-import { PATH_TO_IMAGE } from '@/consts/PATH_TO_FILES'
 import NotFoundPost from '@/app/posts/[slug]/components/not-found-post'
 import UserAvatar from '@/app/posts/[slug]/components/user-avatar'
 import { MapProvider } from '@/components/providers/map-provider'
 import YandexMap from '@/components/ui/map/yandex-map'
-import { cn } from '@/lib/utils'
-
-type LayoutItem = {
-	className: string
-	showOverlay?: boolean
-	overlayText?: string
-}
-
-const getLayout = (count: number): LayoutItem[] => {
-	if (count === 1) {
-		return [{ className: 'col-span-2 row-span-2 h-96' }]
-	}
-
-	if (count === 2) {
-		return [{ className: 'h-64' }, { className: 'h-64' }]
-	}
-
-	if (count === 3) {
-		return [{ className: 'col-span-2 row-span-2 h-96' }, { className: 'h-48' }, { className: 'h-48' }]
-	}
-
-	if (count === 4) {
-		return new Array(4).fill({ className: 'h-48' })
-	}
-
-	// 5+
-	return [
-		{ className: 'col-span-2 row-span-2 h-96' },
-		{ className: 'h-48' },
-		{ className: 'h-48' },
-		{ className: 'h-48' },
-		{
-			className: 'h-48',
-			showOverlay: true,
-			overlayText: `+${count - 5}`
-		}
-	]
-}
+import { MapFullscreenTrigger } from '@/components/ui/map/map-fullscreen'
+import { PostImageGrid } from '@/app/posts/[slug]/components/post-image-grid'
 
 interface WorkoutPostProps {
 	post: IGuestPost | null
@@ -66,13 +28,6 @@ export function WorkoutPost({ post }: WorkoutPostProps) {
 	}
 
 	const images = post?.fileNames ?? []
-	const count = images.length
-	const layout = getLayout(count)
-
-	const getGridClass = (count: number) => {
-		if (count === 1) return 'grid-cols-1'
-		return 'grid-cols-2'
-	}
 
 	const creatorMetrics = post?.training.participants.find(
 		(participant) => participant.user.id === post?.userCreator.id
@@ -133,39 +88,18 @@ export function WorkoutPost({ post }: WorkoutPostProps) {
 				</div>
 			</div>
 
-			<div className="px-4 pb-4 h-64 overflow-hidden">
-				<MapProvider
-					apiUrl={`https://api-maps.yandex.ru/v3/?apikey=${process.env.NEXT_PUBLIC_YANDEX_MAPS_KEY}&lang=ru_RU`}
-				>
-					<YandexMap className="rounded-xl" points={creatorPoints} routeColor={post?.userCreator.color} />
-				</MapProvider>
+			<div className="px-4 pb-4 h-64 sm:h-80 lg:h-96 overflow-hidden">
+				<div className="relative w-full h-full rounded-xl overflow-hidden">
+					<MapProvider
+						apiUrl={`https://api-maps.yandex.ru/v3/?apikey=${process.env.NEXT_PUBLIC_YANDEX_MAPS_KEY}&lang=ru_RU`}
+					>
+						<YandexMap className="rounded-xl" points={creatorPoints} routeColor={post?.userCreator.color} />
+					</MapProvider>
+					<MapFullscreenTrigger points={creatorPoints} routeColor={post?.userCreator.color} />
+				</div>
 			</div>
 
-			{count > 0 && (
-				<div className={cn('px-4 pb-4 grid gap-2', getGridClass(count))}>
-					{layout.map((item, idx) => {
-						const img = images[idx]
-
-						return (
-							<div key={idx} className={cn('relative overflow-hidden rounded-xl', item.className)}>
-								<Image
-									fill
-									src={`${PATH_TO_IMAGE}${img}`}
-									alt={`Тренировка ${idx + 1}`}
-									loading="eager"
-									className="object-cover"
-								/>
-
-								{item.showOverlay && (
-									<div className="absolute inset-0 bg-black/60 flex items-center justify-center">
-										<span className="text-white text-xl font-semibold">{item.overlayText}</span>
-									</div>
-								)}
-							</div>
-						)
-					})}
-				</div>
-			)}
+			<PostImageGrid fileNames={images} altPrefix="Тренировка" />
 
 			<div className="px-4 pb-4 flex items-center gap-6">
 				<div className="flex items-center gap-4">

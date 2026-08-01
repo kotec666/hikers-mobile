@@ -1,5 +1,5 @@
 import React from 'react'
-import { FlatList, View } from 'react-native'
+import { View } from 'react-native'
 import HeaderBack from '@/components/ui/HeaderBack'
 import { Container } from '@/components/ui/Container'
 import { Button } from '@/components/ui/Button'
@@ -7,6 +7,7 @@ import { Input } from '@/components/ui/Input'
 import PeopleListItem from '@/components/find-people/PeopleListItem'
 import { useSafeNavigation } from '@/hooks/useSafeNavigation'
 import { Page } from '@/components/ui/Page'
+import { FlashList } from '@shopify/flash-list'
 
 export enum FRIEND_STATUS {
 	ADDED = 'added',
@@ -67,7 +68,7 @@ const FindPeople = () => {
 
 					<Input isFind placeholder="Поиск участников" />
 
-					<FlatList
+					<FlashList
 						data={data}
 						renderItem={({ item }) => <PeopleListItem {...item} />}
 						keyExtractor={(item) => item.id.toString()}

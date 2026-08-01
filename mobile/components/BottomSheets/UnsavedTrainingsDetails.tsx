@@ -8,10 +8,10 @@ import { ru } from 'date-fns/locale'
 import WorkoutHistoryListItem from '@/components/workout-history/WorkoutHistoryListItem'
 import SaveUnsavedTrainingSvg from '@/components/svg/SaveUnsavedTrainingSvg'
 import DeleteTrashSvg from '@/components/svg/DeleteTrashSvg'
-import { LegendList } from '@legendapp/list/react-native'
 import { IWorkout } from '@/store/workoutStorage'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
 import { formatDistance } from '@/helpers/distance'
+import { FlashList } from '@shopify/flash-list'
 
 interface IProps {
 	notSavedWorkouts: IWorkout[]
@@ -68,9 +68,10 @@ const UnsavedTrainingsDetails = ({
 
 	const isDeletingDisabled = !notSavedWorkouts.length || syncingIds.length > 0
 
+	// @TODO flex-1 ?
 	return (
 		<View className="flex-1 w-full p-[16px]">
-			<LegendList
+			<FlashList
 				data={notSavedWorkouts}
 				renderItem={renderItem}
 				keyExtractor={(item) => String(item.startedAt)}

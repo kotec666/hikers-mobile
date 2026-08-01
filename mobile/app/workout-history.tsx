@@ -1,5 +1,5 @@
 import React, { useCallback, useMemo, useRef, useState } from 'react'
-import { View, Text, RefreshControl, ActivityIndicator, Dimensions, Pressable } from 'react-native'
+import { View, Text, RefreshControl, ActivityIndicator, Pressable } from 'react-native'
 import HeaderBack from '@/components/ui/HeaderBack'
 import { Container } from '@/components/ui/Container'
 import PeopleRunningSvg from '@/components/svg/PeopleRunningSvg'
@@ -11,7 +11,6 @@ import { ru } from 'date-fns/locale'
 import SaveUnsavedTrainingSvg from '@/components/svg/SaveUnsavedTrainingSvg'
 import DeleteTrashSvg from '@/components/svg/DeleteTrashSvg'
 import SwipeableProvider from '@/components/providers/SwipeableProvider'
-import { LegendList, LegendListRef } from '@legendapp/list/react-native'
 import { Colors } from '@/constants/Colors'
 import CheckMarkIconSvg from '@/components/svg/CheckMarkIconSvg'
 import TrainingsEmpty from '@/components/ui/Post/TrainingsEmpty'
@@ -22,11 +21,13 @@ import { formatDistance } from '@/helpers/distance'
 import { useWorkoutsQuery } from '@/queries/workout'
 import { Page } from '@/components/ui/Page'
 import BlurProvider from '@/components/providers/BlurProvider'
-import BottomSheet from '@/components/ui/BottomSheet/BottomSheet'
-import { BottomSheetHandle } from '@/components/ui/BottomSheet/types'
 import ArrowDownSvg from '@/components/svg/ArrowDownSvg'
 import BaseWheelPicker from '@/components/ui/wheel-picker/base-wheel-picker'
 import { refetchAndHaptics } from '@/helpers/refetchAndHaptics'
+import { FlashList, FlashListRef } from '@shopify/flash-list'
+import BottomSheet, { BottomSheetHandle } from '@/components/ui/BottomSheet/BottomSheet'
+import LoadQueryErrorRetry from '@/components/LoadQueryErrorRetry'
+import { WorkoutHistoryListSkeleton } from '@/components/ui/skeleton'
 
 interface WorkoutItem {
 	id: string
@@ -50,11 +51,9 @@ type WorkoutHistoryRow =
 			rowType: 'workout'
 	  } & WorkoutItem)
 
-const { height: SCREEN_HEIGHT } = Dimensions.get('screen')
-
 const WorkoutHistory = () => {
 	const toast = useToast()
-	const listRef = useRef<LegendListRef>(null)
+	const listRef = useRef<FlashListRef<WorkoutHistoryRow>>(null)
 	const bottomSheetRef = useRef<BottomSheetHandle>(null)
 
 	const { notSavedWorkouts, syncingIds, enqueueWorkoutSync, deleteWorkout } = useUnsavedWorkoutSync()
@@ -69,12 +68,14 @@ const WorkoutHistory = () => {
 		fetchNextPage,
 		refetch,
 		isLoading,
-		isFetching,
+		isError,
 		hasNextPage,
 		isFetchingNextPage
 	} = useWorkoutsQuery(selectedType)
 
-	const isInitialLoading = isLoading || (isFetching && history.length === 0)
+	const handleRetry = useCallback(() => {
+		return refetch()
+	}, [refetch])
 
 	const data: WorkoutItem[] = history
 		.filter((item) => !deletedWorkoutIds.includes(item.id))
@@ -115,16 +116,6 @@ const WorkoutHistory = () => {
 		itemsWithHeaders.push({ ...item, rowType: 'workout' })
 	})
 
-	// Функция рендеринга индикатора загрузки
-	const renderFooter = useCallback(() => {
-		if (!isFetchingNextPage) return null
-		return (
-			<View style={{ padding: 20 }}>
-				<ActivityIndicator size="small" color={Colors['green-main']} />
-			</View>
-		)
-	}, [isFetchingNextPage])
-
 	const workoutTypeMap = useMemo(() => Object.fromEntries(WorkoutTypesData.map((t) => [t.type, t])), [])
 
 	const handleDelete = async (startedAt: number) => {
@@ -150,16 +141,16 @@ const WorkoutHistory = () => {
 
 	const handleSelectType = async (type: string) => {
 		setSelectedType(type)
-		await listRef.current?.scrollToOffset({
+		listRef.current?.scrollToOffset({
 			offset: 0,
 			animated: false
 		})
 	}
 
-	const openBottomSheet = useCallback(() => {
+	const openBottomSheet = useCallback(async () => {
 		setTemporarySelectedType(selectedType)
 		if (bottomSheetRef.current) {
-			bottomSheetRef.current.openSheet()
+			await bottomSheetRef.current.openSheet()
 		}
 	}, [selectedType])
 
@@ -182,15 +173,38 @@ const WorkoutHistory = () => {
 		return Object.fromEntries(workoutTypePickerWheelData.map((item) => [item.value, item.label]))
 	}, [workoutTypePickerWheelData])
 
+	// Функция рендеринга индикатора загрузки
+	const renderFooter = useCallback(() => {
+		if (isError && data.length > 0) {
+			return <LoadQueryErrorRetry text="Не удалось загрузить ещё" buttonText="Повторить" onRetry={handleRetry} />
+		}
+		if (!isFetchingNextPage) return null
+		return (
+			<View style={{ padding: 20 }}>
+				<ActivityIndicator size="small" color={Colors['green-main']} />
+			</View>
+		)
+	}, [isFetchingNextPage, isError, data.length, handleRetry])
+
+	const renderEmpty = useCallback(() => {
+		if (isLoading || notSavedWorkouts.length > 0) return <WorkoutHistoryListSkeleton />
+
+		if (isError) {
+			return <LoadQueryErrorRetry text="Не удалось загрузить историю тренировок" onRetry={handleRetry} />
+		}
+
+		return <TrainingsEmpty text="К сожалению, тренировок еще не существует" />
+	}, [isLoading, notSavedWorkouts.length, isError, handleRetry])
+
 	return (
 		<Page>
 			<BlurProvider>
 				<BottomSheet
 					ref={bottomSheetRef}
-					activeHeight={SCREEN_HEIGHT * 0.5}
-					onDone={() => {
-						handleSelectType(temporarySelectedType)
+					dimmed={false}
+					onDone={async () => {
 						bottomSheetRef.current?.closeSheet()
+						await handleSelectType(temporarySelectedType)
 					}}
 				>
 					<BaseWheelPicker
@@ -231,19 +245,15 @@ const WorkoutHistory = () => {
 						</Text>
 						<ArrowDownSvg />
 					</Pressable>
-					<LegendList
+					<FlashList
 						ref={listRef}
 						style={{ flex: 1 }}
 						data={itemsWithHeaders}
-						ListEmptyComponent={
-							!isInitialLoading && !notSavedWorkouts.length ? (
-								<TrainingsEmpty text="К сожалению, тренировок еще не существует" />
-							) : null
-						}
+						ListEmptyComponent={renderEmpty}
 						refreshControl={
 							<RefreshControl
 								refreshing={isRefetching}
-								onRefresh={() => refetchAndHaptics(refetch)}
+								onRefresh={() => refetchAndHaptics(handleRetry)}
 								tintColor={Colors['green-main']}
 							/>
 						}

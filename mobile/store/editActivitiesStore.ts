@@ -7,7 +7,7 @@ interface IEditActivitiesStore {
 }
 
 export const useEditActivitiesStore = create<IEditActivitiesStore>((set) => ({
-	newActivitiesOrder: [],
+	newActivitiesOrder: [] as IActivity[],
 	setNewActivitiesOrder: (activities) => {
 		set({
 			newActivitiesOrder: activities

@@ -18,7 +18,6 @@ interface IProps {
 	color?: string
 	debugAccuracyM?: number
 	animatedFillProps?: Partial<{ fill: string }>
-	animatedFillColorWithOpacityProps?: Partial<{ fillColor: string }>
 }
 
 export interface RNMapsUserLocationMarkerHandle {
@@ -115,7 +114,6 @@ const RNMapsUserLocationMarker = forwardRef<RNMapsUserLocationMarkerHandle, IPro
 				initialPosition={initialPoint}
 				debugAccuracyM={props.debugAccuracyM}
 				color={props.color}
-				animatedFillColorWithOpacityProps={props.animatedFillColorWithOpacityProps}
 			/>
 		</>
 	)
@@ -130,6 +128,5 @@ export default React.memo(
 		prev.initialPosition?.lat === next.initialPosition?.lat &&
 		prev.initialPosition?.lon === next.initialPosition?.lon &&
 		prev.color === next.color &&
-		prev.animatedFillProps?.fill === next.animatedFillProps?.fill &&
-		prev.animatedFillColorWithOpacityProps?.fillColor === next.animatedFillColorWithOpacityProps?.fillColor
+		prev.animatedFillProps?.fill === next.animatedFillProps?.fill
 )

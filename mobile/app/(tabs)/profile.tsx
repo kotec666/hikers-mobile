@@ -11,7 +11,6 @@ import { RelativePathString, useLocalSearchParams, useRouter } from 'expo-router
 import { useAuthStore } from '@/store/authStore'
 import { PATH_TO_IMAGE } from '@/constants/PATH_TO_FILES'
 import { AnimatedProfilePicture } from '@/components/ui/Profile/AnimatedProfilePicture'
-import { LegendList, LegendListRef } from '@legendapp/list/react-native'
 import { IPost } from '@/api/posts'
 import { Colors } from '@/constants/Colors'
 import { adaptLocations } from '@/helpers/adaptPointsToIWorkoutLocationStorageItem'
@@ -21,7 +20,6 @@ import BlurProvider from '@/components/providers/BlurProvider'
 import { useProfilePostsQuery } from '@/queries/posts'
 import { useProfileQuery, useUpdateProfileBadgeMutation } from '@/queries/my-profile'
 import { Page } from '@/components/ui/Page'
-import { useQueryClient } from '@tanstack/react-query'
 import { refetchAndHaptics } from '@/helpers/refetchAndHaptics'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
 import WorkoutMap from '@/components/map/WorkoutMap'
@@ -30,6 +28,12 @@ import { RoundedButton } from '@/components/ui/HeaderBack'
 import PopupMenuItem from '@/components/ui/Popup/PopupMenuItem'
 import PopupMenu from '@/components/ui/Popup/PopupMenu'
 import { EmojiSheetModule } from 'expo-native-sheet-emojis'
+import { FlashList, FlashListRef } from '@shopify/flash-list'
+import EditSvg from '@/components/svg/EditSvg'
+import ExitSvg from '@/components/svg/ExitSvg'
+import AboutSvg from '@/components/svg/AboutSvg'
+import LoadQueryErrorRetry from '@/components/LoadQueryErrorRetry'
+import { PostListItemSkeleton, ProfileHeaderSkeleton } from '@/components/ui/skeleton'
 
 /**
  *
@@ -48,30 +52,37 @@ type AllowedRoute = (typeof ALLOWED_ROUTES)[keyof typeof ALLOWED_ROUTES]
 
 const Profile = () => {
 	const router = useRouter()
-	const queryClient = useQueryClient()
 	const insets = useSafeAreaInsets()
 	const { push } = useSafeNavigation()
 	const { user, logout } = useAuthStore()
 	const params = useLocalSearchParams()
-	const legendListRef = useRef<LegendListRef>(null)
+	const flashListRef = useRef<FlashListRef<IPost>>(null)
 
-	const { data: profileData, isFetching: isProfileFetching, refetch: refetchProfile } = useProfileQuery()
-	const { mutateAsync: updateProfileBadge } = useUpdateProfileBadgeMutation()
+	const {
+		data: profileData,
+		isFetching: isProfileFetching,
+		isLoading: isProfileLoading,
+		isError: isProfileError,
+		refetch: refetchProfile
+	} = useProfileQuery()
 
 	const {
 		data: posts = [],
 		fetchNextPage: fetchNextPostsPage,
 		hasNextPage: postsHasNextPage,
-		isFetchingNextPage: postsIsFetchingNextPage,
+		isFetchingNextPage: isFetchingPostsNextPage,
 		refetch: postsRefetch,
 		isRefetching: postsIsRefetching,
-		isFetching: postsIsFetching
+		isLoading: isPostsLoading,
+		isError: isPostsError
 	} = useProfilePostsQuery()
+
+	const { mutateAsync: updateProfileBadge } = useUpdateProfileBadgeMutation()
 
 	// Если пользователь кликнет на ту же страницу, то пойдёт скролл вверх. Навбар передаст params при переходе на эту же страницу
 	useEffect(() => {
-		if (params.scrollToTop && legendListRef.current) {
-			legendListRef.current.scrollToOffset({ offset: 0, animated: true })
+		if (params.scrollToTop && flashListRef.current) {
+			flashListRef.current.scrollToOffset({ offset: 0, animated: true })
 		}
 	}, [params.scrollToTop])
 
@@ -81,13 +92,20 @@ const Profile = () => {
 
 	const handleClickExit = async () => {
 		await logout()
-		queryClient.clear()
 		router.replace('/')
 	}
 
 	const onRefreshAll = useCallback(async () => {
 		await Promise.all([refetchProfile(), postsRefetch()]) // , refresh()
 	}, [refetchProfile, postsRefetch]) // , refresh
+
+	const handleRetryPosts = useCallback(() => {
+		return postsRefetch()
+	}, [postsRefetch])
+
+	const handleRetryProfile = useCallback(() => {
+		return refetchProfile()
+	}, [refetchProfile])
 
 	const handlePressEmojiPick = async () => {
 		const result = await EmojiSheetModule.present({
@@ -175,40 +193,65 @@ const Profile = () => {
 
 	// Функция рендеринга индикатора загрузки
 	const renderFooter = useCallback(() => {
-		//if (!loading) return null
-		if (!postsIsFetchingNextPage) return null
+		if (isPostsError && posts.length > 0) {
+			return (
+				<LoadQueryErrorRetry
+					text="Не удалось загрузить ещё"
+					buttonText="Повторить"
+					onRetry={handleRetryPosts}
+				/>
+			)
+		}
+		if (!isFetchingPostsNextPage) return null
 		return (
 			<View style={{ padding: 20 }}>
 				<ActivityIndicator size="small" color={Colors['green-main']} />
 			</View>
 		)
-	}, [postsIsFetchingNextPage]) // loading
+	}, [isFetchingPostsNextPage, isPostsError, posts.length, handleRetryPosts])
 
 	const renderEmpty = useCallback(() => {
-		if (postsIsFetching) return null
+		if (isPostsLoading) {
+			return (
+				<View className="gap-8">
+					<PostListItemSkeleton isMyPost />
+					<PostListItemSkeleton isMyPost />
+				</View>
+			)
+		}
+
+		if (isPostsError) {
+			return <LoadQueryErrorRetry onRetry={handleRetryPosts} />
+		}
 
 		return <TrainingsEmpty text="Постов еще не существует, опубликуйте пост после тренировки" />
-	}, [postsIsFetching])
+	}, [isPostsLoading, isPostsError, handleRetryPosts])
+
+	const SEPARATOR = () => <View style={{ height: 16 }} />
+
+	if (isProfileError && !profileData) {
+		return (
+			<View className="flex-1 items-center justify-center px-4">
+				<LoadQueryErrorRetry text="Не удалось загрузить профиль" onRetry={handleRetryProfile} />
+			</View>
+		)
+	}
 
 	return (
 		<Page edges={['top']}>
 			<BlurProvider>
-				<LegendList
-					ref={legendListRef}
+				<FlashList
+					ref={flashListRef}
 					data={posts}
 					renderItem={renderPostItem}
 					keyExtractor={(item) => item.id}
-					recycleItems
-					estimatedItemSize={320} // @TODO перепроверить размер + на главной странице + в чужом профиле
-					drawDistance={600}
-					maintainVisibleContentPosition
 					onEndReached={() => {
-						if (postsHasNextPage && !postsIsFetchingNextPage) {
+						if (postsHasNextPage && !isFetchingPostsNextPage) {
 							fetchNextPostsPage()
 						}
 					}}
 					onEndReachedThreshold={0.4}
-					ItemSeparatorComponent={() => <View style={{ height: 16 }} />}
+					ItemSeparatorComponent={SEPARATOR}
 					ListEmptyComponent={renderEmpty}
 					ListFooterComponent={renderFooter}
 					refreshControl={
@@ -220,96 +263,132 @@ const Profile = () => {
 					}
 					ListHeaderComponent={
 						<View className="gap-[20px] mb-[16px]">
-							<View className="gap-[20px]">
-								<View className="gap-[16px]">
-									{/*<EmailNotConfirmed*/}
-									{/*	isVisible={shouldShowEmailConfirmation}*/}
-									{/*	email={profileData?.user?.email}*/}
-									{/*/>*/}
-									<View className="flex-row justify-between w-full">
-										<AnimatedProfilePicture
-											size={117}
-											bordered
-											imageUrl={`${PATH_TO_IMAGE}${profileData?.user?.avatarFilename}`}
-										/>
-
-										<PopupMenu
-											menuWidth={200}
-											menuHeight={300}
-											trigger={({ open }) => (
-												<RoundedButton onPress={open} icon={<SettingsSvg />} />
-											)}
-										>
-											<PopupMenuItem
-												title="Редактировать профиль"
-												onPress={() => handleClickRedirect(ALLOWED_ROUTES.EDIT_PROFILE)}
+							{isProfileLoading ? (
+								<View className="gap-[20px]">
+									<ProfileHeaderSkeleton isMyProfile />
+								</View>
+							) : (
+								<View className="gap-[20px]">
+									<View className="gap-[16px]">
+										{/*<EmailNotConfirmed*/}
+										{/*	isVisible={shouldShowEmailConfirmation}*/}
+										{/*	email={profileData?.user?.email}*/}
+										{/*/>*/}
+										<View className="flex-row justify-between w-full">
+											<AnimatedProfilePicture
+												size={117}
+												bordered
+												imageUrl={`${PATH_TO_IMAGE}${profileData?.user?.avatarFilename}`}
 											/>
-											<PopupMenuItem
-												title="О приложении"
-												onPress={() => handleClickRedirect(ALLOWED_ROUTES.ABOUT)}
-											/>
-											<PopupMenuItem
-												title="Настройки"
-												onPress={() => handleClickRedirect(ALLOWED_ROUTES.SETTINGS)}
-											/>
-											<PopupMenuItem
-												title="results page"
-												onPress={() => handleClickRedirect(ALLOWED_ROUTES.RESULTS_PAGE)}
-											/>
-											<PopupMenuItem title="Выход" onPress={handleClickExit} />
-										</PopupMenu>
-									</View>
-									<View>
-										<Pressable
-											onPress={handlePressEmojiPick}
-											className="flex-row items-center gap-3"
-										>
-											{profileData?.user?.name && (
-												<Text
-													className="text-[19px] text-white"
-													style={{ fontFamily: fontFamily.bold }}
+											<PopupMenu
+												menuWidth={230}
+												menuHeight={300}
+												trigger={({ open }) => (
+													<RoundedButton onPress={open} icon={<SettingsSvg />} />
+												)}
+											>
+												<PopupMenuItem
+													title="Редактировать профиль"
+													onPress={() => handleClickRedirect(ALLOWED_ROUTES.EDIT_PROFILE)}
 												>
-													{profileData?.user?.name}
+													<View className="flex-row items-center gap-3">
+														<EditSvg size={18} color="white" />
+														<Text className="text-white text-base">
+															Редактировать профиль
+														</Text>
+													</View>
+												</PopupMenuItem>
+												<PopupMenuItem
+													title="О приложении"
+													onPress={() => handleClickRedirect(ALLOWED_ROUTES.ABOUT)}
+												>
+													<View className="flex-row items-center gap-3">
+														<AboutSvg size={18} color="white" />
+														<Text className="text-white text-base">О приложении</Text>
+													</View>
+												</PopupMenuItem>
+												<PopupMenuItem
+													title="Настройки"
+													onPress={() => handleClickRedirect(ALLOWED_ROUTES.SETTINGS)}
+												>
+													<View className="flex-row items-center gap-3">
+														<SettingsSvg size={18} color="white" />
+														<Text className="text-white text-base">Настройки</Text>
+													</View>
+												</PopupMenuItem>
+												{/*<PopupMenuItem*/}
+												{/*	title="results page"*/}
+												{/*	onPress={() => handleClickRedirect(ALLOWED_ROUTES.RESULTS_PAGE)}*/}
+												{/*/>*/}
+												<PopupMenuItem title="Выход" onPress={handleClickExit}>
+													<View className="flex-row items-center gap-3">
+														<ExitSvg size={18} color="white" />
+														<Text className="text-white text-base">Выход</Text>
+													</View>
+												</PopupMenuItem>
+											</PopupMenu>
+										</View>
+										<View>
+											<Pressable
+												onPress={handlePressEmojiPick}
+												className="flex-row items-center gap-3"
+											>
+												{profileData?.user?.name && (
+													<Text
+														className="text-[19px] text-white"
+														style={{ fontFamily: fontFamily.bold }}
+													>
+														{profileData?.user?.name}
+													</Text>
+												)}
+												{profileData?.user?.badge && (
+													<Text className="text-xl" style={{ fontFamily: fontFamily.bold }}>
+														{profileData.user.badge}
+													</Text>
+												)}
+											</Pressable>
+											<Text
+												className="text-base text-gray-ab"
+												style={{ fontFamily: fontFamily.medium }}
+											>
+												@{profileData?.user?.username}
+											</Text>
+										</View>
+										{isProfileError && profileData && (
+											<Text className="text-red-500 text-sm">
+												Не удалось обновить профиль.{' '}
+												<Text onPress={handleRetryProfile} className="underline">
+													Повторить
 												</Text>
-											)}
-											{profileData?.user?.badge && (
-												<Text className="text-xl" style={{ fontFamily: fontFamily.bold }}>
-													{profileData.user.badge}
-												</Text>
-											)}
-										</Pressable>
-										<Text
-											className="text-base text-gray-ab"
-											style={{ fontFamily: fontFamily.medium }}
-										>
-											@{profileData?.user?.username}
-										</Text>
+											</Text>
+										)}
 									</View>
+									<View className="flex-row justify-between gap-[10px]">
+										<SocialStats
+											label="Подписчики"
+											content={profileData?.subscribers}
+											hrefTo="/subscribers/my-subscribers"
+										/>
+										<SocialStats
+											label="Друзья"
+											content={profileData?.friends}
+											hrefTo="/friends/my-friends"
+										/>
+										<SocialStats
+											label="Подписки"
+											content={profileData?.subscriptions}
+											hrefTo="/subscribers/my-subscriptions"
+										/>
+									</View>
+									<Button variant="white" onPress={() => push('/workout-history')}>
+										История тренировок
+									</Button>
+									<RedirectAchievementsInfo achievements={profileData?.achievements} isMyProfile />
+									<ActivityInfo label="Активности" activities={profileData?.activities || []} />
+									<DailyActivityRedirect />
 								</View>
-								<View className="flex-row justify-between gap-[10px]">
-									<SocialStats
-										label="Подписчики"
-										content={profileData?.subscribers}
-										hrefTo="/subscribers/my-subscribers"
-									/>
-									<SocialStats
-										label="Друзья"
-										content={profileData?.friends}
-										hrefTo="/friends/my-friends"
-									/>
-									<SocialStats
-										label="Подписки"
-										content={profileData?.subscriptions}
-										hrefTo="/subscribers/my-subscriptions"
-									/>
-								</View>
-								<Button variant="white" onPress={() => push('/workout-history')}>
-									История тренировок
-								</Button>
-								<RedirectAchievementsInfo achievements={profileData?.achievements} isMyProfile />
-								<ActivityInfo label="Активности" activities={profileData?.activities || []} />
-								<DailyActivityRedirect />
-							</View>
+							)}
+
 							<Text
 								className="text-base text-white border-b-[1px] border-b-black-44 py-[20px]"
 								style={{ fontFamily: fontFamily.bold }}
@@ -319,7 +398,6 @@ const Profile = () => {
 						</View>
 					}
 					contentContainerStyle={{
-						flexGrow: 1,
 						paddingBottom: insets.bottom + (Platform.OS === 'android' ? 100 : 40),
 						paddingHorizontal: 16
 					}}

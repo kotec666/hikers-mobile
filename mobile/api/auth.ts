@@ -52,16 +52,7 @@ export const requestConfirmEmailCode = async (
 }
 
 // Ввести код подтверждения почты
-export const confirmEmailCode = async (
-	email: string,
-	code: string
-): Promise<{
-	token: string
-	id: string
-	name: string
-	username: string
-	avatarFilename: null | string
-}> => {
+export const confirmEmailCode = async (email: string, code: string): Promise<IUser & { token: string }> => {
 	return (
 		await fetcher.post('auth/confirm-email', {
 			json: { email, code }

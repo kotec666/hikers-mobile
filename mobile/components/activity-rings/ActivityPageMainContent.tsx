@@ -14,9 +14,9 @@ import DistanceSvg from '@/components/svg/DistanceSvg'
 import { Button } from '@/components/ui/Button'
 
 interface IProps {
-	handlePressChangeGoalToday: () => void
-	handlePressChangeGoalSchedule: () => void
-	handlePressChangeGoal: () => void
+	handlePressChangeGoalToday: () => Promise<void>
+	handlePressChangeGoalSchedule: () => Promise<void>
+	handlePressChangeGoal: () => Promise<void>
 	isToday?: boolean
 }
 
@@ -65,13 +65,13 @@ const ActivityPageMainContent = ({
 								)}
 							>
 								<PopupMenuItem onPress={handlePressChangeGoalToday}>
-									<View className="flex-row gap-3">
+									<View className="flex-row items-center gap-3">
 										<CircleSvg />
 										<Text className="text-white text-base">Изменить цель на сегодня</Text>
 									</View>
 								</PopupMenuItem>
 								<PopupMenuItem onPress={handlePressChangeGoalSchedule}>
-									<View className="flex-row gap-3">
+									<View className="flex-row items-center gap-3">
 										<CalendarSvg />
 										<Text className="text-white text-base">Изменить расписание</Text>
 									</View>

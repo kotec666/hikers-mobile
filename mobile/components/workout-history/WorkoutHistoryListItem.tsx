@@ -42,7 +42,7 @@ const WorkoutHistoryListItemContent = (props: IProps) => {
 			{props.isLoading ? (
 				<ActivityIndicator size="small" color={Colors['green-main']} />
 			) : props.actionIcon && Array.isArray(props.actionIcon) ? (
-				<View className="flex-row gap-3">
+				<View className="flex-row items-center gap-3">
 					{props.actionIcon.map((iconItem, index) => (
 						<TouchableOpacity
 							key={index}
@@ -72,7 +72,7 @@ const WorkoutHistoryListItem = (props: IProps) => {
 		return (
 			<Link
 				href={`/training/viewWorkout?mode=${VIEW_WORKOUT_MODE.FROM_HISTORY}&historyTrainingId=${props.id}`}
-				className="flex-row items-center justify-between pt-2"
+				style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingTop: 3 }}
 			>
 				<WorkoutHistoryListItemContent {...props} />
 			</Link>

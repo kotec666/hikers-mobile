@@ -1,17 +1,22 @@
 import * as React from 'react'
 import Svg, { Path } from 'react-native-svg'
 
-const SvgComponent = () => (
-	<Svg width={19} height={19} fill="none">
+interface IProps {
+	color?: string
+	size?: number
+}
+
+const SvgComponent = ({ color = '#fff', size = 19 }: IProps) => (
+	<Svg width={size} height={size} fill="none" viewBox="0 0 19 19">
 		<Path
-			stroke="#fff"
+			stroke={color}
 			strokeLinecap="round"
 			strokeLinejoin="round"
 			strokeWidth={1.6}
 			d="M9.5 11.75a2.25 2.25 0 1 0 0-4.5 2.25 2.25 0 0 0 0 4.5Z"
 		/>
 		<Path
-			stroke="#fff"
+			stroke={color}
 			strokeLinecap="round"
 			strokeLinejoin="round"
 			strokeWidth={1.6}

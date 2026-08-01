@@ -14,7 +14,7 @@ interface AchievementsListItemProps {
 	iconFilename: string | null
 	id: string
 	colorHex: string | null
-	handleClickAchievement: (achievementId: string) => void
+	handleClickAchievement: (achievementId: string) => Promise<void>
 }
 
 const AchievementsListItem = ({
@@ -41,8 +41,12 @@ const AchievementsListItem = ({
 	const transparentLocations: readonly [number, number, ...number[]] | null | undefined = [0, 0.7, 0.9, 1]
 	const notTransparentLocations: readonly [number, number, ...number[]] | null | undefined = [0, 0.7, 1, 1]
 
+	const handlePressAchievement = async () => {
+		await handleClickAchievement(id)
+	}
+
 	return (
-		<TouchableOpacity onPress={() => handleClickAchievement(id)}>
+		<TouchableOpacity onPress={handlePressAchievement}>
 			<View
 				className={cn('rounded-[20px] overflow-hidden border-[1px]', {
 					'border-white/20': progressWidth !== 100,

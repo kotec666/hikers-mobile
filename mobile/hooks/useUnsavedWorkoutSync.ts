@@ -31,34 +31,28 @@ export const useUnsavedWorkoutSync = () => {
 	const processQueue = useCallback(async () => {
 		if (isProcessingRef.current) return
 
-		const nextWorkout = syncQueueRef.current.shift()
-
-		if (!nextWorkout) {
-			isProcessingRef.current = false
-			return
-		}
-
 		isProcessingRef.current = true
 
-		setSyncingIds((ids) => [...ids, nextWorkout.startedAt])
+		while (syncQueueRef.current.length) {
+			const nextWorkout = syncQueueRef.current.shift()
+			if (!nextWorkout) break
 
-		try {
-			await saveSingleWorkout(WorkoutSource.UNSAVED, nextWorkout.startedAt, finishWorkout, nextWorkout.userId)
-			refresh()
-			nextWorkout.resolve()
-		} catch (e) {
-			console.log(e)
-			nextWorkout.reject(e)
-		} finally {
-			setSyncingIds((ids) => ids.filter((id) => id !== nextWorkout.startedAt))
-			promisesRef.current.delete(nextWorkout.startedAt)
+			setSyncingIds((ids) => [...ids, nextWorkout.startedAt])
 
-			isProcessingRef.current = false
-
-			if (syncQueueRef.current.length) {
-				void processQueue()
+			try {
+				await saveSingleWorkout(WorkoutSource.UNSAVED, nextWorkout.startedAt, finishWorkout, nextWorkout.userId)
+				refresh()
+				nextWorkout.resolve()
+			} catch (e) {
+				console.log(e)
+				nextWorkout.reject(e)
+			} finally {
+				setSyncingIds((ids) => ids.filter((id) => id !== nextWorkout.startedAt))
+				promisesRef.current.delete(nextWorkout.startedAt)
 			}
 		}
+
+		isProcessingRef.current = false
 	}, [finishWorkout, refresh])
 
 	// const enqueueWorkoutSync = (startedAt: number) => {

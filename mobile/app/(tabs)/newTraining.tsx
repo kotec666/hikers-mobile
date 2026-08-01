@@ -277,20 +277,30 @@ export default function NewTraining() {
 		try {
 			activeLocationSubscriptionRef.current = await Location.watchPositionAsync(
 				{
-					accuracy: Location.Accuracy.Balanced,
+					accuracy: Location.Accuracy.BestForNavigation,
+					timeInterval: 1000,
 					distanceInterval: 1
 				},
 				(location) => {
 					console.log('[active-tracking] received active location: ', location)
-					const { latitude: lat, longitude: lon, accuracy } = location.coords
+					const { latitude: lat, longitude: lon, accuracy, speed } = location.coords
+					const markerMoveOptions = { speedMps: speed, timestamp: location.timestamp }
 					saveInitialMarkerLocation({ lat, lon })
 					if (isIOS) {
 						rnMapComponentRef.current?.setMapCenter({ center: { lat, lon } })
 						rnMapUserLocationMarkerRef.current?.setMarkerPosition({ lat, lon })
 						rnMapUserLocationMarkerRef.current?.setAccuracy(accuracy)
 					} else {
-						yaMapComponentRef.current?.setMapCenter({ lat, lon })
-						yaMapUserLocationMarkerRef.current?.setMarkerPosition({ lat, lon })
+						const durationMs = yaMapUserLocationMarkerRef.current?.setMarkerPosition(
+							{ lat, lon },
+							markerMoveOptions
+						)
+						if (durationMs !== null) {
+							yaMapComponentRef.current?.setMapCenter(
+								{ lat, lon },
+								durationMs !== undefined ? durationMs / 1000 : undefined
+							)
+						}
 						yaMapUserLocationMarkerRef.current?.setAccuracy(accuracy)
 					}
 
@@ -484,8 +494,10 @@ export default function NewTraining() {
 		const locationObject = await getFastUserPosition()
 		if (!locationObject) return
 		const {
-			coords: { latitude: lat, longitude: lon, accuracy, heading }
+			coords: { latitude: lat, longitude: lon, accuracy, heading },
+			timestamp
 		} = locationObject
+		const markerMoveOptions = { immediate: true, timestamp }
 
 		setInitialMarkerLocationState({ lat, lon })
 		if (isIOS) {
@@ -524,7 +536,7 @@ export default function NewTraining() {
 			if (yaMapUserLocationMarkerRef.current) {
 				yaMapUserLocationMarkerRef.current.setAccuracy(accuracy)
 				yaMapUserLocationMarkerRef.current.setMarkerHeading(heading)
-				yaMapUserLocationMarkerRef.current.setMarkerPosition({ lat, lon })
+				yaMapUserLocationMarkerRef.current.setMarkerPosition({ lat, lon }, markerMoveOptions)
 			}
 		}
 	}, [

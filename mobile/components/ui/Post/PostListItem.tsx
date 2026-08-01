@@ -47,6 +47,7 @@ const PostListItem = (props: IProps) => {
 				authorName={props.authorName}
 				createdAt={props.createdAt}
 				workoutType={props.workoutType}
+				postId={props.postId}
 			/>
 			<PostBodyWrapper
 				mode={PostType.FEED_LIST_ITEM}

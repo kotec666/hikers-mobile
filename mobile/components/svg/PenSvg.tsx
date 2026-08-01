@@ -1,10 +1,15 @@
 import * as React from 'react'
 import Svg, { Path } from 'react-native-svg'
 
-const SvgComponent = () => (
-	<Svg width={13} height={13} fill="none">
+interface IProps {
+	color?: string
+	size?: number
+}
+
+const SvgComponent = ({ color = '#000', size = 13 }: IProps) => (
+	<Svg width={size} height={size} fill="none" viewBox="0 0 13 13">
 		<Path
-			stroke="#000"
+			stroke={color}
 			strokeLinecap="round"
 			strokeLinejoin="round"
 			strokeWidth={1.6}

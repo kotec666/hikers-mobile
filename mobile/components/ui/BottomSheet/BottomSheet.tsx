@@ -1,245 +1,172 @@
-import React, { forwardRef, useCallback, useImperativeHandle } from 'react'
-import { View, StyleSheet, TouchableWithoutFeedback, Dimensions, Pressable, Platform } from 'react-native'
-import { BottomSheetHandle, BottomSheetProps } from '@/components/ui/BottomSheet/types'
-import Animated, { interpolate, useAnimatedStyle, useSharedValue, withSpring } from 'react-native-reanimated'
-import { Gesture, GestureDetector } from 'react-native-gesture-handler'
-import { Colors } from '@/constants/Colors'
-import { BlurView } from 'expo-blur'
-import { scheduleOnRN } from 'react-native-worklets'
-import Portal from '@/components/Portal/Portal'
-import { useBlurContext } from '@/components/providers/BlurProvider'
+import React, { forwardRef, useCallback, useImperativeHandle, useRef } from 'react'
 import { GlassView, isLiquidGlassAvailable } from 'expo-glass-effect'
+import { Dimensions, Platform, StyleSheet } from 'react-native'
+import { BlurView } from 'expo-blur'
+import { useBlurContext } from '@/components/providers/BlurProvider'
+import { Colors } from '@/constants/Colors'
+import { PositionChangeEvent, TrueSheet, TrueSheetProps } from '@lodev09/react-native-true-sheet'
 import { Button } from '@/components/ui/Button'
+import Animated, { interpolate, useAnimatedStyle, useSharedValue } from 'react-native-reanimated'
+import { scheduleOnRN } from 'react-native-worklets'
 
-const BottomSheet = forwardRef<BottomSheetHandle, BottomSheetProps>(
-	(
-		{
-			activeHeight,
-			backDropColor = 'rgba(0,0,0,0.5)',
-			backgroundColor = 'rgba(0, 0, 0, 1)',
-			blurDisabled,
-			children,
-			onDone
-		},
-		ref
-	) => {
-		// const safeAreaInsets = useSafeAreaInsets()
-		const blurTargetRef = useBlurContext()
-		const { height: screenHeight } = Dimensions.get('screen')
-		const isGlassAvailable = Platform.OS === 'ios' && isLiquidGlassAvailable()
+const { height: screenHeight } = Dimensions.get('screen')
 
-		const closedPositionY = screenHeight
-		const openPositionY = screenHeight - activeHeight
+export interface BottomSheetProps extends TrueSheetProps {
+	children: React.ReactNode
+	blurDisabled?: boolean
+	onDone?: () => void
+}
 
-		const sheetPositionY = useSharedValue(closedPositionY)
-		const gestureStartPositionY = useSharedValue(0)
+export interface BottomSheetHandle {
+	openSheet: () => Promise<void>
+	closeSheet: (onFinished?: () => void) => Promise<void>
+}
 
-		const openSheet = useCallback(() => {
-			sheetPositionY.value = withSpring(openPositionY, {
-				damping: 50,
-				stiffness: 150,
-				mass: 0.5
-			})
-		}, [openPositionY, sheetPositionY])
+const BottomSheet = forwardRef<BottomSheetHandle, BottomSheetProps>((props, ref) => {
+	const { blurDisabled, onDone, children, ...restProps } = props
+	const bottomSheetRef = useRef<TrueSheet | null>(null)
+	const blurTargetRef = useBlurContext()
+	const isIOS = Platform.OS === 'ios'
+	const isGlassAvailable = isIOS && isLiquidGlassAvailable()
 
-		const closeSheet = useCallback(
-			(onFinished?: () => void) => {
-				sheetPositionY.value = withSpring(
-					closedPositionY,
-					{
-						damping: 50,
-						stiffness: 150,
-						mass: 0.5
-					},
-					(finished) => {
-						if (finished) {
-							if (onFinished) {
-								scheduleOnRN(onFinished)
-							}
+	const closedPositionY = screenHeight
+
+	const sheetPosition = useSharedValue(closedPositionY)
+
+	const renderBackground = () => {
+		if (blurDisabled) return null
+
+		if (isGlassAvailable) {
+			return (
+				<GlassView
+					colorScheme="dark"
+					style={[
+						StyleSheet.absoluteFill,
+						{
+							height: screenHeight,
+							borderTopLeftRadius: 50,
+							borderTopRightRadius: 50
 						}
-					}
-				)
-			},
-			[closedPositionY, sheetPositionY]
-		)
+					]}
+				/>
+			)
+		}
 
-		useImperativeHandle(
-			ref,
-			() => ({
-				openSheet,
-				closeSheet
-			}),
-			[openSheet, closeSheet]
-		)
-
-		const sheetStyle = useAnimatedStyle(() => ({
-			top: sheetPositionY.value
-		}))
-
-		const backdropStyle = useAnimatedStyle(() => {
-			const opacity = interpolate(sheetPositionY.value, [closedPositionY, openPositionY], [0, 0.5])
-
-			return {
-				opacity,
-				display: opacity === 0 ? 'none' : 'flex'
-			}
-		})
-
-		const floatingButtonStyle = useAnimatedStyle(() => {
-			const opacity = interpolate(sheetPositionY.value, [closedPositionY - 50, openPositionY], [0, 1])
-
-			return {
-				top: sheetPositionY.value - 70,
-				opacity,
-				transform: [
-					{
-						translateY: interpolate(sheetPositionY.value, [openPositionY, closedPositionY], [0, 30])
-					}
-				]
-			}
-		})
-
-		const panGestureHandler = Gesture.Pan()
-			.onBegin(() => {
-				gestureStartPositionY.value = sheetPositionY.value
-			})
-			.onUpdate((event) => {
-				const newPositionY = gestureStartPositionY.value + event.translationY
-				sheetPositionY.value = Math.min(Math.max(newPositionY, openPositionY), closedPositionY)
-			})
-			.onEnd(() => {
-				if (sheetPositionY.value > openPositionY + 50) {
-					sheetPositionY.value = withSpring(closedPositionY, {
-						damping: 50,
-						stiffness: 150,
-						mass: 0.5
-					})
-				} else {
-					sheetPositionY.value = withSpring(openPositionY, {
-						damping: 50,
-						stiffness: 150,
-						mass: 0.5
-					})
-				}
-			})
-
-		const platformStyles = [
-			styles.container,
-			sheetStyle,
-			{
-				height: activeHeight,
-				//paddingBottom: safeAreaInsets.bottom,
-				...(blurDisabled && {
-					backgroundColor
-				})
-			}
-		]
-
-		const renderBackground = () => {
-			if (blurDisabled) return null
-
-			if (isGlassAvailable) {
-				return (
-					<GlassView
-						colorScheme="dark"
-						style={[StyleSheet.absoluteFill, { borderTopLeftRadius: 50, borderTopRightRadius: 50 }]}
-					/>
-				)
-			}
-
-			if (Platform.OS === 'ios') {
-				return <BlurView tint="dark" style={StyleSheet.absoluteFill} intensity={10} />
-			}
-
+		if (Platform.OS === 'ios') {
 			return (
 				<BlurView
 					tint="dark"
-					style={StyleSheet.absoluteFill}
+					style={[
+						StyleSheet.absoluteFill,
+						{
+							height: screenHeight
+						}
+					]}
 					intensity={23}
-					blurTarget={blurTargetRef}
-					blurMethod="dimezisBlurView"
 				/>
 			)
 		}
 
 		return (
-			<Portal>
-				<TouchableWithoutFeedback onPress={() => closeSheet()}>
-					<Animated.View style={[styles.backdrop, backdropStyle, { backgroundColor: backDropColor }]} />
-				</TouchableWithoutFeedback>
-				{onDone && (
-					<Animated.View style={[styles.floatingButton, floatingButtonStyle]}>
-						<Button variant="black" onPress={onDone}>
-							Готово
-						</Button>
-					</Animated.View>
-				)}
-
-				<Animated.View style={platformStyles}>
-					<View
-						style={{
-							flex: 1
-						}}
-					>
-						{renderBackground()}
-
-						<GestureDetector gesture={panGestureHandler}>
-							<Pressable style={styles.lineContainer}>
-								<View style={styles.line} />
-							</Pressable>
-						</GestureDetector>
-
-						<View style={styles.contentContainer}>{children}</View>
-					</View>
-				</Animated.View>
-			</Portal>
+			<BlurView
+				tint="dark"
+				style={[
+					StyleSheet.absoluteFill,
+					{
+						height: screenHeight
+					}
+				]}
+				intensity={23}
+				blurTarget={blurTargetRef}
+				blurMethod="dimezisBlurView"
+			/>
 		)
 	}
-)
+
+	const openSheet = useCallback(async () => {
+		await bottomSheetRef.current?.present()
+	}, [])
+
+	const closeSheet = useCallback(async (onFinished?: () => void) => {
+		await bottomSheetRef.current?.dismiss()
+		if (onFinished) {
+			scheduleOnRN(onFinished)
+		}
+	}, [])
+
+	useImperativeHandle(
+		ref,
+		() => ({
+			openSheet,
+			closeSheet
+		}),
+		[openSheet, closeSheet]
+	)
+
+	const handlePositionChange = (e: PositionChangeEvent) => {
+		sheetPosition.value = e.nativeEvent.position
+	}
+
+	const floatingButtonStyle = useAnimatedStyle(() => {
+		const opacity = interpolate(sheetPosition.value, [closedPositionY - 50, screenHeight * 0.5], [0, 1])
+		const isClosed = sheetPosition.value > closedPositionY - 10
+
+		const buttonPosition = isIOS ? 180 : 150
+		return {
+			top: isClosed ? screenHeight + 20 : sheetPosition.value - buttonPosition,
+			opacity,
+			transform: [
+				{
+					translateY: interpolate(sheetPosition.value, [screenHeight, screenHeight * 0.5], [0, 30])
+				}
+			]
+		}
+	})
+
+	return (
+		<>
+			{onDone && (
+				<Animated.View
+					style={[
+						{
+							position: 'absolute',
+							left: 20,
+							right: 20,
+							zIndex: 999,
+							elevation: 999
+						},
+						floatingButtonStyle
+					]}
+				>
+					<Button variant="black" onPress={onDone}>
+						Готово
+					</Button>
+				</Animated.View>
+			)}
+
+			<TrueSheet
+				ref={bottomSheetRef}
+				cornerRadius={24}
+				backgroundColor={blurDisabled ? 'rgba(0, 0, 0, 1)' : 'transparent'}
+				detents={restProps.detents ?? [0.5]}
+				grabberOptions={{
+					topMargin: 10,
+					color: Colors['gray-d9'],
+					adaptive: false
+				}}
+				style={{
+					paddingTop: 20
+				}}
+				onPositionChange={handlePositionChange}
+				{...restProps}
+			>
+				{renderBackground()}
+				{children}
+			</TrueSheet>
+		</>
+	)
+})
 
 BottomSheet.displayName = 'BottomSheet'
-export default BottomSheet
 
-const styles = StyleSheet.create({
-	container: {
-		position: 'absolute',
-		borderTopLeftRadius: 25,
-		borderTopRightRadius: 25,
-		left: 0,
-		right: 0,
-		bottom: 0,
-		zIndex: 2,
-		elevation: 2,
-		overflow: 'hidden'
-	},
-	contentContainer: {
-		flex: 1
-	},
-	floatingButton: {
-		position: 'absolute',
-		left: 20,
-		right: 20,
-		zIndex: 999,
-		elevation: 999
-	},
-	lineContainer: {
-		height: 20,
-		paddingVertical: 20,
-		alignItems: 'center',
-		justifyContent: 'flex-start'
-	},
-	line: {
-		width: 36,
-		height: 4,
-		backgroundColor: Colors['gray-d9'],
-		borderRadius: 20
-	},
-	backdrop: {
-		top: 0,
-		bottom: 0,
-		left: 0,
-		right: 0,
-		position: 'absolute',
-		zIndex: 1
-	}
-})
+export default BottomSheet

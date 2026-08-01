@@ -9,7 +9,7 @@ const NotFinishedWorkout = (props: {
 	close: () => void
 }) => {
 	return (
-		<View className="flex-1 items-center justify-start p-[16px] gap-[40px] w-full">
+		<View className="items-center justify-start p-[16px] gap-[40px] w-full">
 			<View className="items-center">
 				<Text style={{ fontFamily: fontFamily.regular }} className="text-white text-lg text-center">
 					Сейчас нельзя начать новую тренировку,

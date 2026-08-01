@@ -145,7 +145,7 @@ export default function Home() {
 								installUrl: env.app_store_link,
 								downloadUrl: env.google_play_link,
 								image: `${env.web_url}/icon192_rounded.png`,
-								sameAs: [env.tg_link, env.tt_link, env.vk_link],
+								sameAs: [env.tg_link, env.tt_link, env.vk_link, env.ig_link],
 								publisher: {
 									'@id': `${env.web_url}/#organization`
 								},

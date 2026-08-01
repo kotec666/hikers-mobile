@@ -6,7 +6,7 @@ import PeopleListItem from '@/components/find-people/PeopleListItem'
 import { Colors } from '@/constants/Colors'
 import { ITrainingMember } from '@/api/posts'
 import { useLocalSearchParams } from 'expo-router'
-import { LegendList } from '@legendapp/list/react-native'
+import { FlashList } from '@shopify/flash-list'
 import RoundedCheckMarkSvg from '@/components/svg/RoundedCheckMark'
 import RoundedPlusSvg from '@/components/svg/RoundedPlusSvg'
 import { PATH_TO_IMAGE } from '@/constants/PATH_TO_FILES'
@@ -15,6 +15,7 @@ import { useWorkoutMembersQuery } from '@/queries/workout'
 import { useToggleSubscribeMutation } from '@/queries/subscriptions'
 import { Page } from '@/components/ui/Page'
 import { refetchAndHaptics } from '@/helpers/refetchAndHaptics'
+import LoadQueryErrorRetry from '@/components/LoadQueryErrorRetry'
 
 const MemberItem = ({ item, currentUserId }: { item: ITrainingMember; currentUserId?: string; postId: string }) => {
 	const { mutateAsync: toggleSubscribe, isPending: isPendingSubscribe } = useToggleSubscribeMutation()
@@ -64,28 +65,45 @@ const Members = () => {
 		fetchNextPage,
 		hasNextPage,
 		refetch,
-		isRefetching
+		isRefetching,
+		isFetching,
+		isError
 	} = useWorkoutMembersQuery(id)
+
+	const handleRetry = useCallback(() => {
+		return refetch()
+	}, [refetch])
 
 	const renderMemberItem = useCallback(
 		({ item }: { item: ITrainingMember }) => <MemberItem item={item} currentUserId={user?.id} postId={id} />,
 		[id, user?.id]
 	)
 
-	const renderFooter = () => {
+	const renderFooter = useCallback(() => {
+		if (isError && members.length > 0) {
+			return <LoadQueryErrorRetry text="Не удалось загрузить ещё" buttonText="Повторить" onRetry={handleRetry} />
+		}
 		if (!isFetchingNextPage) return null
 		return (
 			<View style={{ padding: 20 }}>
 				<ActivityIndicator size="small" color={Colors['green-main']} />
 			</View>
 		)
-	}
+	}, [isFetchingNextPage, isError, members.length, handleRetry])
+
+	const renderEmpty = useCallback(() => {
+		if (isFetching) return null
+		if (isError) {
+			return <LoadQueryErrorRetry text="Не удалось загрузить участников" onRetry={handleRetry} />
+		}
+		return null
+	}, [isFetching, isError, handleRetry])
 
 	return (
 		<Page>
 			<Container className="gap-[20px] flex-1">
 				<HeaderBack>Участники тренировки</HeaderBack>
-				<LegendList
+				<FlashList
 					data={members}
 					renderItem={renderMemberItem}
 					keyExtractor={(item) => item.id}
@@ -99,10 +117,11 @@ const Members = () => {
 					refreshControl={
 						<RefreshControl
 							refreshing={isRefetching}
-							onRefresh={() => refetchAndHaptics(refetch)}
+							onRefresh={() => refetchAndHaptics(handleRetry)}
 							tintColor={Colors['green-main']}
 						/>
 					}
+					ListEmptyComponent={renderEmpty}
 					ListFooterComponent={renderFooter}
 					contentContainerStyle={{
 						paddingBottom: 50,

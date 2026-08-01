@@ -3,6 +3,7 @@ import { getAuthData, removeAuthData, setAuthData } from '@/services/tokenServic
 import { refreshTokenAPI } from '@/api/refresh'
 import { getTokenExpirationTime } from '@/helpers/getTokenExpirationTime'
 import { setIsAccountExist } from '@/store/authStorage'
+import { queryClient } from '@/queries/queryClient'
 
 export interface IUser {
 	id: string
@@ -57,6 +58,8 @@ export const useAuthStore = create<AuthStore>((set, get) => ({
 
 	logout: async () => {
 		await removeAuthData()
+		await queryClient.cancelQueries()
+		queryClient.clear()
 		set({
 			isAuthenticated: false,
 			// accessToken: null,
@@ -66,9 +69,9 @@ export const useAuthStore = create<AuthStore>((set, get) => ({
 	},
 
 	refreshAccessToken: async () => {
-		const { user } = get()
 		const authData = await getAuthData()
 		const accessToken = authData?.accessToken
+		const user = authData?.user ?? get().user
 		if (!accessToken) return false
 
 		try {
@@ -84,7 +87,9 @@ export const useAuthStore = create<AuthStore>((set, get) => ({
 
 			set({
 				// accessToken: newToken.token,
-				accessTokenExpiration: expiration
+				accessTokenExpiration: expiration,
+				isAuthenticated: true,
+				user
 			})
 
 			return true
@@ -108,9 +113,9 @@ export const useAuthStore = create<AuthStore>((set, get) => ({
 			return
 		}
 
-		await get().refreshAccessToken()
+		const ok = await get().refreshAccessToken()
 
-		set({ isAuthChecked: true })
+		set({ isAuthChecked: true, isAuthenticated: ok })
 	}
 }))
 

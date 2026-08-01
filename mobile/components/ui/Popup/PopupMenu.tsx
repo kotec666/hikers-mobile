@@ -13,6 +13,7 @@ type PopupMenuProps = {
 	menuWidth?: number
 	menuHeight?: number
 	offset?: number
+	blurDisabled?: boolean
 }
 
 const SCREEN = Dimensions.get('window')
@@ -20,6 +21,7 @@ const SCREEN = Dimensions.get('window')
 export default function PopupMenu({
 	trigger,
 	children,
+	blurDisabled,
 	menuWidth = 220,
 	menuHeight = 200,
 	offset = 8
@@ -67,7 +69,7 @@ export default function PopupMenu({
 
 	const calculatePosition = useCallback(
 		(layout: LayoutRectangle, placement: Placement) => {
-			const padding = 12
+			const padding = 16
 
 			switch (placement) {
 				case 'bottom':
@@ -166,6 +168,10 @@ export default function PopupMenu({
 					{content}
 				</BlurView>
 			)
+		}
+
+		if (blurDisabled) {
+			return <View style={[styles.blurView, { backgroundColor: 'rgba(0,0,0,0.5)' }]}>{content}</View>
 		}
 
 		return (

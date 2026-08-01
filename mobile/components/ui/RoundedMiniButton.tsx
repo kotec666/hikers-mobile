@@ -1,11 +1,11 @@
-import React from 'react'
+import React, { ReactNode } from 'react'
 import { Pressable, View, StyleSheet, Platform } from 'react-native'
 import CloseSvg from '@/components/svg/CloseSvg'
 import { BlurView } from 'expo-blur'
 import { useBlurContext } from '@/components/providers/BlurProvider'
 import { GlassView, isLiquidGlassAvailable } from 'expo-glass-effect'
 
-const CloseCross = (props: { handleClose?: () => void; blurDisabled?: boolean }) => {
+const RoundedMiniButton = (props: { onPress?: () => void; blurDisabled?: boolean; children?: ReactNode }) => {
 	const blurTargetRef = useBlurContext()
 	const isGlassAvailable = Platform.OS === 'ios' && isLiquidGlassAvailable()
 
@@ -13,9 +13,7 @@ const CloseCross = (props: { handleClose?: () => void; blurDisabled?: boolean })
 		if (props.blurDisabled) {
 			return (
 				<View style={[styles.fallback]}>
-					<View style={styles.closeButton}>
-						<CloseSvg />
-					</View>
+					<View style={styles.closeButton}>{props.children || <CloseSvg />}</View>
 				</View>
 			)
 		}
@@ -23,9 +21,7 @@ const CloseCross = (props: { handleClose?: () => void; blurDisabled?: boolean })
 		if (isGlassAvailable) {
 			return (
 				<GlassView colorScheme="dark" style={styles.glassView}>
-					<View style={styles.closeButton}>
-						<CloseSvg />
-					</View>
+					<View style={styles.closeButton}>{props.children || <CloseSvg />}</View>
 				</GlassView>
 			)
 		}
@@ -33,9 +29,7 @@ const CloseCross = (props: { handleClose?: () => void; blurDisabled?: boolean })
 		if (Platform.OS === 'ios') {
 			return (
 				<BlurView style={styles.blurView} tint="light" intensity={10}>
-					<View style={styles.closeButton}>
-						<CloseSvg />
-					</View>
+					<View style={styles.closeButton}>{props.children || <CloseSvg />}</View>
 				</BlurView>
 			)
 		}
@@ -48,14 +42,12 @@ const CloseCross = (props: { handleClose?: () => void; blurDisabled?: boolean })
 				blurTarget={blurTargetRef}
 				blurMethod="dimezisBlurView"
 			>
-				<View style={styles.closeButton}>
-					<CloseSvg />
-				</View>
+				<View style={styles.closeButton}>{props.children || <CloseSvg />}</View>
 			</BlurView>
 		)
 	}
 
-	return <Pressable onPress={props.handleClose}>{renderContent()}</Pressable>
+	return <Pressable onPress={props.onPress}>{renderContent()}</Pressable>
 }
 
 const SIZE = 28
@@ -89,4 +81,4 @@ const styles = StyleSheet.create({
 	}
 })
 
-export default CloseCross
+export default RoundedMiniButton

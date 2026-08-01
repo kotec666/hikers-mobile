@@ -1,6 +1,5 @@
 /* eslint-disable react-hooks/refs */ // ложное срабатывание
 import { BlurView } from 'expo-blur'
-import { Image } from 'expo-image'
 import React, { useCallback, useState } from 'react'
 import { Dimensions, Text, TouchableOpacity, View, StyleSheet, StyleProp, ViewStyle, Platform } from 'react-native'
 import { Gesture, GestureDetector } from 'react-native-gesture-handler'
@@ -18,6 +17,7 @@ import { scheduleOnRN } from 'react-native-worklets'
 import PeopleSvg from '@/components/svg/PeopleSvg'
 import { cn } from '@/helpers/cn'
 import { useBlurContext } from '@/components/providers/BlurProvider'
+import SmartImage from '@/components/ui/SmartImage'
 
 const SPRING_CONFIG = { damping: 15, mass: 1, stiffness: 200 }
 const OPEN_HORIZONTAL_PADDING = 24
@@ -243,7 +243,7 @@ export const AnimatedProfilePicture = ({ size = 40, imageUrl, bordered }: Props)
 							]}
 						>
 							{hasImage ? (
-								<Image
+								<SmartImage
 									source={{ uri: imageUrl }}
 									contentFit="cover"
 									style={{
@@ -275,7 +275,7 @@ export const AnimatedProfilePicture = ({ size = 40, imageUrl, bordered }: Props)
 						]}
 					>
 						{hasImage ? (
-							<Image
+							<SmartImage
 								source={{ uri: imageUrl }}
 								contentFit="cover"
 								style={{

@@ -21,6 +21,7 @@ export { default as AppGallerySmallSvg } from './store/app-gallery-svg-s'
 export { default as VkSvg } from './vk-svg'
 export { default as TgSvg } from './tg-svg'
 export { default as TtSvg } from './tt-svg'
+export { default as IgSvg } from './ig-svg'
 export { default as BurgerSvg } from './burger-svg'
 
 export type { SvgIconProps } from './types'

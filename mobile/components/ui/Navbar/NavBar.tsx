@@ -5,7 +5,6 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context'
 import { Colors } from '@/constants/Colors'
 import { RelativePathString, usePathname } from 'expo-router'
 import { BlurView } from 'expo-blur'
-import { cn } from '@/helpers/cn'
 import { useNavBarVisibility } from '@/hooks/useNavBarVisibility'
 import { tabsConfig } from '@/components/ui/Navbar/tabs.config'
 import { useSafeNavigation } from '@/hooks/useSafeNavigation'
@@ -87,10 +86,13 @@ const NavBar = () => {
 			pointerEvents="box-none"
 		>
 			<View
-				style={styles.NavBarButtonsContainer}
-				className={cn('', {
-					'bg-black/20': Platform.OS === 'android'
-				})}
+				style={[
+					styles.NavBarButtonsContainer,
+					Platform.OS === 'android' ? { backgroundColor: 'rgb(0 0 0 / 0.2)' } : {}
+				]}
+				// className={cn('', {
+				// 	'bg-black/20': Platform.OS === 'android'
+				// })}
 			>
 				{Platform.OS === 'ios' && (
 					<BlurView
