@@ -11,7 +11,6 @@ import {
 	isUserActivityEnumValue,
 	isUUID,
 	TypedArray,
-	UniqueUsername,
 	IsOnlyOneEmoji,
 } from '@validation/property-decorators';
 import { toArray } from '@transformers/array.transformer';
@@ -56,7 +55,6 @@ export namespace ProfileDto {
 	/** Form-Data запрос */
 	export class Edit {
 		@IsOptional()
-		@UniqueUsername()
 		@Matches(/^[a-zA-Z0-9]+$/, { message: `_username:${ERRORS.MISMATCH}` })
 		@Length(lengths.user.username.min, lengths.user.username.max, { message: `_username:${ERRORS.INVALID_LENGTH}` })
 		username?: string;

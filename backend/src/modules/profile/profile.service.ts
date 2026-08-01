@@ -1,4 +1,4 @@
-﻿import { BadRequestException, Injectable } from '@nestjs/common';
+﻿import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common';
 import { ProfileDto } from './profile.dto';
 import { UserService } from '../user/user.service';
 import { SubscribersService } from '../subscribers/subscribers.service';
@@ -8,6 +8,7 @@ import { ActivitiesService } from '../activities/activities.service';
 import { StaticService } from '../static/static.service';
 import { UserDto } from '../user/user.dto';
 import { CommonDto } from '../../common/dto/common.dto';
+import { ERRORS } from '@shared/errors';
 
 const PROFILE_TOP_ACTIVITIES_COUNT = 3;
 const PROFILE_TOP_ACHIEVEMENTS_COUNT = 3;
@@ -83,11 +84,36 @@ export class ProfileService {
 		return { success: true };
 	}
 
+	private async isUsernameUnique(userId: string, usernameToCheck: string): Promise<boolean> {
+		try {
+			const user = await this.users.getUserByUsername(usernameToCheck);
+			if (user.id === userId) {
+				console.log('===');
+
+				return true;
+			}
+		} catch (error) {
+			if (error instanceof NotFoundException) {
+				console.log('not found');
+
+				return true;
+			}
+		}
+
+		return false;
+	}
+
 	public async edit(userId: string, dto: ProfileDto.Edit): Promise<ProfileDto.Entity> {
 		dto = Object.fromEntries(Object.entries(dto).filter(([, val]) => typeof val !== 'undefined'));
 
 		if (Object.values(dto).length === 0) {
 			throw new BadRequestException();
+		}
+
+		if (dto.username) {
+			if (!(await this.isUsernameUnique(userId, dto.username))) {
+				throw new BadRequestException(`_username:${ERRORS.ALREADY_EXISTS}`);
+			}
 		}
 
 		const user = await this.users.getUser(userId);
@@ -108,16 +134,19 @@ export class ProfileService {
 			}
 		}
 
+		const userPromises: Promise<unknown>[] = [];
 		if (Object.values(userDto).filter((val) => !!val).length > 0) {
-			await this.users.updateUser(userId, userDto);
+			userPromises.push(this.users.updateUser(userId, userDto));
 		}
 
 		if (dto.achievements) {
-			await this.achievements.updatePlaces(userId, dto.achievements);
+			userPromises.push(this.achievements.updatePlaces(userId, dto.achievements));
 		}
 		if (dto.activities) {
-			await this.activities.updatePlaces(userId, dto.activities);
+			userPromises.push(this.activities.updatePlaces(userId, dto.activities));
 		}
+
+		await Promise.all(userPromises);
 
 		return this.getProfile(userId);
 	}

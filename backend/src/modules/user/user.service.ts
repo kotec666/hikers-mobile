@@ -25,6 +25,7 @@ import { ERRORS } from '@shared/errors';
 import { EventEmitter2 } from '@nestjs/event-emitter';
 import { Event } from '@events/constants';
 import { CommonDto } from '../../common/dto/common.dto';
+import { lower } from '../database/helpers';
 
 @Injectable()
 export class UserService {
@@ -126,7 +127,7 @@ export class UserService {
 				avatarFilename: users.avatarFilename,
 			})
 			.from(users)
-			.where(eq(users.username, username))
+			.where(eq(lower(users.username), username.toLowerCase()))
 			.limit(1);
 		if (!user) {
 			throw new NotFoundException(ERRORS.NOT_FOUND);
