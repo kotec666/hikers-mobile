@@ -94,8 +94,8 @@ export function WorkoutPost({ post }: WorkoutPostProps) {
 						apiUrl={`https://api-maps.yandex.ru/v3/?apikey=${process.env.NEXT_PUBLIC_YANDEX_MAPS_KEY}&lang=ru_RU`}
 					>
 						<YandexMap className="rounded-xl" points={creatorPoints} routeColor={post?.userCreator.color} />
+						<MapFullscreenTrigger points={creatorPoints} routeColor={post?.userCreator.color} />
 					</MapProvider>
-					<MapFullscreenTrigger points={creatorPoints} routeColor={post?.userCreator.color} />
 				</div>
 			</div>
 

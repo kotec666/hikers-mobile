@@ -23,8 +23,8 @@ import { RNMapsUserLocationMarkerHandle } from '@/components/map/markers/UserLoc
 const { height } = Dimensions.get('screen')
 const { width } = Dimensions.get('window')
 
-const GAP = 15
-const COLUMNS = 7
+const GAP = 20
+const COLUMNS = 6
 const CONTAINER_PADDING = 16
 const MAP_HEIGHT = height / 3.2
 
@@ -32,13 +32,45 @@ const Divider = () => {
 	return <View style={{ height: 1, backgroundColor: Colors['gray-3a'] }} />
 }
 
-const ColorBox = ({ color, size, onPress }: { color: string; size: number; onPress?: (color: string) => void }) => {
+const ColorBox = ({
+	color,
+	chosenColor,
+	size,
+	onPress
+}: {
+	color: string
+	chosenColor: string
+	size: number
+	onPress?: (color: string) => void
+}) => {
+	const PADDING = 6
+	const innerSize = size - PADDING * 2
+
+	const baseStyles = {
+		width: size,
+		height: size,
+		borderRadius: size / 2,
+		justifyContent: 'center' as const,
+		alignItems: 'center' as const,
+		borderWidth: 1,
+		borderColor: Colors['gray-92']
+	}
+
+	const activeStyles = {
+		borderWidth: 2,
+		borderColor: 'white'
+	}
+
+	const normalizeColor = (value: string) => value.replace(/\s+/g, '').toUpperCase()
+
+	const isActive = normalizeColor(chosenColor) === normalizeColor(color)
+
 	return (
-		<Pressable
-			onPress={() => onPress?.(color)}
-			className="w-[40px] h-[40px] border-2 border-white rounded-[4px]"
-			style={{ backgroundColor: color, width: size, height: size }}
-		/>
+		<Pressable onPress={() => onPress?.(color)} style={[baseStyles, isActive && activeStyles]}>
+			<View
+				style={{ backgroundColor: color, width: innerSize, height: innerSize, borderRadius: innerSize / 2 }}
+			/>
+		</Pressable>
 	)
 }
 
@@ -213,11 +245,12 @@ const SettingsPickAColorPage = () => {
 							</View>
 						) : (
 							<View className="flex-row flex-wrap" style={{ gap: GAP }}>
-								{Object.values(FREE_COLORS).map((color) => {
+								{Object.values(FREE_COLORS).map((boxColor) => {
 									return (
 										<ColorBox
-											key={color}
-											color={color}
+											key={boxColor}
+											chosenColor={color}
+											color={boxColor}
 											size={colorBoxSize}
 											onPress={(newColor) => onColorPick(newColor)}
 										/>

@@ -1,13 +1,13 @@
 import { Container } from '@/components/ui/Container'
 import HeaderBack from '@/components/ui/HeaderBack'
-import { ScrollView, View, Text } from 'react-native'
+import { ScrollView, View, Text as RNText, Platform } from 'react-native'
 import Setting from '@/components/Setting'
 import { useSafeNavigation } from '@/hooks/useSafeNavigation'
 import { Colors } from '@/constants/Colors'
 import { fontFamily } from '@/constants/Fonts'
 import { Motion } from '@legendapp/motion'
 import Modal from '@/components/ui/Modal/Modal'
-import React from 'react'
+import React, { useState } from 'react'
 import BlurProvider from '@/components/providers/BlurProvider'
 import { Button } from '@/components/ui/Button'
 import { removeUserWorkoutStorage } from '@/store/workoutStorage'
@@ -16,6 +16,38 @@ import { useRouter } from 'expo-router'
 import AlertTriangleSvg from '@/components/svg/AlertTriangleSvg'
 import { useDeleteProfileMutation } from '@/queries/my-profile'
 import { Page } from '@/components/ui/Page'
+import ChevronSelectorVerticalSvg from '@/components/svg/ChevronSelectorVerticalSvg'
+import { Language, supportedLanguages } from '@/store/languageStorage'
+import { Host, Picker, Text } from '@expo/ui/swift-ui'
+import { pickerStyle, tag } from '@expo/ui/swift-ui/modifiers'
+
+const LanguagePicker = ({ options }: { options: Language[] }) => {
+	const [selected, setSelected] = useState<null | Language>(null)
+
+	const handleSelectionChange = (lngShort: string) => {
+		const foundLang = options.find((l) => l.lngShort === lngShort)
+		if (foundLang) {
+			setSelected(foundLang)
+		}
+	}
+
+	return (
+		<Host matchContents>
+			<Picker
+				label="Language"
+				modifiers={[pickerStyle('menu')]}
+				selection={selected?.lngShort}
+				onSelectionChange={handleSelectionChange}
+			>
+				{options.map((option) => (
+					<Text key={option.lngShort} modifiers={[tag(option.lngShort)]}>
+						{option.language}
+					</Text>
+				))}
+			</Picker>
+		</Host>
+	)
+}
 
 const SettingsPage = () => {
 	const { push } = useSafeNavigation()
@@ -23,7 +55,9 @@ const SettingsPage = () => {
 	const router = useRouter()
 	const { mutateAsync, isPending } = useDeleteProfileMutation()
 
-	const [isDeleteAccountModalOpen, setIsDeleteAccountModalOpen] = React.useState(false)
+	const isIOS = Platform.OS === 'ios'
+
+	const [isDeleteAccountModalOpen, setIsDeleteAccountModalOpen] = useState(false)
 
 	const closeDeleteAccountModal = () => {
 		setIsDeleteAccountModalOpen(false)
@@ -50,10 +84,10 @@ const SettingsPage = () => {
 					labelSize={16}
 				>
 					<View className="gap-[20px]">
-						<Text style={{ fontFamily: fontFamily.medium }} className="text-white text-base">
+						<RNText style={{ fontFamily: fontFamily.medium }} className="text-white text-base">
 							Вы уверены, что хотите удалить свою учетную запись? Это действие необратимо, и все ваши
 							данные будут безвозвратно удалены.
-						</Text>
+						</RNText>
 						<View className="flex-row gap-[10px]">
 							<Button onPress={closeDeleteAccountModal} variant="white" buttonContainerClassName="flex-1">
 								Отмена
@@ -88,6 +122,12 @@ const SettingsPage = () => {
 								title={[{ text: 'Выбор своего ' }, { text: 'цвета', color: Colors['green-main'] }]}
 								onPress={() => push('/(settings)/pick-a-color')}
 							/>
+							<Setting
+								title="Язык"
+								icon={<ChevronSelectorVerticalSvg />}
+								onPress={() => push('/(settings)/language')}
+							/>
+							{isIOS && <LanguagePicker options={supportedLanguages} />}
 						</View>
 						<View className="gap-[16px]">
 							<Motion.Pressable onPress={openDeleteAccountModal}>
@@ -101,16 +141,19 @@ const SettingsPage = () => {
 									}}
 								>
 									<AlertTriangleSvg />
-									<Text style={{ fontFamily: fontFamily.medium }} className="text-gray-ab text-base">
+									<RNText
+										style={{ fontFamily: fontFamily.medium }}
+										className="text-gray-ab text-base"
+									>
 										Удалить аккаунт
-									</Text>
+									</RNText>
 								</Motion.View>
 							</Motion.Pressable>
 							<View>
-								<Text style={{ fontFamily: fontFamily.medium }} className="text-gray-ab text-sm">
+								<RNText style={{ fontFamily: fontFamily.medium }} className="text-gray-ab text-sm">
 									Удаление вашей учетной записи является необратимым и не подлежит отмене. Все ваши
 									данные, тренировки и история будут потеряны навсегда.
-								</Text>
+								</RNText>
 							</View>
 						</View>
 					</ScrollView>

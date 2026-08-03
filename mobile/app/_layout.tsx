@@ -1,3 +1,4 @@
+import '@/i18next/i18next'
 import { useFonts } from 'expo-font'
 import { Stack, SplashScreen } from 'expo-router'
 import { fontFamily } from '@/constants/Fonts'
@@ -96,6 +97,7 @@ const Root = ({ isAuthenticated }: { isAuthenticated: boolean }) => {
 									<Stack.Screen name="(about)/report-a-problem" />
 									<Stack.Screen name="(settings)/index" />
 									<Stack.Screen name="(settings)/in-app-notifications" />
+									<Stack.Screen name="(settings)/language" />
 									{/*<Stack.Screen name="friends/search" /> не используется*/}
 									{/*<Stack.Screen name="find-people" /> не используется*/}
 								</Stack.Protected>

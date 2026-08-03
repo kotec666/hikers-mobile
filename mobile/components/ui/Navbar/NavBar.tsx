@@ -75,7 +75,7 @@ const NavBar = () => {
 		[pathname, push]
 	)
 
-	// Костыль, потому что на странице новой тренировки из-за NativeTabs нельзя перетаскивать BottomSheetResizable
+	// Костыль, потому что на странице новой тренировки из-за NativeTabs нельзя перетаскивать BottomSheetResizable @TODO перепроверить сохраняется ли проблема
 	const isGlassAvailable = Platform.OS === 'ios' && isLiquidGlassAvailable()
 	if (isGlassAvailable) {
 		return null

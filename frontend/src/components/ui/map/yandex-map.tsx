@@ -31,7 +31,7 @@ interface TransitionMarker {
 // const pausedLineColor = '#9ca3af'
 const defaultActiveLineColor = '#20DC52'
 
-export interface YandexMapRef {
+export interface YandexMapHandle {
 	setPath: (points: ITrainingPoint[]) => void
 }
 
@@ -41,7 +41,7 @@ interface IYandexMapProps {
 	routeColor?: string
 }
 
-const YandexMapInner = forwardRef<YandexMapRef, IYandexMapProps>(
+const YandexMapInner = forwardRef<YandexMapHandle, IYandexMapProps>(
 	({ points: propPoints, routeColor, className }, ref) => {
 		const { reactifyApi } = useMap()
 		const [mapRef, setMapRef] = useState<YMapType | null>(null)
@@ -162,7 +162,7 @@ const YandexMapInner = forwardRef<YandexMapRef, IYandexMapProps>(
 
 		return (
 			<div className={cn('overflow-hidden', className)} style={{ width: '100%', height: '100%' }}>
-				<YMap ref={(ref) => setMapRef(ref)} location={{ center: [37.57, 55.75], zoom: 13 }} theme="dark">
+				<YMap ref={setMapRef} location={{ center: [37.57, 55.75], zoom: 13 }} theme="dark">
 					<YMapDefaultSchemeLayer />
 					<YMapDefaultFeaturesLayer />
 				</YMap>

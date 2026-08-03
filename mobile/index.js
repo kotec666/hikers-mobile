@@ -1,4 +1,5 @@
 import { registerRootComponent } from 'expo'
+
 import Layout from './app/_layout'
 
 // registerRootComponent calls AppRegistry.registerComponent('main', () => App);
