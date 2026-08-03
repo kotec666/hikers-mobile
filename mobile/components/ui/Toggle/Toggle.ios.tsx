@@ -5,7 +5,7 @@ import { opacity } from '@expo/ui/swift-ui/modifiers'
 
 const Toggle: React.FC<ToggleProps> = ({ value, onChange, label, disabled }) => {
 	return (
-		<Host matchContents>
+		<Host matchContents colorScheme="dark">
 			<SwiftToggle
 				isOn={value}
 				onIsOnChange={disabled ? () => {} : onChange}

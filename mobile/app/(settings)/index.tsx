@@ -32,7 +32,7 @@ const LanguagePicker = ({ options }: { options: Language[] }) => {
 	}
 
 	return (
-		<Host matchContents>
+		<Host matchContents colorScheme="dark">
 			<Picker
 				label="Language"
 				modifiers={[pickerStyle('menu')]}
