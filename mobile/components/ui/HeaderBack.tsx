@@ -23,14 +23,14 @@ interface IRoundedButtonProps {
 }
 
 export const RoundedButton = memo(({ onPress, icon }: IRoundedButtonProps) => {
-	const isIos = Platform.OS === 'ios'
-	const isGlassAvailable = isIos && isLiquidGlassAvailable()
+	const isIOS = Platform.OS === 'ios'
+	const isGlassAvailable = isIOS && isLiquidGlassAvailable()
 
 	const buttonContent = (
 		<Motion.View
 			className={cn('w-[50px] h-[50px] items-center justify-center ', {
 				'border border-black-44 rounded-full': !isGlassAvailable,
-				'bg-black-0d': !isIos
+				'bg-black-0d': !isIOS
 			})}
 			whileTap={{ scale: 0.8 }}
 			transition={{
@@ -55,7 +55,7 @@ export const RoundedButton = memo(({ onPress, icon }: IRoundedButtonProps) => {
 		return renderWithEffect(GlassView, { colorScheme: 'dark' })
 	}
 
-	if (isIos) {
+	if (isIOS) {
 		return renderWithEffect(BlurView, { tint: 'dark', intensity: 10 })
 	}
 
@@ -83,7 +83,7 @@ const HeaderBack = memo((props: IProps) => {
 	}
 
 	const headerRow = (
-		<View className="h-[50px] px-4 items-center justify-center overflow-hidden">
+		<View className="h-[50px] px-4 items-center justify-center overflow-hidden rounded-full">
 			{props.progress !== undefined && props.isProgressExist && (
 				<Animated.View className="absolute inset-0 bg-black-25" style={progressBarStyle} />
 			)}
