@@ -1,6 +1,6 @@
 import { Container } from '@/components/ui/Container'
 import HeaderBack from '@/components/ui/HeaderBack'
-import { ScrollView, View, Text as RNText, Platform } from 'react-native'
+import { ScrollView, View, Text as RNText, I18nManager, NativeModules } from 'react-native'
 import Setting from '@/components/Setting'
 import { useSafeNavigation } from '@/hooks/useSafeNavigation'
 import { Colors } from '@/constants/Colors'
@@ -16,46 +16,20 @@ import { useRouter } from 'expo-router'
 import AlertTriangleSvg from '@/components/svg/AlertTriangleSvg'
 import { useDeleteProfileMutation } from '@/queries/my-profile'
 import { Page } from '@/components/ui/Page'
-import ChevronSelectorVerticalSvg from '@/components/svg/ChevronSelectorVerticalSvg'
-import { Language, supportedLanguages } from '@/store/languageStorage'
-import { Host, Picker, Text } from '@expo/ui/swift-ui'
-import { pickerStyle, tag } from '@expo/ui/swift-ui/modifiers'
-
-const LanguagePicker = ({ options }: { options: Language[] }) => {
-	const [selected, setSelected] = useState<null | Language>(null)
-
-	const handleSelectionChange = (lngShort: string) => {
-		const foundLang = options.find((l) => l.lngShort === lngShort)
-		if (foundLang) {
-			setSelected(foundLang)
-		}
-	}
-
-	return (
-		<Host matchContents colorScheme="dark">
-			<Picker
-				label="Language"
-				modifiers={[pickerStyle('menu')]}
-				selection={selected?.lngShort}
-				onSelectionChange={handleSelectionChange}
-			>
-				{options.map((option) => (
-					<Text key={option.lngShort} modifiers={[tag(option.lngShort)]}>
-						{option.language}
-					</Text>
-				))}
-			</Picker>
-		</Host>
-	)
-}
+import { Directions, Language, LngShort, setLngToStorage, supportedLanguages } from '@/store/languageStorage'
+import VerticalPicker from '@/components/ui/VerticalPicker/VerticalPicker'
+import { useTranslation } from 'react-i18next'
 
 const SettingsPage = () => {
+	const { t, i18n } = useTranslation()
 	const { push } = useSafeNavigation()
 	const { user, logout } = useAuthStore()
 	const router = useRouter()
 	const { mutateAsync, isPending } = useDeleteProfileMutation()
 
-	const isIOS = Platform.OS === 'ios'
+	const [selectedLanguage, setSelectedLanguage] = useState<Language | null>(
+		() => supportedLanguages.find((l) => l.lngShort === (i18n.language as LngShort)) ?? null
+	)
 
 	const [isDeleteAccountModalOpen, setIsDeleteAccountModalOpen] = useState(false)
 
@@ -72,6 +46,19 @@ const SettingsPage = () => {
 		await mutateAsync()
 		await logout()
 		router.replace('/')
+	}
+
+	const handleSelectLanguage = (lang: Language) => {
+		setLngToStorage(lang.lngShort)
+
+		const isRTL = lang.dir === Directions.rtl
+		if (isRTL) {
+			I18nManager.allowRTL(isRTL)
+			I18nManager.forceRTL(isRTL)
+		}
+		void i18n.changeLanguage(lang.lngShort)
+		setSelectedLanguage(lang)
+		if (isRTL) return NativeModules.DevSettings.reload() //@TODO мб из-за яндекс карты релоадить всегда
 	}
 
 	return (
@@ -122,12 +109,18 @@ const SettingsPage = () => {
 								title={[{ text: 'Выбор своего ' }, { text: 'цвета', color: Colors['green-main'] }]}
 								onPress={() => push('/(settings)/pick-a-color')}
 							/>
-							<Setting
-								title="Язык"
-								icon={<ChevronSelectorVerticalSvg />}
-								onPress={() => push('/(settings)/language')}
-							/>
-							{isIOS && <LanguagePicker options={supportedLanguages} />}
+							<View className="flex-row justify-between items-center">
+								<RNText className="text-base text-gray-ab" style={{ fontFamily: fontFamily.medium }}>
+									Язык {t('LanguagePage.title')}
+								</RNText>
+								<VerticalPicker
+									items={supportedLanguages}
+									mapOptionToLabel={(item) => item.language}
+									mapOptionToKey={(item) => item.lngShort}
+									onChange={(value) => value && handleSelectLanguage(value)}
+									value={selectedLanguage}
+								/>
+							</View>
 						</View>
 						<View className="gap-[16px]">
 							<Motion.Pressable onPress={openDeleteAccountModal}>

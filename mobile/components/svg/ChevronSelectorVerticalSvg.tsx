@@ -14,7 +14,7 @@ const SvgComponent = (props: IProps) => {
 				stroke={props.color || '#fff'}
 				strokeLinecap="round"
 				strokeLinejoin="round"
-				strokeWidth={1.33}
+				strokeWidth={1.6}
 				d="m7 15 5 5 5-5M7 9l5-5 5 5"
 			/>
 		</Svg>
