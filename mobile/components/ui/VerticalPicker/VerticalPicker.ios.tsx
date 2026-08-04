@@ -1,6 +1,6 @@
 import React, { useMemo } from 'react'
 import { Host, Picker, Text } from '@expo/ui/swift-ui'
-import { pickerStyle, tag } from '@expo/ui/swift-ui/modifiers'
+import { pickerStyle, tag, tint } from '@expo/ui/swift-ui/modifiers'
 import { VerticalPickerProps } from './VerticalPicker.types'
 
 const VerticalPicker = <T,>({
@@ -24,7 +24,11 @@ const VerticalPicker = <T,>({
 
 	return (
 		<Host matchContents colorScheme="dark">
-			<Picker modifiers={[pickerStyle('menu')]} selection={selectedKey} onSelectionChange={handleSelectionChange}>
+			<Picker
+				modifiers={[pickerStyle('menu'), tint('white')]}
+				selection={selectedKey}
+				onSelectionChange={handleSelectionChange}
+			>
 				{items.map((item) => {
 					const key = mapOptionToKey(item)
 					return (
