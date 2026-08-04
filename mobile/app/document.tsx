@@ -1,8 +1,9 @@
-import { ScrollView, Text } from 'react-native'
+import { Text } from 'react-native'
 import { Container } from '@/components/ui/Container'
 import { fontFamily } from '@/constants/Fonts'
 import HeaderBack from '@/components/ui/HeaderBack'
 import { Page } from '@/components/ui/Page'
+import Animated, { useAnimatedScrollHandler, useSharedValue } from 'react-native-reanimated'
 
 export const MockText = () => {
 	return (
@@ -74,13 +75,27 @@ export const MockText = () => {
 }
 
 const DocumentPage = () => {
+	const progress = useSharedValue(0)
+
+	const onScroll = useAnimatedScrollHandler((event) => {
+		const { contentOffset, contentSize, layoutMeasurement } = event
+		const maxScroll = contentSize.height - layoutMeasurement.height
+		progress.value = maxScroll > 0 ? Math.min(Math.max(contentOffset.y / maxScroll, 0), 1) : 0
+	})
+
 	return (
 		<Page>
 			<Container className="gap-[20px]">
-				<HeaderBack>Просмотр документа</HeaderBack>
-				<ScrollView contentContainerStyle={{ paddingBottom: 100 }}>
+				<HeaderBack progress={progress} isProgressExist>
+					Просмотр документа
+				</HeaderBack>
+				<Animated.ScrollView
+					contentContainerStyle={{ paddingBottom: 100 }}
+					onScroll={onScroll}
+					scrollEventThrottle={16}
+				>
 					<MockText />
-				</ScrollView>
+				</Animated.ScrollView>
 			</Container>
 		</Page>
 	)
