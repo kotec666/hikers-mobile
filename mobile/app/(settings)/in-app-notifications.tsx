@@ -10,6 +10,7 @@ import { useCallback, useEffect, useRef, useState } from 'react'
 import { useFocusEffect } from 'expo-router'
 import { useNotificationsSettingsQuery, useUpdateNotificationsSettingsMutation } from '@/queries/notifications'
 import { Page } from '@/components/ui/Page'
+import { useTranslation } from 'react-i18next'
 
 const InAppNotificationSetting = ({
 	title,
@@ -58,6 +59,7 @@ const InAppNotificationSetting = ({
 }
 
 const SettingsInAppNotificationsPage = () => {
+	const { t } = useTranslation()
 	const [localSettings, setLocalSettings] = useState<NotificationSettings | null>(null)
 	const localSettingsRef = useRef<NotificationSettings | null>(null)
 	const settingsRef = useRef<NotificationSettings | null>(null)
@@ -113,33 +115,33 @@ const SettingsInAppNotificationsPage = () => {
 	return (
 		<Page>
 			<Container className="gap-[20px] flex-1">
-				<HeaderBack>Настройка уведомлений</HeaderBack>
+				<HeaderBack>{t('SettingsPage.inAppNotifications.header')}</HeaderBack>
 				<ScrollView style={{ flex: 1, width: '100%' }} contentContainerStyle={{ paddingBottom: 50 }}>
 					<View className="gap-[16px]">
 						<InAppNotificationSetting
-							title="Добавление в друзья"
-							description="Получать уведомление, когда кто-то добавляет меня в друзья"
+							title={t('SettingsPage.inAppNotifications.settingsList.addAsFriend.title')}
+							description={t('SettingsPage.inAppNotifications.settingsList.addAsFriend.description')}
 							enabled={localSettings?.friend_invite ?? true}
 							onToggle={(val) => handleToggleChange(NotificationType.FRIEND_INVITE, val)}
 							disabled={isLoading}
 						/>
 						<InAppNotificationSetting
-							title="Приглашение на тренировку"
-							description="Получать уведомление, когда кто-то приглашает меня на тренировку"
+							title={t('SettingsPage.inAppNotifications.settingsList.workoutInvite.title')}
+							description={t('SettingsPage.inAppNotifications.settingsList.workoutInvite.description')}
 							enabled={localSettings?.trainig_invite ?? true}
 							onToggle={(val) => handleToggleChange(NotificationType.TRAINING_INVITE, val)}
 							disabled={isLoading}
 						/>
 						<InAppNotificationSetting
-							title="Новое достижение"
-							description="Получать уведомление, когда я получаю новое достижение"
+							title={t('SettingsPage.inAppNotifications.settingsList.newAchievement.title')}
+							description={t('SettingsPage.inAppNotifications.settingsList.newAchievement.description')}
 							enabled={localSettings?.new_achievement ?? true}
 							onToggle={(val) => handleToggleChange(NotificationType.NEW_ACHIEVEMENT, val)}
 							disabled={isLoading}
 						/>
 						<InAppNotificationSetting
-							title="Пост о тренировке"
-							description="Получать уведомление, когда хост тренировки выкладывает публикацию о прошедшей тренировке"
+							title={t('SettingsPage.inAppNotifications.settingsList.postAboutWorkout.title')}
+							description={t('SettingsPage.inAppNotifications.settingsList.postAboutWorkout.description')}
 							enabled={localSettings?.tagged_in_post ?? true}
 							onToggle={(val) => handleToggleChange(NotificationType.TAGGED_IN_POST, val)}
 							disabled={isLoading}

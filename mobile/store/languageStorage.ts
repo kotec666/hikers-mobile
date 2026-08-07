@@ -12,6 +12,11 @@ export enum LngShort {
 	ru = 'ru'
 }
 
+export enum LngLong {
+	en = 'en_US',
+	ru = 'ru_RU'
+}
+
 export enum Directions {
 	ltr = 'ltr',
 	rtl = 'rtl'
@@ -20,22 +25,29 @@ export enum Directions {
 export interface Language {
 	language: string
 	lngShort: LngShort
+	lngLong: LngLong
 	dir: Directions
-	locale: Locale
+}
+
+export const locales: Record<LngShort, Locale> = {
+	[LngShort.en]: enUS,
+	[LngShort.ru]: ru
+}
+
+const defaultLanguage = {
+	language: 'English',
+	lngShort: LngShort.en,
+	lngLong: LngLong.en,
+	dir: Directions.ltr
 }
 
 export const supportedLanguages: Language[] = [
-	{
-		language: 'English',
-		lngShort: LngShort.en,
-		dir: Directions.ltr,
-		locale: enUS
-	},
+	defaultLanguage,
 	{
 		language: 'Русский',
 		lngShort: LngShort.ru,
-		dir: Directions.ltr,
-		locale: ru
+		lngLong: LngLong.ru,
+		dir: Directions.ltr
 	}
 ]
 
@@ -45,11 +57,12 @@ export const setLngToStorage = (lngShort: LngShort) => {
 	return languageStorage.set(LANGUAGE_KEY, JSON.stringify(foundLang))
 }
 
-export const getSavedLngInStorage = (): Language | null => {
+export const getSavedLngInStorage = (): Language => {
 	const storageStr = languageStorage.getString(LANGUAGE_KEY)
 
 	if (!storageStr) {
-		return null
+		setLngToStorage(LngShort.en)
+		return defaultLanguage
 	}
 
 	return JSON.parse(storageStr) as Language

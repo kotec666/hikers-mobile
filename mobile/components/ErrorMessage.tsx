@@ -2,12 +2,14 @@ import React, { useEffect, useState } from 'react'
 import { Animated, Text } from 'react-native'
 import { Container } from '@/components/ui/Container'
 import { fontFamily } from '@/constants/Fonts'
+import { useTranslation } from 'react-i18next'
 
 interface ErrorMessageProps {
 	error?: string | boolean
 }
 
 const ErrorMessage = ({ error }: ErrorMessageProps) => {
+	const { t } = useTranslation()
 	const [opacity] = useState(() => new Animated.Value(0))
 	const [height] = useState(() => new Animated.Value(0))
 
@@ -58,7 +60,7 @@ const ErrorMessage = ({ error }: ErrorMessageProps) => {
 						fontFamily: fontFamily.regular
 					}}
 				>
-					{typeof error === 'string' ? error : error ? 'Ошибка' : ''}
+					{typeof error === 'string' ? error : error ? t('common.error') : ''}
 				</Text>
 			</Container>
 		</Animated.View>

@@ -19,8 +19,10 @@ import { refetchAndHaptics } from '@/helpers/refetchAndHaptics'
 import { FlashList } from '@shopify/flash-list'
 import LoadQueryErrorRetry from '@/components/LoadQueryErrorRetry'
 import { NotificationsListSkeleton } from '@/components/ui/skeleton'
+import { useTranslation } from 'react-i18next'
 
 const NotificationsPage = () => {
+	const { t } = useTranslation()
 	const {
 		data: notificationsData = [],
 		fetchNextPage,
@@ -62,21 +64,33 @@ const NotificationsPage = () => {
 		}
 
 		if (isError) {
-			return <LoadQueryErrorRetry text="Не удалось загрузить уведомления" onRetry={handleRetry} />
+			return (
+				<LoadQueryErrorRetry
+					text={t('LoadQueryErrorRetry.label.failedToLoadNotifications')}
+					buttonText={t('LoadQueryErrorRetry.action.tryAgain')}
+					onRetry={handleRetry}
+				/>
+			)
 		}
 
 		return (
 			<View style={{ flex: 1 }} className="items-center justify-center">
 				<Text style={{ fontFamily: fontFamily.regular }} className="text-gray-ab text-base">
-					Уведомления отсутствуют
+					{t('EmptyListText.noNotifications')}
 				</Text>
 			</View>
 		)
-	}, [isLoading, isError, handleRetry])
+	}, [isLoading, isError, t, handleRetry])
 
 	const renderFooter = useCallback(() => {
 		if (isError && notificationsData.length > 0) {
-			return <LoadQueryErrorRetry text="Не удалось загрузить ещё" buttonText="Повторить" onRetry={handleRetry} />
+			return (
+				<LoadQueryErrorRetry
+					text={t('LoadQueryErrorRetry.label.cantLoadMore')}
+					buttonText={t('LoadQueryErrorRetry.action.retry')}
+					onRetry={handleRetry}
+				/>
+			)
 		}
 		if (!isFetchingNextPage) return null
 		return (
@@ -84,16 +98,16 @@ const NotificationsPage = () => {
 				<ActivityIndicator size="small" color={Colors['green-main']} />
 			</View>
 		)
-	}, [isFetchingNextPage, isError, notificationsData.length, handleRetry])
+	}, [isError, notificationsData.length, isFetchingNextPage, t, handleRetry])
 
 	return (
 		<Page>
 			<View style={{ flex: 1 }}>
 				<Container className="gap-[20px]">
-					<HeaderBack>Уведомления</HeaderBack>
+					<HeaderBack>{t('NotificationsPage.header')}</HeaderBack>
 					{!notificationsData.length || isLoading ? null : (
 						<Button variant="white" onPress={() => handleDeleteNotification()}>
-							Очистить все уведомления
+							{t('NotificationsPage.clearAll')}
 						</Button>
 					)}
 				</Container>

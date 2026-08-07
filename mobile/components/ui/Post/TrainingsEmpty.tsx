@@ -3,8 +3,10 @@ import { fontFamily } from '@/constants/Fonts'
 import { Button } from '@/components/ui/Button'
 import { View, Text } from 'react-native'
 import { useSafeNavigation } from '@/hooks/useSafeNavigation'
+import { useTranslation } from 'react-i18next'
 
 const TrainingsEmpty = (props: { text?: string }) => {
+	const { t } = useTranslation()
 	const { push } = useSafeNavigation()
 
 	return (
@@ -13,7 +15,7 @@ const TrainingsEmpty = (props: { text?: string }) => {
 				{props.text}
 			</Text>
 			<Button onPress={() => push('/(tabs)/newTraining')} variant="white">
-				Начать тренировку
+				{t('TrainingsEmpty.action.startTraining')}
 			</Button>
 		</View>
 	)

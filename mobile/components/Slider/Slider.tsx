@@ -11,6 +11,7 @@ import { SliderPagination } from '@/components/Slider/SliderPagination'
 import { PropsWithChildren, useEffect, useRef, useState } from 'react'
 import { fontFamily } from '@/constants/Fonts'
 import { Container } from '@/components/ui/Container'
+import { useTranslation } from 'react-i18next'
 
 export interface SliderProps extends PropsWithChildren {
 	itemList: ImageSliderType[]
@@ -25,6 +26,7 @@ export type ImageSliderType = {
 const { width } = Dimensions.get('screen')
 
 export function Slider({ itemList, children }: SliderProps) {
+	const { t } = useTranslation()
 	const scrollX = useSharedValue(0)
 	const [paginationIndex, setPaginationIndex] = useState(0)
 	const [data, setData] = useState(itemList)
@@ -100,7 +102,7 @@ export function Slider({ itemList, children }: SliderProps) {
 
 			<Container className="flex-1 justify-between">
 				<Text className="text-[19px] text-center text-gray-ab" style={styles.descriptionText}>
-					{data[paginationIndex].description}
+					{t(data[paginationIndex].description)}
 				</Text>
 				{children}
 			</Container>

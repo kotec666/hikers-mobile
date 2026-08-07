@@ -4,6 +4,7 @@ import { fontFamily } from '@/constants/Fonts'
 import HeaderBack from '@/components/ui/HeaderBack'
 import { Page } from '@/components/ui/Page'
 import Animated, { useAnimatedScrollHandler, useSharedValue } from 'react-native-reanimated'
+import { useTranslation } from 'react-i18next'
 
 export const MockText = () => {
 	return (
@@ -75,6 +76,7 @@ export const MockText = () => {
 }
 
 const DocumentPage = () => {
+	const { t } = useTranslation()
 	const progress = useSharedValue(0)
 
 	const onScroll = useAnimatedScrollHandler((event) => {
@@ -87,7 +89,7 @@ const DocumentPage = () => {
 		<Page>
 			<Container className="gap-[20px]">
 				<HeaderBack progress={progress} isProgressExist>
-					Просмотр документа
+					{t('DocumentPage.header')}
 				</HeaderBack>
 				<Animated.ScrollView
 					contentContainerStyle={{ paddingBottom: 100 }}

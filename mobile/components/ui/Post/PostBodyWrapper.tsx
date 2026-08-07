@@ -27,6 +27,7 @@ interface IProps {
 
 const PostBodyWrapper = (props: IProps) => {
 	const { push } = useSafeNavigation()
+
 	const IS_FEED_LIST_ITEM = props.mode === 'FEED_LIST_ITEM' // Из ленты либо детальный просмотр
 	const { isVisible, open, close } = useFullscreenMap()
 

@@ -4,16 +4,12 @@ import { Button } from '@/components/ui/Button'
 import { fontFamily } from '@/constants/Fonts'
 
 interface LoadQueryErrorRetryProps {
-	text?: string
-	buttonText?: string
+	text: string
+	buttonText: string
 	onRetry: () => void
 }
 
-const LoadQueryErrorRetry = ({
-	text = 'Не удалось загрузить публикации',
-	buttonText = 'Попробовать снова',
-	onRetry
-}: LoadQueryErrorRetryProps) => {
+const LoadQueryErrorRetry = ({ text, buttonText, onRetry }: LoadQueryErrorRetryProps) => {
 	return (
 		<View className="items-center gap-4 py-10">
 			<Text className="text-base text-white text-center" style={{ fontFamily: fontFamily.medium }}>

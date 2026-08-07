@@ -21,6 +21,7 @@ import Animated from 'react-native-reanimated'
 import { KeyboardGestureArea } from 'react-native-keyboard-controller'
 import * as Haptics from 'expo-haptics'
 import { useAuthStore } from '@/store/authStore'
+import { useTranslation } from 'react-i18next'
 
 interface IProps {
 	email: string
@@ -28,6 +29,7 @@ interface IProps {
 }
 
 const MailConfirmation = ({ email, handlePressBack }: IProps) => {
+	const { t } = useTranslation()
 	const { login } = useAuthStore()
 	const { push } = useSafeNavigation()
 	const { mutateAsync: confirmEmailMutation, isPending } = useConfirmEmailMutation()
@@ -44,12 +46,12 @@ const MailConfirmation = ({ email, handlePressBack }: IProps) => {
 				await login(regData.token, restParameters)
 				push('/(tabs)/profile')
 			} catch (e) {
-				const formattedErrors = await getFieldsErrors(e)
+				const formattedErrors = await getFieldsErrors(e, t)
 				setErrors(formattedErrors)
 				await Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error)
 			}
 		},
-		[email, confirmEmailMutation, login, push]
+		[confirmEmailMutation, email, login, push, t]
 	)
 
 	const handleClearOTPError = () => {
@@ -72,7 +74,7 @@ const MailConfirmation = ({ email, handlePressBack }: IProps) => {
 			createTimer(TimerType.EMAIL_CONFIRMATION, email, requestCodeResult.waitMs)
 			refresh()
 		} catch (e) {
-			const formattedErrors = await getFieldsErrors(e)
+			const formattedErrors = await getFieldsErrors(e, t)
 			setErrors(formattedErrors)
 			await Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error)
 		}
@@ -91,23 +93,23 @@ const MailConfirmation = ({ email, handlePressBack }: IProps) => {
 				<Container className="flex-1">
 					<Pressable onPress={Keyboard.dismiss} className="flex-1">
 						<View className="flex-1">
-							<HeaderBack returnCallback={handlePressBack}>Назад</HeaderBack>
+							<HeaderBack returnCallback={handlePressBack}>{t('common.back')}</HeaderBack>
 							<Animated.View style={animatedKeyboardStyle} className="flex-1 justify-center gap-[24px]">
 								<View className="gap-[32px]">
 									<View className="gap-[8px]">
 										<Text className="text-2xl text-white" style={{ fontFamily: fontFamily.medium }}>
-											Подтверждение почты
+											{t('AuthPage.mailConfirmation.emailConfirm')}
 										</Text>
 										<Text
 											className="text-base text-gray-9a"
 											style={{ fontFamily: fontFamily.medium }}
 										>
-											Мы отправили код на {email}
+											{t('AuthPage.mailConfirmation.codeSent')} {email}
 										</Text>
 									</View>
 									<View className="gap-[12px]">
 										<Text className="text-lg text-white" style={{ fontFamily: fontFamily.medium }}>
-											Введите код
+											{t('AuthPage.mailConfirmation.enterCode')}
 										</Text>
 										<OTPInput
 											hasError={hasError}
@@ -126,8 +128,8 @@ const MailConfirmation = ({ email, handlePressBack }: IProps) => {
 										onPress={handleResendOTP}
 									>
 										{isBlocked
-											? `Отправить код повторно (${formattedTime})`
-											: 'Отправить код повторно'}
+											? `${t('AuthPage.mailConfirmation.resendCode')} (${formattedTime})`
+											: t('AuthPage.mailConfirmation.resendCode')}{' '}
 									</Button>
 									<CheckSpam />
 								</View>

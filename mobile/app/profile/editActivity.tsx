@@ -8,8 +8,10 @@ import { Page } from '@/components/ui/Page'
 import { ActivityListSkeleton } from '@/components/ui/skeleton'
 import { View } from 'react-native'
 import LoadQueryErrorRetry from '@/components/LoadQueryErrorRetry'
+import { useTranslation } from 'react-i18next'
 
 const ProfileEditActivity = () => {
+	const { t } = useTranslation()
 	const { setNewActivitiesOrder, newActivitiesOrder } = useEditActivitiesStore()
 	const { data: activities = [], isLoading, isError, refetch } = useMyActivitiesQuery()
 
@@ -30,12 +32,16 @@ const ProfileEditActivity = () => {
 	return (
 		<Page>
 			<Container className="gap-[20px]">
-				<HeaderBack>Топ 3 активности на показ</HeaderBack>
+				<HeaderBack>{t('EditProfilePage.topThreeActivity')}</HeaderBack>
 			</Container>
 
 			{isError && activities.length <= 0 ? (
 				<View className="flex-1 items-center justify-center px-4">
-					<LoadQueryErrorRetry text="Не удалось загрузить активности" onRetry={handleRetryActivities} />
+					<LoadQueryErrorRetry
+						text={t('LoadQueryErrorRetry.label.failedToLoadActivity')}
+						buttonText={t('LoadQueryErrorRetry.action.tryAgain')}
+						onRetry={handleRetryActivities}
+					/>
 				</View>
 			) : isLoading ? (
 				<View style={{ marginTop: 15, paddingHorizontal: 5 }}>

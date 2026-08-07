@@ -19,8 +19,10 @@ import { refetchAndHaptics } from '@/helpers/refetchAndHaptics'
 import { FlashList } from '@shopify/flash-list'
 import LoadQueryErrorRetry from '@/components/LoadQueryErrorRetry'
 import { UserListSkeleton } from '@/components/ui/skeleton'
+import { useTranslation } from 'react-i18next'
 
 const MyFriendsPage = () => {
+	const { t } = useTranslation()
 	const { push } = useSafeNavigation()
 	const toast = useToast()
 
@@ -57,7 +59,7 @@ const MyFriendsPage = () => {
 
 	const handleDeleteFromFriends = async () => {
 		if (!deleteUser?.id) {
-			return toast.info('Не выбран пользователь для удаления из друзей')
+			return toast.info(t('ToastMessage.info.noUserSelectedForDeleteFromFriends'))
 		}
 		if (loadingId) return
 		setLoadingId(deleteUser.id)
@@ -82,21 +84,33 @@ const MyFriendsPage = () => {
 		}
 
 		if (isError) {
-			return <LoadQueryErrorRetry text="Не удалось загрузить список друзей" onRetry={handleRetry} />
+			return (
+				<LoadQueryErrorRetry
+					text={t('LoadQueryErrorRetry.label.failedToLoadFriends')}
+					buttonText={t('LoadQueryErrorRetry.action.tryAgain')}
+					onRetry={handleRetry}
+				/>
+			)
 		}
 
 		return (
 			<View style={{ flex: 1 }} className="items-center justify-center">
 				<Text style={{ fontFamily: fontFamily.regular }} className="text-gray-ab text-base">
-					К сожалению никого не нашлось
+					{t('EmptyListText.noFriends')}
 				</Text>
 			</View>
 		)
-	}, [isLoading, isError, handleRetry])
+	}, [isLoading, isError, t, handleRetry])
 
 	const renderFooter = useCallback(() => {
 		if (isError && friends.length > 0) {
-			return <LoadQueryErrorRetry text="Не удалось загрузить ещё" buttonText="Повторить" onRetry={handleRetry} />
+			return (
+				<LoadQueryErrorRetry
+					text={t('LoadQueryErrorRetry.label.cantLoadMore')}
+					buttonText={t('LoadQueryErrorRetry.action.retry')}
+					onRetry={handleRetry}
+				/>
+			)
 		}
 		if (!isFetchingNextPage) return null
 		return (
@@ -104,7 +118,7 @@ const MyFriendsPage = () => {
 				<ActivityIndicator size="small" color={Colors['green-main']} />
 			</View>
 		)
-	}, [isFetchingNextPage, isError, friends.length, handleRetry])
+	}, [isError, friends.length, isFetchingNextPage, t, handleRetry])
 
 	return (
 		<Page>
@@ -113,11 +127,11 @@ const MyFriendsPage = () => {
 					<Modal
 						isOpen={isDeleteModalOpened}
 						handleClose={handleCloseDeleteModal}
-						label="Вы действительно хотите удалить пользователя из друзей?"
+						label={t('FriendsPage.deleteFriendText')}
 					>
 						<View className="gap-[20px]">
 							<Text className="text-white text-sm" style={{ fontFamily: fontFamily.bold }}>
-								Это действие нельзя отменить
+								{t('common.actionCannotBeUndone')}
 							</Text>
 							<View className="flex-row gap-[10px]">
 								<Button
@@ -125,20 +139,20 @@ const MyFriendsPage = () => {
 									variant="white"
 									buttonContainerClassName="flex-1"
 								>
-									Да
+									{t('common.yes')}
 								</Button>
 								<Button
 									onPress={handleCloseDeleteModal}
 									variant="white"
 									buttonContainerClassName="flex-1"
 								>
-									Нет
+									{t('common.no')}
 								</Button>
 							</View>
 						</View>
 					</Modal>
 					<Container className="gap-[20px] flex-1" style={{ paddingBottom: 10 }}>
-						<HeaderBack>Друзья</HeaderBack>
+						<HeaderBack>{t('FriendsPage.header')}</HeaderBack>
 
 						<FlashList
 							data={friends}
@@ -183,7 +197,7 @@ const MyFriendsPage = () => {
 						/>
 
 						<Button variant="white" onPress={() => push('/friends/friend-requests')}>
-							Запросы в друзья
+							{t('FriendsPage.friendRequests')}
 						</Button>
 					</Container>
 				</View>

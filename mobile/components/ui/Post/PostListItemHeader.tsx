@@ -15,6 +15,8 @@ import { useCreateReportMutation } from '@/queries/reports'
 import { getFieldsErrors } from '@/helpers/getFieldsErrors'
 import FinishedFlagSvg from '@/components/svg/FinishedFlagSvg'
 import { Colors } from '@/constants/Colors'
+import { getSavedLngInStorage, locales } from '@/store/languageStorage'
+import { useTranslation } from 'react-i18next'
 
 interface IProps {
 	postId?: string
@@ -41,6 +43,10 @@ const PostListItemHeader = ({
 	workoutType
 }: IProps) => {
 	const { push } = useSafeNavigation()
+	const { t } = useTranslation()
+	const currentLanguage = getSavedLngInStorage()
+	const currentLocale = locales[currentLanguage.lngShort]
+
 	const { mutateAsync: toggleSubscribe, isPending: isPendingSubscribe } = useToggleSubscribeMutation()
 	const { mutateAsync: createReportMutation, isPending: isPendingCreateReport } = useCreateReportMutation()
 
@@ -52,7 +58,7 @@ const PostListItemHeader = ({
 			formData.append('relEntityId', postId)
 			await createReportMutation(formData)
 		} catch (e: unknown) {
-			await getFieldsErrors(e)
+			await getFieldsErrors(e, t)
 		}
 	}
 
@@ -106,7 +112,7 @@ const PostListItemHeader = ({
 							</View>
 							<View>
 								<Text className="text-[13px] text-gray-ab" style={{ fontFamily: fontFamily.regular }}>
-									{formatRelativeDate(createdAt)}
+									{formatRelativeDate(t('common.justNowText'), createdAt, currentLocale)}
 								</Text>
 							</View>
 						</View>
@@ -122,7 +128,7 @@ const PostListItemHeader = ({
 							disabled={isPendingSubscribe}
 						>
 							<Text className="text-white text-xs" style={{ fontFamily: fontFamily.bold }}>
-								{!subscribeData?.isSubscribed ? 'Подписаться' : 'Вы подписаны'}
+								{!subscribeData?.isSubscribed ? t('Post.subscribe') : t('Post.unsubscribe')}
 							</Text>
 						</Pressable>
 						<PopupMenu
@@ -139,7 +145,7 @@ const PostListItemHeader = ({
 								<View className="flex-row items-center gap-3">
 									<FinishedFlagSvg size={16} color={Colors['red-ff4']} />
 									<Text className="text-base" style={{ color: Colors['red-ff4'] }}>
-										Пожаловаться
+										{t('Post.report')}
 									</Text>
 								</View>
 							</PopupMenuItem>

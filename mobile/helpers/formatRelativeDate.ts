@@ -1,7 +1,7 @@
 import { formatDistanceToNow } from 'date-fns'
-import { ru } from 'date-fns/locale'
+import { Locale, ru } from 'date-fns/locale'
 
-export const formatRelativeDate = (dateString?: string | null) => {
+export const formatRelativeDate = (justNowText: string, dateString?: string | null, locale?: Locale) => {
 	if (!dateString) return '-'
 
 	const date = new Date(dateString)
@@ -10,11 +10,11 @@ export const formatRelativeDate = (dateString?: string | null) => {
 
 	// если прошло меньше минуты
 	if (diffMs < 60_000) {
-		return 'только что'
+		return justNowText
 	}
 
 	return formatDistanceToNow(date, {
 		addSuffix: true,
-		locale: ru
+		locale: locale || ru
 	})
 }

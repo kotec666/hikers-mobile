@@ -8,8 +8,10 @@ import { AUTH_MODE } from '@/app/auth'
 import { useEffect } from 'react'
 import { useAuthStore } from '@/store/authStore'
 import { Page } from '@/components/ui/Page'
+import { useTranslation } from 'react-i18next'
 
 const HelloPage = () => {
+	const { t } = useTranslation()
 	const { isAuthenticated } = useAuthStore()
 	const router = useRouter()
 
@@ -40,7 +42,7 @@ const HelloPage = () => {
 			<View className="flex-1">
 				<Slider itemList={slides}>
 					<Button variant="white" onPress={handleClickEnter}>
-						Войти
+						{t('HelloPage.enter')}
 					</Button>
 				</Slider>
 			</View>

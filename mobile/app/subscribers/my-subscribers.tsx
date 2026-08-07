@@ -13,11 +13,13 @@ import { refetchAndHaptics } from '@/helpers/refetchAndHaptics'
 import { FlashList } from '@shopify/flash-list'
 import LoadQueryErrorRetry from '@/components/LoadQueryErrorRetry'
 import { UserListSkeleton } from '@/components/ui/skeleton'
+import { useTranslation } from 'react-i18next'
 
 /**
  * Мои подписчики, кто подписан на меня
  * */
 const MySubscribersPage = () => {
+	const { t } = useTranslation()
 	const {
 		data: subscribers = [],
 		fetchNextPage,
@@ -39,21 +41,33 @@ const MySubscribersPage = () => {
 		}
 
 		if (isError) {
-			return <LoadQueryErrorRetry text="Не удалось загрузить подписчиков" onRetry={handleRetry} />
+			return (
+				<LoadQueryErrorRetry
+					text={t('LoadQueryErrorRetry.label.failedToLoadSubscribers')}
+					buttonText={t('LoadQueryErrorRetry.action.tryAgain')}
+					onRetry={handleRetry}
+				/>
+			)
 		}
 
 		return (
 			<View style={{ flex: 1 }} className="items-center justify-center">
 				<Text style={{ fontFamily: fontFamily.regular }} className="text-gray-ab text-base">
-					На вас ещё никто не подписан
+					{t('EmptyListText.noSubscribers')}
 				</Text>
 			</View>
 		)
-	}, [isLoading, isError, handleRetry])
+	}, [isLoading, isError, t, handleRetry])
 
 	const renderFooter = useCallback(() => {
 		if (isError && subscribers.length > 0) {
-			return <LoadQueryErrorRetry text="Не удалось загрузить ещё" buttonText="Повторить" onRetry={handleRetry} />
+			return (
+				<LoadQueryErrorRetry
+					text={t('LoadQueryErrorRetry.label.cantLoadMore')}
+					buttonText={t('LoadQueryErrorRetry.action.retry')}
+					onRetry={handleRetry}
+				/>
+			)
 		}
 		if (!isFetchingNextPage) return null
 		return (
@@ -61,7 +75,7 @@ const MySubscribersPage = () => {
 				<ActivityIndicator size="small" color={Colors['green-main']} />
 			</View>
 		)
-	}, [isFetchingNextPage, isError, subscribers.length, handleRetry])
+	}, [isError, subscribers.length, isFetchingNextPage, t, handleRetry])
 
 	const renderItem = useCallback(({ item }: { item: ISubscribe }) => {
 		return (
@@ -77,7 +91,7 @@ const MySubscribersPage = () => {
 	return (
 		<Page>
 			<Container className="gap-[20px] flex-1">
-				<HeaderBack>Подписчики</HeaderBack>
+				<HeaderBack>{t('SubscribersPage.header')}</HeaderBack>
 				<FlashList
 					data={subscribers}
 					renderItem={renderItem}

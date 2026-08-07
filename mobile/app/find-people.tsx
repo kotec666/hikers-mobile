@@ -23,28 +23,28 @@ const FindPeople = () => {
 	const { push } = useSafeNavigation()
 
 	const data = [
-		{ id: '1', name: 'Joseph olaf Shcholz', username: 'Стив Джобс first', avatar: '' }, // icon: <PeopleRemoveSvg />
-		{ id: '2', name: 'Joseph olaf Shcholz', username: 'Джефф Безос', avatar: '' }, // icon: <PeopleAddSvg />
-		{ id: '3', name: 'Joseph olaf Shcholz', username: 'Джефф Безос', avatar: '' }, // icon: <RoundedCheckMark />
-		{ id: '4', name: 'Joseph olaf Shcholz', username: 'Джефф Безос', avatar: '' }, // icon: <PeopleRemoveSvg />
-		{ id: '5', name: 'Joseph olaf Shcholz', username: 'Джефф Безос', avatar: '' }, // icon: <PeopleRemoveSvg />
-		{ id: '6', name: 'Joseph olaf Shcholz', username: 'Джефф Безос', avatar: '' }, // icon: <PeopleRemoveSvg />
-		{ id: '7', name: 'Joseph olaf Shcholz', username: 'Джефф Безос', avatar: '' }, // icon: <PeopleRemoveSvg />
-		{ id: '8', name: 'Joseph olaf Shcholz', username: 'Джефф Безос', avatar: '' }, // icon: <PeopleRemoveSvg />
-		{ id: '9', name: 'Joseph olaf Shcholz', username: 'Джефф Безос', avatar: '' }, // icon: <PeopleRemoveSvg />
-		{ id: '10', name: 'Joseph olaf Shcholz', username: 'Джефф Безос', avatar: '' }, // icon: <PeopleRemoveSvg />
-		{ id: '11', name: 'Joseph olaf Shcholz', username: 'Джефф Безос', avatar: '' }, // icon: <PeopleRemoveSvg />
-		{ id: '12', name: 'Joseph olaf Shcholz', username: 'Джефф Безос', avatar: '' }, // icon: <PeopleRemoveSvg />
-		{ id: '13', name: 'Joseph olaf Shcholz', username: 'Джефф Безос', avatar: '' }, // icon: <PeopleRemoveSvg />
-		{ id: '14', name: 'Joseph olaf Shcholz', username: 'Джефф Безос', avatar: '' }, // icon: <PeopleRemoveSvg />
-		{ id: '15', name: 'Joseph olaf Shcholz', username: 'Джефф Безос', avatar: '' }, // icon: <PeopleRemoveSvg />
-		{ id: '16', name: 'Joseph olaf Shcholz', username: 'Джефф Безос', avatar: '' }, // icon: <PeopleRemoveSvg />
-		{ id: '17', name: 'Joseph olaf Shcholz', username: 'Джефф Безос', avatar: '' }, // icon: <PeopleRemoveSvg />
-		{ id: '18', name: 'Joseph olaf Shcholz', username: 'Джефф Безос', avatar: '' }, // icon: <PeopleRemoveSvg />
-		{ id: '19', name: 'Joseph olaf Shcholz', username: 'Джефф Безос', avatar: '' }, // icon: <PeopleRemoveSvg />
+		{ id: '1', name: 'Joseph olaf', username: 'Стив Джобс first', avatar: '' }, // icon: <PeopleRemoveSvg />
+		{ id: '2', name: 'Joseph olaf', username: 'Джефф Безос', avatar: '' }, // icon: <PeopleAddSvg />
+		{ id: '3', name: 'Joseph olaf', username: 'Джефф Безос', avatar: '' }, // icon: <RoundedCheckMark />
+		{ id: '4', name: 'Joseph olaf', username: 'Джефф Безос', avatar: '' }, // icon: <PeopleRemoveSvg />
+		{ id: '5', name: 'Joseph olaf', username: 'Джефф Безос', avatar: '' }, // icon: <PeopleRemoveSvg />
+		{ id: '6', name: 'Joseph olaf', username: 'Джефф Безос', avatar: '' }, // icon: <PeopleRemoveSvg />
+		{ id: '7', name: 'Joseph olaf', username: 'Джефф Безос', avatar: '' }, // icon: <PeopleRemoveSvg />
+		{ id: '8', name: 'Joseph olaf', username: 'Джефф Безос', avatar: '' }, // icon: <PeopleRemoveSvg />
+		{ id: '9', name: 'Joseph olaf', username: 'Джефф Безос', avatar: '' }, // icon: <PeopleRemoveSvg />
+		{ id: '10', name: 'Joseph olaf', username: 'Джефф Безос', avatar: '' }, // icon: <PeopleRemoveSvg />
+		{ id: '11', name: 'Joseph olaf', username: 'Джефф Безос', avatar: '' }, // icon: <PeopleRemoveSvg />
+		{ id: '12', name: 'Joseph olaf', username: 'Джефф Безос', avatar: '' }, // icon: <PeopleRemoveSvg />
+		{ id: '13', name: 'Joseph olaf', username: 'Джефф Безос', avatar: '' }, // icon: <PeopleRemoveSvg />
+		{ id: '14', name: 'Joseph olaf', username: 'Джефф Безос', avatar: '' }, // icon: <PeopleRemoveSvg />
+		{ id: '15', name: 'Joseph olaf', username: 'Джефф Безос', avatar: '' }, // icon: <PeopleRemoveSvg />
+		{ id: '16', name: 'Joseph olaf', username: 'Джефф Безос', avatar: '' }, // icon: <PeopleRemoveSvg />
+		{ id: '17', name: 'Joseph olaf', username: 'Джефф Безос', avatar: '' }, // icon: <PeopleRemoveSvg />
+		{ id: '18', name: 'Joseph olaf', username: 'Джефф Безос', avatar: '' }, // icon: <PeopleRemoveSvg />
+		{ id: '19', name: 'Joseph olaf', username: 'Джефф Безос', avatar: '' }, // icon: <PeopleRemoveSvg />
 		{
 			id: '20',
-			name: 'Joseph olaf Shcholz',
+			name: 'Joseph olaf',
 			username: 'Джефф Безос last',
 			avatar: ''
 			// icon: <PeopleRemoveSvg />

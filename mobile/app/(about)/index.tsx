@@ -5,8 +5,10 @@ import Setting from '@/components/Setting'
 import { useSafeNavigation } from '@/hooks/useSafeNavigation'
 import { useToast } from '@/hooks/useToast'
 import { Page } from '@/components/ui/Page'
+import { useTranslation } from 'react-i18next'
 
 const AboutPage = () => {
+	const { t } = useTranslation()
 	const toast = useToast()
 	const { push } = useSafeNavigation()
 
@@ -16,23 +18,29 @@ const AboutPage = () => {
 		if (supported) {
 			await Linking.openURL(url)
 		} else {
-			toast.info(`Не удалось открыть URL: ${url}`)
+			toast.info(`${t('ToastMessage.info.cannotOpenURL')} ${url}`)
 		}
 	}
 
 	return (
 		<Page>
 			<Container className="gap-[20px] flex-1">
-				<HeaderBack>О приложении</HeaderBack>
+				<HeaderBack>{t('AboutPage.header')}</HeaderBack>
 				<ScrollView style={{ flex: 1, width: '100%' }} contentContainerStyle={{ paddingBottom: 50 }}>
 					<View className="gap-[16px]">
-						<Setting title="Политика конфиденциальности" onPress={() => push('/document')} />
-						<Setting title="Политика обработки персональных данных" onPress={() => push('/document')} />
+						<Setting title={t('AboutPage.itemsList.privacyPolicy')} onPress={() => push('/document')} />
 						<Setting
-							title="Условия использования отдельных сервисов Яндекс карт"
+							title={t('AboutPage.itemsList.personalDataProcessingPolicy')}
+							onPress={() => push('/document')}
+						/>
+						<Setting
+							title={t('AboutPage.itemsList.termsYandexMaps')}
 							onPress={() => openLink('https://yandex.ru/legal/maps_api/')}
 						/>
-						<Setting title="Сообщить о проблеме" onPress={() => push('/(about)/report-a-problem')} />
+						<Setting
+							title={t('AboutPage.itemsList.reportProblem')}
+							onPress={() => push('/(about)/report-a-problem')}
+						/>
 					</View>
 				</ScrollView>
 			</Container>

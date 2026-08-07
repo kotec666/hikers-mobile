@@ -1,3 +1,4 @@
+import { TFunction } from 'i18next'
 import { ERRORS } from '@shared/errors'
 import { useNotificationStore } from '@/store/notificationStore'
 import { NotificationInAppType } from '@/components/Notification'
@@ -14,96 +15,96 @@ type ErrorFields = {
  * */
 
 const errorFields: ErrorFields = {
-	[ERRORS.BAD_REQUEST]: { field: 'field_name', message: 'bad request' },
-	[ERRORS.INTERNAL]: { field: 'field_name', message: 'Непредвиденная ошибка сервера' },
-	[ERRORS.MISMATCH]: { field: 'password', message: 'Неверный пароль' },
-	[ERRORS.DIGIT_REQUIRED]: { field: 'password', message: 'Поле должно содержать цифры' },
+	[ERRORS.BAD_REQUEST]: { field: 'field_name', message: 'ServerErrors.BAD_REQUEST' },
+	[ERRORS.INTERNAL]: { field: 'field_name', message: 'ServerErrors.INTERNAL' },
+	[ERRORS.MISMATCH]: { field: 'password', message: 'ServerErrors.MISMATCH' },
+	[ERRORS.DIGIT_REQUIRED]: { field: 'password', message: 'ServerErrors.DIGIT_REQUIRED' },
 	[ERRORS.ALREADY_CREATED]: {
 		field: 'email',
-		message: 'Такой email уже зарегистрирован'
+		message: 'ServerErrors.ALREADY_CREATED'
 	},
 	[ERRORS.INVALID_EMAIL]: {
 		field: 'email',
-		message: 'Некорректный email'
+		message: 'ServerErrors.INVALID_EMAIL'
 	},
-	[ERRORS.ALREADY_EXISTS]: { field: 'email', message: 'Такой email уже зарегистрирован' },
-	[ERRORS.EMAIL_ALREADY_CONFIRMED]: { field: 'email', message: 'email уже подтвержден' },
+	[ERRORS.ALREADY_EXISTS]: { field: 'email', message: 'ServerErrors.ALREADY_EXISTS' },
+	[ERRORS.EMAIL_ALREADY_CONFIRMED]: { field: 'email', message: 'ServerErrors.EMAIL_ALREADY_CONFIRMED' },
 	[ERRORS.NOT_FOUND]: {
 		field: 'field_name',
-		message: 'Не найдено'
+		message: 'ServerErrors.NOT_FOUND'
 	},
 	[ERRORS.INVALID_LENGTH]: {
 		field: 'field_name',
-		message: 'Неверная длина'
+		message: 'ServerErrors.INVALID_LENGTH'
 	},
 	[ERRORS.UNKNOWN_ERROR]: {
 		field: 'field_name',
-		message: 'Непредвиденная ошибка'
+		message: 'ServerErrors.UNKNOWN_ERROR'
 	},
 	[ERRORS.FORBIDDEN]: {
 		field: 'field_name',
-		message: 'Нет доступа'
+		message: 'ServerErrors.FORBIDDEN'
 	},
 	[ERRORS.UNAUTHORIZED]: {
 		field: 'field_name',
-		message: 'Не авторизован'
+		message: 'ServerErrors.UNAUTHORIZED'
 	},
 	[ERRORS.TIMEOUT_EXPIRED]: {
 		field: 'field_name',
-		message: 'TIMEOUT_EXPIRED'
+		message: 'ServerErrors.TIMEOUT_EXPIRED'
 	},
 	[ERRORS.USER_IN_NOT_FINISHED_TRAINING]: {
 		field: 'field_name',
-		message: 'Невозможно начать тренировку, пока предыдущая не закончилась'
+		message: 'ServerErrors.USER_IN_NOT_FINISHED_TRAINING'
 	},
 	[ERRORS.USER_IS_TRAINING_PARTICIPANT]: {
 		field: 'field_name',
-		message: 'Невозможно начать тренировку, вы уже в составе другой тренировки'
+		message: 'ServerErrors.USER_IS_TRAINING_PARTICIPANT'
 	},
 	[ERRORS.USER_IS_NOT_TRAINING_PARTICIPANT]: {
 		field: 'field_name',
-		message: 'Невозможно начать тренировку, вы не являетесь её участником'
+		message: 'ServerErrors.USER_IS_NOT_TRAINING_PARTICIPANT'
 	},
 	[ERRORS.DATE_IN_THE_PAST]: {
 		field: 'field_name',
-		message: 'DATE_IN_THE_PAST'
+		message: 'ServerErrors.DATE_IN_THE_PAST'
 	},
 	[ERRORS.DATE_IN_THE_FUTURE]: {
 		field: 'field_name',
-		message: 'DATE_IN_THE_FUTURE'
+		message: 'ServerErrors.DATE_IN_THE_FUTURE'
 	},
 	[ERRORS.TOO_LARGE]: {
 		field: 'field_name',
-		message: 'Слишком большой размер файла'
+		message: 'ServerErrors.TOO_LARGE'
 	},
 	[ERRORS.TRAINING_ALREADY_FINISHED]: {
 		field: 'field_name',
-		message: 'Тренировка уже завершена'
+		message: 'ServerErrors.TRAINING_ALREADY_FINISHED'
 	},
 	[ERRORS.TRAINING_ALREADY_STARTED]: {
 		// , TRAINING_NOT_STARTED
 		field: 'field_name',
-		message: 'Тренировка уже начата'
+		message: 'ServerErrors.TRAINING_ALREADY_STARTED'
 	},
 	[ERRORS.TRAINING_NOT_FINISHED]: {
 		field: 'field_name',
-		message: 'Тренировка не завершена'
+		message: 'ServerErrors.TRAINING_NOT_FINISHED'
 	},
 	[ERRORS.TRAINING_NOT_STARTED]: {
 		field: 'field_name',
-		message: 'Тренировка не начата'
+		message: 'ServerErrors.TRAINING_NOT_STARTED'
 	},
 	[ERRORS.SHOULD_BE_DIFFERENT]: {
 		field: 'field_name',
-		message: 'Значения должны отличаться'
+		message: 'ServerErrors.SHOULD_BE_DIFFERENT'
 	},
 	[ERRORS.TOO_MANY_REQUESTS]: {
 		field: 'field_name',
-		message: 'Слишком много попыток'
+		message: 'ServerErrors.TOO_MANY_REQUESTS'
 	},
 	[ERRORS.EMAIL_DOMAIN_NOT_ALLOWED]: {
 		field: 'field_name',
-		message: 'Почтовый домен не разрешен'
+		message: 'ServerErrors.EMAIL_DOMAIN_NOT_ALLOWED'
 	}
 }
 /* prettier-ignore */
@@ -123,60 +124,60 @@ type PersonalErrorFields = {
 
 const personalErrorFields: PersonalErrorFields = {
 	code: {
-		[ERRORS.MISMATCH]: 'Неверный код.'
+		[ERRORS.MISMATCH]: 'ServerErrors.personal.code.MISMATCH'
 	},
 	trainingId: {
-		[ERRORS.MISMATCH]: 'Некорректный id тренировки'
+		[ERRORS.MISMATCH]: 'ServerErrors.personal.trainingId.MISMATCH'
 	},
 	activities: {
-		[ERRORS.BAD_REQUEST]: 'Невалидный формат строки активностей'
+		[ERRORS.BAD_REQUEST]: 'ServerErrors.personal.activities.BAD_REQUEST'
 	},
 	avatarFilename: {
-		[ERRORS.BAD_REQUEST]: 'Невалидный формат аватара'
+		[ERRORS.BAD_REQUEST]: 'ServerErrors.personal.avatarFilename.BAD_REQUEST'
 	},
 	id: {
-		[ERRORS.MISMATCH]: 'Некорректный id',
-		[ERRORS.BAD_REQUEST]: 'Передан некорректный id'
+		[ERRORS.MISMATCH]: 'ServerErrors.personal.id.MISMATCH',
+		[ERRORS.BAD_REQUEST]: 'ServerErrors.personal.id.BAD_REQUEST'
 	},
 	userId: {
-		[ERRORS.MISMATCH]: 'Некорректный формат id'
+		[ERRORS.MISMATCH]: 'ServerErrors.personal.userId.MISMATCH'
 	},
 	type: {
-		[ERRORS.MISMATCH]: 'Передан несуществующий тип тренировки'
+		[ERRORS.MISMATCH]: 'ServerErrors.personal.type.MISMATCH'
 	},
 	colorHex: {
-		[ERRORS.MISMATCH]: 'Передан неверный hex цвета'
+		[ERRORS.MISMATCH]: 'ServerErrors.personal.colorHex.MISMATCH'
 	},
 	ts: {
-		[ERRORS.BAD_REQUEST]: 'Некорректный timestamp, должно быть числом',
-		[ERRORS.DATE_IN_THE_FUTURE]: 'Некорректный timestamp, указано в будущем времени',
-		[ERRORS.DATE_IN_THE_PAST]: 'Некорректный timestamp, дата финиша раньше даты старта'
+		[ERRORS.BAD_REQUEST]: 'ServerErrors.personal.ts.BAD_REQUEST',
+		[ERRORS.DATE_IN_THE_FUTURE]: 'ServerErrors.personal.ts.DATE_IN_THE_FUTURE',
+		[ERRORS.DATE_IN_THE_PAST]: 'ServerErrors.personal.ts.DATE_IN_THE_PAST'
 	},
 	files: {
-		[ERRORS.BAD_REQUEST]: 'Передан некорректный файл'
+		[ERRORS.BAD_REQUEST]: 'ServerErrors.personal.files.BAD_REQUEST'
 	},
 	deletedFilenames: {
-		[ERRORS.BAD_REQUEST]: 'Некорректный формат удаленных изображений',
-		[ERRORS.MISMATCH]: 'Изображение для удаления не прикреплено к посту'
+		[ERRORS.BAD_REQUEST]: 'ServerErrors.personal.deletedFilenames.BAD_REQUEST',
+		[ERRORS.MISMATCH]: 'ServerErrors.personal.deletedFilenames.MISMATCH'
 	},
 	email: {
-		[ERRORS.NOT_FOUND]: 'Такой email не зарегистрирован',
-		[ERRORS.INVALID_EMAIL]: 'Некорректный email',
-		[ERRORS.ALREADY_EXISTS]: 'Такой email уже зарегистрирован',
-		[ERRORS.EMAIL_ALREADY_CONFIRMED]: 'Этот email уже подтвержден',
-		[ERRORS.EMAIL_DOMAIN_NOT_ALLOWED]: 'Доступны только ру-почты'
+		[ERRORS.NOT_FOUND]: 'ServerErrors.personal.email.NOT_FOUND',
+		[ERRORS.INVALID_EMAIL]: 'ServerErrors.personal.email.INVALID_EMAIL',
+		[ERRORS.ALREADY_EXISTS]: 'ServerErrors.personal.email.ALREADY_EXISTS',
+		[ERRORS.EMAIL_ALREADY_CONFIRMED]: 'ServerErrors.personal.email.EMAIL_ALREADY_CONFIRMED',
+		[ERRORS.EMAIL_DOMAIN_NOT_ALLOWED]: 'ServerErrors.personal.email.EMAIL_DOMAIN_NOT_ALLOWED'
 	},
 	password: {
-		[ERRORS.DIGIT_REQUIRED]: 'Пароль должен содержать цифры',
-		[ERRORS.MISMATCH]: 'Неверный пароль',
-		[ERRORS.SHOULD_BE_DIFFERENT]: 'Пароль должен отличаться от старого'
+		[ERRORS.DIGIT_REQUIRED]: 'ServerErrors.personal.password.DIGIT_REQUIRED',
+		[ERRORS.MISMATCH]: 'ServerErrors.personal.password.MISMATCH',
+		[ERRORS.SHOULD_BE_DIFFERENT]: 'ServerErrors.personal.password.SHOULD_BE_DIFFERENT'
 	},
 	confirmPassword: {
-		[ERRORS.MISMATCH]: 'Пароли не совпадают',
-		[ERRORS.DIGIT_REQUIRED]: 'Пароль должен содержать цифры'
+		[ERRORS.MISMATCH]: 'ServerErrors.personal.confirmPassword.MISMATCH',
+		[ERRORS.DIGIT_REQUIRED]: 'ServerErrors.personal.confirmPassword.DIGIT_REQUIRED'
 	},
 	username: {
-		[ERRORS.ALREADY_EXISTS]: 'Такой логин уже используется'
+		[ERRORS.ALREADY_EXISTS]: 'ServerErrors.personal.username.ALREADY_EXISTS'
 	}
 }
 /* prettier-ignore */
@@ -241,22 +242,24 @@ const isParsedErrorObject = (value: unknown): value is ErrorObject | ErrorObject
 	return false
 }
 
-export const getFieldsErrors = async (e: unknown): Promise<FieldErrors> => {
+export const getFieldsErrors = async (e: unknown, t: TFunction<'translation', undefined>): Promise<FieldErrors> => {
 	const { showNotification } = useNotificationStore.getState()
 
 	if (e instanceof TypeError && e.message === 'Network request failed') {
-		showNotification('Отсутствует подключение к интернету', NotificationInAppType.ERROR)
+		const message = t('ClientErrors.NO_INTERNET')
+		showNotification(message, NotificationInAppType.ERROR)
 		return {
 			global: true,
-			message: 'Отсутствует подключение к интернету'
+			message
 		}
 	}
 
 	if (e instanceof Error && e.message.includes('Request timed out')) {
-		showNotification('Превышено время ожидания ответа от сервера', NotificationInAppType.ERROR)
+		const message = t('ClientErrors.REQUEST_TIMEOUT')
+		showNotification(message, NotificationInAppType.ERROR)
 		return {
 			global: true,
-			message: 'Превышено время ожидания ответа от сервера'
+			message
 		}
 	}
 
@@ -282,11 +285,12 @@ export const getFieldsErrors = async (e: unknown): Promise<FieldErrors> => {
 
 		if (!errorObject?.message) {
 			console.log('Непредвиденная ошибка ', e)
-			showNotification('Непредвиденная ошибка', NotificationInAppType.ERROR)
+			const message = t('ClientErrors.UNEXPECTED')
+			showNotification(message, NotificationInAppType.ERROR)
 
 			return {
 				global: true,
-				message: 'Непредвиденная ошибка'
+				message
 			}
 		}
 
@@ -298,7 +302,9 @@ export const getFieldsErrors = async (e: unknown): Promise<FieldErrors> => {
 
 				if (errorKey) {
 					const fieldName = error?.property as string
-					errors[fieldName] = personalErrorFields?.[fieldName]?.[errorKey as keyof typeof ERRORS] || true
+					const translationKey = personalErrorFields?.[fieldName]?.[errorKey as keyof typeof ERRORS]
+
+					errors[fieldName] = translationKey ? t(translationKey) : true
 				}
 			})
 
@@ -316,7 +322,8 @@ export const getFieldsErrors = async (e: unknown): Promise<FieldErrors> => {
 			// 	{ icon: false },
 			// )
 
-			const errorMessage = errorFields[errorObject?.message as keyof ErrorFields]?.message
+			const translationKey = errorFields[errorObject?.message as keyof ErrorFields]?.message
+			const errorMessage = translationKey ? t(translationKey) : undefined
 
 			if (errorMessage) {
 				showNotification(errorMessage, NotificationInAppType.ERROR)
@@ -324,7 +331,7 @@ export const getFieldsErrors = async (e: unknown): Promise<FieldErrors> => {
 
 			return {
 				global: true,
-				message: errorMessage
+				message: errorMessage ?? ''
 			}
 		}
 	}

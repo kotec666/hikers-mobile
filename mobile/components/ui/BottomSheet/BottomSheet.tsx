@@ -8,6 +8,7 @@ import { PositionChangeEvent, TrueSheet, TrueSheetProps } from '@lodev09/react-n
 import { Button } from '@/components/ui/Button'
 import Animated, { interpolate, useAnimatedStyle, useSharedValue } from 'react-native-reanimated'
 import { scheduleOnRN } from 'react-native-worklets'
+import { useTranslation } from 'react-i18next'
 
 const { height: screenHeight } = Dimensions.get('screen')
 
@@ -23,6 +24,7 @@ export interface BottomSheetHandle {
 }
 
 const BottomSheet = forwardRef<BottomSheetHandle, BottomSheetProps>((props, ref) => {
+	const { t } = useTranslation()
 	const { blurDisabled, onDone, children, ...restProps } = props
 	const bottomSheetRef = useRef<TrueSheet | null>(null)
 	const blurTargetRef = useBlurContext()
@@ -139,7 +141,7 @@ const BottomSheet = forwardRef<BottomSheetHandle, BottomSheetProps>((props, ref)
 					]}
 				>
 					<Button variant="black" onPress={onDone}>
-						Готово
+						{t('common.ready')}
 					</Button>
 				</Animated.View>
 			)}

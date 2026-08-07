@@ -3,8 +3,10 @@ import { tabsConfig } from '@/components/ui/Navbar/tabs.config'
 import { SFSymbols6_0 } from 'sf-symbols-typescript'
 import { usePathname } from 'expo-router'
 import { Colors } from '@/constants/Colors'
+import { useTranslation } from 'react-i18next'
 
 export default function NativeTabsComponent() {
+	const { t } = useTranslation()
 	const pathname = usePathname()
 	const shouldHide = pathname.startsWith('/newTraining')
 
@@ -19,7 +21,7 @@ export default function NativeTabsComponent() {
 		>
 			{tabsConfig.map((tab) => (
 				<NativeTabs.Trigger key={tab.id} name={tab.route} disableScrollToTop={tab.id === 'newTraining'}>
-					<NativeTabs.Trigger.Label>{tab.label}</NativeTabs.Trigger.Label>
+					<NativeTabs.Trigger.Label>{t(tab.label)}</NativeTabs.Trigger.Label>
 					<NativeTabs.Trigger.Icon
 						sf={tab.nativeIcon.sf as SFSymbols6_0}
 						drawable={tab.nativeIcon.drawable}

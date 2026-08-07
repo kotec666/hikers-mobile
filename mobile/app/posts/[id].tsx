@@ -24,11 +24,13 @@ import EditSvg from '@/components/svg/EditSvg'
 import DeleteTrashSvg from '@/components/svg/DeleteTrashSvg'
 import LoadQueryErrorRetry from '@/components/LoadQueryErrorRetry'
 import { PostItemSkeleton } from '@/components/ui/skeleton'
+import { useTranslation } from 'react-i18next'
 
 const { height } = Dimensions.get('screen')
 const SLIDE_ASPECT_RATIO = height / 3.6
 
 const Post = () => {
+	const { t } = useTranslation()
 	const router = useRouter()
 	const { push } = useSafeNavigation()
 	const { id } = useLocalSearchParams<{ id: string }>()
@@ -82,7 +84,11 @@ const Post = () => {
 	if (isError && !post) {
 		return (
 			<View className="flex-1 items-center justify-center px-4">
-				<LoadQueryErrorRetry text="Не удалось загрузить пост" onRetry={handleRetryPost} />
+				<LoadQueryErrorRetry
+					text={t('LoadQueryErrorRetry.label.failedToLoadPost')}
+					buttonText={t('LoadQueryErrorRetry.action.tryAgain')}
+					onRetry={handleRetryPost}
+				/>
 			</View>
 		)
 	}
@@ -92,7 +98,7 @@ const Post = () => {
 			<Page>
 				<View style={{ flex: 1 }}>
 					<Container className="gap-[20px] flex-1">
-						<HeaderBack returnCallback={handleClickBack}>Просмотр поста</HeaderBack>
+						<HeaderBack returnCallback={handleClickBack}>{t('PostDetailsPage.header')}</HeaderBack>
 						<ScrollView style={{ flex: 1, width: '100%' }} contentContainerStyle={{ paddingBottom: 20 }}>
 							<PostItemSkeleton />
 						</ScrollView>
@@ -113,7 +119,7 @@ const Post = () => {
 					/>
 					<Container className="gap-[20px]">
 						<View className="flex-row justify-between items-center">
-							<HeaderBack returnCallback={handleClickBack}>Просмотр поста</HeaderBack>
+							<HeaderBack returnCallback={handleClickBack}>{t('PostDetailsPage.header')}</HeaderBack>
 							{post?.userCreator?.id === user?.id && (
 								<PopupMenu
 									menuWidth={170}
@@ -129,14 +135,14 @@ const Post = () => {
 									>
 										<View className="flex-row items-center gap-3">
 											<EditSvg size={18} color="white" />
-											<Text className="text-white text-base">Редактировать</Text>
+											<Text className="text-white text-base">{t('common.edit')}</Text>
 										</View>
 									</PopupMenuItem>
 									<PopupMenuItem onPress={handleOpenDeleteModal}>
 										<View className="flex-row items-center gap-3">
 											<DeleteTrashSvg size={18} color={Colors['red-ff4']} />
 											<Text className="text-base" style={{ color: Colors['red-ff4'] }}>
-												Удалить
+												{t('common.delete')}
 											</Text>
 										</View>
 									</PopupMenuItem>

@@ -9,21 +9,26 @@ export const formatTime = (ms: number) => {
 /**
  * Компактный формат: "2 ч 15 мин" или "45 сек"
  */
-export const formatTimeFromSecondsCompact = (seconds: number | undefined): string => {
+export const formatTimeFromSecondsCompact = (
+	seconds: number | undefined,
+	secondsText: string,
+	minutesText: string,
+	hoursText: string
+): string => {
 	if (seconds === undefined || seconds === null) return '-'
 
 	if (seconds < 60) {
-		return `${seconds} сек`
+		return `${seconds} ${secondsText}`
 	}
 
 	const hours = Math.floor(seconds / 3600)
 	const minutes = Math.floor((seconds % 3600) / 60)
 
 	const parts = []
-	if (hours > 0) parts.push(`${hours} ч`)
-	if (minutes > 0 || hours === 0) parts.push(`${minutes} мин`)
+	if (hours > 0) parts.push(`${hours} ${hoursText}`)
+	if (minutes > 0 || hours === 0) parts.push(`${minutes} ${minutesText}`)
 
-	return parts.join(' ') || '0 мин'
+	return parts.join(' ') || `0 ${minutesText}`
 }
 
 // 45000      -> 0:45

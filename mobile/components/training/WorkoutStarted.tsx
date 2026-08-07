@@ -20,6 +20,7 @@ import { RNMapWorkoutHandle } from '@/components/map/RNMapWorkout'
 import { RNMapsUserLocationMarkerHandle } from '@/components/map/markers/UserLocationMarker/RNMapsUserLocationMarker'
 import WorkoutMap from '@/components/map/WorkoutMap'
 import { useAuthStore } from '@/store/authStore'
+import { useTranslation } from 'react-i18next'
 
 interface IProps {
 	initialMarkerLocation?: Point | null
@@ -48,6 +49,7 @@ interface IProps {
 const { height } = Dimensions.get('screen')
 
 const WorkoutStarted = (props: IProps) => {
+	const { t } = useTranslation()
 	const { user } = useAuthStore()
 	const insets = useSafeAreaInsets()
 	const maxMapHeight = useMemo(() => height / 2 - 40 - insets.top, [insets.top])
@@ -68,7 +70,7 @@ const WorkoutStarted = (props: IProps) => {
 		<>
 			<Container>
 				<Text className="mb-[20px] text-white text-[20px]" style={{ fontFamily: fontFamily.bold }}>
-					Тренировка
+					{t('WorkoutPage.header.workout')}
 				</Text>
 			</Container>
 			<WorkoutMap

@@ -37,6 +37,7 @@ import WorkoutMap from '@/components/map/WorkoutMap'
 import BatteryOptimizationBanner from '@/components/training/BatteryOptimizationBanner'
 import { FlashList } from '@shopify/flash-list'
 import BottomSheet, { BottomSheetHandle } from '@/components/ui/BottomSheet/BottomSheet'
+import { useTranslation } from 'react-i18next'
 
 export interface IWorkoutModeElement {
 	name: string
@@ -74,6 +75,7 @@ enum BottomSheetContent {
 
 const NewWorkout = memo(
 	forwardRef<NewWorkoutHandle, IProps>((props, ref) => {
+		const { t } = useTranslation()
 		const { handleChangeWorkout: onChangeWorkout } = props
 		const { user } = useAuthStore()
 		const isIOS = Platform.OS === 'ios'
@@ -163,33 +165,37 @@ const NewWorkout = memo(
 		const saveUnsavedTrainings = useCallback(async () => {
 			try {
 				await saveAll()
-				toast.success(notSavedWorkoutsCount === 1 ? 'Тренировка сохранена' : 'Все тренировки сохранены')
+				toast.success(
+					notSavedWorkoutsCount === 1
+						? t('ToastMessage.success.workoutSaved') // Тренировка сохранена
+						: t('ToastMessage.success.allWorkoutsSaved') // Все тренировки сохранены
+				)
 			} catch {
-				toast.error('Не удалось сохранить все тренировки')
+				toast.error(t('ToastMessage.error.failedToSaveAllWorkouts'))
 			} finally {
 				await closeBottomSheet()
 			}
-		}, [closeBottomSheet, notSavedWorkoutsCount, saveAll, toast])
+		}, [closeBottomSheet, notSavedWorkoutsCount, saveAll, t, toast])
 
 		const handleClickSaveOneWorkout = useCallback(
 			async (startedAt: number) => {
 				try {
 					await enqueueWorkoutSync(startedAt)
-					toast.success('Тренировка сохранена успешно')
+					toast.success(t('ToastMessage.success.workoutWasSavedSuccessfully'))
 				} catch {
-					toast.error('Не удалось сохранить тренировку')
+					toast.error(t('ToastMessage.error.failedToSaveWorkout'))
 				}
 			},
-			[enqueueWorkoutSync, toast]
+			[enqueueWorkoutSync, t, toast]
 		)
 
 		const handleClickDeleteWorkout = useCallback(
 			async (startedAt: number) => {
 				try {
 					await deleteWorkout(startedAt)
-					toast.success('Несохраненная тренировка удалена успешно')
+					toast.success(t('ToastMessage.success.unsavedWorkoutDeletedSuccessfully'))
 				} catch {
-					toast.error('Не удалось удалить тренировку')
+					toast.error(t('ToastMessage.error.failedToDeleteWorkout'))
 				} finally {
 					unsavedWorkoutsShownRef.current = false
 					if (notSavedWorkoutsCount === 1) {
@@ -197,7 +203,7 @@ const NewWorkout = memo(
 					}
 				}
 			},
-			[closeBottomSheet, deleteWorkout, notSavedWorkoutsCount, toast]
+			[closeBottomSheet, deleteWorkout, notSavedWorkoutsCount, t, toast]
 		)
 
 		const handleRestoreAndContinueNotFinishedWorkout = useCallback(async () => {
@@ -218,19 +224,19 @@ const NewWorkout = memo(
 		const deleteUnsavedWorkouts = useCallback(async () => {
 			try {
 				await deleteAll()
-				toast.success('Все несохраненные тренировки удалены успешно')
+				toast.success(t('ToastMessage.success.allUnsavedWorkoutsHaveBeenDeletedSuccessfully'))
 			} catch {
-				toast.error('Не удалось удалить все тренировки')
+				toast.error(t('ToastMessage.error.failedToDeleteAllWorkouts'))
 			} finally {
 				unsavedWorkoutsShownRef.current = false
 				await closeBottomSheet()
 			}
-		}, [closeBottomSheet, deleteAll, toast])
+		}, [closeBottomSheet, deleteAll, t, toast])
 
 		return (
 			<>
 				<Container className="mb-[20px]">
-					<HeaderBack>Новая тренировка</HeaderBack>
+					<HeaderBack>{t('WorkoutPage.header.newWorkout')}</HeaderBack>
 				</Container>
 				<BatteryOptimizationBanner />
 				<WorkoutMap
@@ -258,7 +264,7 @@ const NewWorkout = memo(
 					<MapActionButton onPress={toggleWorkoutTypeSheet}>
 						{props.chosenWorkout && renderIcon(props.chosenWorkout.IconComponent, '#fff')}
 					</MapActionButton>
-					<StartButton onPress={() => props.handleClickStart(false)}>Начать</StartButton>
+					<StartButton onPress={() => props.handleClickStart(false)}>{t('WorkoutPage.start')}</StartButton>
 					<MapActionButton onPress={() => router.navigate('/find-people')} className="hidden">
 						<PeopleAddSvg />
 					</MapActionButton>

@@ -6,6 +6,7 @@ import PlaySvg from '@/components/svg/PlaySvg'
 import PauseSvg from '@/components/svg/PauseSvg'
 import SwitchMapMode from '@/components/svg/SwitchMapMode'
 import { Button } from '@/components/ui/Button'
+import { useTranslation } from 'react-i18next'
 
 interface IProps {
 	isPaused: boolean
@@ -18,6 +19,7 @@ interface IProps {
 }
 
 const InteractiveBottomElements = (props: IProps) => {
+	const { t } = useTranslation()
 	return (
 		<View
 			className={cn('justify-end gap-[10px]', {
@@ -42,7 +44,7 @@ const InteractiveBottomElements = (props: IProps) => {
 					buttonContainerClassName="flex-1"
 					buttonHeight={70}
 				>
-					Завершить
+					{t('WorkoutPage.finishButton')}
 				</Button>
 			)}
 		</View>

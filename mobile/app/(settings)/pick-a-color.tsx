@@ -19,6 +19,7 @@ import { useProfileQuery, useUpdateProfileColorMutation } from '@/queries/my-pro
 import { RNMapColorPickHandle } from '@/components/map/RNMapComponentColorPick'
 import { scheduleOnRN } from 'react-native-worklets'
 import { RNMapsUserLocationMarkerHandle } from '@/components/map/markers/UserLocationMarker/RNMapsUserLocationMarker'
+import { useTranslation } from 'react-i18next'
 
 const { height } = Dimensions.get('screen')
 const { width } = Dimensions.get('window')
@@ -75,6 +76,7 @@ const ColorBox = ({
 }
 
 const SettingsPickAColorPage = () => {
+	const { t } = useTranslation()
 	const [notSavedModal, setNotSavedModal] = useState(false)
 	const router = useRouter()
 
@@ -173,20 +175,20 @@ const SettingsPickAColorPage = () => {
 				<Modal
 					isOpen={notSavedModal}
 					handleClose={handleCloseNotSavedModal}
-					label="Выйти без сохранения данных?"
+					label={t('common.quitWithoutSave')}
 					labelSize={16}
 				>
 					<View className="gap-[20px]">
 						<View className="flex-row gap-[10px]">
 							<Button onPress={exitWithoutSave} variant="white" buttonContainerClassName="flex-1">
-								Да
+								{t('common.yes')}
 							</Button>
 							<Button
 								onPress={handleCloseNotSavedModal}
 								variant="white"
 								buttonContainerClassName="flex-1"
 							>
-								Нет
+								{t('common.no')}
 							</Button>
 						</View>
 					</View>
@@ -199,12 +201,12 @@ const SettingsPickAColorPage = () => {
 				>
 					<Container className="gap-[20px] flex-1">
 						<HeaderBack returnCallback={handleGoBack}>
-							Выбор{' '}
+							{t('SettingsPage.pickAColor.header.choose')}{' '}
 							<Animated.Text
 								className="text-[20px]"
 								style={[{ fontFamily: fontFamily.bold }, animatedTextStyle]}
 							>
-								цвета
+								{t('SettingsPage.pickAColor.header.color')}
 							</Animated.Text>
 						</HeaderBack>
 						<MapComponentColorPick
@@ -264,7 +266,7 @@ const SettingsPickAColorPage = () => {
 								onPress={onPressSaveColor}
 								isLoading={isPending || isProfileFetching}
 							>
-								Сохранить
+								{t('common.save')}
 							</Button>
 						</View>
 					</Container>

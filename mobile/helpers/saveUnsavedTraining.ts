@@ -14,6 +14,7 @@ import { chunkArray } from '@/helpers/chunkArray'
 import { prepareLocationsForSync } from '@/helpers/prepareLocationsForSync'
 import { getFieldsErrors } from '@/helpers/getFieldsErrors'
 import { UseMutateAsyncFunction } from '@tanstack/react-query'
+import { TFunction } from 'i18next'
 
 type FinishWorkoutMutation = UseMutateAsyncFunction<
 	{
@@ -218,7 +219,11 @@ export const saveSingleWorkout = async (
 }
 
 // только для source WorkoutSource.UNSAVED
-export const deleteSingleWorkout = async (startedAt: number, userId?: string): Promise<boolean> => {
+export const deleteSingleWorkout = async (
+	startedAt: number,
+	t: TFunction<'translation', undefined>,
+	userId?: string
+): Promise<boolean> => {
 	let workout = getUnsavedWorkoutByStartedAt(startedAt, userId)
 	if (!workout) return false
 
@@ -233,7 +238,7 @@ export const deleteSingleWorkout = async (startedAt: number, userId?: string): P
 			}
 			return result.success
 		} catch (e: unknown) {
-			await getFieldsErrors(e)
+			await getFieldsErrors(e, t)
 			throw e
 		}
 	}

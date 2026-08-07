@@ -15,9 +15,12 @@ import { INotMyProfile, IProfile } from '@/api/profile'
 import { FriendStatus } from '@shared/enums'
 import { getFieldsErrors } from '@/helpers/getFieldsErrors'
 import { useToast } from '@/hooks/useToast'
+import { useTranslation } from 'react-i18next'
 
-export const useMyFriendsQuery = (limit = 15) =>
-	useInfiniteQuery<IFriend[], Error, IFriend[], typeof QUERY_KEYS.MY_FRIENDS, number>({
+export const useMyFriendsQuery = (limit = 15) => {
+	const { t } = useTranslation()
+
+	return useInfiniteQuery<IFriend[], Error, IFriend[], typeof QUERY_KEYS.MY_FRIENDS, number>({
 		queryKey: QUERY_KEYS.MY_FRIENDS,
 		queryFn: async ({ pageParam }) => {
 			try {
@@ -26,7 +29,7 @@ export const useMyFriendsQuery = (limit = 15) =>
 					limit
 				})
 			} catch (e) {
-				await getFieldsErrors(e)
+				await getFieldsErrors(e, t)
 				throw e
 			}
 		},
@@ -37,9 +40,12 @@ export const useMyFriendsQuery = (limit = 15) =>
 		},
 		select: (data) => data.pages.flat()
 	})
+}
 
-export const useMyFriendRequestsQuery = (limit = 15) =>
-	useInfiniteQuery<IInvite[], Error, IInvite[], typeof QUERY_KEYS.MY_FRIEND_REQUESTS, number>({
+export const useMyFriendRequestsQuery = (limit = 15) => {
+	const { t } = useTranslation()
+
+	return useInfiniteQuery<IInvite[], Error, IInvite[], typeof QUERY_KEYS.MY_FRIEND_REQUESTS, number>({
 		queryKey: QUERY_KEYS.MY_FRIEND_REQUESTS,
 		queryFn: async ({ pageParam }) => {
 			try {
@@ -48,7 +54,7 @@ export const useMyFriendRequestsQuery = (limit = 15) =>
 					limit
 				})
 			} catch (e) {
-				await getFieldsErrors(e)
+				await getFieldsErrors(e, t)
 				throw e
 			}
 		},
@@ -59,9 +65,11 @@ export const useMyFriendRequestsQuery = (limit = 15) =>
 		},
 		select: (data) => data.pages.flat()
 	})
+}
 
 // Принять заявку в друзья
 export const useAcceptFriendRequestMutation = () => {
+	const { t } = useTranslation()
 	const queryClient = useQueryClient()
 	const toast = useToast()
 
@@ -131,10 +139,10 @@ export const useAcceptFriendRequestMutation = () => {
 			return { prevMyProfile, prevUserProfile, prevFriendRequests, prevFriends }
 		},
 		onSuccess: () => {
-			toast.success('Пользователь добавлен в друзья')
+			toast.success(t('ToastMessage.success.theUserHasBeenAddedAsFriend'))
 		},
 		onError: async (e, userId, context) => {
-			await getFieldsErrors(e)
+			await getFieldsErrors(e, t)
 			if (context?.prevMyProfile) {
 				queryClient.setQueryData(QUERY_KEYS.MY_PROFILE, context.prevMyProfile)
 			}
@@ -153,6 +161,7 @@ export const useAcceptFriendRequestMutation = () => {
 
 // Удалить из друзей
 export const useRemoveFriendMutation = () => {
+	const { t } = useTranslation()
 	const queryClient = useQueryClient()
 	const toast = useToast()
 
@@ -202,10 +211,10 @@ export const useRemoveFriendMutation = () => {
 			return { prevMyProfile, prevFriends, prevUserProfile }
 		},
 		onSuccess: () => {
-			toast.success('Пользователь удалён из списка друзей')
+			toast.success(t('ToastMessage.success.theUserHasBeenRemovedFromTheFriendsList'))
 		},
 		onError: async (e, userId, context) => {
-			await getFieldsErrors(e)
+			await getFieldsErrors(e, t)
 			if (context?.prevMyProfile) {
 				queryClient.setQueryData(QUERY_KEYS.MY_PROFILE, context.prevMyProfile)
 			}
@@ -221,6 +230,7 @@ export const useRemoveFriendMutation = () => {
 
 // Отклонить заявку в друзья
 export const useRejectFriendMutation = () => {
+	const { t } = useTranslation()
 	const queryClient = useQueryClient()
 	const toast = useToast()
 
@@ -258,10 +268,10 @@ export const useRejectFriendMutation = () => {
 			return { prevFriendRequests, prevUserProfile }
 		},
 		onSuccess: () => {
-			toast.success('Заявка отклонена')
+			toast.success(t('ToastMessage.success.friendInviteRejected'))
 		},
 		onError: async (e, userId, context) => {
-			await getFieldsErrors(e)
+			await getFieldsErrors(e, t)
 			if (context?.prevFriendRequests) {
 				queryClient.setQueryData(QUERY_KEYS.MY_FRIEND_REQUESTS, context.prevFriendRequests)
 			}
@@ -274,6 +284,7 @@ export const useRejectFriendMutation = () => {
 
 // Отправить заявку в друзья
 export const useSendFriendRequestMutation = () => {
+	const { t } = useTranslation()
 	const queryClient = useQueryClient()
 	const toast = useToast()
 
@@ -297,10 +308,10 @@ export const useSendFriendRequestMutation = () => {
 			return { prevUserProfile }
 		},
 		onSuccess: () => {
-			toast.success('Заявка в друзья отправлена')
+			toast.success(t('ToastMessage.success.friendRequestSent'))
 		},
 		onError: async (e, userId, context) => {
-			await getFieldsErrors(e)
+			await getFieldsErrors(e, t)
 			if (context?.prevUserProfile) {
 				queryClient.setQueryData([...QUERY_KEYS.USER_PROFILE, userId], context.prevUserProfile)
 			}
@@ -310,6 +321,7 @@ export const useSendFriendRequestMutation = () => {
 
 // Отозвать запрос в друзья
 export const useRevokeRequestMutation = () => {
+	const { t } = useTranslation()
 	const queryClient = useQueryClient()
 	const toast = useToast()
 
@@ -333,10 +345,10 @@ export const useRevokeRequestMutation = () => {
 			return { prevUserProfile }
 		},
 		onSuccess: () => {
-			toast.success('Заявка в друзья отозвана')
+			toast.success(t('ToastMessage.success.friendRequestWithdrawn'))
 		},
 		onError: async (e, userId, context) => {
-			await getFieldsErrors(e)
+			await getFieldsErrors(e, t)
 			if (context?.prevUserProfile) {
 				queryClient.setQueryData([...QUERY_KEYS.USER_PROFILE, userId], context.prevUserProfile)
 			}

@@ -3,6 +3,7 @@ import { Image } from 'expo-image'
 import { ImageSliderType } from '@/components/Slider/Slider'
 import { fontFamily } from '@/constants/Fonts'
 import { Motion } from '@legendapp/motion'
+import { useTranslation } from 'react-i18next'
 
 export type SliderItemProps = {
 	item: ImageSliderType
@@ -21,6 +22,7 @@ const ITEM_CONTAINER_HEIGHT = Platform.select({
 // const BOTTOM_OVERLAY_HEIGHT = ITEM_CONTAINER_HEIGHT * 0.2 // 20%
 
 export function SliderItem({ item, index, activeIndex, total }: SliderItemProps) {
+	const { t } = useTranslation()
 	const normalizedIndex = index % total
 	const isActive = normalizedIndex === activeIndex
 
@@ -43,7 +45,7 @@ export function SliderItem({ item, index, activeIndex, total }: SliderItemProps)
 						className="text-white text-[39px]"
 						style={styles.titleText}
 					>
-						{item.title}
+						{t(item.title)}
 					</Motion.Text>
 				</View>
 			</View>

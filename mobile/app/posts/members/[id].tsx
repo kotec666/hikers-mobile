@@ -16,6 +16,7 @@ import { useToggleSubscribeMutation } from '@/queries/subscriptions'
 import { Page } from '@/components/ui/Page'
 import { refetchAndHaptics } from '@/helpers/refetchAndHaptics'
 import LoadQueryErrorRetry from '@/components/LoadQueryErrorRetry'
+import { useTranslation } from 'react-i18next'
 
 const MemberItem = ({ item, currentUserId }: { item: ITrainingMember; currentUserId?: string; postId: string }) => {
 	const { mutateAsync: toggleSubscribe, isPending: isPendingSubscribe } = useToggleSubscribeMutation()
@@ -56,6 +57,7 @@ const MemberItem = ({ item, currentUserId }: { item: ITrainingMember; currentUse
 }
 
 const Members = () => {
+	const { t } = useTranslation()
 	const { id } = useLocalSearchParams<{ id: string }>()
 	const { user } = useAuthStore()
 
@@ -81,7 +83,13 @@ const Members = () => {
 
 	const renderFooter = useCallback(() => {
 		if (isError && members.length > 0) {
-			return <LoadQueryErrorRetry text="Не удалось загрузить ещё" buttonText="Повторить" onRetry={handleRetry} />
+			return (
+				<LoadQueryErrorRetry
+					text={t('LoadQueryErrorRetry.label.cantLoadMore')}
+					buttonText={t('LoadQueryErrorRetry.action.retry')}
+					onRetry={handleRetry}
+				/>
+			)
 		}
 		if (!isFetchingNextPage) return null
 		return (
@@ -89,20 +97,26 @@ const Members = () => {
 				<ActivityIndicator size="small" color={Colors['green-main']} />
 			</View>
 		)
-	}, [isFetchingNextPage, isError, members.length, handleRetry])
+	}, [isError, members.length, isFetchingNextPage, t, handleRetry])
 
 	const renderEmpty = useCallback(() => {
 		if (isFetching) return null
 		if (isError) {
-			return <LoadQueryErrorRetry text="Не удалось загрузить участников" onRetry={handleRetry} />
+			return (
+				<LoadQueryErrorRetry
+					text={t('LoadQueryErrorRetry.label.failedToLoadMembers')}
+					buttonText={t('LoadQueryErrorRetry.action.tryAgain')}
+					onRetry={handleRetry}
+				/>
+			)
 		}
 		return null
-	}, [isFetching, isError, handleRetry])
+	}, [isFetching, isError, t, handleRetry])
 
 	return (
 		<Page>
 			<Container className="gap-[20px] flex-1">
-				<HeaderBack>Участники тренировки</HeaderBack>
+				<HeaderBack>{t('WorkoutParticipantsPage.header')}</HeaderBack>
 				<FlashList
 					data={members}
 					renderItem={renderMemberItem}

@@ -3,6 +3,7 @@ import { useAuthStore } from '@/store/authStore'
 import { getNotSavedWorkouts } from '@/store/workoutStorage'
 import { deleteSingleWorkout, saveSingleWorkout, WorkoutSource } from '@/helpers/saveUnsavedTraining'
 import { useFinishWorkoutMutation } from '@/queries/workout'
+import { useTranslation } from 'react-i18next'
 
 type QueueItem = {
 	startedAt: number
@@ -12,6 +13,7 @@ type QueueItem = {
 }
 
 export const useUnsavedWorkoutSync = () => {
+	const { t } = useTranslation()
 	const { user } = useAuthStore()
 
 	const [notSavedWorkouts, setNotSavedWorkouts] = useState(getNotSavedWorkouts(user?.id))
@@ -101,16 +103,16 @@ export const useUnsavedWorkoutSync = () => {
 
 	const deleteWorkout = useCallback(
 		async (startedAt: number) => {
-			await deleteSingleWorkout(startedAt, user?.id)
+			await deleteSingleWorkout(startedAt, t, user?.id)
 			refresh()
 		},
-		[refresh, user?.id]
+		[refresh, t, user?.id]
 	)
 
 	const deleteAll = useCallback(async () => {
-		await Promise.all(notSavedWorkouts.map((w) => deleteSingleWorkout(w.startedAt, user?.id)))
+		await Promise.all(notSavedWorkouts.map((w) => deleteSingleWorkout(w.startedAt, t, user?.id)))
 		refresh()
-	}, [notSavedWorkouts, refresh, user?.id])
+	}, [notSavedWorkouts, refresh, t, user?.id])
 
 	// const deleteAll = () => {
 	// 	notSavedWorkouts.forEach((w) => deleteUnsavedTrainingByStartedAt(w.startedAt, user?.id))

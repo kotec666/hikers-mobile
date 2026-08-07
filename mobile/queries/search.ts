@@ -3,9 +3,12 @@ import { QUERY_KEYS } from '@/constants/query-keys'
 import { IFoundPost, IFoundUser, searchByAllItems } from '@/api/search'
 import { SearchType } from '@shared/enums'
 import { getFieldsErrors } from '@/helpers/getFieldsErrors'
+import { useTranslation } from 'react-i18next'
 
-export const useSearchQuery = (word: string, type: SearchType, limit = 15) =>
-	useInfiniteQuery<
+export const useSearchQuery = (word: string, type: SearchType, limit = 15) => {
+	const { t } = useTranslation()
+
+	return useInfiniteQuery<
 		IFoundUser[] | IFoundPost[],
 		Error,
 		(IFoundUser | IFoundPost)[],
@@ -26,7 +29,7 @@ export const useSearchQuery = (word: string, type: SearchType, limit = 15) =>
 					signal
 				)
 			} catch (e) {
-				await getFieldsErrors(e)
+				await getFieldsErrors(e, t)
 				throw e
 			}
 		},
@@ -37,3 +40,4 @@ export const useSearchQuery = (word: string, type: SearchType, limit = 15) =>
 		},
 		select: (data) => data.pages.flat()
 	})
+}

@@ -12,6 +12,7 @@ import { Motion } from '@legendapp/motion'
 import { useSafeNavigation } from '@/hooks/useSafeNavigation'
 import { useToggleLikePostMutation } from '@/queries/posts'
 import { api } from '@/constants/Variables'
+import { useTranslation } from 'react-i18next'
 
 interface IProps {
 	postId?: string
@@ -21,6 +22,7 @@ interface IProps {
 }
 
 const PostListItemBottom = (props: IProps) => {
+	const { t } = useTranslation()
 	const { push } = useSafeNavigation()
 	const toast = useToast()
 	const shareButtonRef = useRef(null)
@@ -30,7 +32,7 @@ const PostListItemBottom = (props: IProps) => {
 
 	const handleLikePress = () => {
 		if (!props.postId) {
-			toast.error('Не выбран пост')
+			toast.error(t('ToastMessage.error.noPostId'))
 			return
 		}
 
@@ -50,7 +52,7 @@ const PostListItemBottom = (props: IProps) => {
 					...(Platform.OS === 'android' ? { message: url } : { url })
 				},
 				{
-					dialogTitle: 'Поделиться',
+					dialogTitle: t('common.share'),
 					excludedActivityTypes: [
 						'com.apple.UIKit.activity.Print',
 						'com.apple.UIKit.activity.AssignToContact'
@@ -114,7 +116,7 @@ const PostListItemBottom = (props: IProps) => {
 									{props.participants?.[0].user.name}
 								</Text>
 								<Text className="text-gray-ab text-sm" style={{ fontFamily: fontFamily.medium }}>
-									и ещё
+									{t('Post.participants.and')}
 								</Text>
 								<Text
 									className="text-blue-3d text-sm"

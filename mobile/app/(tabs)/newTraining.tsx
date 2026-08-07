@@ -59,6 +59,7 @@ import { useFinishWorkoutMutation } from '@/queries/workout'
 import { Page } from '@/components/ui/Page'
 import { RNMapAnimationType } from '@/components/map/RNMapWorkout'
 import { updateRNMapSettings } from '@/store/rnMapStorage'
+import { useTranslation } from 'react-i18next'
 // Debugging
 TaskManager.getRegisteredTasksAsync().then((tasks) => {
 	console.log('getRegisteredTasksAsync', tasks)
@@ -82,6 +83,7 @@ const YA_MAP_INITIAL_MAP_ZOOM = 14
 const RN_MAP_INITIAL_MAP_ZOOM = 500
 
 export default function NewTraining() {
+	const { t, i18n } = useTranslation()
 	const toast = useToast()
 	const { user } = useAuthStore()
 	const isIOS = Platform.OS === 'ios'
@@ -240,9 +242,10 @@ export default function NewTraining() {
 			await tracking.startTracking()
 		} catch (e) {
 			console.error('Ошибка запуска отслеживания:', e)
-			toast.error('Ошибка запуска отслеживания местоположения')
+
+			toast.error(t('ToastMessage.error.startingLocationTracking'))
 		}
-	}, [toast, tracking])
+	}, [t, toast, tracking])
 
 	const throttledHeadingUpdate = useMemo(
 		() =>
@@ -408,7 +411,6 @@ export default function NewTraining() {
 				if (!afterReboot) {
 					// Устанавливаем флаг, что мы пытались начать тренировку
 					isPendingStartRef.current = true
-					// toast.error('Невозможно начать тренировку без предоставления всех разрешений') // Убрал тост, чтобы не мешал модалкам
 				}
 				return permissionsRef.current?.checkPermissions()
 			}
@@ -424,7 +426,7 @@ export default function NewTraining() {
 						newTrainingId = newTraining.id
 					} catch (e: unknown) {
 						console.log('(1) [start-workout-error]:', e)
-						await getFieldsErrors(e)
+						await getFieldsErrors(e, t)
 						// Если человек не закончил предыдущую тренировку, то следующую невозможно начать
 						// @TODO Восстановление/удаление тренировки
 						if (typeof e === 'object' && e !== null && 'response' in e) {
@@ -442,7 +444,7 @@ export default function NewTraining() {
 						}
 					}
 				} else {
-					toast.info('Нет подключения к интернету, тренировка будет происходить в оффлайн режиме')
+					toast.info(t('ToastMessage.info.noInternetConnectionTrainingWillTakePlaceOffline'))
 				}
 
 				setIsWorkoutStarted(true)
@@ -468,6 +470,7 @@ export default function NewTraining() {
 			startHeadingTracking,
 			startTrackingLocation,
 			stopActiveTracking,
+			t,
 			toast,
 			user
 		]
@@ -638,7 +641,10 @@ export default function NewTraining() {
 			const totalAvgSpeed = Math.round(avgKmh) + 'км/ч'
 			const totalTimeFormatted = formatTime(timeElapsed)
 			const totalCalories = calculateCalories(timeElapsed, distanceMeters, chosenWorkout.type, 70) // @TODO вес пользователя
-			const totalDistanceFormatted = formatDistance(distanceMeters)
+			const totalDistanceFormatted = formatDistance(distanceMeters, i18n.language, {
+				meter: t('measurementUnits.meters.short'),
+				kilometer: t('measurementUnits.km.short')
+			})
 			const totalAvgPace = calculatePace(timeElapsed, distanceMeters)
 			const totalHeight = getWorkoutHeight(pointsRef.current)
 
@@ -655,7 +661,18 @@ export default function NewTraining() {
 				totalHeight
 			})
 		},
-		[chosenWorkout, pointsRef, setMetrics, setPoints, setStartedAt, setTrainingId, setType, user?.id]
+		[
+			chosenWorkout,
+			i18n.language,
+			pointsRef,
+			setMetrics,
+			setPoints,
+			setStartedAt,
+			setTrainingId,
+			setType,
+			t,
+			user?.id
+		]
 	)
 
 	// Догрузка незавершенных тренировок на бэк
@@ -683,7 +700,7 @@ export default function NewTraining() {
 
 			// Если завершил рано
 			if (isWorkoutTooShort(user?.id)) {
-				toast.info('Тренировка завершена слишком рано')
+				toast.info(t('ToastMessage.info.trainingEndedTooEarly'))
 				if (isInternetConnectedRef.current && meta?.id) {
 					// тренировка существует на бэкенде
 					const result = await deleteNotFinishedTrainingById(meta.id)
@@ -717,7 +734,7 @@ export default function NewTraining() {
 				)
 				setTrainingId(newTrainingId)
 			} else {
-				toast.info('Нет доступа к интернету, тренировку можно будет сохранить позже')
+				toast.info(t('ToastMessage.info.noInternetTheWorkoutCanBeSavedLater'))
 				moveActiveWorkoutToNotSaved(user?.id)
 			}
 			// Полный сброс состояния карты и переменных
@@ -725,20 +742,21 @@ export default function NewTraining() {
 			router.push(`/training/viewWorkout?mode=${VIEW_WORKOUT_MODE.VIEW}&unsavedStartedAt=${meta?.startedAt}`)
 		} catch (e: unknown) {
 			console.error('handleClickEndWorkout error: ', e)
-			await getFieldsErrors(e)
+			await getFieldsErrors(e, t)
 		}
 	}, [
-		finishWorkout,
-		setTrainingId,
+		tracking,
+		stopHeadingTracking,
+		user,
 		calculateMetricsWhenFinished,
 		isInternetConnectedRef,
 		resetWorkoutState,
 		router,
-		saveUnsavedWorkoutsBeforeFinish,
-		stopHeadingTracking,
 		toast,
-		tracking,
-		user
+		saveUnsavedWorkoutsBeforeFinish,
+		finishWorkout,
+		setTrainingId,
+		t
 	])
 
 	const handleClickEnd = useCallback(() => {

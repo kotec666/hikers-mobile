@@ -5,6 +5,7 @@ import PostMetrics from '@/components/ui/Post/PostMetrics'
 import { ITrainingMetrics } from '@/api/workout'
 import { formatDistance } from '@/helpers/distance'
 import { formatTimeFromSecondsCompact } from '@/helpers/formatTime'
+import { useTranslation } from 'react-i18next'
 
 interface IProps {
 	title?: string
@@ -14,6 +15,8 @@ interface IProps {
 }
 
 const PostListItemBody = (props: IProps) => {
+	const { t, i18n } = useTranslation()
+
 	return (
 		<>
 			<View className="gap-[15px]">
@@ -31,9 +34,26 @@ const PostListItemBody = (props: IProps) => {
 				</View>
 
 				<View className="flex-row justify-between w-full">
-					<PostMetrics label="Расстояние" text={formatDistance(props.metrics?.distanceM || 0)} />
-					<PostMetrics label="Время" text={formatTimeFromSecondsCompact(props.metrics?.timeSec)} />
-					<PostMetrics label="Набор высоты" text={`${props.metrics?.altitudeGainM || '-'} м`} />
+					<PostMetrics
+						label={t('measurementUnits.distance')}
+						text={formatDistance(props.metrics?.distanceM || 0, i18n.language, {
+							meter: t('measurementUnits.meters.short'),
+							kilometer: t('measurementUnits.km.short')
+						})}
+					/>
+					<PostMetrics
+						label={t('measurementUnits.time')}
+						text={formatTimeFromSecondsCompact(
+							props.metrics?.timeSec,
+							t('measurementUnits.seconds.short'),
+							t('measurementUnits.minutes.short'),
+							t('measurementUnits.hours.short')
+						)}
+					/>
+					<PostMetrics
+						label={t('measurementUnits.climb')}
+						text={`${props.metrics?.altitudeGainM || '-'} ${t('measurementUnits.meters.short')}`}
+					/>
 				</View>
 			</View>
 		</>

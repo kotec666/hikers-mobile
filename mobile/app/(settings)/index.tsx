@@ -1,6 +1,6 @@
 import { Container } from '@/components/ui/Container'
 import HeaderBack from '@/components/ui/HeaderBack'
-import { ScrollView, View, Text as RNText, I18nManager, NativeModules } from 'react-native'
+import { ScrollView, View, Text, I18nManager, NativeModules, Platform } from 'react-native'
 import Setting from '@/components/Setting'
 import { useSafeNavigation } from '@/hooks/useSafeNavigation'
 import { Colors } from '@/constants/Colors'
@@ -19,6 +19,7 @@ import { Page } from '@/components/ui/Page'
 import { Directions, Language, LngShort, setLngToStorage, supportedLanguages } from '@/store/languageStorage'
 import VerticalPicker from '@/components/ui/VerticalPicker/VerticalPicker'
 import { useTranslation } from 'react-i18next'
+import { YamapInstance } from 'react-native-yamap-plus'
 
 const SettingsPage = () => {
 	const { t, i18n } = useTranslation()
@@ -26,6 +27,8 @@ const SettingsPage = () => {
 	const { user, logout } = useAuthStore()
 	const router = useRouter()
 	const { mutateAsync, isPending } = useDeleteProfileMutation()
+
+	const isAndroid = Platform.OS === 'android'
 
 	const [selectedLanguage, setSelectedLanguage] = useState<Language | null>(
 		() => supportedLanguages.find((l) => l.lngShort === (i18n.language as LngShort)) ?? null
@@ -58,7 +61,10 @@ const SettingsPage = () => {
 		}
 		void i18n.changeLanguage(lang.lngShort)
 		setSelectedLanguage(lang)
-		if (isRTL) return NativeModules.DevSettings.reload() //@TODO мб из-за яндекс карты релоадить всегда
+		void YamapInstance.setLocale(lang.lngLong)
+		// перезагрузка на андроид из-за яндекс карт
+		// и перезагрузка если RTL
+		if (isRTL || isAndroid) return NativeModules.DevSettings.reload()
 	}
 
 	return (
@@ -67,17 +73,16 @@ const SettingsPage = () => {
 				<Modal
 					isOpen={isDeleteAccountModalOpen}
 					handleClose={closeDeleteAccountModal}
-					label="Удаление аккаунта"
+					label={t('SettingsPage.deleteAccountModal.label')}
 					labelSize={16}
 				>
 					<View className="gap-[20px]">
-						<RNText style={{ fontFamily: fontFamily.medium }} className="text-white text-base">
-							Вы уверены, что хотите удалить свою учетную запись? Это действие необратимо, и все ваши
-							данные будут безвозвратно удалены.
-						</RNText>
+						<Text style={{ fontFamily: fontFamily.medium }} className="text-white text-base">
+							{t('SettingsPage.deleteAccountModal.accountDeleteText')}
+						</Text>
 						<View className="flex-row gap-[10px]">
 							<Button onPress={closeDeleteAccountModal} variant="white" buttonContainerClassName="flex-1">
-								Отмена
+								{t('common.cancel')}
 							</Button>
 							<Button
 								onPress={handleDeleteAccount}
@@ -85,13 +90,13 @@ const SettingsPage = () => {
 								variant="white"
 								buttonContainerClassName="flex-1"
 							>
-								Удалить
+								{t('common.delete')}
 							</Button>
 						</View>
 					</View>
 				</Modal>
 				<Container className="gap-[20px] flex-1">
-					<HeaderBack>Настройки</HeaderBack>
+					<HeaderBack>{t('SettingsPage.header')}</HeaderBack>
 					<ScrollView
 						style={{ flex: 1, width: '100%' }}
 						contentContainerStyle={{
@@ -102,17 +107,20 @@ const SettingsPage = () => {
 					>
 						<View className="gap-[16px]">
 							<Setting
-								title="Уведомления внутри приложения"
+								title={t('SettingsPage.settingsList.inAppNotifications')}
 								onPress={() => push('/(settings)/in-app-notifications')}
 							/>
 							<Setting
-								title={[{ text: 'Выбор своего ' }, { text: 'цвета', color: Colors['green-main'] }]}
+								title={[
+									{ text: t('SettingsPage.settingsList.chooseYour') },
+									{ text: t('SettingsPage.settingsList.color'), color: Colors['green-main'] }
+								]}
 								onPress={() => push('/(settings)/pick-a-color')}
 							/>
 							<View className="flex-row justify-between items-center">
-								<RNText className="text-base text-gray-ab" style={{ fontFamily: fontFamily.medium }}>
-									Язык {t('LanguagePage.title')}
-								</RNText>
+								<Text className="text-base text-gray-ab" style={{ fontFamily: fontFamily.medium }}>
+									{t('SettingsPage.settingsList.language')}
+								</Text>
 								<VerticalPicker
 									items={supportedLanguages}
 									mapOptionToLabel={(item) => item.language}
@@ -134,19 +142,15 @@ const SettingsPage = () => {
 									}}
 								>
 									<AlertTriangleSvg />
-									<RNText
-										style={{ fontFamily: fontFamily.medium }}
-										className="text-gray-ab text-base"
-									>
-										Удалить аккаунт
-									</RNText>
+									<Text style={{ fontFamily: fontFamily.medium }} className="text-gray-ab text-base">
+										{t('SettingsPage.deleteAccount')}
+									</Text>
 								</Motion.View>
 							</Motion.Pressable>
 							<View>
-								<RNText style={{ fontFamily: fontFamily.medium }} className="text-gray-ab text-sm">
-									Удаление вашей учетной записи является необратимым и не подлежит отмене. Все ваши
-									данные, тренировки и история будут потеряны навсегда.
-								</RNText>
+								<Text style={{ fontFamily: fontFamily.medium }} className="text-gray-ab text-sm">
+									{t('SettingsPage.deleteAccountDetails')}
+								</Text>
 							</View>
 						</View>
 					</ScrollView>

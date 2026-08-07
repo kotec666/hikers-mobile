@@ -1,12 +1,13 @@
 import React, { forwardRef, useCallback, useEffect, useImperativeHandle, useRef, useState } from 'react'
-import AllowGeolocation from '@/components/BottomSheets/AllowGeolocation'
 import { Alert, AppState, Linking, Platform } from 'react-native'
+import AllowGeolocation from '@/components/BottomSheets/AllowGeolocation'
 import EnableGPS from '@/components/BottomSheets/EnableGPS'
 import AllowBackgroundGeolocation from '@/components/BottomSheets/AllowBackgroundGeolocation'
 import AllowDeniedGeolocation from '@/components/BottomSheets/AllowDeniedGeolocation'
 import * as Location from 'expo-location'
 import * as Application from 'expo-application'
 import BottomSheet, { BottomSheetHandle } from '@/components/ui/BottomSheet/BottomSheet'
+import { useTranslation } from 'react-i18next'
 
 const IOS_LOCATION_SERVICES_ALERT_COOLDOWN_MS = 1500
 
@@ -36,6 +37,7 @@ export interface AllGeolocationPermissionsHandle {
 
 const AllGeolocationPermissions = forwardRef<AllGeolocationPermissionsHandle, IProps>(
 	({ allPermissionsGrantedCallback }, ref) => {
+		const { t } = useTranslation()
 		const bottomSheetRef = useRef<BottomSheetHandle>(null)
 		const [bottomSheetContent, setBottomSheetContent] = useState<React.ReactNode>(null)
 		const appStateRef = useRef(AppState.currentState)
@@ -75,11 +77,11 @@ const AllGeolocationPermissions = forwardRef<AllGeolocationPermissionsHandle, IP
 					}
 				} catch (error) {
 					console.error('Error opening settings:', error)
-					Alert.alert('Ошибка', 'Не удалось открыть настройки')
+					Alert.alert(t('common.error'), t('AllGeolocationPermissions.failedToOpenSettings'))
 					wasInSettingsRef.current = false
 				}
 			},
-			[appId, closeBottomSheet]
+			[appId, closeBottomSheet, t]
 		)
 
 		const showIOSLocationServicesAlert = useCallback(async () => {
@@ -96,18 +98,18 @@ const AllGeolocationPermissions = forwardRef<AllGeolocationPermissionsHandle, IP
 			lastIOSLocationServicesAlertShownAt = now
 			await closeBottomSheet()
 			Alert.alert(
-				'Службы геолокации выключены',
-				'Откройте Настройки > Конфиденциальность и безопасность > Службы геолокации и включите переключатель.',
+				t('AllGeolocationPermissions.locationServicesAreTurnedOff'),
+				t('AllGeolocationPermissions.locationInstructions'),
 				[
 					{
-						text: 'Настройки',
+						text: t('common.settings'),
 						onPress: () => {
 							isIOSLocationServicesAlertVisible = false
 							openAppSettings()
 						}
 					},
 					{
-						text: 'Отмена',
+						text: t('common.cancel'),
 						style: 'cancel',
 						onPress: () => {
 							isIOSLocationServicesAlertVisible = false
@@ -115,7 +117,7 @@ const AllGeolocationPermissions = forwardRef<AllGeolocationPermissionsHandle, IP
 					}
 				]
 			)
-		}, [closeBottomSheet, openAppSettings])
+		}, [closeBottomSheet, openAppSettings, t])
 
 		const checkIOSLocationServicesAndShowAlert = useCallback(
 			async (granted: boolean, canAskAgain: boolean): Promise<boolean> => {

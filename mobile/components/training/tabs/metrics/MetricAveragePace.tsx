@@ -1,6 +1,7 @@
 import React, { memo, useMemo } from 'react'
 import Parameter from '@/components/training/Parameter'
 import { calculatePace } from '@/helpers/calculatePace'
+import { useTranslation } from 'react-i18next'
 
 interface IProps {
 	isPaused: boolean
@@ -9,6 +10,7 @@ interface IProps {
 }
 
 const MetricAveragePace = memo((props: IProps) => {
+	const { t } = useTranslation()
 	const currentDistance = props.accumulatedDistanceRef.current
 
 	const averagePace = useMemo(
@@ -16,7 +18,7 @@ const MetricAveragePace = memo((props: IProps) => {
 		[props.workoutTimeMs, currentDistance]
 	)
 
-	return <Parameter isPaused={props.isPaused} label="Ср. темп" value={averagePace} />
+	return <Parameter isPaused={props.isPaused} label={t('measurementUnits.avgPace')} value={averagePace} />
 })
 
 MetricAveragePace.displayName = 'MetricAveragePace'

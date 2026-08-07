@@ -14,6 +14,7 @@ import { useCreateReportMutation } from '@/queries/reports'
 import { ReportType } from '@shared/enums'
 import { getFieldsErrors } from '@/helpers/getFieldsErrors'
 import { lengths } from '@shared/lengths'
+import { useTranslation } from 'react-i18next'
 // import * as Device from 'expo-device'
 // import * as Application from 'expo-application'
 
@@ -54,6 +55,7 @@ interface IReportAProblemForm {
 }
 
 const ReportAProblem = () => {
+	const { t } = useTranslation()
 	const { handleSubmit, control } = useForm<IReportAProblemForm>()
 	const { ErrorMessages } = useErrorMessage()
 
@@ -75,7 +77,7 @@ const ReportAProblem = () => {
 
 			await createReportMutation(formData)
 		} catch (e: unknown) {
-			const formattedErrors = await getFieldsErrors(e)
+			const formattedErrors = await getFieldsErrors(e, t)
 			setServerErrors(formattedErrors)
 		}
 	}
@@ -90,7 +92,7 @@ const ReportAProblem = () => {
 				>
 					<Pressable onPress={Keyboard.dismiss} accessible={false} style={{ flex: 1 }}>
 						<View className="flex-1">
-							<HeaderBack>Сообщить о проблеме</HeaderBack>
+							<HeaderBack>{t('ReportAProblemPage.header')}</HeaderBack>
 							<View className="justify-center gap-[24px] mt-[20px]">
 								<View className="gap-[20px]">
 									<Controller
@@ -109,7 +111,7 @@ const ReportAProblem = () => {
 										render={({ field: { onChange, onBlur, value }, fieldState: { error } }) => (
 											<Input
 												multiline
-												placeholder="Подробно опишите проблему, которую вы обнаружили"
+												placeholder={t('ReportAProblemPage.inputPlaceholder')}
 												error={error?.message || serverErrors?.text}
 												onChangeText={onChange}
 												value={value}
@@ -128,7 +130,7 @@ const ReportAProblem = () => {
 												className="flex-shrink text-[11px] text-white"
 												style={{ fontFamily: fontFamily.regular }}
 											>
-												Прикрепить данные о моём устройстве
+												{t('ReportAProblemPage.attachDeviceDetails')}
 											</Text>
 										</View>
 									</View>
@@ -136,7 +138,7 @@ const ReportAProblem = () => {
 							</View>
 							<View className="flex-1 justify-end">
 								<Button onPress={handleSubmit(onSubmit)} variant="white" isLoading={isPendingCreate}>
-									Отправить сообщение
+									{t('ReportAProblemPage.send')}
 								</Button>
 							</View>
 						</View>

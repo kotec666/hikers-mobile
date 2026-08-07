@@ -3,6 +3,7 @@ import { Text, View } from 'react-native'
 import { fontFamily } from '@/constants/Fonts'
 import { Button } from '@/components/ui/Button'
 import { getNoun } from '@/helpers/getNoun'
+import { useTranslation } from 'react-i18next'
 
 interface IProps {
 	isSaving: boolean
@@ -14,11 +15,13 @@ interface IProps {
 }
 
 const UnsavedTrainings = (props: IProps) => {
+	const { t } = useTranslation()
+
 	const { number, word } = getNoun(
 		props.unsavedTrainingsCount,
-		'несохранённая тренировка',
-		'несохранённые тренировки',
-		'несохранённых тренировок'
+		'WorkoutPage.bottomSheets.unsavedTrainings.noun.one',
+		'WorkoutPage.bottomSheets.unsavedTrainings.noun.two',
+		'WorkoutPage.bottomSheets.unsavedTrainings.noun.five'
 	)
 
 	const [adj, noun] = word.split(' ')
@@ -28,15 +31,15 @@ const UnsavedTrainings = (props: IProps) => {
 			<View className="items-center">
 				{props.unsavedTrainingsCount === 1 ? (
 					<Text style={{ fontFamily: fontFamily.regular }} className="text-white text-lg">
-						У вас есть несохранённая тренировка
+						{t('WorkoutPage.bottomSheets.unsavedTrainings.titleFull')}
 					</Text>
 				) : (
 					<>
 						<Text style={{ fontFamily: fontFamily.regular }} className="text-white text-lg">
-							У вас есть {number} {adj}
+							{t('WorkoutPage.bottomSheets.unsavedTrainings.titleShort')} {number} {t(adj)}
 						</Text>
 						<Text style={{ fontFamily: fontFamily.regular }} className="text-white text-lg">
-							{noun}
+							{t(noun)}
 						</Text>
 					</>
 				)}
@@ -50,13 +53,13 @@ const UnsavedTrainings = (props: IProps) => {
 							isLoading={props.isSaving}
 							disabled={props.isSaving}
 						>
-							Сохранить
+							{t('common.save')}
 						</Button>
 						<Button variant="white" onPress={props.handleClickDelete} disabled={props.isSaving}>
-							Удалить
+							{t('common.delete')}
 						</Button>
 						<Button variant="white" onPress={props.handleClickClose} disabled={props.isSaving}>
-							Не сейчас
+							{t('WorkoutPage.bottomSheets.actions.notNow')}
 						</Button>
 					</>
 				) : (
@@ -67,7 +70,7 @@ const UnsavedTrainings = (props: IProps) => {
 							isLoading={props.isSaving}
 							disabled={props.isSaving}
 						>
-							Сохранить все
+							{t('WorkoutPage.bottomSheets.actions.saveAll')}
 						</Button>
 						<Button
 							variant="white"
@@ -75,10 +78,10 @@ const UnsavedTrainings = (props: IProps) => {
 							isLoading={props.isSaving}
 							disabled={props.isSaving}
 						>
-							Подробнее
+							{t('WorkoutPage.bottomSheets.actions.details')}
 						</Button>
 						<Button variant="white" onPress={props.handleClickClose} disabled={props.isSaving}>
-							Не сейчас
+							{t('WorkoutPage.bottomSheets.actions.notNow')}
 						</Button>
 					</>
 				)}

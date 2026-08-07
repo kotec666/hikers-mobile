@@ -15,9 +15,12 @@ import {
 import { QUERY_KEYS } from '@/constants/query-keys'
 import { getFieldsErrors } from '@/helpers/getFieldsErrors'
 import { useToast } from '@/hooks/useToast'
+import { useTranslation } from 'react-i18next'
 
-export const useFeedPostsQuery = (limit = 5) =>
-	useInfiniteQuery<IPost[], Error, IPost[], typeof QUERY_KEYS.POSTS_FEED, number>({
+export const useFeedPostsQuery = (limit = 5) => {
+	const { t } = useTranslation()
+
+	return useInfiniteQuery<IPost[], Error, IPost[], typeof QUERY_KEYS.POSTS_FEED, number>({
 		queryKey: QUERY_KEYS.POSTS_FEED,
 		queryFn: async ({ pageParam }) => {
 			try {
@@ -26,7 +29,7 @@ export const useFeedPostsQuery = (limit = 5) =>
 					limit
 				})
 			} catch (e) {
-				await getFieldsErrors(e)
+				await getFieldsErrors(e, t)
 				throw e
 			}
 		},
@@ -37,9 +40,12 @@ export const useFeedPostsQuery = (limit = 5) =>
 		},
 		select: (data) => data.pages.flat()
 	})
+}
 
-export const useProfilePostsQuery = (limit = 5) =>
-	useInfiniteQuery<IPost[], Error, IPost[], typeof QUERY_KEYS.POSTS_MY_PROFILE, number>({
+export const useProfilePostsQuery = (limit = 5) => {
+	const { t } = useTranslation()
+
+	return useInfiniteQuery<IPost[], Error, IPost[], typeof QUERY_KEYS.POSTS_MY_PROFILE, number>({
 		queryKey: QUERY_KEYS.POSTS_MY_PROFILE,
 		queryFn: async ({ pageParam }) => {
 			try {
@@ -48,7 +54,7 @@ export const useProfilePostsQuery = (limit = 5) =>
 					limit
 				})
 			} catch (e) {
-				await getFieldsErrors(e)
+				await getFieldsErrors(e, t)
 				throw e
 			}
 		},
@@ -59,9 +65,12 @@ export const useProfilePostsQuery = (limit = 5) =>
 		},
 		select: (data) => data.pages.flat()
 	})
+}
 
-export const useNotMyProfilePostsQuery = (userId: string, limit = 5) =>
-	useInfiniteQuery<IPost[], Error, IPost[], [...typeof QUERY_KEYS.POSTS_NOT_MY_PROFILE, string], number>({
+export const useNotMyProfilePostsQuery = (userId: string, limit = 5) => {
+	const { t } = useTranslation()
+
+	return useInfiniteQuery<IPost[], Error, IPost[], [...typeof QUERY_KEYS.POSTS_NOT_MY_PROFILE, string], number>({
 		queryKey: [...QUERY_KEYS.POSTS_NOT_MY_PROFILE, userId],
 		queryFn: async ({ pageParam }) => {
 			try {
@@ -70,7 +79,7 @@ export const useNotMyProfilePostsQuery = (userId: string, limit = 5) =>
 					limit
 				})
 			} catch (e) {
-				await getFieldsErrors(e)
+				await getFieldsErrors(e, t)
 				throw e
 			}
 		},
@@ -82,21 +91,25 @@ export const useNotMyProfilePostsQuery = (userId: string, limit = 5) =>
 		select: (data) => data.pages.flat(),
 		enabled: !!userId
 	})
+}
 
-export const usePostQuery = (postId?: string) =>
-	useQuery<IPost>({
+export const usePostQuery = (postId?: string) => {
+	const { t } = useTranslation()
+
+	return useQuery<IPost>({
 		queryKey: [...QUERY_KEYS.POST_DETAILS, postId],
 		queryFn: async () => {
 			try {
 				return await getPostById(postId!)
 			} catch (e) {
-				await getFieldsErrors(e)
+				await getFieldsErrors(e, t)
 				throw e
 			}
 		},
 		enabled: !!postId
 		// retry: 1
 	})
+}
 
 export const usePostByTrainingQuery = (trainingId?: string) =>
 	useQuery({
@@ -114,13 +127,14 @@ export const usePostByTrainingQuery = (trainingId?: string) =>
 	})
 
 export const useCreatePostMutation = () => {
+	const { t } = useTranslation()
 	const queryClient = useQueryClient()
 	const toast = useToast()
 
 	return useMutation({
 		mutationFn: (postData: FormData) => createPost(postData),
 		onSuccess: (newPost) => {
-			toast.success('Пост опубликован')
+			toast.success(t('ToastMessage.success.postPublished'))
 			queryClient.setQueryData<IPost>([...QUERY_KEYS.POST_DETAILS, newPost.id], newPost)
 
 			queryClient.setQueryData<InfiniteData<IPost[]>>(QUERY_KEYS.POSTS_MY_PROFILE, (old) => {
@@ -137,13 +151,14 @@ export const useCreatePostMutation = () => {
 }
 
 export const useUpdatePostMutation = () => {
+	const { t } = useTranslation()
 	const queryClient = useQueryClient()
 	const toast = useToast()
 
 	return useMutation({
 		mutationFn: ({ postId, data }: { postId: string; data: FormData }) => editPostById(postId, data),
 		onSuccess: async (_data, updatedPost) => {
-			toast.success('Пост отредактирован')
+			toast.success(t('ToastMessage.success.postEdited'))
 			await queryClient.invalidateQueries({ queryKey: QUERY_KEYS.POSTS_MY_PROFILE })
 			await queryClient.invalidateQueries({ queryKey: [...QUERY_KEYS.POST_DETAILS, updatedPost.postId] })
 		}
@@ -151,6 +166,7 @@ export const useUpdatePostMutation = () => {
 }
 
 export const useDeletePostMutation = () => {
+	const { t } = useTranslation()
 	const queryClient = useQueryClient()
 	const toast = useToast()
 
@@ -198,10 +214,10 @@ export const useDeletePostMutation = () => {
 			}
 		},
 		onSuccess: () => {
-			toast.success('Пост удалён')
+			toast.success(t('ToastMessage.success.postDeleted'))
 		},
 		onError: async (e, postId, context) => {
-			await getFieldsErrors(e)
+			await getFieldsErrors(e, t)
 			if (!context) return
 
 			if (context.prevPostDetails) {
@@ -220,6 +236,7 @@ export const useDeletePostMutation = () => {
 }
 
 export const useToggleLikePostMutation = () => {
+	const { t } = useTranslation()
 	const queryClient = useQueryClient()
 
 	return useMutation({
@@ -294,7 +311,7 @@ export const useToggleLikePostMutation = () => {
 		// rollback если ошибка
 		onError: async (e, { postId }, context) => {
 			console.log('Ошибка при like/unlike поста', e)
-			await getFieldsErrors(e)
+			await getFieldsErrors(e, t)
 			if (!context) return
 
 			queryClient.setQueryData(QUERY_KEYS.POSTS_FEED, context.previousFeed)

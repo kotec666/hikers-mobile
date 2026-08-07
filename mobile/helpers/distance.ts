@@ -92,16 +92,24 @@ export const calculateDistanceBetweenWorkoutPoints = (
 //     return Math.round(totalDistance)
 // }
 
-export const formatDistance = (meters: number): string => {
+// locale: ru-RU
+export const formatDistance = (
+	meters: number,
+	locale: string,
+	units: {
+		meter: string
+		kilometer: string
+	}
+): string => {
 	if (meters < 1000) {
-		return `${Math.round(meters)}м`
+		return `${Math.round(meters)}${units.meter}`
 	}
 
 	const kilometers = meters / 1000
-	const formatter = new Intl.NumberFormat('ru-RU', {
+	const formatter = new Intl.NumberFormat(locale, {
 		minimumFractionDigits: 0,
 		maximumFractionDigits: 1
 	})
 
-	return `${formatter.format(kilometers)}км`
+	return `${formatter.format(kilometers)}${units.kilometer}`
 }
