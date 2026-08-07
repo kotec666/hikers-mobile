@@ -58,6 +58,7 @@ import { useFullscreenImageViewer } from '@/hooks/useFullscreenImageViewer'
 import { useTranslation } from 'react-i18next'
 import { getSavedLngInStorage, locales } from '@/store/languageStorage'
 import { translateArr } from '@/helpers/arrTranslator'
+import { TFunction } from 'i18next'
 
 type Param = {
 	label: string
@@ -76,6 +77,7 @@ const getWorkoutResultImage = (workoutType?: TrainingType | null) => {
 }
 
 const getWorkoutParams = ({
+	t,
 	mode,
 	results,
 	secondsText,
@@ -87,6 +89,7 @@ const getWorkoutParams = ({
 	creatorMetrics,
 	myMetrics
 }: {
+	t: TFunction<'translation', undefined>
 	mode: VIEW_WORKOUT_MODE
 	results: IWorkoutResultsStore
 	secondsText: string
@@ -133,7 +136,7 @@ const getWorkoutParams = ({
 		[
 			{
 				label: 'measurementUnits.height',
-				value: `${metrics?.altitudeGainM || '-'} м`
+				value: `${metrics?.altitudeGainM || '-'} ${t('measurementUnits.meters.short')}`
 			},
 			{
 				label: 'measurementUnits.avgSpeed',
@@ -141,7 +144,7 @@ const getWorkoutParams = ({
 			},
 			{
 				label: 'measurementUnits.avgPace',
-				value: formatBackendPace(metrics?.avgTempoSecondsPerKm)
+				value: formatBackendPace(t, metrics?.avgTempoSecondsPerKm)
 			}
 		]
 	]
@@ -469,6 +472,7 @@ export default function ViewWorkout() {
 	const currentWorkoutImage = getWorkoutResultImage(currentWorkout?.type)
 
 	const [leftParams, rightParams] = getWorkoutParams({
+		t,
 		mode,
 		results,
 		secondsText: t('measurementUnits.seconds.short'),

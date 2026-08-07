@@ -5,6 +5,7 @@ import { Button } from '@/components/ui/Button'
 import NotificationsPermissionSvg from '@/components/svg/NotificationsPermissionSvg'
 import { useTranslation } from 'react-i18next'
 
+// @TODO перевод, если компонент потребуется
 const AllowDeniedNotifications = (props: { allow: () => void; close: () => void }) => {
 	const { t } = useTranslation()
 	return (

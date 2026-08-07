@@ -13,11 +13,13 @@ const ru = {
 			yes: 'Да',
 			no: 'Нет',
 			back: 'Назад',
+			you: 'Вы',
 			next: 'Далее',
 			settings: 'Настройки',
 			search: 'Поиск',
 			ready: 'Готово',
 			edit: 'Редактирование',
+			workout: 'Тренировка',
 			savedSuccess: 'Данные успешно сохранены',
 			quitWithoutSave: 'Выйти без сохранения данных?'
 		},
@@ -26,11 +28,18 @@ const ru = {
 			workoutPage: 'Тренировка',
 			profilePage: 'Профиль'
 		},
+		QuickActions: {
+			newTraining: 'Новая тренировка',
+			search: 'Поиск',
+			reportProblem: 'Сообщить о проблеме'
+		},
 		AllGeolocationPermissions: {
 			failedToOpenSettings: 'Не удалось открыть настройки',
 			locationServicesAreTurnedOff: 'Службы геолокации выключены',
 			locationInstructions:
-				'Откройте Настройки > Конфиденциальность и безопасность > Службы геолокации и включите переключатель.'
+				'Откройте Настройки > Конфиденциальность и безопасность > Службы геолокации и включите переключатель.',
+			trackingNotificationTitle: 'Отслеживание местоположения',
+			trackingNotificationBody: 'Приложение собирает данные о вашем местоположении'
 		},
 		FormErrors: {
 			one: 'символ',
@@ -520,6 +529,49 @@ const ru = {
 				steps: 'Шаги'
 			}
 		},
+		DailyActivity: {
+			mobility: 'Подвижность',
+			kcalShort: 'ККАЛ',
+			kcalPerDay: 'ККАЛ/ДЕНЬ',
+			changeGoalToday: 'Изменить цель на сегодня',
+			changeSchedule: 'Изменить расписание',
+			changeGoal: 'Изменить цель',
+			chartPlaceholder: 'Здесь мог бы быть график траты ккал относительно времени дня',
+			steps: 'Шаги',
+			distance: 'Дистанция',
+			goalToday: {
+				title: 'Цель подвижности на сегодня',
+				description:
+					'Задайте временную цель подвижности на сегодня в соответствии с желаемым уровнем активности. Это не повлияет на Ваше текущее расписание целей.'
+			},
+			goalEveryDay: {
+				title: 'Дневная цель подвижности',
+				description:
+					'Задайте ежедневную цель в зависимости от Вашего реального или желаемого уровня физической активности.'
+			},
+			goalSchedule: {
+				title: 'Расписание целей подвижности'
+			},
+			weekdaysShort: {
+				monday: 'Пн',
+				tuesday: 'Вт',
+				wednesday: 'Ср',
+				thursday: 'Чт',
+				friday: 'Пт',
+				saturday: 'Сб',
+				sunday: 'Вс'
+			},
+			weekdaysLong: {
+				monday: 'Понедельник',
+				tuesday: 'Вторник',
+				wednesday: 'Среда',
+				thursday: 'Четверг',
+				friday: 'Пятница',
+				saturday: 'Суббота',
+				sunday: 'Воскресенье'
+			},
+			yearShortSuffix: ' г.'
+		},
 		ReportAProblemPage: {
 			header: 'Сообщить о проблеме',
 			inputPlaceholder: 'Подробно опишите проблему, которую вы обнаружили',
@@ -600,7 +652,12 @@ const ru = {
 			header: 'Просмотр документа'
 		},
 		PostDetailsPage: {
-			header: 'Просмотр поста'
+			header: 'Просмотр поста',
+			authorRoute: 'Маршрут автора',
+			allRoutes: 'Все маршруты',
+			deletePostModal: {
+				label: 'Вы действительно хотите удалить пост?'
+			}
 		},
 		WorkoutHistoryPage: {
 			header: 'История тренировок',

@@ -5,6 +5,7 @@ import { fontFamily } from '@/constants/Fonts'
 import MinusSvg from '@/components/svg/MinusSvg'
 import PlusSvg from '@/components/svg/PlusSvg'
 import StepperButton from '@/components/activity-rings/StepperButton'
+import { useTranslation } from 'react-i18next'
 
 interface IWeekDaySettingButtonProps {
 	label: string
@@ -21,6 +22,8 @@ const WeekDaySettingButton = ({
 	onLongPressStart,
 	onLongPressStop
 }: IWeekDaySettingButtonProps) => {
+	const { t } = useTranslation()
+
 	return (
 		<View
 			className="flex-row justify-between items-center"
@@ -52,7 +55,7 @@ const WeekDaySettingButton = ({
 						className="text-gray-ab opacity-50 text-center"
 						style={{ fontSize: 12, fontFamily: fontFamily.bold }}
 					>
-						ККАЛ
+						{t('DailyActivity.kcalShort')}
 					</Text>
 				</View>
 				<StepperButton

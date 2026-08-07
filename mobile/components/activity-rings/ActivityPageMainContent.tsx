@@ -12,6 +12,7 @@ import { MetricContainer } from '@/components/activity-rings/MetricContainer'
 import FootprintsSvg from '@/components/svg/FootprintsSvg'
 import DistanceSvg from '@/components/svg/DistanceSvg'
 import { Button } from '@/components/ui/Button'
+import { useTranslation } from 'react-i18next'
 
 interface IProps {
 	handlePressChangeGoalToday: () => Promise<void>
@@ -26,6 +27,8 @@ const ActivityPageMainContent = ({
 	handlePressChangeGoal,
 	isToday = false
 }: IProps) => {
+	const { t } = useTranslation()
+
 	return (
 		<ScrollView>
 			<View className="flex-1 gap-4">
@@ -35,10 +38,10 @@ const ActivityPageMainContent = ({
 				<View className="flex-row items-end justify-between ">
 					<View>
 						<Text className="text-gray-ab text-base" style={{ fontFamily: fontFamily.medium }}>
-							Подвижность
+							{t('DailyActivity.mobility')}
 						</Text>
 						<Text className="text-green-main" style={{ fontSize: 36, fontFamily: fontFamily.bold }}>
-							45/200 ККАЛ
+							45/200 {t('DailyActivity.kcalShort')}
 						</Text>
 					</View>
 					<View style={{ paddingBottom: 5 }}>
@@ -67,13 +70,17 @@ const ActivityPageMainContent = ({
 								<PopupMenuItem onPress={handlePressChangeGoalToday}>
 									<View className="flex-row items-center gap-3">
 										<CircleSvg />
-										<Text className="text-white text-base">Изменить цель на сегодня</Text>
+										<Text className="text-white text-base">
+											{t('DailyActivity.changeGoalToday')}
+										</Text>
 									</View>
 								</PopupMenuItem>
 								<PopupMenuItem onPress={handlePressChangeGoalSchedule}>
 									<View className="flex-row items-center gap-3">
 										<CalendarSvg />
-										<Text className="text-white text-base">Изменить расписание</Text>
+										<Text className="text-white text-base">
+											{t('DailyActivity.changeSchedule')}
+										</Text>
 									</View>
 								</PopupMenuItem>
 							</PopupMenu>
@@ -83,16 +90,20 @@ const ActivityPageMainContent = ({
 				<View>
 					<Text className="text-red-500">
 						{/* @TODO График */}
-						Здесь мог бы быть график траты ккал относительно времени дня
+						{t('DailyActivity.chartPlaceholder')}
 					</Text>
 				</View>
 				<View className="flex-row gap-4">
-					<MetricContainer value="1 226" title="Шаги" icon={<FootprintsSvg />} />
-					<MetricContainer value="0.87 км" title="Дистанция" icon={<DistanceSvg />} />
+					<MetricContainer value="1 226" title={t('DailyActivity.steps')} icon={<FootprintsSvg />} />
+					<MetricContainer
+						value={`0.87 ${t('measurementUnits.km.short')}`}
+						title={t('DailyActivity.distance')}
+						icon={<DistanceSvg />}
+					/>
 				</View>
 				{isToday && (
 					<Button variant="white" onPress={handlePressChangeGoal}>
-						Изменить цель
+						{t('DailyActivity.changeGoal')}
 					</Button>
 				)}
 			</View>

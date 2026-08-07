@@ -3,6 +3,7 @@ import { TrainingType } from '@shared/enums'
 import { WorkoutTypesMap } from '@/constants/WorkoutTypes'
 import * as liveActivities from '@/modules/expo-live-activity'
 import type { LiveActivityMetrics, PendingWidgetAction } from '@/modules/expo-live-activity'
+import i18n from '@/i18next/i18next'
 
 type WorkoutLiveActivityIcon = 'RUNNING' | 'WALKING' | 'BIKING' | 'WORKOUT'
 
@@ -40,7 +41,7 @@ export const startWorkoutLiveActivity = async (
 	}
 
 	const activityId = await liveActivities.startLiveActivity(
-		WorkoutTypesMap?.[workoutType]?.name ?? 'Тренировка',
+		WorkoutTypesMap?.[workoutType]?.name ?? i18n.t('common.workout'),
 		getWorkoutLiveActivityIcon(workoutType),
 		startedAt,
 		pausedAt

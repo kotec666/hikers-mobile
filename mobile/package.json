@@ -16,6 +16,7 @@
 		"ios": "expo run:ios",
 		"web": "expo start --web",
 		"lint": "eslint .",
+		"set-emulator-proxy": "node scripts/set-emulator-proxy.js",
 		"typecheck": "tsc --noEmit",
 		"check": "yarn lint && yarn typecheck",
 		"format": "prettier --write \"{app,components,constants,helpers,hooks,scripts}/**/*.{js,jsx,ts,tsx}\""
@@ -65,7 +66,6 @@
 		"ky": "^1.11.0",
 		"nativewind": "^4.2.6",
 		"react": "19.2.3",
-		"react-dom": "19.2.3",
 		"react-hook-form": "^7.64.0",
 		"react-i18next": "^17.0.11",
 		"react-native": "0.86.0",
@@ -79,7 +79,6 @@
 		"react-native-safe-area-context": "~5.7.0",
 		"react-native-screens": "4.25.2",
 		"react-native-svg": "15.15.4",
-		"react-native-web": "^0.21.2",
 		"react-native-worklets": "0.10.0",
 		"react-native-yamap-plus": "^6.9.1",
 		"reanimated-color-picker": "^4.2.0",

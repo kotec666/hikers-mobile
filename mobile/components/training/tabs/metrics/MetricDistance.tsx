@@ -13,13 +13,14 @@ export interface MetricDistanceHandle {
 
 const MetricDistance = forwardRef<MetricDistanceHandle, IProps>((props, ref) => {
 	const { t, i18n } = useTranslation()
-	const [distanceStr, setDistanceStr] = useState('0м')
+	const metersShort = t('measurementUnits.meters.short')
+	const [distanceStr, setDistanceStr] = useState(`0${metersShort}`)
 
 	useImperativeHandle(ref, () => ({
 		setDistance: (meters: number) => {
 			setDistanceStr(
 				formatDistance(meters, i18n.language, {
-					meter: t('measurementUnits.meters.short'),
+					meter: metersShort,
 					kilometer: t('measurementUnits.km.short')
 				})
 			)

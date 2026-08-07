@@ -638,7 +638,7 @@ export default function NewTraining() {
 			// Ср. скорость
 			const avgKmh = calculateAverageSpeedKmh(distanceMeters, timeElapsed)
 
-			const totalAvgSpeed = Math.round(avgKmh) + 'км/ч'
+			const totalAvgSpeed = Math.round(avgKmh) + t('measurementUnits.kmh')
 			const totalTimeFormatted = formatTime(timeElapsed)
 			const totalCalories = calculateCalories(timeElapsed, distanceMeters, chosenWorkout.type, 70) // @TODO вес пользователя
 			const totalDistanceFormatted = formatDistance(distanceMeters, i18n.language, {

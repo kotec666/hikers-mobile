@@ -314,7 +314,7 @@ const ProfileEdit = () => {
 												value={value}
 												onBlur={onBlur}
 												returnKeyType="next"
-												returnKeyLabel="Далее"
+												returnKeyLabel={t('common.next')}
 												submitBehavior="submit"
 												onSubmitEditing={() => usernameRef.current?.focus()}
 											/>

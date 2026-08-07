@@ -19,6 +19,7 @@ export enum FRIEND_STATUS {
 // import PeopleAddSvg from '@/components/svg/PeopleAddSvg'
 // import RoundedCheckMark from '@/components/svg/RoundedCheckMark'
 
+// @TODO перевод позже
 const FindPeople = () => {
 	const { push } = useSafeNavigation()
 

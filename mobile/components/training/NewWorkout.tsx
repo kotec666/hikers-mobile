@@ -207,7 +207,7 @@ const NewWorkout = memo(
 		)
 
 		const handleRestoreAndContinueNotFinishedWorkout = useCallback(async () => {
-			toast.error('восстановление еще не реализовано')
+			toast.error('восстановление еще не реализовано') // @TODO убрать
 			await closeBottomSheet()
 		}, [closeBottomSheet, toast])
 

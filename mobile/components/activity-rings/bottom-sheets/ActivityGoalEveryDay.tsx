@@ -5,6 +5,7 @@ import StepperButton from '@/components/activity-rings/StepperButton'
 import { Container } from '@/components/ui/Container'
 import { View, Text } from 'react-native'
 import { fontFamily } from '@/constants/Fonts'
+import { useTranslation } from 'react-i18next'
 
 interface IProps {
 	currentGoal: number
@@ -14,15 +15,16 @@ interface IProps {
 }
 
 const ActivityGoalEveryDay = ({ currentGoal, updateGoal, onLongPressStart, onLongPressStop }: IProps) => {
+	const { t } = useTranslation()
+
 	return (
 		<Container className="gap-6">
 			<View className="gap-2">
 				<Text className="text-white" style={{ fontSize: 16, fontFamily: fontFamily.bold }}>
-					Дневная цель подвижности
+					{t('DailyActivity.goalEveryDay.title')}
 				</Text>
 				<Text className="text-gray-a1" style={{ fontSize: 14, fontFamily: fontFamily.regular }}>
-					Задайте ежедневную цель в зависимости от Вашего реального или желаемого уровня физической
-					активности.
+					{t('DailyActivity.goalEveryDay.description')}
 				</Text>
 			</View>
 			<View className="flex-row items-center justify-between">
@@ -39,7 +41,7 @@ const ActivityGoalEveryDay = ({ currentGoal, updateGoal, onLongPressStart, onLon
 						{currentGoal}
 					</Text>
 					<Text className="text-white" style={{ fontSize: 16, fontFamily: fontFamily.bold }}>
-						ККАЛ/ДЕНЬ
+						{t('DailyActivity.kcalPerDay')}
 					</Text>
 				</View>
 				<StepperButton

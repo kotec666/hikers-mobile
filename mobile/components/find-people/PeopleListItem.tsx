@@ -4,6 +4,7 @@ import { fontFamily } from '@/constants/Fonts'
 import { UserAvatar } from '@/components/ui/UserAvatar'
 import { Link } from 'expo-router'
 import { useAuthStore } from '@/store/authStore'
+import { useTranslation } from 'react-i18next'
 
 interface IIcon {
 	iconSvg: React.JSX.Element | null
@@ -20,6 +21,7 @@ interface IProps {
 }
 
 const PeopleListItem = (props: IProps) => {
+	const { t } = useTranslation()
 	const { user } = useAuthStore()
 	return (
 		<View className="flex-row justify-between items-center w-full">
@@ -33,7 +35,7 @@ const PeopleListItem = (props: IProps) => {
 				<View className="flex-row gap-[15px] items-center pt-1">
 					<UserAvatar avatar={props.avatar} />
 					<Text style={{ fontFamily: fontFamily.medium }} className="text-gray-ab text-base">
-						{props.id === user?.id ? 'Вы' : `${props.name || props.username || '-'}`}
+						{props.id === user?.id ? t('common.you') : `${props.name || props.username || '-'}`}
 					</Text>
 				</View>
 			</Link>

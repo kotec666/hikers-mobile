@@ -7,11 +7,12 @@ import { formatHeaderDate, getWeek, TODAY } from '@/helpers/date'
 import CalendarSvg from '@/components/svg/CalendarSvg'
 import PagerView from 'react-native-pager-view'
 import { addWeeks, format, isAfter, isSameDay } from 'date-fns'
-import { ru } from 'date-fns/locale'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
 import { useRouter } from 'expo-router'
 import { capitalizeFirstLetter } from '@/helpers/capitalizeFirstLetter'
 import { MiniRing } from '@/components/activity-rings/MiniRing'
+import { useTranslation } from 'react-i18next'
+import { LngShort, locales } from '@/store/languageStorage'
 
 interface IProps {
 	selectedDate: Date
@@ -32,6 +33,9 @@ const ActivityRingsHeader = ({
 }: IProps) => {
 	const router = useRouter()
 	const insets = useSafeAreaInsets()
+	const { i18n } = useTranslation()
+
+	const dateLocale = locales[i18n.language as LngShort] ?? locales[LngShort.en]
 
 	// первый кадр рисуем только активную страницу, соседей — сразу после маунта
 	const [neighborsReady, setNeighborsReady] = useState(false)
@@ -97,7 +101,7 @@ const ActivityRingsHeader = ({
 								>
 									{capitalizeFirstLetter(
 										format(date, 'EEEEEE', {
-											locale: ru
+											locale: dateLocale
 										})
 									)}
 								</Text>
@@ -124,7 +128,7 @@ const ActivityRingsHeader = ({
 			<View className="flex-row items-center justify-between">
 				<RoundedButton onPress={handlePressGoBack} />
 				<Text className="text-white text-base" style={{ fontFamily: fontFamily.medium }}>
-					{formatHeaderDate(selectedDate)}
+					{formatHeaderDate(selectedDate, i18n.language as LngShort)}
 				</Text>
 				<RoundedButton onPress={handlePressHeaderCalendar} icon={<CalendarSvg />} />
 			</View>

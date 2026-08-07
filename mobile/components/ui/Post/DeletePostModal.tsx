@@ -3,6 +3,7 @@ import { Text, View } from 'react-native'
 import { fontFamily } from '@/constants/Fonts'
 import { Button } from '@/components/ui/Button'
 import Modal from '@/components/ui/Modal/Modal'
+import { useTranslation } from 'react-i18next'
 
 interface IProps {
 	open: boolean
@@ -11,23 +12,25 @@ interface IProps {
 }
 
 const DeletePostModal = (props: IProps) => {
+	const { t } = useTranslation()
+
 	return (
 		<Modal
 			blurDisabled
 			isOpen={props.open}
 			handleClose={props.handleClose}
-			label="Вы действительно хотите удалить пост?"
+			label={t('PostDetailsPage.deletePostModal.label')}
 		>
 			<View className="gap-[20px]">
 				<Text className="text-white text-sm" style={{ fontFamily: fontFamily.bold }}>
-					Это действие нельзя отменить
+					{t('common.actionCannotBeUndone')}
 				</Text>
 				<View className="flex-row gap-[10px]">
 					<Button onPress={props.handleClickDeletePost} variant="white" buttonContainerClassName="flex-1">
-						Да
+						{t('common.yes')}
 					</Button>
 					<Button onPress={props.handleClose} variant="white" buttonContainerClassName="flex-1">
-						Нет
+						{t('common.no')}
 					</Button>
 				</View>
 			</View>
