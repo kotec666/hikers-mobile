@@ -24,7 +24,7 @@ const AppNavigator = (props: { isAuthenticated: boolean }) => {
 					backgroundColor: Colors['black-0d']
 				}
 			}}
-			tabBar={() => <NavBar />}
+			tabBar={(props) => <NavBar state={props.state} />}
 		>
 			<Stack.Protected guard={props.isAuthenticated}>
 				<Tabs.Screen name="profile" />

@@ -5,10 +5,14 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context'
 import { Colors } from '@/constants/Colors'
 import { RelativePathString, usePathname } from 'expo-router'
 import { BlurView } from 'expo-blur'
-import { useNavBarVisibility } from '@/hooks/useNavBarVisibility'
 import { tabsConfig } from '@/components/ui/Navbar/tabs.config'
 import { useSafeNavigation } from '@/hooks/useSafeNavigation'
 import { isLiquidGlassAvailable } from 'expo-glass-effect'
+
+type TabBarState = {
+	index: number
+	routes: { name: string }[]
+}
 
 type AnimatedButtonProps = {
 	isActive: boolean
@@ -44,12 +48,20 @@ const AnimatedButton: React.FC<AnimatedButtonProps> = ({ isActive, onPress, Icon
 	)
 }
 
-const NavBar = () => {
+const NavBar = ({ state }: { state?: TabBarState }) => {
 	const insets = useSafeAreaInsets()
 	const { push } = useSafeNavigation()
 	const pathname = usePathname()
 
-	const hidden = useNavBarVisibility(['/newTraining'])
+	const activeRouteName =
+		state?.routes[state.index]?.name ?? tabsConfig.find((tab) => pathname.startsWith(tab.href))?.id
+	const shouldHide = activeRouteName === 'newTraining'
+
+	const hidden = useSharedValue(shouldHide ? 1 : 0)
+
+	useEffect(() => {
+		hidden.value = withTiming(shouldHide ? 1 : 0, { duration: 250 })
+	}, [shouldHide, hidden])
 
 	const animatedContainer = useAnimatedStyle(() => ({
 		opacity: 1 - hidden.value,
@@ -57,7 +69,7 @@ const NavBar = () => {
 	}))
 
 	const getActiveId = () => {
-		const found = tabsConfig.find((t) => pathname.startsWith(t.href))
+		const found = tabsConfig.find((tab) => tab.id === activeRouteName)
 		return found?.id
 	}
 
