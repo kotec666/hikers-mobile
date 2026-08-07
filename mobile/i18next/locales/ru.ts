@@ -125,7 +125,7 @@ const ru = {
 		},
 		LoadQueryErrorRetry: {
 			label: {
-				failedToLoadPublications: 'Не удалось загрузить публикации', // дефолт
+				failedToLoadPublications: 'Не удалось загрузить публикации',
 				failedToLoadPost: 'Не удалось загрузить пост',
 				failedToLoadProfile: 'Не удалось загрузить профиль',
 				failedToLoadFriendRequests: 'Не удалось загрузить заявки в друзья',
@@ -142,7 +142,7 @@ const ru = {
 				cantLoadMore: 'Не удалось загрузить ещё'
 			},
 			action: {
-				tryAgain: 'Попробовать снова', // дефолт
+				tryAgain: 'Попробовать снова',
 				retry: 'Повторить'
 			}
 		},
@@ -284,13 +284,11 @@ const ru = {
 			climb: 'Набор высоты',
 			height: 'Высота',
 			count: {
-				// plural
 				one: 'раз',
 				two: 'раза',
 				five: 'раз'
 			},
 			reps: {
-				// plural
 				one: 'повторение',
 				two: 'повторения',
 				five: 'повторений'
@@ -610,7 +608,7 @@ const ru = {
 							'Получать уведомление, когда хост тренировки выкладывает публикацию о прошедшей тренировке'
 					}
 				}
-			}, // SettingsPage.pickAColor.quitWithoutSave
+			},
 			pickAColor: {
 				header: {
 					choose: 'Выбор',
