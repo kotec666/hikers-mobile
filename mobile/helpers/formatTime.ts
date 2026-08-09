@@ -1,3 +1,5 @@
+import i18n from '@/i18next/i18next'
+
 export const formatTime = (ms: number) => {
 	const totalSec = Math.floor(ms / 1000)
 	const h = String(Math.floor(totalSec / 3600)).padStart(2, '0')
@@ -9,13 +11,12 @@ export const formatTime = (ms: number) => {
 /**
  * Компактный формат: "2 ч 15 мин" или "45 сек"
  */
-export const formatTimeFromSecondsCompact = (
-	seconds: number | undefined,
-	secondsText: string,
-	minutesText: string,
-	hoursText: string
-): string => {
+export const formatTimeFromSecondsCompact = (seconds: number | undefined): string => {
 	if (seconds === undefined || seconds === null) return '-'
+
+	const secondsText = i18n.t('measurementUnits.seconds.short')
+	const minutesText = i18n.t('measurementUnits.minutes.short')
+	const hoursText = i18n.t('measurementUnits.hours.short')
 
 	if (seconds < 60) {
 		return `${seconds} ${secondsText}`

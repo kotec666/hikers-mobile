@@ -56,7 +56,7 @@ const EditAvatarModalContent = (props: IProps) => {
 				}
 
 				// Валидация файла
-				const { isValid, errorMessage } = validateFile(pickedUri, t)
+				const { isValid, errorMessage } = validateFile(pickedUri)
 
 				if (!isValid) {
 					toast.error(errorMessage || t('ToastMessage.error.fileDidNotPassVerification'))

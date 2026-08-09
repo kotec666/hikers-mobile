@@ -112,7 +112,7 @@ const PostListItemHeader = ({
 							</View>
 							<View>
 								<Text className="text-[13px] text-gray-ab" style={{ fontFamily: fontFamily.regular }}>
-									{formatRelativeDate(t('common.justNowText'), createdAt, currentLocale)}
+									{formatRelativeDate(createdAt, currentLocale)}
 								</Text>
 							</View>
 						</View>

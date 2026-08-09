@@ -45,10 +45,7 @@ const UnsavedTrainingsDetails = ({
 			const titleDate = format(date, 'd MMMM, HH:mm', { locale: currentLocale })
 			const title = `${titleDate}${
 				Number.isFinite(item.distanceMeters) && item.distanceMeters >= 0
-					? `, ${formatDistance(item.distanceMeters, i18n.language, {
-							meter: t('measurementUnits.meters.short'),
-							kilometer: t('measurementUnits.km.short')
-						})}`
+					? `, ${formatDistance(item.distanceMeters, i18n.language)}`
 					: ''
 			}`
 			const typeData = workoutTypeMap[item.type]
@@ -76,7 +73,7 @@ const UnsavedTrainingsDetails = ({
 				/>
 			)
 		},
-		[currentLocale, handleClickDelete, handleClickSaveOneWorkout, i18n.language, syncingIds, t, workoutTypeMap]
+		[currentLocale, handleClickDelete, handleClickSaveOneWorkout, i18n.language, syncingIds, workoutTypeMap]
 	)
 
 	const isDeletingDisabled = !notSavedWorkouts.length || syncingIds.length > 0

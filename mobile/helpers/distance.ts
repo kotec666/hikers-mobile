@@ -1,4 +1,5 @@
 import type { IWorkoutLocationStorageItem } from '@/store/workoutStorage'
+import i18n from '@/i18next/i18next'
 
 /**
  * Вычисляет расстояние между двумя точками по координатам (в метрах)
@@ -93,16 +94,17 @@ export const calculateDistanceBetweenWorkoutPoints = (
 // }
 
 // locale: ru-RU
-export const formatDistance = (
-	meters: number,
-	locale: string,
-	units: {
-		meter: string
-		kilometer: string
+export const formatDistance = (meters: number, locale: string): string => {
+	const meterText = i18n.t('measurementUnits.meters.short')
+	const kilometerText = i18n.t('measurementUnits.km.short')
+
+	const units = {
+		meters: meterText,
+		kilometer: kilometerText
 	}
-): string => {
+
 	if (meters < 1000) {
-		return `${Math.round(meters)}${units.meter}`
+		return `${Math.round(meters)}${units.meters}`
 	}
 
 	const kilometers = meters / 1000

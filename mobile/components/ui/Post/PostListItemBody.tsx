@@ -36,19 +36,11 @@ const PostListItemBody = (props: IProps) => {
 				<View className="flex-row justify-between w-full">
 					<PostMetrics
 						label={t('measurementUnits.distance')}
-						text={formatDistance(props.metrics?.distanceM || 0, i18n.language, {
-							meter: t('measurementUnits.meters.short'),
-							kilometer: t('measurementUnits.km.short')
-						})}
+						text={formatDistance(props.metrics?.distanceM || 0, i18n.language)}
 					/>
 					<PostMetrics
 						label={t('measurementUnits.time')}
-						text={formatTimeFromSecondsCompact(
-							props.metrics?.timeSec,
-							t('measurementUnits.seconds.short'),
-							t('measurementUnits.minutes.short'),
-							t('measurementUnits.hours.short')
-						)}
+						text={formatTimeFromSecondsCompact(props.metrics?.timeSec)}
 					/>
 					<PostMetrics
 						label={t('measurementUnits.climb')}

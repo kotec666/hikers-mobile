@@ -1,5 +1,5 @@
 import { VALID_IMAGE_MIME_TYPES, VALID_VIDEO_MIME_TYPES } from '@shared/constants'
-import { TFunction } from 'i18next'
+import i18n from '@/i18next/i18next'
 
 export interface IFileValidationResult {
 	isValid: boolean
@@ -13,18 +13,18 @@ const getMimeTypeByUri = (uri: string): string => {
 	return `image/${extension}`
 }
 
-export const validateFile = (uri: string | string[], t: TFunction<'translation', undefined>): IFileValidationResult => {
+export const validateFile = (uri: string | string[]): IFileValidationResult => {
 	const uris = Array.isArray(uri) ? uri : [uri]
 
 	if (uris.length === 0) {
-		return { isValid: false, errorMessage: t('ToastMessage.error.noFilesSelected') }
+		return { isValid: false, errorMessage: i18n.t('ToastMessage.error.noFilesSelected') }
 	}
 
 	for (const singleUri of uris) {
 		const mimeType = getMimeTypeByUri(singleUri)
 
 		if (!VALID_IMAGE_MIME_TYPES.includes(mimeType) && !VALID_VIDEO_MIME_TYPES.includes(mimeType)) {
-			return { isValid: false, errorMessage: t('ToastMessage.error.unsupportedFileFormat') }
+			return { isValid: false, errorMessage: i18n.t('ToastMessage.error.unsupportedFileFormat') }
 		}
 	}
 

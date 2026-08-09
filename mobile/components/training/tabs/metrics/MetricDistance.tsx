@@ -18,12 +18,7 @@ const MetricDistance = forwardRef<MetricDistanceHandle, IProps>((props, ref) => 
 
 	useImperativeHandle(ref, () => ({
 		setDistance: (meters: number) => {
-			setDistanceStr(
-				formatDistance(meters, i18n.language, {
-					meter: metersShort,
-					kilometer: t('measurementUnits.km.short')
-				})
-			)
+			setDistanceStr(formatDistance(meters, i18n.language))
 		}
 	}))
 

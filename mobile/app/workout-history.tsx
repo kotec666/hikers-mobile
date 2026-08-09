@@ -96,12 +96,7 @@ const WorkoutHistory = () => {
 			return {
 				id: item.id,
 				title: `${title}${
-					Number.isFinite(distance) && distance >= 0
-						? `, ${formatDistance(distance, i18n.language, {
-								meter: t('measurementUnits.meters.short'),
-								kilometer: t('measurementUnits.km.short')
-							})}`
-						: ''
+					Number.isFinite(distance) && distance >= 0 ? `, ${formatDistance(distance, i18n.language)}` : ''
 				}`,
 				month,
 				monthKey,
@@ -312,10 +307,7 @@ const WorkoutHistory = () => {
 										const title = `${titleDate}${
 											Number.isFinite(notSavedWorkout.distanceMeters) &&
 											notSavedWorkout.distanceMeters >= 0
-												? `, ${formatDistance(notSavedWorkout.distanceMeters, i18n.language, {
-														meter: t('measurementUnits.meters.short'),
-														kilometer: t('measurementUnits.km.short')
-													})}`
+												? `, ${formatDistance(notSavedWorkout.distanceMeters, i18n.language)}`
 												: ''
 										}`
 										const typeData = workoutTypeMap[notSavedWorkout.type]

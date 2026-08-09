@@ -6,11 +6,9 @@ import { IFoundPost } from '@/api/search'
 import { TrainingType } from '@/shared/enums'
 import { WorkoutTypesData } from '@/constants/WorkoutTypes'
 import { formatRelativeDate } from '@/helpers/formatRelativeDate'
-import { useTranslation } from 'react-i18next'
 import { getSavedLngInStorage, locales } from '@/store/languageStorage'
 
 const PostSearchResult = (props: IFoundPost) => {
-	const { t } = useTranslation()
 	const currentLanguage = getSavedLngInStorage()
 	const currentLocale = locales[currentLanguage.lngShort]
 
@@ -46,7 +44,7 @@ const PostSearchResult = (props: IFoundPost) => {
 				</View>
 
 				<Text className="text-xs text-gray-ab ml-8 shrink-0" style={{ fontFamily: fontFamily.regular }}>
-					{formatRelativeDate(t('common.justNowText'), props.createdAt, currentLocale)}
+					{formatRelativeDate(props.createdAt, currentLocale)}
 				</Text>
 			</View>
 		</Link>

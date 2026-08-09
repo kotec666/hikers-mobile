@@ -80,11 +80,6 @@ const getWorkoutParams = ({
 	t,
 	mode,
 	results,
-	secondsText,
-	minutesText,
-	hoursText,
-	meterText,
-	kilometerText,
 	locale,
 	creatorMetrics,
 	myMetrics
@@ -92,11 +87,6 @@ const getWorkoutParams = ({
 	t: TFunction<'translation', undefined>
 	mode: VIEW_WORKOUT_MODE
 	results: IWorkoutResultsStore
-	secondsText: string
-	minutesText: string
-	hoursText: string
-	meterText: string
-	kilometerText: string
 	locale: string
 	creatorMetrics?: ITrainingMetrics
 	myMetrics?: ITrainingMetrics
@@ -122,14 +112,11 @@ const getWorkoutParams = ({
 		[
 			{
 				label: 'measurementUnits.time',
-				value: formatTimeFromSecondsCompact(metrics?.timeSec, secondsText, minutesText, hoursText)
+				value: formatTimeFromSecondsCompact(metrics?.timeSec)
 			},
 			{
 				label: 'measurementUnits.range',
-				value: formatDistance(metrics?.distanceM || 0, locale, {
-					meter: meterText,
-					kilometer: kilometerText
-				})
+				value: formatDistance(metrics?.distanceM || 0, locale)
 			},
 			{ label: 'measurementUnits.kcal', value: metrics?.kkcal }
 		],
@@ -144,7 +131,7 @@ const getWorkoutParams = ({
 			},
 			{
 				label: 'measurementUnits.avgPace',
-				value: formatBackendPace(t, metrics?.avgTempoSecondsPerKm)
+				value: formatBackendPace(metrics?.avgTempoSecondsPerKm)
 			}
 		]
 	]
@@ -382,7 +369,7 @@ export default function ViewWorkout() {
 			const imagesToAdd = images.slice(0, availableSlots)
 			const skippedCount = images.length - imagesToAdd.length
 
-			const { isValid, errorMessage } = validateFile(imagesToAdd, t)
+			const { isValid, errorMessage } = validateFile(imagesToAdd)
 
 			if (!isValid) {
 				toast.error(errorMessage || t('ToastMessage.error.fileDidNotPassVerification'))
@@ -437,18 +424,11 @@ export default function ViewWorkout() {
 
 	const distanceText = isView
 		? results.metrics?.totalDistanceFormatted
-		: formatDistance((isEdit ? creatorMetrics : myMetrics)?.distanceM || 0, i18n.language, {
-				meter: t('measurementUnits.meters.short'),
-				kilometer: t('measurementUnits.km.short')
-			})
+		: formatDistance((isEdit ? creatorMetrics : myMetrics)?.distanceM || 0, i18n.language)
 
 	const dateText = isView
 		? `${t('common.today')}, ${results.startedAt ? format(results.startedAt, 'HH:mm') : ''} - ${format(viewedAt, 'HH:mm')}`
-		: formatRelativeDate(
-				t('common.justNowText'),
-				isEdit ? existPost?.createdAt : extendedTrainingDetails?.createdAt,
-				currentLocale
-			)
+		: formatRelativeDate(isEdit ? existPost?.createdAt : extendedTrainingDetails?.createdAt, currentLocale)
 
 	const mapLocations = isView ? frozenPoints : isEdit ? adaptedLocations : adaptedLocationsFromHistory
 	const chartPoints = isView ? results.points : isEdit ? adaptedLocations : adaptedLocationsFromHistory
@@ -475,11 +455,6 @@ export default function ViewWorkout() {
 		t,
 		mode,
 		results,
-		secondsText: t('measurementUnits.seconds.short'),
-		minutesText: t('measurementUnits.minutes.short'),
-		hoursText: t('measurementUnits.hours.short'),
-		meterText: t('measurementUnits.meters.short'),
-		kilometerText: t('measurementUnits.km.short'),
 		locale: i18n.language,
 		creatorMetrics,
 		myMetrics
