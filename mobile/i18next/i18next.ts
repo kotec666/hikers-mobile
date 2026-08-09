@@ -6,6 +6,7 @@ import ru from '@/i18next/locales/ru'
 import {
 	Directions,
 	getSavedLngInStorage,
+	hasSavedLng,
 	LngShort,
 	setLngToStorage,
 	supportedLanguages
@@ -26,9 +27,8 @@ const setRTL = (isRTL: boolean) => {
 
 function resolveLanguage(): string {
 	// 1. Check for a stored user preference
-	const savedLngInStorage = getSavedLngInStorage()
-
-	if (savedLngInStorage) {
+	if (hasSavedLng()) {
+		const savedLngInStorage = getSavedLngInStorage()
 		const isRTL = savedLngInStorage.dir === Directions.rtl
 		setRTL(isRTL)
 		return savedLngInStorage.lngShort

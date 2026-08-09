@@ -1,4 +1,4 @@
-import '@/i18next/i18next'
+import i18n from '@/i18next/i18next'
 import { useFonts } from 'expo-font'
 import { Stack, SplashScreen } from 'expo-router'
 import { fontFamily } from '@/constants/Fonts'
@@ -15,15 +15,20 @@ import { SafeAreaProvider } from 'react-native-safe-area-context'
 import { clearExpiredTimers } from '@/store/timerStorage'
 import { KeyboardProvider } from 'react-native-keyboard-controller'
 import { queryClient } from '@/queries/queryClient'
-import { getSavedLngInStorage } from '@/store/languageStorage'
+import { LngLong, LngShort } from '@/store/languageStorage'
 import './../global.css'
 
 SplashScreen.preventAutoHideAsync()
 
 const initializeYamap = async () => {
 	try {
-		const currentLang = getSavedLngInStorage()
-		await YamapInstance.setLocale(currentLang.lngLong)
+		const currentLang = i18n.language as LngShort
+		const languages = {
+			[LngShort.ru]: LngLong.ru,
+			[LngShort.en]: LngLong.en
+		}
+
+		await YamapInstance.setLocale(languages[currentLang])
 	} catch (error) {
 		const message = error instanceof Error ? error.message : String(error)
 

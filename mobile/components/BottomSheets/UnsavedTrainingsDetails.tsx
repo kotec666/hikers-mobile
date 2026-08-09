@@ -12,7 +12,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context'
 import { formatDistance } from '@/helpers/distance'
 import { FlashList } from '@shopify/flash-list'
 import { useTranslation } from 'react-i18next'
-import { getSavedLngInStorage, locales } from '@/store/languageStorage'
+import { LngShort, locales } from '@/store/languageStorage'
 
 interface IProps {
 	notSavedWorkouts: IWorkout[]
@@ -31,8 +31,7 @@ const UnsavedTrainingsDetails = ({
 }: IProps) => {
 	const { t, i18n } = useTranslation()
 
-	const currentLanguage = getSavedLngInStorage()
-	const currentLocale = locales[currentLanguage.lngShort]
+	const currentLocale = locales[i18n.language as LngShort] ?? locales[LngShort.en]
 
 	const insets = useSafeAreaInsets()
 

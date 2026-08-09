@@ -57,11 +57,13 @@ export const setLngToStorage = (lngShort: LngShort) => {
 	return languageStorage.set(LANGUAGE_KEY, JSON.stringify(foundLang))
 }
 
+/** Было ли сохранено значение языка пользователем или авто-определением */
+export const hasSavedLng = (): boolean => languageStorage.getString(LANGUAGE_KEY) != null
+
 export const getSavedLngInStorage = (): Language => {
 	const storageStr = languageStorage.getString(LANGUAGE_KEY)
 
 	if (!storageStr) {
-		setLngToStorage(LngShort.en)
 		return defaultLanguage
 	}
 

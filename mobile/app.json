@@ -1,7 +1,11 @@
 {
   "expo": {
-    "name": "хайкерс",
+    "name": "hikers",
     "slug": "hikers",
+    "locales": {
+      "en": "./languages/en.json",
+      "ru": "./languages/ru.json"
+    },
     "version": "1.0.0",
     "orientation": "portrait",
     "scheme": "hikers",

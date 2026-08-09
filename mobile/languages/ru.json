@@ -1,0 +1,8 @@
+{
+  "android": {
+    "app_name": "хайкерс"
+  },
+  "ios": {
+    "CFBundleDisplayName": "хайкерс"
+  }
+}

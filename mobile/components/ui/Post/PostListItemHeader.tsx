@@ -15,7 +15,7 @@ import { useCreateReportMutation } from '@/queries/reports'
 import { getFieldsErrors } from '@/helpers/getFieldsErrors'
 import FinishedFlagSvg from '@/components/svg/FinishedFlagSvg'
 import { Colors } from '@/constants/Colors'
-import { getSavedLngInStorage, locales } from '@/store/languageStorage'
+import { LngShort, locales } from '@/store/languageStorage'
 import { useTranslation } from 'react-i18next'
 
 interface IProps {
@@ -43,9 +43,8 @@ const PostListItemHeader = ({
 	workoutType
 }: IProps) => {
 	const { push } = useSafeNavigation()
-	const { t } = useTranslation()
-	const currentLanguage = getSavedLngInStorage()
-	const currentLocale = locales[currentLanguage.lngShort]
+	const { t, i18n } = useTranslation()
+	const currentLocale = locales[i18n.language as LngShort] ?? locales[LngShort.en]
 
 	const { mutateAsync: toggleSubscribe, isPending: isPendingSubscribe } = useToggleSubscribeMutation()
 	const { mutateAsync: createReportMutation, isPending: isPendingCreateReport } = useCreateReportMutation()

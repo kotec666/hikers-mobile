@@ -28,7 +28,7 @@ import BottomSheet, { BottomSheetHandle } from '@/components/ui/BottomSheet/Bott
 import LoadQueryErrorRetry from '@/components/LoadQueryErrorRetry'
 import { WorkoutHistoryListSkeleton } from '@/components/ui/skeleton'
 import { useTranslation } from 'react-i18next'
-import { getSavedLngInStorage, locales } from '@/store/languageStorage'
+import { LngShort, locales } from '@/store/languageStorage'
 import { translateArr } from '@/helpers/arrTranslator'
 
 interface WorkoutItem {
@@ -55,8 +55,7 @@ type WorkoutHistoryRow =
 
 const WorkoutHistory = () => {
 	const { t, i18n } = useTranslation()
-	const currentLanguage = getSavedLngInStorage()
-	const currentLocale = locales[currentLanguage.lngShort]
+	const currentLocale = locales[i18n.language as LngShort] ?? locales[LngShort.en]
 	const toast = useToast()
 	const listRef = useRef<FlashListRef<WorkoutHistoryRow>>(null)
 	const bottomSheetRef = useRef<BottomSheetHandle>(null)

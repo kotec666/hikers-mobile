@@ -51,7 +51,7 @@ const SettingsPage = () => {
 		router.replace('/')
 	}
 
-	const handleSelectLanguage = (lang: Language) => {
+	const handleSelectLanguage = async (lang: Language) => {
 		setLngToStorage(lang.lngShort)
 
 		const isRTL = lang.dir === Directions.rtl
@@ -61,10 +61,13 @@ const SettingsPage = () => {
 		}
 		void i18n.changeLanguage(lang.lngShort)
 		setSelectedLanguage(lang)
-		void YamapInstance.setLocale(lang.lngLong)
-		// перезагрузка на андроид из-за яндекс карт
+
+		if (isAndroid) {
+			void YamapInstance.setLocale(lang.lngLong)
+		}
+		// перезагрузка яндекс карт не дает моментальное изменение языка, только если перезайти в приложение с перезапуском =(
 		// и перезагрузка если RTL
-		if (isRTL || isAndroid) return NativeModules.DevSettings.reload()
+		if (isRTL) return NativeModules.DevSettings.reload()
 	}
 
 	return (

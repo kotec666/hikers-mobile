@@ -56,7 +56,7 @@ import { POST_MAX_FILES_COUNT } from '@shared/constants'
 import { getNoun } from '@/helpers/getNoun'
 import { useFullscreenImageViewer } from '@/hooks/useFullscreenImageViewer'
 import { useTranslation } from 'react-i18next'
-import { getSavedLngInStorage, locales } from '@/store/languageStorage'
+import { LngShort, locales } from '@/store/languageStorage'
 import { translateArr } from '@/helpers/arrTranslator'
 import { TFunction } from 'i18next'
 
@@ -171,8 +171,7 @@ export default function ViewWorkout() {
 	const { user } = useAuthStore()
 	const { t, i18n } = useTranslation()
 
-	const currentLanguage = getSavedLngInStorage()
-	const currentLocale = locales[currentLanguage.lngShort]
+	const currentLocale = locales[i18n.language as LngShort] ?? locales[LngShort.en]
 
 	const isIOS = Platform.OS === 'ios'
 	const router = useRouter()
