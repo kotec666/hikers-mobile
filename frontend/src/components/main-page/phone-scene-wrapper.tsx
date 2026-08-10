@@ -8,8 +8,16 @@ import { Stats } from '@react-three/drei'
 const PhoneSceneWrapper = () => {
 	const isDesktop = useMediaQuery('(min-width: 1024px)')
 	return (
-		<Canvas camera={{ position: [0, 0, 5], fov: 3 }}>
+		<Canvas
+			dpr={[1, 1.5]}
+			gl={{
+				powerPreference: 'high-performance',
+				toneMappingExposure: 1.6
+			}}
+			camera={{ position: [0, 0, 5], fov: 3 }}
+		>
 			{isDesktop && <PhoneScene />}
+			{/* {process.env.NODE_ENV === 'development' && <Stats />} */}
 			<Stats />
 		</Canvas>
 	)

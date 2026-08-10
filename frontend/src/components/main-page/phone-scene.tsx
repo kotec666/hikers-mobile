@@ -2,7 +2,7 @@
 import * as THREE from 'three'
 import React, { Suspense, useMemo, useRef, useState } from 'react'
 import { useFrame } from '@react-three/fiber'
-import { AdaptiveDpr, AdaptiveEvents, Environment } from '@react-three/drei'
+import { AdaptiveDpr, AdaptiveEvents } from '@react-three/drei'
 import { ScreenTextureURL, screenTextureURLs } from '@/consts/PhoneScreenTextures'
 import { useScroll, useTransform } from 'framer-motion'
 import { PhoneModel } from '@/components/main-page/phone-model'
@@ -11,29 +11,30 @@ import { useMotionValueEvent } from 'framer-motion'
 const Lights = () => {
 	// const dirLight1 = useRef<THREE.DirectionalLight>(null!)
 	// const dirLight2 = useRef<THREE.DirectionalLight>(null!)
+	// const dirLight3 = useRef<THREE.DirectionalLight>(null!)
 
 	// useHelper(dirLight1, THREE.DirectionalLightHelper, 1)
 	// useHelper(dirLight2, THREE.DirectionalLightHelper, 1)
+	// useHelper(dirLight3, THREE.DirectionalLightHelper, 1)
 
 	return (
 		<>
+			<hemisphereLight args={['#ffffff', '#5a5a5a', 2.2]} />
+			<ambientLight intensity={1} />
 			<directionalLight
 				// ref={dirLight1}
 				position={[5, 5, 5]}
-				intensity={2}
-				shadow-mapSize-width={1024}
-				shadow-mapSize-height={1024}
-				shadow-camera-near={0.1}
-				shadow-camera-far={50}
+				intensity={3}
 			/>
 			<directionalLight
 				// ref={dirLight2}
 				position={[-5, 5, -5]}
-				intensity={2}
-				shadow-mapSize-width={1024}
-				shadow-mapSize-height={1024}
-				shadow-camera-near={0.1}
-				shadow-camera-far={50}
+				intensity={4}
+			/>
+			<directionalLight
+				// ref={dirLight3}
+				position={[0, -4, 4]}
+				intensity={1.8}
 			/>
 		</>
 	)
@@ -100,7 +101,6 @@ const PhoneScene = () => {
 	return (
 		<>
 			{/*<axesHelper args={[100]} />*/}
-			<Environment files={'/hdr/warehouse-256.hdr'} environmentIntensity={2} />
 			<Lights />
 			<Suspense fallback={null}>
 				<PhoneModel ref={phoneRef} screenTextureURL={screenTextureURL} />
