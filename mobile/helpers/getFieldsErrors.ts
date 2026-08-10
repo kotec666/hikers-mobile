@@ -1,5 +1,7 @@
 import { TFunction } from 'i18next'
+import { isTimeoutError } from 'ky'
 import { ERRORS } from '@shared/errors'
+import { isConnectivityError } from '@/helpers/authError'
 import { useNotificationStore } from '@/store/notificationStore'
 import { NotificationInAppType } from '@/components/Notification'
 
@@ -245,8 +247,8 @@ const isParsedErrorObject = (value: unknown): value is ErrorObject | ErrorObject
 export const getFieldsErrors = async (e: unknown, t: TFunction<'translation', undefined>): Promise<FieldErrors> => {
 	const { showNotification } = useNotificationStore.getState()
 
-	if (e instanceof TypeError && e.message === 'Network request failed') {
-		const message = t('ClientErrors.NO_INTERNET')
+	if (isTimeoutError(e)) {
+		const message = t('ClientErrors.REQUEST_TIMEOUT')
 		showNotification(message, NotificationInAppType.ERROR)
 		return {
 			global: true,
@@ -254,8 +256,8 @@ export const getFieldsErrors = async (e: unknown, t: TFunction<'translation', un
 		}
 	}
 
-	if (e instanceof Error && e.message.includes('Request timed out')) {
-		const message = t('ClientErrors.REQUEST_TIMEOUT')
+	if (isConnectivityError(e)) {
+		const message = t('ClientErrors.NO_INTERNET')
 		showNotification(message, NotificationInAppType.ERROR)
 		return {
 			global: true,
