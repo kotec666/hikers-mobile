@@ -69,9 +69,11 @@ const HeaderBack = memo((props: IProps) => {
 	const isIOS = Platform.OS === 'ios'
 	const isGlassAvailable = isIOS && isLiquidGlassAvailable()
 
+	const progress = props.progress
+
 	const progressBarStyle = useAnimatedStyle(() => ({
 		transformOrigin: 'left',
-		transform: [{ scaleX: props.progress?.value ?? 0 }]
+		transform: [{ scaleX: progress?.value ?? 0 }]
 	}))
 
 	const handleClickBack = () => {

@@ -17,7 +17,6 @@ import MapComponentColorPick from '@/components/map/MapComponentColorPick'
 import { useAnimatedColorPickProps } from '@/hooks/useAnimatedColorPickProps'
 import { useProfileQuery, useUpdateProfileColorMutation } from '@/queries/my-profile'
 import { RNMapColorPickHandle } from '@/components/map/RNMapComponentColorPick'
-import { scheduleOnRN } from 'react-native-worklets'
 import { RNMapsUserLocationMarkerHandle } from '@/components/map/markers/UserLocationMarker/RNMapsUserLocationMarker'
 import { useTranslation } from 'react-i18next'
 
@@ -159,7 +158,17 @@ const SettingsPickAColorPage = () => {
 	const onColorChange = (color: ColorFormatsObject) => {
 		'worklet'
 		currentColor.value = color.rgb
-		scheduleOnRN(setColorOnMap, color.rgb)
+	}
+
+	// const onColorChange = (color: ColorFormatsObject) => {
+	// 		'worklet'
+	// 		currentColor.value = color.rgb
+	// 		if(isIOS) { scheduleOnRN(setColorOnMap, color.rgb) }
+	// 	}
+
+	// runs on the js thread during color picker drag
+	const onColorChangeJS = (color: ColorFormatsObject) => {
+		setColorOnMap(color.rgb)
 	}
 
 	const colorBoxSize = (width - CONTAINER_PADDING * 2 - GAP * (COLUMNS - 1)) / COLUMNS
@@ -230,6 +239,7 @@ const SettingsPickAColorPage = () => {
 									thumbSize={24}
 									thumbShape="circle"
 									onChange={onColorChange}
+									onChangeJS={onColorChangeJS}
 									onCompleteJS={onColorPick}
 									style={colorPickerStyle.picker}
 									boundedThumb
