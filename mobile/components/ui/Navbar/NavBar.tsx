@@ -1,6 +1,12 @@
 import React, { useCallback, useEffect } from 'react'
 import { StyleSheet, View, Pressable, Platform } from 'react-native'
-import Animated, { useSharedValue, useAnimatedStyle, withTiming, interpolateColor } from 'react-native-reanimated'
+import Animated, {
+	useSharedValue,
+	useAnimatedStyle,
+	withTiming,
+	interpolate,
+	interpolateColor
+} from 'react-native-reanimated'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
 import { Colors } from '@/constants/Colors'
 import { RelativePathString, usePathname } from 'expo-router'
@@ -28,7 +34,7 @@ const AnimatedButton: React.FC<AnimatedButtonProps> = ({ isActive, onPress, Icon
 	}, [isActive, progress])
 
 	const animatedStyle = useAnimatedStyle(() => {
-		const scale = withTiming(isActive ? 1.1 : 1, { duration: 250 })
+		const scale = interpolate(progress.value, [0, 1], [1, 1.1])
 		const backgroundColor = interpolateColor(progress.value, [0, 1], ['transparent', Colors.white])
 
 		return {
@@ -53,8 +59,13 @@ const NavBar = ({ state }: { state?: TabBarState }) => {
 	const { push } = useSafeNavigation()
 	const pathname = usePathname()
 
-	const activeRouteName =
-		state?.routes[state.index]?.name ?? tabsConfig.find((tab) => pathname.startsWith(tab.href))?.id
+	// Активная вкладка определяется по pathname (глобальный контекст expo-router
+	// всегда перерисует NavBar при любой навигации), а НЕ по state табов.
+	// state.routes[state.index] в момент тяжёлого маунта экрана тренировки
+	// (инициализация карты, открытие BottomSheet геолокации, низкий FPS) может
+	// «зависнуть» на прошлой вкладке, и панель не скроется до повторного входа.
+	void state
+	const activeRouteName = tabsConfig.find((tab) => pathname.startsWith(tab.href))?.id
 	const shouldHide = activeRouteName === 'newTraining'
 
 	const hidden = useSharedValue(shouldHide ? 1 : 0)
