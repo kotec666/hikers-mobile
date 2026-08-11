@@ -13,6 +13,8 @@ import { Colors } from '@/constants/Colors'
 import { QueryClientProvider } from '@tanstack/react-query'
 import { SafeAreaProvider } from 'react-native-safe-area-context'
 import { clearExpiredTimers } from '@/store/timerStorage'
+import { runWorkoutStorageMigrations } from '@/store/workoutVersioning'
+import { workoutStorage } from '@/store/workoutStorage'
 import { KeyboardProvider } from 'react-native-keyboard-controller'
 import { queryClient } from '@/queries/queryClient'
 import { LngLong, LngShort } from '@/store/languageStorage'
@@ -137,6 +139,9 @@ export default function RootLayout() {
 	const isReady = loaded && isAuthChecked
 
 	useEffect(() => {
+		// Апгрейд схемы workout-хранилища до актуальной версии (идемпотентно).
+		// Дополнительно вызывается при первом импорте модуля workoutStorage.
+		runWorkoutStorageMigrations(workoutStorage)
 		clearExpiredTimers() // очистка истекших таймеров для восстановления пароля / подтверждения почты
 	}, [])
 

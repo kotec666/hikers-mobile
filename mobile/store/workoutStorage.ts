@@ -2,16 +2,34 @@ import { createMMKV } from 'react-native-mmkv'
 import { LocationObject } from 'expo-location'
 import { TrainingType } from '@shared/enums'
 import {
+	CHUNK_HEADER_BYTE_SIZE,
+	createEmptyChunkBuffer,
+	deserializeChunkPoints,
 	deserializeGetterType,
-	deserializeLocations,
+	ensureChunkHeader,
+	getChunkPointCount,
+	getChunkPointsDataView,
 	POINT_BYTE_SIZE,
+	serializeChunkPoints,
 	serializeLocation
 } from '@/helpers/binarySerializer'
 import { calculateDistanceBetweenWorkoutPoints } from '@/helpers/distance'
+import type {
+	IStoredWorkoutEntry,
+	IWorkout,
+	IWorkoutLocationStorageItem,
+	IWorkoutMeta
+} from '@/store/workoutStorageTypes'
+import { runWorkoutStorageMigrations, safeParse } from '@/store/workoutVersioning'
 
 export const workoutStorage = createMMKV({
 	id: 'workout-storage'
 })
+
+export type { IWorkout, IWorkoutMeta, IWorkoutLocationStorageItem } from '@/store/workoutStorageTypes'
+
+// Применяем миграции при первом импорте модуля (до любого чтения).
+runWorkoutStorageMigrations(workoutStorage)
 
 // --- KEY FACTORY (user scoped) ---
 
@@ -19,43 +37,29 @@ const KEY_NOT_SAVED = (userId: string) => `NOT_SAVED_${userId}`
 const KEY_SHORT_WORKOUTS = (userId: string) => `SHORT_WORKOUTS_${userId}`
 const KEY_ACTIVE_META = (userId: string) => `ACTIVE_META_${userId}`
 const KEY_ACTIVE_BIN = (userId: string, chunkIndex: number) => `BIN_${userId}_${chunkIndex}`
+const KEY_UNSAVED_BIN = (userId: string, startedAt: number) => `NS_BIN_${userId}_${startedAt}`
+const KEY_SHORT_BIN = (userId: string, startedAt: number) => `SHORT_BIN_${userId}_${startedAt}`
 
 export const CHUNK_POINT_COUNT = 200
 
-// --- TYPES ---
+// --- INTERNAL HELPERS ---
 
-export interface IWorkout {
-	id: string | null
-	userId: string
-	isPaused: boolean
-	type: TrainingType
-	startedAt: number
-	totalPausedMs: number
-	lastPauseAt: null | number
-	distanceMeters: number
-	locations: IWorkoutLocationStorageItem[]
+const CHUNK_BYTE_LIMIT = CHUNK_POINT_COUNT * POINT_BYTE_SIZE + CHUNK_HEADER_BYTE_SIZE
+
+const readWorkoutEntries = (key: string): IStoredWorkoutEntry[] => safeParse(workoutStorage.getString(key), [])
+
+const writeWorkoutEntries = (key: string, entries: IStoredWorkoutEntry[]): void => {
+	if (entries.length === 0) {
+		workoutStorage.remove(key)
+		return
+	}
+	workoutStorage.set(key, JSON.stringify(entries))
 }
 
-export interface IWorkoutMeta {
-	id: string | null
-	userId: string
-	isPaused: boolean
-	type: TrainingType
-	startedAt: number
-	totalPausedMs: number
-	lastPauseAt: null | number
-	chunkCount: number
-	nextPointId: number
-	distanceMeters: number
-	lastDistancePoint: IWorkoutLocationStorageItem | null
-}
-
-export interface IWorkoutLocationStorageItem {
-	pointId: number
-	relTs: number
-	locationObject: LocationObject
-	paused: boolean
-	isSavedToServer: boolean
+const materializeWorkout = (entry: IStoredWorkoutEntry, blobKey: string): IWorkout => {
+	const buffer = workoutStorage.getBuffer(blobKey)
+	const locations = buffer ? deserializeChunkPoints(buffer, entry.startedAt, deserializeGetterType.ALL) : []
+	return { ...entry, locations }
 }
 
 const addWorkoutDistancePointToMeta = (meta: IWorkoutMeta, entry: IWorkoutLocationStorageItem): void => {
@@ -71,6 +75,44 @@ const addWorkoutDistancePointToMeta = (meta: IWorkoutMeta, entry: IWorkoutLocati
 	meta.lastDistancePoint = entry
 }
 
+// Выставляет бит «saved» точкам из idSet в буфере чанка. Возвращает был ли мутирован буфер.
+const setPointFlagsSavedInBuffer = (
+	buffer: ArrayBufferLike,
+	idSet: Set<number>,
+	minId: number,
+	maxId: number
+): boolean => {
+	const view = getChunkPointsDataView(buffer)
+	let mutated = false
+
+	for (let i = 0; i < getChunkPointCount(buffer); i++) {
+		const baseOffset = i * POINT_BYTE_SIZE
+		const pointId = view.getUint32(baseOffset)
+
+		if (pointId < minId || pointId > maxId || !idSet.has(pointId)) {
+			continue
+		}
+
+		const flagsOffset = baseOffset + 32
+		const flags = view.getUint8(flagsOffset)
+
+		// bit1 = saved
+		if ((flags & 2) === 0) {
+			view.setUint8(flagsOffset, flags | 2)
+			mutated = true
+		}
+	}
+
+	return mutated
+}
+
+const appendBytes = (oldBuffer: Uint8Array, newBytes: Uint8Array) => {
+	const tmp = new Uint8Array(oldBuffer.byteLength + newBytes.byteLength)
+	tmp.set(oldBuffer)
+	tmp.set(newBytes, oldBuffer.byteLength)
+	return tmp
+}
+
 // --- CLEANUP ---
 export const removeUserWorkoutStorage = (userId?: string): void => {
 	if (!userId) {
@@ -82,7 +124,14 @@ export const removeUserWorkoutStorage = (userId?: string): void => {
 		const keys = workoutStorage.getAllKeys()
 
 		// Префиксы, которые относятся к пользователю
-		const prefixes = [`NOT_SAVED_${userId}`, `SHORT_WORKOUTS_${userId}`, `ACTIVE_META_${userId}`, `BIN_${userId}_`]
+		const prefixes = [
+			`NOT_SAVED_${userId}`,
+			`SHORT_WORKOUTS_${userId}`,
+			`ACTIVE_META_${userId}`,
+			`BIN_${userId}_`,
+			`NS_BIN_${userId}_`,
+			`SHORT_BIN_${userId}_`
+		]
 
 		for (const key of keys) {
 			const shouldDelete = prefixes.some((prefix) => key.startsWith(prefix))
@@ -103,7 +152,7 @@ export const getWorkoutMeta = (userId?: string): IWorkoutMeta | null | void => {
 	const metaStr = workoutStorage.getString(KEY_ACTIVE_META(userId))
 	if (!metaStr) return null
 
-	return JSON.parse(metaStr) as IWorkoutMeta
+	return safeParse<IWorkoutMeta | null>(metaStr, null)
 }
 
 // --- ACTIVE WORKOUT ---
@@ -148,14 +197,6 @@ export const clearActiveWorkoutData = (userId?: string) => {
 
 // --- LOCATION STORAGE ---
 
-const appendBytes = (oldBuffer: Uint8Array | undefined, newBytes: Uint8Array): Uint8Array => {
-	if (!oldBuffer) return newBytes
-	const tmp = new Uint8Array(oldBuffer.byteLength + newBytes.byteLength)
-	tmp.set(oldBuffer)
-	tmp.set(newBytes, oldBuffer.byteLength)
-	return tmp
-}
-
 export const setWorkoutItems = (items: LocationObject[], userId?: string): IWorkoutLocationStorageItem[] => {
 	if (!userId) {
 		console.error('setWorkoutItems [error]: no userId provided')
@@ -165,8 +206,10 @@ export const setWorkoutItems = (items: LocationObject[], userId?: string): IWork
 	if (!meta) return []
 
 	let chunkIdx = Math.max(0, meta.chunkCount - 1)
-	let buffer = workoutStorage.getBuffer(KEY_ACTIVE_BIN(userId, chunkIdx))
-	let currentBuffer = buffer ? new Uint8Array(buffer as any) : undefined
+	const existing = workoutStorage.getBuffer(KEY_ACTIVE_BIN(userId, chunkIdx))
+	let currentBuffer = existing
+		? new Uint8Array(ensureChunkHeader(existing))
+		: new Uint8Array(createEmptyChunkBuffer())
 
 	const saved: IWorkoutLocationStorageItem[] = []
 
@@ -186,21 +229,18 @@ export const setWorkoutItems = (items: LocationObject[], userId?: string): IWork
 		addWorkoutDistancePointToMeta(meta, entry)
 
 		const bytes = serializeLocation(entry)
-		const limit = CHUNK_POINT_COUNT * POINT_BYTE_SIZE
 
-		if ((currentBuffer?.byteLength ?? 0) + bytes.byteLength > limit) {
-			if (currentBuffer) {
-				workoutStorage.set(KEY_ACTIVE_BIN(userId, chunkIdx), currentBuffer.buffer)
-			}
+		if (currentBuffer.byteLength + bytes.byteLength > CHUNK_BYTE_LIMIT) {
+			workoutStorage.set(KEY_ACTIVE_BIN(userId, chunkIdx), currentBuffer.buffer)
 			chunkIdx++
 			meta.chunkCount = chunkIdx + 1
-			currentBuffer = undefined
+			currentBuffer = new Uint8Array(createEmptyChunkBuffer())
 		}
 
 		currentBuffer = appendBytes(currentBuffer, bytes)
 	}
 
-	if (currentBuffer) {
+	if (currentBuffer.byteLength > CHUNK_HEADER_BYTE_SIZE) {
 		workoutStorage.set(KEY_ACTIVE_BIN(userId, chunkIdx), currentBuffer.buffer)
 	}
 
@@ -225,7 +265,7 @@ export const getFullActiveWorkout = (userId?: string): IWorkout | null => {
 		const buffer = workoutStorage.getBuffer(KEY_ACTIVE_BIN(userId, i))
 		if (!buffer) continue
 
-		const points = deserializeLocations(new Uint8Array(buffer), meta.startedAt, deserializeGetterType.ALL)
+		const points = deserializeChunkPoints(buffer, meta.startedAt, deserializeGetterType.ALL)
 
 		locations = locations.concat(points)
 	}
@@ -250,11 +290,14 @@ export const moveActiveWorkoutToNotSaved = (userId?: string) => {
 	const workout = getFullActiveWorkout(userId)
 	if (!workout) return
 
-	const key = KEY_NOT_SAVED(userId)
-	const existing = workoutStorage.getString(key)
-	const arr = existing ? (JSON.parse(existing) as IWorkout[]) : []
+	const { locations, ...entry } = workout
 
-	workoutStorage.set(key, JSON.stringify([...arr, workout]))
+	const key = KEY_NOT_SAVED(userId)
+	const entries = readWorkoutEntries(key)
+	entries.push(entry)
+	writeWorkoutEntries(key, entries)
+
+	workoutStorage.set(KEY_UNSAVED_BIN(userId, workout.startedAt), serializeChunkPoints(locations))
 
 	clearActiveWorkoutData(userId)
 }
@@ -264,8 +307,10 @@ export const getNotSavedWorkouts = (userId?: string): IWorkout[] => {
 		console.error('getNotSavedWorkouts [error]: no userId provided')
 		return []
 	}
-	const str = workoutStorage.getString(KEY_NOT_SAVED(userId))
-	return str ? (JSON.parse(str) as IWorkout[]) : []
+
+	const entries = readWorkoutEntries(KEY_NOT_SAVED(userId))
+
+	return entries.map((entry) => materializeWorkout(entry, KEY_UNSAVED_BIN(userId, entry.startedAt)))
 }
 
 export const getUnsavedWorkoutsThatHaveId = (userId?: string) => {
@@ -280,11 +325,14 @@ export const moveActiveWorkoutToShortWorkouts = (userId?: string) => {
 	const workout = getFullActiveWorkout(userId)
 	if (!workout) return
 
-	const key = KEY_SHORT_WORKOUTS(userId)
-	const existing = workoutStorage.getString(key)
-	const arr = existing ? (JSON.parse(existing) as IWorkout[]) : []
+	const { locations, ...entry } = workout
 
-	workoutStorage.set(key, JSON.stringify([...arr, workout]))
+	const key = KEY_SHORT_WORKOUTS(userId)
+	const entries = readWorkoutEntries(key)
+	entries.push(entry)
+	writeWorkoutEntries(key, entries)
+
+	workoutStorage.set(KEY_SHORT_BIN(userId, workout.startedAt), serializeChunkPoints(locations))
 
 	clearActiveWorkoutData(userId)
 }
@@ -294,8 +342,10 @@ export const getShortWorkouts = (userId?: string): IWorkout[] => {
 		console.error('getShortWorkouts [error]: no userId provided')
 		return []
 	}
-	const str = workoutStorage.getString(KEY_SHORT_WORKOUTS(userId))
-	return str ? (JSON.parse(str) as IWorkout[]) : []
+
+	const entries = readWorkoutEntries(KEY_SHORT_WORKOUTS(userId))
+
+	return entries.map((entry) => materializeWorkout(entry, KEY_SHORT_BIN(userId, entry.startedAt)))
 }
 
 export const setActiveWorkoutPauseState = (isPaused: boolean, userId?: string): void => {
@@ -337,7 +387,7 @@ export const getActiveWorkoutPoints = (
 		const buffer = workoutStorage.getBuffer(KEY_ACTIVE_BIN(userId, i))
 		if (!buffer) continue
 
-		const points = deserializeLocations(new Uint8Array(buffer), meta.startedAt, getterType)
+		const points = deserializeChunkPoints(buffer, meta.startedAt, getterType)
 
 		result.push(...points)
 	}
@@ -355,7 +405,7 @@ export const getLastActiveWorkoutPoint = (userId?: string): IWorkoutLocationStor
 		const buffer = workoutStorage.getBuffer(KEY_ACTIVE_BIN(userId, i))
 		if (!buffer) continue
 
-		const points = deserializeLocations(new Uint8Array(buffer), meta.startedAt, deserializeGetterType.ALL)
+		const points = deserializeChunkPoints(buffer, meta.startedAt, deserializeGetterType.ALL)
 		const lastPoint = points.at(-1)
 
 		if (lastPoint) return lastPoint
@@ -375,6 +425,15 @@ export const getWorkoutDistanceMeters = (userId?: string): number => {
 
 export const removeAllShortWorkouts = (userId?: string): void => {
 	if (!userId) return console.error('removeAllShortWorkouts [error]: no userId provided')
+
+	const prefix = `SHORT_BIN_${userId}_`
+
+	for (const key of workoutStorage.getAllKeys()) {
+		if (key.startsWith(prefix)) {
+			workoutStorage.remove(key)
+		}
+	}
+
 	workoutStorage.remove(KEY_SHORT_WORKOUTS(userId))
 }
 
@@ -399,20 +458,11 @@ export const assignIdToActiveWorkout = (id: string, userId?: string): void => {
 export const assignIdToAnUnsavedWorkout = (startedAt: number, id: string, userId?: string): void => {
 	if (!userId) return console.error('assignIdToAnUnsavedWorkout [error]: no userId provided')
 	const key = KEY_NOT_SAVED(userId)
-	const str = workoutStorage.getString(key)
-	if (!str) return
-
-	let workouts: IWorkout[]
-	try {
-		workouts = JSON.parse(str)
-	} catch (e) {
-		console.error('[workoutStorage] parse error:', e)
-		return
-	}
+	const entries = readWorkoutEntries(key)
 
 	let updated = false
 
-	const next = workouts.map((w) => {
+	const next = entries.map((w) => {
 		if (w.startedAt === startedAt) {
 			updated = true
 			return { ...w, id }
@@ -425,35 +475,23 @@ export const assignIdToAnUnsavedWorkout = (startedAt: number, id: string, userId
 		return
 	}
 
-	workoutStorage.set(key, JSON.stringify(next))
+	writeWorkoutEntries(key, next)
 }
 
 export const deleteUnsavedTrainingByStartedAt = (startedAt: number, userId?: string): void => {
 	if (!userId) return console.error('deleteUnsavedTrainingByStartedAt [error]: no userId provided')
 	const key = KEY_NOT_SAVED(userId)
-	const str = workoutStorage.getString(key)
-	if (!str) return
+	const entries = readWorkoutEntries(key)
 
-	let workouts: IWorkout[]
-	try {
-		workouts = JSON.parse(str)
-	} catch (e) {
-		console.error('[workoutStorage] parse error:', e)
-		return
-	}
+	const filtered = entries.filter((w) => w.startedAt !== startedAt)
 
-	const filtered = workouts.filter((w) => w.startedAt !== startedAt)
-
-	if (filtered.length === workouts.length) {
+	if (filtered.length === entries.length) {
 		console.warn('[workoutStorage] not found:', startedAt)
 		return
 	}
 
-	if (filtered.length === 0) {
-		workoutStorage.remove(key)
-	} else {
-		workoutStorage.set(key, JSON.stringify(filtered))
-	}
+	workoutStorage.remove(KEY_UNSAVED_BIN(userId, startedAt))
+	writeWorkoutEntries(key, filtered)
 }
 
 export const getUnsavedWorkoutByStartedAt = (startedAt: number, userId?: string): IWorkout | null => {
@@ -461,8 +499,10 @@ export const getUnsavedWorkoutByStartedAt = (startedAt: number, userId?: string)
 		console.error('getUnsavedWorkoutByStartedAt [error]: no userId provided')
 		return null
 	}
-	const workouts = getNotSavedWorkouts(userId)
-	return workouts.find((w) => w.startedAt === startedAt) ?? null
+
+	const entry = readWorkoutEntries(KEY_NOT_SAVED(userId)).find((w) => w.startedAt === startedAt)
+
+	return entry ? materializeWorkout(entry, KEY_UNSAVED_BIN(userId, entry.startedAt)) : null
 }
 
 export const markUnsavedWorkoutPointsAsSaved = (startedAt: number, pointIds: number[], userId?: string): void => {
@@ -470,50 +510,18 @@ export const markUnsavedWorkoutPointsAsSaved = (startedAt: number, pointIds: num
 
 	if (pointIds.length === 0) return
 
-	const key = KEY_NOT_SAVED(userId)
-	const str = workoutStorage.getString(key)
-	if (!str) return
-
-	let workouts: IWorkout[]
-	try {
-		workouts = JSON.parse(str)
-	} catch (e) {
-		console.error('[workoutStorage] parse error:', e)
+	const key = KEY_UNSAVED_BIN(userId, startedAt)
+	const buffer = workoutStorage.getBuffer(key)
+	if (!buffer) {
+		console.warn('[workoutStorage] unsaved workout blob not found:', startedAt)
 		return
 	}
 
-	const idSet = new Set(pointIds)
-	let updated = false
+	const mutated = setPointFlagsSavedInBuffer(buffer, new Set(pointIds), Math.min(...pointIds), Math.max(...pointIds))
 
-	const next = workouts.map((workout) => {
-		if (workout.startedAt !== startedAt) return workout
-
-		let changed = false
-
-		const locations = workout.locations.map((p) => {
-			if (!p.isSavedToServer && idSet.has(p.pointId)) {
-				changed = true
-				return { ...p, isSavedToServer: true }
-			}
-			return p
-		})
-
-		if (!changed) return workout
-
-		updated = true
-
-		return {
-			...workout,
-			locations
-		}
-	})
-
-	if (!updated) {
-		console.warn('[workoutStorage] no points updated:', startedAt)
-		return
+	if (mutated) {
+		workoutStorage.set(key, buffer)
 	}
-
-	workoutStorage.set(key, JSON.stringify(next))
 }
 
 export const getWorkoutChunk = (
@@ -529,7 +537,7 @@ export const getWorkoutChunk = (
 
 	if (!buffer) return []
 
-	return deserializeLocations(new Uint8Array(buffer), startedAt, deserializeGetterType.ALL)
+	return deserializeChunkPoints(buffer, startedAt, deserializeGetterType.ALL)
 }
 
 export const markPointsAsSaved = (pointIds: number[], userId?: string) => {
@@ -548,30 +556,7 @@ export const markPointsAsSaved = (pointIds: number[], userId?: string) => {
 		const buffer = workoutStorage.getBuffer(key)
 		if (!buffer) continue
 
-		const view = new DataView(buffer)
-		const pointCount = Math.floor(buffer.byteLength / POINT_BYTE_SIZE)
-
-		let mutated = false
-
-		for (let i = 0; i < pointCount; i++) {
-			const baseOffset = i * POINT_BYTE_SIZE
-			const pointId = view.getUint32(baseOffset)
-
-			if (pointId < minId || pointId > maxId || !idSet.has(pointId)) {
-				continue
-			}
-
-			const flagsOffset = baseOffset + 32
-			const flags = view.getUint8(flagsOffset)
-
-			// bit1 = saved
-			if ((flags & 2) === 0) {
-				view.setUint8(flagsOffset, flags | 2)
-				mutated = true
-			}
-		}
-
-		if (mutated) {
+		if (setPointFlagsSavedInBuffer(buffer, idSet, minId, maxId)) {
 			workoutStorage.set(key, buffer)
 		}
 	}

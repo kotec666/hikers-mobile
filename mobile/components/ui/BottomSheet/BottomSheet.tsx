@@ -26,7 +26,7 @@ const BUTTON_SLIDE_LIFT = 30 // дополнительное смещение к
 // а не плоскими пикселями: так кнопка держит одинаковое относительное положение
 // на любом размере экрана и одинаково на iOS/Android. Кнопка «виснет» на 1/5
 // высоты открытого шита выше его кромки (эквивалент старого фикс. отступа ~70dp).
-const BUTTON_GAP_RATIO = 0.2
+const BUTTON_GAP_RATIO = 0.3
 const BUTTON_TOP_OFFSET = OPEN_POSITION_Y * BUTTON_GAP_RATIO
 
 export interface BottomSheetProps extends TrueSheetProps {

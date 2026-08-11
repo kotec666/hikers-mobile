@@ -1,5 +1,5 @@
 import { LocationObject } from 'expo-location'
-import { IWorkoutLocationStorageItem } from '@/store/workoutStorage'
+import { IWorkoutLocationStorageItem } from '@/store/workoutStorageTypes'
 
 /**
  *
@@ -20,6 +20,70 @@ import { IWorkoutLocationStorageItem } from '@/store/workoutStorage'
 // Размер одной точки в байтах
 // pointId(4) + Lat(4) + Lon(4) + Alt(4) + Acc(4) + Speed(4) + Heading(4) + relTs(4) + Flags(1) = 33 байта
 export const POINT_BYTE_SIZE = 33
+
+// ============================================================
+// Версия бинарного формата чанков.
+// Любое изменение структуры точки (офсеты, типы полей, размер) = бамп CHUNK_VERSION
+// + ветвление в deserializeChunkPoints для чтения старых форматов.
+// ============================================================
+
+export const CHUNK_MAGIC = 0x4b505754 // 'WKPT'
+export const CHUNK_VERSION = 1
+export const CHUNK_HEADER_BYTE_SIZE = 5 // magic(4) + version(1)
+
+export const hasChunkHeader = (buffer: ArrayBufferLike): boolean =>
+	buffer.byteLength >= CHUNK_HEADER_BYTE_SIZE && new DataView(buffer).getUint32(0) === CHUNK_MAGIC
+
+// Точки только-данных без заголовка (пустая область точек = длина 0).
+const getPointsRegion = (buffer: ArrayBufferLike): { byteOffset: number; byteLength: number } => {
+	const byteOffset = hasChunkHeader(buffer) ? CHUNK_HEADER_BYTE_SIZE : 0
+	return { byteOffset, byteLength: buffer.byteLength - byteOffset }
+}
+
+export const getChunkPointCount = (buffer: ArrayBufferLike): number => {
+	const { byteLength } = getPointsRegion(buffer)
+	return Math.floor(byteLength / POINT_BYTE_SIZE)
+}
+
+// DataView над областью точек (без заголовка). Мутации идут в общий буфер чанка.
+export const getChunkPointsDataView = (buffer: ArrayBufferLike): DataView => {
+	const { byteOffset, byteLength } = getPointsRegion(buffer)
+	return new DataView(buffer, byteOffset, byteLength)
+}
+
+// Гарантирует наличие заголовка у буфера: legacy-чанки (без заголовка) оборачиваются.
+export const ensureChunkHeader = (buffer: ArrayBufferLike): ArrayBuffer => {
+	if (hasChunkHeader(buffer)) return buffer as ArrayBuffer
+
+	const out = new ArrayBuffer(CHUNK_HEADER_BYTE_SIZE + buffer.byteLength)
+	const view = new DataView(out)
+	view.setUint32(0, CHUNK_MAGIC)
+	view.setUint8(4, CHUNK_VERSION)
+	new Uint8Array(out).set(new Uint8Array(buffer), CHUNK_HEADER_BYTE_SIZE)
+	return out
+}
+
+// Создаёт пустой чанк (только заголовок) — точка отсчёта для инкрементальной записи.
+export const createEmptyChunkBuffer = (): ArrayBuffer => {
+	const out = new ArrayBuffer(CHUNK_HEADER_BYTE_SIZE)
+	const view = new DataView(out)
+	view.setUint32(0, CHUNK_MAGIC)
+	view.setUint8(4, CHUNK_VERSION)
+	return out
+}
+
+export const serializeChunkPoints = (items: IWorkoutLocationStorageItem[]): ArrayBuffer => {
+	const out = new ArrayBuffer(CHUNK_HEADER_BYTE_SIZE + items.length * POINT_BYTE_SIZE)
+	const view = new DataView(out)
+	view.setUint32(0, CHUNK_MAGIC)
+	view.setUint8(4, CHUNK_VERSION)
+
+	for (let i = 0; i < items.length; i++) {
+		new Uint8Array(out).set(serializeLocation(items[i]), CHUNK_HEADER_BYTE_SIZE + i * POINT_BYTE_SIZE)
+	}
+
+	return out
+}
 
 export const serializeLocation = (item: IWorkoutLocationStorageItem): Uint8Array => {
 	const buffer = new ArrayBuffer(POINT_BYTE_SIZE)
@@ -63,17 +127,6 @@ export const serializeLocation = (item: IWorkoutLocationStorageItem): Uint8Array
 
 	return new Uint8Array(buffer)
 }
-
-// export const serializeLocations = (items: IWorkoutLocationStorageItem[]): ArrayBuffer => {
-// 	const buffer = new ArrayBuffer(items.length * POINT_BYTE_SIZE)
-// 	const target = new Uint8Array(buffer)
-//
-// 	for (let i = 0; i < items.length; i++) {
-// 		target.set(serializeLocation(items[i]), i * POINT_BYTE_SIZE)
-// 	}
-//
-// 	return buffer
-// }
 
 export enum deserializeGetterType {
 	ALL = 'all',
@@ -145,4 +198,17 @@ export const deserializeLocations = (
 	}
 
 	return result
+}
+
+// Читает чанк с заголовком (или legacy-чанк без заголовка) в точки.
+export const deserializeChunkPoints = (
+	buffer: ArrayBufferLike | undefined,
+	startedAt: number,
+	getterType: deserializeGetterType
+): IWorkoutLocationStorageItem[] => {
+	if (!buffer || buffer.byteLength === 0) return []
+
+	const { byteOffset, byteLength } = getPointsRegion(buffer)
+
+	return deserializeLocations(new Uint8Array(buffer, byteOffset, byteLength), startedAt, getterType)
 }
