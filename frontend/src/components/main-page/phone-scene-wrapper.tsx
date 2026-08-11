@@ -12,7 +12,7 @@ const PhoneSceneWrapper = () => {
 			dpr={[1, 1.5]}
 			gl={{
 				powerPreference: 'high-performance',
-				toneMappingExposure: 1.6
+				toneMappingExposure: 1
 			}}
 			camera={{ position: [0, 0, 5], fov: 3 }}
 		>

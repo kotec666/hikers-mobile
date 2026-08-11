@@ -20,21 +20,21 @@ const Lights = () => {
 	return (
 		<>
 			<hemisphereLight args={['#ffffff', '#5a5a5a', 2.2]} />
-			<ambientLight intensity={1} />
+			<ambientLight intensity={4} />
 			<directionalLight
 				// ref={dirLight1}
 				position={[5, 5, 5]}
-				intensity={3}
+				intensity={7.5}
 			/>
 			<directionalLight
 				// ref={dirLight2}
 				position={[-5, 5, -5]}
-				intensity={4}
+				intensity={7.5}
 			/>
 			<directionalLight
 				// ref={dirLight3}
 				position={[0, -4, 4]}
-				intensity={1.8}
+				intensity={7.5}
 			/>
 		</>
 	)
