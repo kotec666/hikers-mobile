@@ -35,6 +35,7 @@ import AboutSvg from '@/components/svg/AboutSvg'
 import LoadQueryErrorRetry from '@/components/LoadQueryErrorRetry'
 import { PostListItemSkeleton, ProfileHeaderSkeleton } from '@/components/ui/skeleton'
 import { useTranslation } from 'react-i18next'
+import { IOSMenu } from '@/components/ui/Menu/Menu.ios'
 
 /**
  *
@@ -364,6 +365,7 @@ const Profile = () => {
 													</Text>
 												)}
 											</Pressable>
+											{/*<IOSMenu />*/}
 											<Text
 												className="text-base text-gray-ab"
 												style={{ fontFamily: fontFamily.medium }}

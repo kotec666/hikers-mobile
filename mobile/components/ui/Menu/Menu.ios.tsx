@@ -29,7 +29,6 @@ import { TouchableOpacity, Text } from 'react-native'
 export function IOSMenu() {
 	return (
 		<MenuView
-			title="тайтл"
 			onPressAction={({ nativeEvent }) => {
 				switch (nativeEvent.event) {
 					case 'routing':
@@ -81,13 +80,13 @@ export function IOSMenu() {
 				{
 					id: 'delete',
 					title: 'Удалить',
-					// image: deleteIcon,
+					image: 'trash',
 					attributes: { destructive: true }
 				}
 			]}
 		>
 			<TouchableOpacity>
-				<Text style={{ fontSize: 20 }}>⋯</Text>
+				<Text style={{ fontSize: 20, color: 'white' }}>⋯</Text>
 			</TouchableOpacity>
 		</MenuView>
 	)
