@@ -1,4 +1,5 @@
-import { Pressable, Text, View } from 'react-native'
+import { Text, View } from 'react-native'
+import { Motion } from '@legendapp/motion'
 import { fontFamily } from '@/constants/Fonts'
 import PopupMenu from '@/components/ui/Popup/PopupMenu'
 import PopupMenuItem from '@/components/ui/Popup/PopupMenuItem'
@@ -11,9 +12,12 @@ export function Menu({ actions, children, menuWidth, menuHeight, blurDisabled }:
 			menuWidth={menuWidth}
 			menuHeight={menuHeight}
 			trigger={({ open }) => (
-				<Pressable onPress={open}>
+				// Motion.Pressable — единственный Pressable триггера: передаёт контекст pressed
+				// вложенным Motion.View с whileTap (кнопка в RoundedButton и пр.), но сам не
+				// перехватывается ими — «кнопка в кнопке» не возникает, меню открывается.
+				<Motion.Pressable onPress={open}>
 					{children ?? <Text style={{ fontSize: 20, color: 'white' }}>⋯</Text>}
-				</Pressable>
+				</Motion.Pressable>
 			)}
 		>
 			{actions.map((action) => (

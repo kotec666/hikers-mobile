@@ -43,13 +43,23 @@ export const RoundedButton = memo(({ onPress, icon }: IRoundedButtonProps) => {
 		</Motion.View>
 	)
 
-	const renderWithEffect = (EffectComponent: React.ComponentType<any>, effectProps: any) => (
-		<Motion.Pressable onPress={onPress} className="w-[50px] h-[50px]">
+	const renderWithEffect = (EffectComponent: React.ComponentType<any>, effectProps: any) => {
+		const content = (
 			<EffectComponent style={{ borderRadius: 999, overflow: 'hidden' }} {...effectProps}>
 				{buttonContent}
 			</EffectComponent>
-		</Motion.Pressable>
-	)
+		)
+
+		if (!onPress) {
+			return <View className="w-[50px] h-[50px]">{content}</View>
+		}
+
+		return (
+			<Motion.Pressable onPress={onPress} className="w-[50px] h-[50px]">
+				{content}
+			</Motion.Pressable>
+		)
+	}
 
 	if (isGlassAvailable) {
 		return renderWithEffect(GlassView, { colorScheme: 'dark' })
@@ -57,6 +67,12 @@ export const RoundedButton = memo(({ onPress, icon }: IRoundedButtonProps) => {
 
 	if (isIOS) {
 		return renderWithEffect(BlurView, { tint: 'dark', intensity: 10 })
+	}
+
+	// Без onPress рендерим не-pressable враппер: вложенный Motion.Pressable перехватывает
+	// тач и не даёт открыться внешнему триггеру (например, Menu на Android) — «кнопка в кнопке».
+	if (!onPress) {
+		return <View className="w-[50px] h-[50px]">{buttonContent}</View>
 	}
 
 	return <Motion.Pressable onPress={onPress}>{buttonContent}</Motion.Pressable>

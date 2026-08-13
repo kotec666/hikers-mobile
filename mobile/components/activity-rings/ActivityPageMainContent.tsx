@@ -65,7 +65,7 @@ const ActivityPageMainContent = ({
 									}
 								]}
 							>
-								<Motion.Pressable className="bg-gray-1c w-[40px] h-[40px] rounded-full items-center justify-center">
+								<Motion.View className="bg-gray-1c w-[40px] h-[40px] rounded-full items-center justify-center">
 									<Motion.View
 										whileTap={{ scale: 0.8 }}
 										transition={{
@@ -76,7 +76,7 @@ const ActivityPageMainContent = ({
 									>
 										<RoundedPlusMinusSvg />
 									</Motion.View>
-								</Motion.Pressable>
+								</Motion.View>
 							</Menu>
 						)}
 					</View>
