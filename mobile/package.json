@@ -17,7 +17,7 @@
 		"web": "expo start --web",
 		"lint": "eslint .",
 		"set-emulator-proxy": "node scripts/set-emulator-proxy.js",
-		"typecheck": "tsc --noEmit",
+		"typecheck": "bash scripts/typecheck.sh",
 		"check": "yarn lint && yarn typecheck",
 		"format": "prettier --write \"{app,components,constants,helpers,hooks,scripts}/**/*.{js,jsx,ts,tsx}\""
 	},
