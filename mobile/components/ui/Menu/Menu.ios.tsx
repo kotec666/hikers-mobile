@@ -1,93 +1,35 @@
-import { MenuView } from '@expo/ui/community/menu'
-import { TouchableOpacity, Text } from 'react-native'
+import { Button, Host, Menu as SwiftUIMenu, RNHostView } from '@expo/ui/swift-ui'
+import { disabled as disabledModifier } from '@expo/ui/swift-ui/modifiers'
+import { Text } from 'react-native'
+import { MenuAction, MenuProps } from './Menu.types'
 
-// const routingIcon = Icon.select({
-// 	ios: 'point.3.connected.trianglepath.dotted',
-// 	android: import('@expo/material-symbols/route.xml')
-// })
-// const refreshIcon = Icon.select({
-// 	ios: 'arrow.triangle.2.circlepath',
-// 	android: import('@expo/material-symbols/refresh.xml')
-// })
-// const pingIcon = Icon.select({
-// 	ios: 'gauge',
-// 	android: import('@expo/material-symbols/speed.xml')
-// })
-// const editIcon = Icon.select({
-// 	ios: 'square.and.pencil',
-// 	android: import('@expo/material-symbols/edit.xml')
-// })
-// const pinIcon = Icon.select({
-// 	ios: 'pin',
-// 	android: import('@expo/material-symbols/keep.xml')
-// })
-// const deleteIcon = Icon.select({
-// 	ios: 'trash',
-// 	android: import('@expo/material-symbols/delete.xml')
-// })
+function renderAction(action: MenuAction) {
+	const modifiers = action.disabled ? [disabledModifier()] : undefined
 
-export function IOSMenu() {
 	return (
-		<MenuView
-			onPressAction={({ nativeEvent }) => {
-				switch (nativeEvent.event) {
-					case 'routing':
-						console.log('Маршрутизация')
-						break
-					case 'refresh':
-						console.log('Обновить подписку')
-						break
-					case 'ping':
-						console.log('Пинг')
-						break
-					case 'edit':
-						console.log('Редактировать')
-						break
-					case 'pin':
-						console.log('Закрепить')
-						break
-					case 'delete':
-						console.log('Удалить')
-						break
+		<Button
+			key={action.id}
+			label={action.title}
+			systemImage={action.image}
+			role={action.destructive ? 'destructive' : undefined}
+			modifiers={modifiers}
+			onPress={action.onPress}
+		/>
+	)
+}
+
+export function Menu({ actions, children }: MenuProps) {
+	return (
+		<Host colorScheme="dark" matchContents>
+			<SwiftUIMenu
+				label={
+					<RNHostView matchContents>
+						<>{children ?? <Text style={{ fontSize: 20, color: 'white' }}>⋯</Text>}</>
+					</RNHostView>
 				}
-			}}
-			actions={[
-				{
-					id: 'routing',
-					title: 'Маршрутизация'
-					// image: routingIcon
-				},
-				{
-					id: 'refresh',
-					title: 'Обновить подписку'
-					// image: refreshIcon
-				},
-				{
-					id: 'ping',
-					title: 'Пинг'
-					// image: pingIcon
-				},
-				{
-					id: 'edit',
-					title: 'Редактировать'
-					// image: editIcon
-				},
-				{
-					id: 'pin',
-					title: 'Закрепить'
-					// image: pinIcon
-				},
-				{
-					id: 'delete',
-					title: 'Удалить',
-					image: 'trash',
-					attributes: { destructive: true }
-				}
-			]}
-		>
-			<TouchableOpacity>
-				<Text style={{ fontSize: 20, color: 'white' }}>⋯</Text>
-			</TouchableOpacity>
-		</MenuView>
+			>
+				{actions.map(renderAction)}
+			</SwiftUIMenu>
+		</Host>
 	)
 }

@@ -9,14 +9,15 @@
     "version": "1.0.0",
     "orientation": "portrait",
     "scheme": "hikers",
-    "userInterfaceStyle": "automatic",
+    "userInterfaceStyle": "dark",
     "backgroundColor": "#0D0D0D",
     "ios": {
       "supportsTablet": true,
       "bundleIdentifier": "run.hikers.app",
       "icon": "./assets/images/icon-ios.icon",
       "infoPlist": {
-        "NSSupportsLiveActivities": true
+        "NSSupportsLiveActivities": true,
+        "CFBundleAllowMixedLocalizations": true
       },
       "entitlements": {
         "com.apple.security.application-groups": [
@@ -64,7 +65,7 @@
       [
         "expo-sensors",
         {
-          "motionPermission": "Разрешите хайкерс доступ к датчикам устройства"
+          "motionPermission": "Allow Hikers to access your device sensors"
         }
       ],
       [
@@ -79,8 +80,8 @@
       [
         "expo-location",
         {
-          "locationWhenInUsePermission": "Используем геолокацию для записи ваших тренировок и маршрутов",
-          "locationAlwaysAndWhenInUsePermission": "Разрешение на фоновую геолокацию позволяет продолжать запись тренировки при заблокированном экране",
+          "locationWhenInUsePermission": "We use your location to record your workouts and routes",
+          "locationAlwaysAndWhenInUsePermission": "Background location permission lets you continue recording your workout while the screen is locked",
           "isAndroidForegroundServiceEnabled": true,
           "isAndroidBackgroundLocationEnabled": true,
           "isIosBackgroundLocationEnabled": true
@@ -117,8 +118,8 @@
       [
         "expo-image-picker",
         {
-          "photosPermission": "Приложению требуется доступ к вашей галерее для выбора изображения",
-          "cameraPermission": "Приложению требуется доступ к вашей камере для добавления изображения"
+          "photosPermission": "The app needs access to your photo library to choose an image",
+          "cameraPermission": "The app needs access to your camera to add an image"
         }
       ],
       "expo-font",

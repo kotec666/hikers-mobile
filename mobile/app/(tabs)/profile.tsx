@@ -25,8 +25,6 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context'
 import WorkoutMap from '@/components/map/WorkoutMap'
 import DailyActivityRedirect from '@/components/activity-rings/DailyActivityRedirect'
 import { RoundedButton } from '@/components/ui/HeaderBack'
-import PopupMenuItem from '@/components/ui/Popup/PopupMenuItem'
-import PopupMenu from '@/components/ui/Popup/PopupMenu'
 import { EmojiSheetModule } from 'expo-native-sheet-emojis'
 import { FlashList, FlashListRef } from '@shopify/flash-list'
 import EditSvg from '@/components/svg/EditSvg'
@@ -35,7 +33,7 @@ import AboutSvg from '@/components/svg/AboutSvg'
 import LoadQueryErrorRetry from '@/components/LoadQueryErrorRetry'
 import { PostListItemSkeleton, ProfileHeaderSkeleton } from '@/components/ui/skeleton'
 import { useTranslation } from 'react-i18next'
-import { IOSMenu } from '@/components/ui/Menu/Menu.ios'
+import { Menu } from '@/components/ui/Menu/Menu'
 
 /**
  *
@@ -289,67 +287,47 @@ const Profile = () => {
 												bordered
 												imageUrl={`${PATH_TO_IMAGE}${profileData?.user?.avatarFilename}`}
 											/>
-											<PopupMenu
+											<Menu
 												menuWidth={230}
 												menuHeight={300}
-												trigger={({ open }) => (
-													<RoundedButton onPress={open} icon={<SettingsSvg />} />
-												)}
+												actions={[
+													{
+														id: 'edit',
+														title: t('ProfilePage.menu.editProfile'),
+														image: 'square.and.pencil',
+														icon: <EditSvg size={18} color="white" />,
+														onPress: () => handleClickRedirect(ALLOWED_ROUTES.EDIT_PROFILE)
+													},
+													{
+														id: 'about',
+														title: t('ProfilePage.menu.about'),
+														image: 'ellipsis.circle',
+														icon: <AboutSvg size={18} color="white" />,
+														onPress: () => handleClickRedirect(ALLOWED_ROUTES.ABOUT)
+													},
+													{
+														id: 'settings',
+														title: t('common.settings'),
+														image: 'gearshape',
+														icon: <SettingsSvg size={18} color="white" />,
+														onPress: () => handleClickRedirect(ALLOWED_ROUTES.SETTINGS)
+													},
+													{
+														id: 'exit',
+														title: t('ProfilePage.menu.exit'),
+														image: 'rectangle.portrait.and.arrow.right',
+														icon: <ExitSvg size={18} color="white" />,
+														onPress: handleClickExit
+													}
+												]}
 											>
-												<PopupMenuItem
-													title={t('ProfilePage.menu.editProfile')}
-													onPress={() => handleClickRedirect(ALLOWED_ROUTES.EDIT_PROFILE)}
-												>
-													<View className="flex-row items-center gap-3">
-														<EditSvg size={18} color="white" />
-														<Text className="text-white text-base">
-															{t('ProfilePage.menu.editProfile')}
-														</Text>
-													</View>
-												</PopupMenuItem>
-												<PopupMenuItem
-													title={t('ProfilePage.menu.about')}
-													onPress={() => handleClickRedirect(ALLOWED_ROUTES.ABOUT)}
-												>
-													<View className="flex-row items-center gap-3">
-														<AboutSvg size={18} color="white" />
-														<Text className="text-white text-base">
-															{t('ProfilePage.menu.about')}
-														</Text>
-													</View>
-												</PopupMenuItem>
-												<PopupMenuItem
-													title={t('common.settings')}
-													onPress={() => handleClickRedirect(ALLOWED_ROUTES.SETTINGS)}
-												>
-													<View className="flex-row items-center gap-3">
-														<SettingsSvg size={18} color="white" />
-														<Text className="text-white text-base">
-															{t('common.settings')}
-														</Text>
-													</View>
-												</PopupMenuItem>
-												{/*<PopupMenuItem*/}
-												{/*	title="results page"*/}
-												{/*	onPress={() => handleClickRedirect(ALLOWED_ROUTES.RESULTS_PAGE)}*/}
-												{/*/>*/}
-												<PopupMenuItem
-													title={t('ProfilePage.menu.exit')}
-													onPress={handleClickExit}
-												>
-													<View className="flex-row items-center gap-3">
-														<ExitSvg size={18} color="white" />
-														<Text className="text-white text-base">
-															{t('ProfilePage.menu.exit')}
-														</Text>
-													</View>
-												</PopupMenuItem>
-											</PopupMenu>
+												<RoundedButton icon={<SettingsSvg />} />
+											</Menu>
 										</View>
 										<View>
 											<Pressable
 												onPress={handlePressEmojiPick}
-												className="flex-row items-center gap-3"
+												className="flex-row items-center gap-3 self-start"
 											>
 												{profileData?.user?.name && (
 													<Text
@@ -365,7 +343,6 @@ const Profile = () => {
 													</Text>
 												)}
 											</Pressable>
-											{/*<IOSMenu />*/}
 											<Text
 												className="text-base text-gray-ab"
 												style={{ fontFamily: fontFamily.medium }}

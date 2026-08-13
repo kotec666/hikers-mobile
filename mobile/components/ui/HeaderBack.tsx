@@ -18,7 +18,7 @@ interface IProps {
 }
 
 interface IRoundedButtonProps {
-	onPress: () => void
+	onPress?: () => void
 	icon?: React.JSX.Element
 }
 

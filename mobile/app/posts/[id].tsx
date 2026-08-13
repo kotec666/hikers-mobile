@@ -1,5 +1,5 @@
 import React, { useCallback, useEffect, useState } from 'react'
-import { View, ScrollView, Dimensions, Text } from 'react-native'
+import { View, ScrollView, Dimensions } from 'react-native'
 import { Container } from '@/components/ui/Container'
 import PostListItemHeader from '@/components/ui/Post/PostListItemHeader'
 import HeaderBack, { RoundedButton } from '@/components/ui/HeaderBack'
@@ -18,13 +18,12 @@ import BlurProvider from '@/components/providers/BlurProvider'
 import { useDeletePostMutation, usePostQuery } from '@/queries/posts'
 import { Page } from '@/components/ui/Page'
 import WorkoutMap from '@/components/map/WorkoutMap'
-import PopupMenuItem from '@/components/ui/Popup/PopupMenuItem'
-import PopupMenu from '@/components/ui/Popup/PopupMenu'
 import EditSvg from '@/components/svg/EditSvg'
 import DeleteTrashSvg from '@/components/svg/DeleteTrashSvg'
 import LoadQueryErrorRetry from '@/components/LoadQueryErrorRetry'
 import { PostItemSkeleton } from '@/components/ui/skeleton'
 import { useTranslation } from 'react-i18next'
+import { Menu } from '@/components/ui/Menu/Menu'
 
 const { height } = Dimensions.get('screen')
 const SLIDE_ASPECT_RATIO = height / 3.6
@@ -121,32 +120,33 @@ const Post = () => {
 						<View className="flex-row justify-between items-center">
 							<HeaderBack returnCallback={handleClickBack}>{t('PostDetailsPage.header')}</HeaderBack>
 							{post?.userCreator?.id === user?.id && (
-								<PopupMenu
+								<Menu
 									menuWidth={170}
 									menuHeight={150}
-									trigger={({ open }) => <RoundedButton onPress={open} icon={<MoreOptionsSvg />} />}
-								>
-									<PopupMenuItem
-										onPress={() =>
-											push(
-												`/training/viewWorkout?mode=${VIEW_WORKOUT_MODE.EDIT}&editPostId=${post?.id}`
-											)
+									actions={[
+										{
+											id: 'edit',
+											title: t('common.edit'),
+											image: 'square.and.pencil',
+											icon: <EditSvg size={18} color="white" />,
+											onPress: () => {
+												push(
+													`/training/viewWorkout?mode=${VIEW_WORKOUT_MODE.EDIT}&editPostId=${post?.id}`
+												)
+											}
+										},
+										{
+											id: 'delete',
+											title: t('common.delete'),
+											image: 'trash',
+											destructive: true,
+											icon: <DeleteTrashSvg size={18} color={Colors['red-ff4']} />,
+											onPress: handleOpenDeleteModal
 										}
-									>
-										<View className="flex-row items-center gap-3">
-											<EditSvg size={18} color="white" />
-											<Text className="text-white text-base">{t('common.edit')}</Text>
-										</View>
-									</PopupMenuItem>
-									<PopupMenuItem onPress={handleOpenDeleteModal}>
-										<View className="flex-row items-center gap-3">
-											<DeleteTrashSvg size={18} color={Colors['red-ff4']} />
-											<Text className="text-base" style={{ color: Colors['red-ff4'] }}>
-												{t('common.delete')}
-											</Text>
-										</View>
-									</PopupMenuItem>
-								</PopupMenu>
+									]}
+								>
+									<RoundedButton icon={<MoreOptionsSvg />} />
+								</Menu>
 							)}
 						</View>
 						<ScrollView style={{ flex: 1, width: '100%' }} contentContainerStyle={{ paddingBottom: 20 }}>

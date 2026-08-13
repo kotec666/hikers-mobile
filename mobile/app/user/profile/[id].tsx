@@ -333,19 +333,6 @@ const UserProfilePage = () => {
 															bordered
 															imageUrl={`${PATH_TO_IMAGE}${profileData?.user?.avatarFilename}`}
 														/>
-														{/*<PopupMenu*/}
-														{/*	menuWidth={200}*/}
-														{/*	menuHeight={300}*/}
-														{/*	trigger={({ open }) => (*/}
-														{/*		<RoundedButton onPress={open} icon={<SettingsSvg />} />*/}
-														{/*	)}*/}
-														{/*>*/}
-														{/*	<PopupMenuItem*/}
-														{/*		title="Настройки"*/}
-														{/*		onPress={() => handleClickRedirect(ALLOWED_ROUTES.SETTINGS)}*/}
-														{/*	/>*/}
-														{/*	<PopupMenuItem title="Выход" onPress={handleClickExit} />*/}
-														{/*</PopupMenu>*/}
 													</View>
 													<View>
 														<View className="flex-row items-center gap-3">
