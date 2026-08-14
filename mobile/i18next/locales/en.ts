@@ -22,6 +22,7 @@ const en: Translations = {
 			ready: 'Done',
 			edit: 'Edit',
 			workout: 'Workout',
+			pause: 'Pause',
 			savedSuccess: 'Data saved successfully',
 			quitWithoutSave: 'Quit without saving data?'
 		},

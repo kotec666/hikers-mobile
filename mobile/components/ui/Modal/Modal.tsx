@@ -1,10 +1,13 @@
 import React from 'react'
-import { View, Text, StyleSheet, Modal as RNModal, ModalProps, Platform } from 'react-native'
+import { View, Text, StyleSheet, ModalProps, Platform } from 'react-native'
 import { KeyboardStickyView } from 'react-native-keyboard-controller'
+import Animated, { FadeIn, FadeOut } from 'react-native-reanimated'
+import { useSafeAreaInsets } from 'react-native-safe-area-context'
 import { useBlurContext } from '@/components/providers/BlurProvider'
 import { GlassView, isLiquidGlassAvailable } from 'expo-glass-effect'
 import { BlurView } from 'expo-blur'
 import RoundedMiniButton from '@/components/ui/RoundedMiniButton'
+import { DEFAULT_PADDING_TOP } from '@/constants/Variables'
 
 type PROPS = ModalProps & {
 	label?: string
@@ -15,8 +18,9 @@ type PROPS = ModalProps & {
 	handleClose: () => void
 }
 
-const Modal = ({ isOpen, withInput, handleClose, label, labelSize, children, blurDisabled, ...rest }: PROPS) => {
+const Modal = ({ isOpen, withInput, handleClose, label, labelSize, children, blurDisabled }: PROPS) => {
 	const blurTargetRef = useBlurContext()
+	const insets = useSafeAreaInsets()
 	const isGlassAvailable = Platform.OS === 'ios' && isLiquidGlassAvailable()
 
 	const renderContent = () => {
@@ -76,21 +80,35 @@ const Modal = ({ isOpen, withInput, handleClose, label, labelSize, children, blu
 
 	const Wrapper = withInput ? KeyboardStickyView : View
 
+	if (!isOpen) return null
+
 	return (
-		<RNModal visible={isOpen} transparent animationType="fade" statusBarTranslucent {...rest}>
+		<Animated.View
+			entering={FadeIn.duration(200)}
+			exiting={FadeOut.duration(150)}
+			style={[
+				StyleSheet.absoluteFill,
+				styles.topLayer,
+				{ top: -(insets.top + DEFAULT_PADDING_TOP), bottom: -insets.bottom }
+			]}
+		>
 			<Wrapper
 				style={styles.overlay}
 				{...(withInput && {
 					behavior: Platform.OS === 'ios' ? 'padding' : 'height'
 				})}
 			>
-				<View style={[styles.container, !isGlassAvailable && { borderWidth: 1 }]}>{renderContent()}</View>
+				<View style={styles.container}>{renderContent()}</View>
 			</Wrapper>
-		</RNModal>
+		</Animated.View>
 	)
 }
 
 const styles = StyleSheet.create({
+	topLayer: {
+		zIndex: 999,
+		elevation: 999
+	},
 	overlay: {
 		flex: 1,
 		justifyContent: 'center',

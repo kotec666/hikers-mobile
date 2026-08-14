@@ -2,7 +2,7 @@ import { Platform } from 'react-native'
 import { TrainingType } from '@shared/enums'
 import { WorkoutTypesMap } from '@/constants/WorkoutTypes'
 import * as liveActivities from '@/modules/expo-live-activity'
-import type { LiveActivityMetrics, PendingWidgetAction } from '@/modules/expo-live-activity'
+import type { LiveActivityLabels, LiveActivityMetrics, PendingWidgetAction } from '@/modules/expo-live-activity'
 import i18n from '@/i18next/i18next'
 
 type WorkoutLiveActivityIcon = 'RUNNING' | 'WALKING' | 'BIKING' | 'WORKOUT'
@@ -19,6 +19,15 @@ const getWorkoutLiveActivityIcon = (workoutType: TrainingType): WorkoutLiveActiv
 
 	return 'WORKOUT'
 }
+
+const buildWorkoutLiveActivityLabels = (): LiveActivityLabels => ({
+	timeRunning: i18n.t('measurementUnits.time'),
+	timePaused: i18n.t('common.pause'),
+	distance: `${i18n.t('measurementUnits.range')} (${i18n.t('measurementUnits.km.short')})`,
+	speed: i18n.t('measurementUnits.speed'),
+	averageSpeed: i18n.t('measurementUnits.avgSpeed'),
+	speedUnit: `(${i18n.t('measurementUnits.kmh')})`
+})
 
 const getExistingActivityId = () => {
 	const activeActivity = liveActivities.getActiveActivities()[0]
@@ -41,8 +50,9 @@ export const startWorkoutLiveActivity = async (
 	}
 
 	const activityId = await liveActivities.startLiveActivity(
-		WorkoutTypesMap?.[workoutType]?.name ?? i18n.t('common.workout'),
+		i18n.t(WorkoutTypesMap?.[workoutType]?.name ?? 'common.workout'),
 		getWorkoutLiveActivityIcon(workoutType),
+		buildWorkoutLiveActivityLabels(),
 		startedAt,
 		pausedAt
 	)
@@ -89,12 +99,20 @@ export const addWorkoutLiveActivityWidgetActionListener = (listener: WorkoutWidg
 export const updateWorkoutLiveActivityMetrics = async (metrics: LiveActivityMetrics): Promise<void> => {
 	if (!canUseLiveActivity()) return
 
-	const success = await liveActivities.updateLiveActivityMetrics(metrics, activeWorkoutLiveActivityId ?? undefined)
+	const metricsWithLabels: LiveActivityMetrics = {
+		...metrics,
+		labels: buildWorkoutLiveActivityLabels()
+	}
+
+	const success = await liveActivities.updateLiveActivityMetrics(
+		metricsWithLabels,
+		activeWorkoutLiveActivityId ?? undefined
+	)
 
 	if (!success) {
 		activeWorkoutLiveActivityId = getExistingActivityId()
 		if (activeWorkoutLiveActivityId) {
-			await liveActivities.updateLiveActivityMetrics(metrics, activeWorkoutLiveActivityId)
+			await liveActivities.updateLiveActivityMetrics(metricsWithLabels, activeWorkoutLiveActivityId)
 		}
 	}
 }

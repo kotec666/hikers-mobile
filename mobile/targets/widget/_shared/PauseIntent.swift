@@ -38,7 +38,13 @@ struct PauseIntent: AppIntent, LiveActivityIntent {
             lastLocationTimestamp: currentState.lastLocationTimestamp,
             distanceText: currentState.distanceText,
             speedText: currentState.speedText,
-            averageSpeedText: currentState.averageSpeedText
+            averageSpeedText: currentState.averageSpeedText,
+            timeRunningLabel: currentState.timeRunningLabel,
+            timePausedLabel: currentState.timePausedLabel,
+            distanceLabel: currentState.distanceLabel,
+            speedLabel: currentState.speedLabel,
+            averageSpeedLabel: currentState.averageSpeedLabel,
+            speedUnitLabel: currentState.speedUnitLabel
         )
 
         await activity.update(ActivityContent(

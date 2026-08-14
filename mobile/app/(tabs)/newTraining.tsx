@@ -81,6 +81,18 @@ const HEADING_THROTTLE_MS = 750
 const PAUSE_DEBOUNCE_MS = 300
 const YA_MAP_INITIAL_MAP_ZOOM = 14
 const RN_MAP_INITIAL_MAP_ZOOM = 500
+const FINISH_CLEANUP_TIMEOUT_MS = 5000
+
+const withTimeout = (promise: Promise<unknown>, ms: number, label: string): Promise<unknown> =>
+	Promise.race([
+		promise,
+		new Promise<void>((resolve) =>
+			setTimeout(() => {
+				console.warn(`[end-workout] ${label} timed out after ${ms}ms`)
+				resolve()
+			}, ms)
+		)
+	])
 
 export default function NewTraining() {
 	const { t, i18n } = useTranslation()
@@ -687,8 +699,8 @@ export default function NewTraining() {
 
 	const handleClickEndWorkout = useCallback(async () => {
 		try {
-			await tracking.stopTracking()
-			await endWorkoutLiveActivity()
+			await withTimeout(tracking.stopTracking(), FINISH_CLEANUP_TIMEOUT_MS, 'stopTracking')
+			await withTimeout(endWorkoutLiveActivity(), FINISH_CLEANUP_TIMEOUT_MS, 'endLiveActivity')
 
 			stopHeadingTracking()
 
