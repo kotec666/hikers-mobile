@@ -20,6 +20,7 @@ const ru = {
 			ready: 'Готово',
 			edit: 'Редактирование',
 			workout: 'Тренировка',
+			pause: 'Пауза',
 			savedSuccess: 'Данные успешно сохранены',
 			quitWithoutSave: 'Выйти без сохранения данных?'
 		},

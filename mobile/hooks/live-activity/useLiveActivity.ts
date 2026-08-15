@@ -171,7 +171,14 @@ export function useLiveActivity(): UseLiveActivityReturn {
 			try {
 				const activityType = options.activityIcon.toLowerCase()
 
-				const activityId = await liveActivities.startLiveActivity(options.activityName, activityType)
+				const activityId = await liveActivities.startLiveActivity(options.activityName, activityType, {
+					timeRunning: '',
+					timePaused: '',
+					distance: '',
+					speed: '',
+					averageSpeed: '',
+					speedUnit: ''
+				})
 
 				if (activityId) {
 					setLiveActivityId(activityId)

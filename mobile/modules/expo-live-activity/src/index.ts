@@ -6,6 +6,7 @@ type ExpoLiveActivityModule = {
 	startActivity: (
 		activityName: string,
 		activityIcon: string,
+		labels: LiveActivityLabels,
 		startedAtTimestamp?: number,
 		pausedAtTimestamp?: number
 	) => Promise<string>
@@ -16,7 +17,8 @@ type ExpoLiveActivityModule = {
 		distanceText: string,
 		speedText: string,
 		averageSpeedText: string,
-		lastLocationTimestamp: number
+		lastLocationTimestamp: number,
+		labels: LiveActivityLabels
 	) => Promise<boolean>
 	endActivity: (activityId?: string) => Promise<boolean>
 	getTimerStatus: () => Promise<TimerStatus>
@@ -68,11 +70,21 @@ export interface ActivityInfo {
 	activityName: string
 }
 
+export interface LiveActivityLabels {
+	timeRunning: string
+	timePaused: string
+	distance: string
+	speed: string
+	averageSpeed: string
+	speedUnit: string
+}
+
 export interface LiveActivityMetrics {
 	distanceText: string
 	speedText: string
 	averageSpeedText: string
 	lastLocationTimestamp?: number
+	labels?: LiveActivityLabels
 }
 
 export interface PendingWidgetAction {
@@ -100,6 +112,7 @@ export function isLiveActivityAvailable(): boolean {
 export async function startLiveActivity(
 	activityName: string,
 	activityIcon: string,
+	labels: LiveActivityLabels,
 	startedAtTimestamp?: number,
 	pausedAtTimestamp?: number | null
 ): Promise<string> {
@@ -111,6 +124,7 @@ export async function startLiveActivity(
 		return await ExpoLiveActivity.startActivity(
 			activityName,
 			activityIcon,
+			labels,
 			startedAtTimestamp,
 			pausedAtTimestamp ?? undefined
 		)
@@ -145,13 +159,23 @@ export async function resumeLiveActivity(activityId?: string): Promise<boolean> 
 export async function updateLiveActivityMetrics(metrics: LiveActivityMetrics, activityId?: string): Promise<boolean> {
 	if (!ExpoLiveActivity) return false
 
+	const labels = metrics.labels ?? {
+		timeRunning: '',
+		timePaused: '',
+		distance: '',
+		speed: '',
+		averageSpeed: '',
+		speedUnit: ''
+	}
+
 	try {
 		return await ExpoLiveActivity.updateActivity(
 			activityId ?? null,
 			metrics.distanceText,
 			metrics.speedText,
 			metrics.averageSpeedText,
-			metrics.lastLocationTimestamp ?? 0
+			metrics.lastLocationTimestamp ?? 0,
+			labels
 		)
 	} catch (error) {
 		console.error('[LiveActivities] Error updating activity:', error)
