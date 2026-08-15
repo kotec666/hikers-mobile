@@ -20,7 +20,7 @@ const en: Translations = {
 			settings: 'Settings',
 			search: 'Search',
 			ready: 'Done',
-			edit: 'Edit',
+			edit: 'Editing',
 			workout: 'Workout',
 			savedSuccess: 'Data saved successfully',
 			quitWithoutSave: 'Quit without saving data?'
