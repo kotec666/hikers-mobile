@@ -27,6 +27,7 @@ import { cn } from '@/helpers/cn'
 import { KeyboardAwareScrollView } from 'react-native-keyboard-controller'
 import { File } from 'expo-file-system'
 import BottomSheet, { BottomSheetHandle } from '@/components/ui/BottomSheet/BottomSheet'
+import { useTranslation } from 'react-i18next'
 
 interface IEditProfileFormState {
 	name: string
@@ -36,6 +37,7 @@ interface IEditProfileFormState {
 }
 
 const ProfileEdit = () => {
+	const { t } = useTranslation()
 	const router = useRouter()
 	const { push } = useSafeNavigation()
 	const { data: profileData, isLoading } = useProfileQuery()
@@ -119,9 +121,9 @@ const ProfileEdit = () => {
 
 			Keyboard.dismiss()
 			setData((s) => ({ ...s, isSaved: true }))
-			toast.success('Данные успешно сохранены')
+			toast.success(t('common.savedSuccess'))
 		} catch (e: unknown) {
-			const formattedErrors = await getFieldsErrors(e)
+			const formattedErrors = await getFieldsErrors(e, t)
 
 			setData((s) => ({ ...s, errors: formattedErrors }))
 			Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error)
@@ -190,10 +192,10 @@ const ProfileEdit = () => {
 
 				return {
 					value: weight,
-					label: `${weight} кг`
+					label: `${weight} ${t('measurementUnits.kg.short')}`
 				}
 			}),
-		[]
+		[t]
 	)
 
 	return (
@@ -232,7 +234,7 @@ const ProfileEdit = () => {
 				<Modal
 					isOpen={data.avatarModal}
 					handleClose={handleCloseAvatarModal}
-					label="Фото профиля"
+					label={t('EditProfilePage.avatarModal.title')}
 					labelSize={16}
 				>
 					<EditAvatarModalContent
@@ -244,26 +246,26 @@ const ProfileEdit = () => {
 				<Modal
 					isOpen={data.notSavedModal}
 					handleClose={handleCloseNotSavedModal}
-					label="Выйти без сохранения данных?"
+					label={t('common.quitWithoutSave')}
 					labelSize={16}
 				>
 					<View className="gap-[20px]">
 						<View className="flex-row gap-[10px]">
 							<Button onPress={exitWithoutSave} variant="white" buttonContainerClassName="flex-1">
-								Да
+								{t('common.yes')}
 							</Button>
 							<Button
 								onPress={handleCloseNotSavedModal}
 								variant="white"
 								buttonContainerClassName="flex-1"
 							>
-								Нет
+								{t('common.no')}
 							</Button>
 						</View>
 					</View>
 				</Modal>
 				<Container className="flex-1 gap-[20px]">
-					<HeaderBack returnCallback={handleClickReturnToProfile}>Редактирование профиля</HeaderBack>
+					<HeaderBack returnCallback={handleClickReturnToProfile}>{t('EditProfilePage.header')}</HeaderBack>
 					<KeyboardAwareScrollView
 						contentContainerStyle={{
 							flexGrow: 1
@@ -305,14 +307,14 @@ const ProfileEdit = () => {
 											<Input
 												textContentType="name"
 												keyboardType="name-phone-pad"
-												placeholder="Введите имя"
+												placeholder={t('EditProfilePage.inputPlaceholder.name')}
 												error={error?.message || data.errors?.name}
 												autoCapitalize="words"
 												onChangeText={onChange}
 												value={value}
 												onBlur={onBlur}
 												returnKeyType="next"
-												returnKeyLabel="Далее"
+												returnKeyLabel={t('common.next')}
 												submitBehavior="submit"
 												onSubmitEditing={() => usernameRef.current?.focus()}
 											/>
@@ -329,7 +331,7 @@ const ProfileEdit = () => {
 											pattern: {
 												value: /^[A-Za-z0-9_]+$/,
 												message: ErrorMessages.customMessage(
-													'Никнейм содержит недопустимые символы'
+													t('FormErrors.customMessage.username.badSymbol')
 												)
 											},
 											minLength: {
@@ -347,7 +349,7 @@ const ProfileEdit = () => {
 												textContentType="username"
 												autoComplete="username"
 												keyboardType="default"
-												placeholder="Введите логин"
+												placeholder={t('EditProfilePage.inputPlaceholder.username')}
 												error={error?.message || data.errors?.username}
 												autoCapitalize="none"
 												onChangeText={onChange}
@@ -360,7 +362,9 @@ const ProfileEdit = () => {
 										onPress={handlePressWeightField}
 										className="border border-black-44 rounded-full p-[16px]"
 									>
-										<Text className="text-white">Вес {weight} кг</Text>
+										<Text className="text-white">
+											{t('EditProfilePage.weight')} {weight} {t('measurementUnits.kg.short')}
+										</Text>
 									</Pressable>
 								</View>
 							</View>
@@ -368,7 +372,7 @@ const ProfileEdit = () => {
 								<ActivityInfo
 									activities={activitiesToRender}
 									isEditMode
-									label="Топ 3 активности на показ"
+									label={t('EditProfilePage.topThreeActivity')}
 								/>
 							</TouchableOpacity>
 							<View className="flex-1 justify-end">
@@ -377,7 +381,7 @@ const ProfileEdit = () => {
 									variant="white"
 									isLoading={isPending || isLoading}
 								>
-									Сохранить
+									{t('common.save')}
 								</Button>
 							</View>
 						</View>

@@ -4,7 +4,6 @@ import { Button } from '@/components/ui/Button'
 import { WorkoutTypesData } from '@/constants/WorkoutTypes'
 import PeopleRunningSvg from '@/components/svg/PeopleRunningSvg'
 import { format } from 'date-fns'
-import { ru } from 'date-fns/locale'
 import WorkoutHistoryListItem from '@/components/workout-history/WorkoutHistoryListItem'
 import SaveUnsavedTrainingSvg from '@/components/svg/SaveUnsavedTrainingSvg'
 import DeleteTrashSvg from '@/components/svg/DeleteTrashSvg'
@@ -12,6 +11,8 @@ import { IWorkout } from '@/store/workoutStorage'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
 import { formatDistance } from '@/helpers/distance'
 import { FlashList } from '@shopify/flash-list'
+import { useTranslation } from 'react-i18next'
+import { LngShort, locales } from '@/store/languageStorage'
 
 interface IProps {
 	notSavedWorkouts: IWorkout[]
@@ -28,6 +29,10 @@ const UnsavedTrainingsDetails = ({
 	handleClickDeleteAll,
 	syncingIds
 }: IProps) => {
+	const { t, i18n } = useTranslation()
+
+	const currentLocale = locales[i18n.language as LngShort] ?? locales[LngShort.en]
+
 	const insets = useSafeAreaInsets()
 
 	const workoutTypeMap = useMemo(() => Object.fromEntries(WorkoutTypesData.map((t) => [t.type, t])), [])
@@ -36,8 +41,12 @@ const UnsavedTrainingsDetails = ({
 		({ item }: { item: IWorkout }) => {
 			const date = new Date(item.startedAt)
 
-			const titleDate = format(date, 'd MMMM, HH:mm', { locale: ru })
-			const title = `${titleDate}${Number.isFinite(item.distanceMeters) && item.distanceMeters >= 0 ? `, ${formatDistance(item.distanceMeters)}` : ''}`
+			const titleDate = format(date, 'd MMMM, HH:mm', { locale: currentLocale })
+			const title = `${titleDate}${
+				Number.isFinite(item.distanceMeters) && item.distanceMeters >= 0
+					? `, ${formatDistance(item.distanceMeters, i18n.language)}`
+					: ''
+			}`
 			const typeData = workoutTypeMap[item.type]
 
 			const IconComponent = typeData?.IconComponent ?? PeopleRunningSvg
@@ -63,7 +72,7 @@ const UnsavedTrainingsDetails = ({
 				/>
 			)
 		},
-		[handleClickDelete, handleClickSaveOneWorkout, syncingIds, workoutTypeMap]
+		[currentLocale, handleClickDelete, handleClickSaveOneWorkout, i18n.language, syncingIds, workoutTypeMap]
 	)
 
 	const isDeletingDisabled = !notSavedWorkouts.length || syncingIds.length > 0
@@ -82,7 +91,7 @@ const UnsavedTrainingsDetails = ({
 				ListFooterComponent={
 					<View style={{ marginTop: 20 }}>
 						<Button variant="white" onPress={handleClickDeleteAll} disabled={isDeletingDisabled}>
-							Удалить все
+							{t('WorkoutPage.bottomSheets.actions.deleteAll')}
 						</Button>
 					</View>
 				}

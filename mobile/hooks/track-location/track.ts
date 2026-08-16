@@ -10,6 +10,7 @@ import { prepareLocationsForSync } from '@/helpers/prepareLocationsForSync'
 import { getItem } from '@/store/authStorage'
 import { filterLocations } from '@/helpers/location/filterLocations'
 import { updateWorkoutLiveActivityFromLastLocation } from '@/hooks/track-location/liveActivityMetrics'
+import i18n from '@/i18next/i18next'
 
 export const LOCATION_TASK_NAME = 'background-location-task'
 let innerAppMountedPromiseRef: Promise<void> | null = null // Variable to hold the promise resolver logic
@@ -32,8 +33,8 @@ export async function startTracking() {
 			deferredUpdatesInterval: 0, // для точности
 			// android behavior
 			foregroundService: {
-				notificationTitle: 'Отслеживание местоположения',
-				notificationBody: 'Приложение собирает данные о вашем местоположении',
+				notificationTitle: i18n.t('AllGeolocationPermissions.trackingNotificationTitle'),
+				notificationBody: i18n.t('AllGeolocationPermissions.trackingNotificationBody'),
 				notificationColor: 'rgba(0,0,0,0)',
 				killServiceOnDestroy: false
 			},

@@ -7,7 +7,6 @@ import WorkoutHistoryListItem from '@/components/workout-history/WorkoutHistoryL
 import { fontFamily } from '@/constants/Fonts'
 import { WorkoutTypesData } from '@/constants/WorkoutTypes'
 import { format } from 'date-fns'
-import { ru } from 'date-fns/locale'
 import SaveUnsavedTrainingSvg from '@/components/svg/SaveUnsavedTrainingSvg'
 import DeleteTrashSvg from '@/components/svg/DeleteTrashSvg'
 import SwipeableProvider from '@/components/providers/SwipeableProvider'
@@ -28,6 +27,9 @@ import { FlashList, FlashListRef } from '@shopify/flash-list'
 import BottomSheet, { BottomSheetHandle } from '@/components/ui/BottomSheet/BottomSheet'
 import LoadQueryErrorRetry from '@/components/LoadQueryErrorRetry'
 import { WorkoutHistoryListSkeleton } from '@/components/ui/skeleton'
+import { useTranslation } from 'react-i18next'
+import { LngShort, locales } from '@/store/languageStorage'
+import { translateArr } from '@/helpers/arrTranslator'
 
 interface WorkoutItem {
 	id: string
@@ -52,6 +54,8 @@ type WorkoutHistoryRow =
 	  } & WorkoutItem)
 
 const WorkoutHistory = () => {
+	const { t, i18n } = useTranslation()
+	const currentLocale = locales[i18n.language as LngShort] ?? locales[LngShort.en]
 	const toast = useToast()
 	const listRef = useRef<FlashListRef<WorkoutHistoryRow>>(null)
 	const bottomSheetRef = useRef<BottomSheetHandle>(null)
@@ -81,16 +85,18 @@ const WorkoutHistory = () => {
 		.filter((item) => !deletedWorkoutIds.includes(item.id))
 		.map((item) => {
 			const date = new Date(item.startedAt || item.createdAt)
-			const month = format(date, 'LLLL', { locale: ru })
+			const month = format(date, 'LLLL', { locale: currentLocale })
 			const monthKey = format(date, 'yyyy-MM')
-			const title = format(date, 'd MMMM, HH:mm', { locale: ru }) // format(item.createdAt, 'dd-MM-yy, HH:mm')
+			const title = format(date, 'd MMMM, HH:mm', { locale: currentLocale }) // format(item.createdAt, 'dd-MM-yy, HH:mm')
 			const typeData = WorkoutTypesData.find((t) => t.type === item.type)
 			const IconComponent = typeData?.IconComponent ?? PeopleRunningSvg
 
 			const distance = Number(item?.distanceM)
 			return {
 				id: item.id,
-				title: `${title}${Number.isFinite(distance) && distance >= 0 ? `, ${formatDistance(distance)}` : ''}`,
+				title: `${title}${
+					Number.isFinite(distance) && distance >= 0 ? `, ${formatDistance(distance, i18n.language)}` : ''
+				}`,
 				month,
 				monthKey,
 				icon: <IconComponent width={26} height={26} />,
@@ -121,7 +127,7 @@ const WorkoutHistory = () => {
 	const handleDelete = async (startedAt: number) => {
 		try {
 			await deleteWorkout(startedAt)
-			toast.success('Тренировка удалена')
+			toast.success(t('ToastMessage.success.workoutDeleted'))
 		} catch {}
 	}
 
@@ -132,10 +138,10 @@ const WorkoutHistory = () => {
 	const handleSync = async (startedAt: number) => {
 		try {
 			await enqueueWorkoutSync(startedAt)
-			toast.success('Тренировка сохранена успешно')
+			toast.success(t('ToastMessage.success.workoutSaved'))
 		} catch (e) {
 			console.log(e)
-			toast.error('Не удалось сохранить тренировку')
+			toast.error(t('ToastMessage.error.failedToSaveWorkout'))
 		}
 	}
 
@@ -158,7 +164,7 @@ const WorkoutHistory = () => {
 		return [
 			{
 				value: '',
-				label: 'Все',
+				label: 'common.all',
 				IconComponent: CheckMarkIconSvg
 			},
 			...WorkoutTypesData.map((t) => ({
@@ -169,14 +175,22 @@ const WorkoutHistory = () => {
 		]
 	}, [])
 
+	const translatedWorkoutTypePickerWheelData = translateArr(workoutTypePickerWheelData, 'label', t)
+
 	const workoutTypeLabelMap = useMemo(() => {
-		return Object.fromEntries(workoutTypePickerWheelData.map((item) => [item.value, item.label]))
-	}, [workoutTypePickerWheelData])
+		return Object.fromEntries(translatedWorkoutTypePickerWheelData.map((item) => [item.value, item.label]))
+	}, [translatedWorkoutTypePickerWheelData])
 
 	// Функция рендеринга индикатора загрузки
 	const renderFooter = useCallback(() => {
 		if (isError && data.length > 0) {
-			return <LoadQueryErrorRetry text="Не удалось загрузить ещё" buttonText="Повторить" onRetry={handleRetry} />
+			return (
+				<LoadQueryErrorRetry
+					text={t('LoadQueryErrorRetry.label.cantLoadMore')}
+					buttonText={t('LoadQueryErrorRetry.action.retry')}
+					onRetry={handleRetry}
+				/>
+			)
 		}
 		if (!isFetchingNextPage) return null
 		return (
@@ -184,17 +198,23 @@ const WorkoutHistory = () => {
 				<ActivityIndicator size="small" color={Colors['green-main']} />
 			</View>
 		)
-	}, [isFetchingNextPage, isError, data.length, handleRetry])
+	}, [isError, data.length, isFetchingNextPage, t, handleRetry])
 
 	const renderEmpty = useCallback(() => {
 		if (isLoading || notSavedWorkouts.length > 0) return <WorkoutHistoryListSkeleton />
 
 		if (isError) {
-			return <LoadQueryErrorRetry text="Не удалось загрузить историю тренировок" onRetry={handleRetry} />
+			return (
+				<LoadQueryErrorRetry
+					text={t('LoadQueryErrorRetry.label.failedToLoadWorkoutHistory')}
+					buttonText={t('LoadQueryErrorRetry.action.tryAgain')}
+					onRetry={handleRetry}
+				/>
+			)
 		}
 
-		return <TrainingsEmpty text="К сожалению, тренировок еще не существует" />
-	}, [isLoading, notSavedWorkouts.length, isError, handleRetry])
+		return <TrainingsEmpty text={t('TrainingsEmpty.label.workoutsNotExist')} />
+	}, [isLoading, notSavedWorkouts.length, isError, t, handleRetry])
 
 	return (
 		<Page>
@@ -208,7 +228,7 @@ const WorkoutHistory = () => {
 					}}
 				>
 					<BaseWheelPicker
-						data={workoutTypePickerWheelData}
+						data={translatedWorkoutTypePickerWheelData}
 						value={temporarySelectedType}
 						onChange={(type: string) => setTemporarySelectedType(type)}
 						itemHeight={70}
@@ -229,7 +249,7 @@ const WorkoutHistory = () => {
 					/>
 				</BottomSheet>
 				<Container className="gap-[20px] flex-1">
-					<HeaderBack>История тренировок</HeaderBack>
+					<HeaderBack>{t('WorkoutHistoryPage.header')}</HeaderBack>
 					<Pressable
 						className="border border-black-44 text-white h-[50px] rounded-full relative flex-row items-center justify-between px-4"
 						onPress={openBottomSheet}
@@ -241,7 +261,7 @@ const WorkoutHistory = () => {
 							className="text-sm mr-2 text-white"
 							numberOfLines={1}
 						>
-							{workoutTypeLabelMap[selectedType] ?? 'Все'}
+							{workoutTypeLabelMap[selectedType] ?? t('common.all')}
 						</Text>
 						<ArrowDownSvg />
 					</Pressable>
@@ -249,6 +269,7 @@ const WorkoutHistory = () => {
 						ref={listRef}
 						style={{ flex: 1 }}
 						data={itemsWithHeaders}
+						ListFooterComponent={renderFooter}
 						ListEmptyComponent={renderEmpty}
 						refreshControl={
 							<RefreshControl
@@ -257,7 +278,6 @@ const WorkoutHistory = () => {
 								tintColor={Colors['green-main']}
 							/>
 						}
-						ListFooterComponent={renderFooter}
 						contentContainerStyle={{
 							flexGrow: 1,
 							paddingBottom: 10,
@@ -270,7 +290,7 @@ const WorkoutHistory = () => {
 										className="text-white text-base mb-[15px]"
 										style={{ fontFamily: fontFamily.bold }}
 									>
-										Несохраненные тренировки
+										{t('WorkoutHistoryPage.unsavedWorkouts')}
 									</Text>
 								)}
 								<View
@@ -281,9 +301,14 @@ const WorkoutHistory = () => {
 									{notSavedWorkouts.map((notSavedWorkout) => {
 										const date = new Date(notSavedWorkout.startedAt)
 										const titleDate = format(date, 'd MMMM, HH:mm', {
-											locale: ru
+											locale: currentLocale
 										})
-										const title = `${titleDate}${Number.isFinite(notSavedWorkout.distanceMeters) && notSavedWorkout.distanceMeters >= 0 ? `, ${formatDistance(notSavedWorkout.distanceMeters)}` : ''}`
+										const title = `${titleDate}${
+											Number.isFinite(notSavedWorkout.distanceMeters) &&
+											notSavedWorkout.distanceMeters >= 0
+												? `, ${formatDistance(notSavedWorkout.distanceMeters, i18n.language)}`
+												: ''
+										}`
 										const typeData = workoutTypeMap[notSavedWorkout.type]
 										const IconComponent = typeData?.IconComponent ?? PeopleRunningSvg
 

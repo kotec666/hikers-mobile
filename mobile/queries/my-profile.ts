@@ -13,37 +13,45 @@ import { getFieldsErrors } from '@/helpers/getFieldsErrors'
 import { useToast } from '@/hooks/useToast'
 import { confirmEmailCode } from '@/api/auth'
 import { useAuthStore } from '@/store/authStore'
+import { useTranslation } from 'react-i18next'
 
-export const useProfileQuery = () =>
-	useQuery<IProfile>({
+export const useProfileQuery = () => {
+	const { t } = useTranslation()
+
+	return useQuery<IProfile>({
 		queryKey: QUERY_KEYS.MY_PROFILE,
 		queryFn: async () => {
 			try {
 				return await getProfileData()
 			} catch (e) {
-				await getFieldsErrors(e)
+				await getFieldsErrors(e, t)
 				throw e
 			}
 		}
 	})
+}
 
-export const useMyActivitiesQuery = () =>
-	useQuery<IActivity[]>({
+export const useMyActivitiesQuery = () => {
+	const { t } = useTranslation()
+
+	return useQuery<IActivity[]>({
 		queryKey: QUERY_KEYS.MY_ACTIVITIES,
 		queryFn: async () => {
 			try {
 				return await getActivities()
 			} catch (e) {
-				await getFieldsErrors(e)
+				await getFieldsErrors(e, t)
 				throw e
 			}
 		}
 	})
+}
 
 export const useUpdateProfileColorMutation = () => {
 	const queryClient = useQueryClient()
 	const toast = useToast()
 	const { user, setUser } = useAuthStore()
+	const { t } = useTranslation()
 
 	return useMutation({
 		mutationFn: (color: string) => editProfileColor(color),
@@ -69,7 +77,7 @@ export const useUpdateProfileColorMutation = () => {
 			return { prevMyProfile, prevColor }
 		},
 		onError: async (e, _color, context) => {
-			await getFieldsErrors(e)
+			await getFieldsErrors(e, t)
 			if (context?.prevMyProfile) {
 				queryClient.setQueryData(QUERY_KEYS.MY_PROFILE, context.prevMyProfile)
 			}
@@ -78,7 +86,7 @@ export const useUpdateProfileColorMutation = () => {
 			}
 		},
 		onSuccess: async () => {
-			toast.success('Цвет успешно обновлен')
+			toast.success(t('ToastMessage.success.colorUpdatedSuccessfully'))
 		}
 	})
 }
@@ -87,6 +95,7 @@ export const useUpdateProfileBadgeMutation = () => {
 	const queryClient = useQueryClient()
 	const toast = useToast()
 	const { user, setUser } = useAuthStore()
+	const { t } = useTranslation()
 
 	return useMutation({
 		mutationFn: (badge: string) => editProfileBadge(badge),
@@ -111,13 +120,13 @@ export const useUpdateProfileBadgeMutation = () => {
 			return { prevMyProfile }
 		},
 		onError: async (e, _badge, context) => {
-			await getFieldsErrors(e)
+			await getFieldsErrors(e, t)
 			if (context?.prevMyProfile) {
 				queryClient.setQueryData(QUERY_KEYS.MY_PROFILE, context.prevMyProfile)
 			}
 		},
 		onSuccess: async () => {
-			toast.success('Значок успешно обновлен')
+			toast.success(t('ToastMessage.success.iconUpdatedSuccessfully'))
 		}
 	})
 }
@@ -142,15 +151,16 @@ export const useConfirmEmailMutation = () => {
 }
 
 export const useDeleteProfileMutation = () => {
+	const { t } = useTranslation()
 	const toast = useToast()
 
 	return useMutation({
 		mutationFn: deleteMyAccount,
 		onSuccess: () => {
-			toast.success('Аккаунт успешно удален')
+			toast.success(t('ToastMessage.success.accountHasBeenSuccessfullyDeleted'))
 		},
 		onError: async (e) => {
-			await getFieldsErrors(e)
+			await getFieldsErrors(e, t)
 		}
 	})
 }

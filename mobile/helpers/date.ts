@@ -1,5 +1,6 @@
 import { addDays, addWeeks, format, isAfter, isSameDay, startOfWeek } from 'date-fns'
-import { ru } from 'date-fns/locale'
+import i18n from '@/i18next/i18next'
+import { LngShort, locales } from '@/store/languageStorage'
 
 export const TODAY = new Date()
 
@@ -23,14 +24,16 @@ export const canGoNextWeek = (date: Date) => {
 	return !isAfter(nextWeekStart, TODAY)
 }
 
-export const formatHeaderDate = (date: Date) => {
+export const formatHeaderDate = (date: Date, language: LngShort = LngShort.en) => {
+	const yearSuffix = i18n.t('DailyActivity.yearShortSuffix')
+	const formatted =
+		format(date, 'd MMMM yyyy', {
+			locale: locales[language] ?? locales[LngShort.en]
+		}) + yearSuffix
+
 	if (isSameDay(date, TODAY)) {
-		return `Сегодня, ${format(date, 'd MMMM yyyy г.', {
-			locale: ru
-		})}`
+		return `${i18n.t('common.today')}, ${formatted}`
 	}
 
-	return format(date, 'd MMMM yyyy г.', {
-		locale: ru
-	})
+	return formatted
 }

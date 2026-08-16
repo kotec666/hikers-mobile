@@ -1,3 +1,4 @@
+import i18n from '@/i18next/i18next'
 import { useFonts } from 'expo-font'
 import { Stack, SplashScreen } from 'expo-router'
 import { fontFamily } from '@/constants/Fonts'
@@ -10,17 +11,26 @@ import { GestureHandlerRootView } from 'react-native-gesture-handler'
 import PortalProvider from '@/components/Portal/PortalProvider'
 import { Colors } from '@/constants/Colors'
 import { QueryClientProvider } from '@tanstack/react-query'
-import './../global.css'
 import { SafeAreaProvider } from 'react-native-safe-area-context'
 import { clearExpiredTimers } from '@/store/timerStorage'
+import { runWorkoutStorageMigrations } from '@/store/workoutVersioning'
+import { workoutStorage } from '@/store/workoutStorage'
 import { KeyboardProvider } from 'react-native-keyboard-controller'
 import { queryClient } from '@/queries/queryClient'
+import { LngLong, LngShort } from '@/store/languageStorage'
+import './../global.css'
 
 SplashScreen.preventAutoHideAsync()
 
 const initializeYamap = async () => {
 	try {
-		await YamapInstance.setLocale('ru_RU')
+		const currentLang = i18n.language as LngShort
+		const languages = {
+			[LngShort.ru]: LngLong.ru,
+			[LngShort.en]: LngLong.en
+		}
+
+		await YamapInstance.setLocale(languages[currentLang])
 	} catch (error) {
 		const message = error instanceof Error ? error.message : String(error)
 
@@ -129,6 +139,9 @@ export default function RootLayout() {
 	const isReady = loaded && isAuthChecked
 
 	useEffect(() => {
+		// Апгрейд схемы workout-хранилища до актуальной версии (идемпотентно).
+		// Дополнительно вызывается при первом импорте модуля workoutStorage.
+		runWorkoutStorageMigrations(workoutStorage)
 		clearExpiredTimers() // очистка истекших таймеров для восстановления пароля / подтверждения почты
 	}, [])
 

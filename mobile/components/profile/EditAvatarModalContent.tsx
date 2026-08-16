@@ -7,6 +7,8 @@ import * as ImagePicker from 'expo-image-picker'
 import ImagePickerButton from '@/components/ui/ImagePickerButton'
 import { useToast } from '@/hooks/useToast'
 import { validateFile } from '@/helpers/fileValidation'
+import { useTranslation } from 'react-i18next'
+import { translateArr } from '@/helpers/arrTranslator'
 
 interface IProps {
 	handleClickDeleteAvatar: () => void
@@ -21,6 +23,7 @@ export enum ImagePickMode {
 
 const EditAvatarModalContent = (props: IProps) => {
 	const toast = useToast()
+	const { t } = useTranslation()
 
 	const uploadImage = async (mode: ImagePickMode) => {
 		try {
@@ -48,7 +51,7 @@ const EditAvatarModalContent = (props: IProps) => {
 				const pickedUri = result.assets[0].uri
 
 				if (!pickedUri) {
-					toast.error('Невалидный файл')
+					toast.error(t('ToastMessage.error.invalidFile'))
 					return
 				}
 
@@ -56,7 +59,7 @@ const EditAvatarModalContent = (props: IProps) => {
 				const { isValid, errorMessage } = validateFile(pickedUri)
 
 				if (!isValid) {
-					toast.error(errorMessage || 'Файл не прошёл проверку')
+					toast.error(errorMessage || t('ToastMessage.error.fileDidNotPassVerification'))
 					return
 				}
 
@@ -64,28 +67,30 @@ const EditAvatarModalContent = (props: IProps) => {
 			}
 		} catch (e) {
 			console.log('Ошибка при загрузке изображения:', e)
-			toast.error('Ошибка при загрузке изображения')
+			toast.error(t('ToastMessage.error.errorLoadingImage'))
 			props.handleCloseModal()
 		}
 	}
 
 	const buttons = [
 		{
-			label: 'Камера',
+			label: 'PhotoPicker.camera',
 			icon: <CameraSvg />,
 			onPress: () => uploadImage(ImagePickMode.CAMERA)
 		},
 		{
-			label: 'Галерея',
+			label: 'PhotoPicker.gallery',
 			icon: <GallerySvg />,
 			onPress: () => uploadImage(ImagePickMode.GALLERY)
 		},
 		{
-			label: 'Удалить',
+			label: 'common.delete',
 			icon: <DeleteTrashSvg />,
 			onPress: props.handleClickDeleteAvatar
 		}
 	]
+
+	const translatedButtons = translateArr(buttons, 'label', t)
 
 	const saveImage = (image: string) => {
 		// update displayed image
@@ -95,7 +100,7 @@ const EditAvatarModalContent = (props: IProps) => {
 
 	return (
 		<View className="flex-row gap-[10px] justify-between">
-			{buttons.map((button) => (
+			{translatedButtons.map((button) => (
 				<ImagePickerButton
 					key={button.label}
 					title={button.label}

@@ -32,6 +32,7 @@ import WorkoutMap from '@/components/map/WorkoutMap'
 import { FlashList, FlashListRef } from '@shopify/flash-list'
 import LoadQueryErrorRetry from '@/components/LoadQueryErrorRetry'
 import { PostListItemSkeleton, ProfileHeaderSkeleton } from '@/components/ui/skeleton'
+import { useTranslation } from 'react-i18next'
 
 /**
  *
@@ -40,13 +41,14 @@ import { PostListItemSkeleton, ProfileHeaderSkeleton } from '@/components/ui/ske
  * */
 
 const friendStatusLabel = {
-	[FriendStatus.FALSE]: 'Добавить в друзья',
-	[FriendStatus.TRUE]: 'Удалить из друзей',
-	[FriendStatus.INVITED]: 'Заявка отправлена',
-	[FriendStatus.SENT]: 'Принять заявку'
+	[FriendStatus.FALSE]: 'UserProfilePage.friendStatus.addAsFriend',
+	[FriendStatus.TRUE]: 'UserProfilePage.friendStatus.deleteFriend',
+	[FriendStatus.INVITED]: 'UserProfilePage.friendStatus.inviteFriend',
+	[FriendStatus.SENT]: 'UserProfilePage.friendStatus.acceptFriend'
 }
 
 const UserProfilePage = () => {
+	const { t } = useTranslation()
 	const router = useRouter()
 	const insets = useSafeAreaInsets()
 	const { id } = useLocalSearchParams<{ id: string }>()
@@ -214,8 +216,8 @@ const UserProfilePage = () => {
 		if (isPostsError && posts.length > 0) {
 			return (
 				<LoadQueryErrorRetry
-					text="Не удалось загрузить ещё"
-					buttonText="Повторить"
+					text={t('LoadQueryErrorRetry.label.cantLoadMore')}
+					buttonText={t('LoadQueryErrorRetry.action.retry')}
 					onRetry={handleRetryPosts}
 				/>
 			)
@@ -226,7 +228,7 @@ const UserProfilePage = () => {
 				<ActivityIndicator size="small" color={Colors['green-main']} />
 			</View>
 		)
-	}, [isFetchingPostsNextPage, isPostsError, posts.length, handleRetryPosts])
+	}, [isPostsError, posts.length, isFetchingPostsNextPage, t, handleRetryPosts])
 
 	const renderEmpty = useCallback(() => {
 		if (isPostsLoading) {
@@ -239,11 +241,17 @@ const UserProfilePage = () => {
 		}
 
 		if (isPostsError) {
-			return <LoadQueryErrorRetry onRetry={handleRetryPosts} />
+			return (
+				<LoadQueryErrorRetry
+					text={t('LoadQueryErrorRetry.label.failedToLoadPublications')}
+					buttonText={t('LoadQueryErrorRetry.action.tryAgain')}
+					onRetry={handleRetryPosts}
+				/>
+			)
 		}
 
 		return null
-	}, [isPostsLoading, isPostsError, handleRetryPosts])
+	}, [isPostsLoading, isPostsError, t, handleRetryPosts])
 
 	return (
 		<Page edges={['top']}>
@@ -274,11 +282,11 @@ const UserProfilePage = () => {
 							<Modal
 								isOpen={isDeleteModalOpened}
 								handleClose={handleCloseDeleteModal}
-								label="Вы действительно хотите удалить пользователя из друзей?"
+								label={t('UserProfilePage.deleteFriendText')}
 							>
 								<View className="gap-[20px]">
 									<Text className="text-white text-sm" style={{ fontFamily: fontFamily.bold }}>
-										Это действие нельзя отменить
+										{t('common.actionCannotBeUndone')}
 									</Text>
 									<View className="flex-row gap-[10px]">
 										<Button
@@ -287,20 +295,20 @@ const UserProfilePage = () => {
 											buttonContainerClassName="flex-1"
 											isLoading={isRemoveFriendPending}
 										>
-											Да
+											{t('common.yes')}
 										</Button>
 										<Button
 											onPress={handleCloseDeleteModal}
 											variant="white"
 											buttonContainerClassName="flex-1"
 										>
-											Нет
+											{t('common.no')}
 										</Button>
 									</View>
 								</View>
 							</Modal>
 							<View className="gap-[20px] mb-[16px]">
-								<HeaderBack>Профиль</HeaderBack>
+								<HeaderBack>{t('UserProfilePage.header')}</HeaderBack>
 
 								{isProfileLoading ? (
 									<View className="gap-[20px]">
@@ -309,7 +317,8 @@ const UserProfilePage = () => {
 								) : isProfileError && !profileData ? (
 									<View className="flex-1 items-center justify-center px-4">
 										<LoadQueryErrorRetry
-											text="Не удалось загрузить профиль"
+											text={t('LoadQueryErrorRetry.label.failedToLoadProfile')}
+											buttonText={t('LoadQueryErrorRetry.action.tryAgain')}
 											onRetry={handleRetryProfile}
 										/>
 									</View>
@@ -324,19 +333,6 @@ const UserProfilePage = () => {
 															bordered
 															imageUrl={`${PATH_TO_IMAGE}${profileData?.user?.avatarFilename}`}
 														/>
-														{/*<PopupMenu*/}
-														{/*	menuWidth={200}*/}
-														{/*	menuHeight={300}*/}
-														{/*	trigger={({ open }) => (*/}
-														{/*		<RoundedButton onPress={open} icon={<SettingsSvg />} />*/}
-														{/*	)}*/}
-														{/*>*/}
-														{/*	<PopupMenuItem*/}
-														{/*		title="Настройки"*/}
-														{/*		onPress={() => handleClickRedirect(ALLOWED_ROUTES.SETTINGS)}*/}
-														{/*	/>*/}
-														{/*	<PopupMenuItem title="Выход" onPress={handleClickExit} />*/}
-														{/*</PopupMenu>*/}
 													</View>
 													<View>
 														<View className="flex-row items-center gap-3">
@@ -369,17 +365,17 @@ const UserProfilePage = () => {
 												</View>
 												<View className="flex-row justify-between gap-[20px]">
 													<SocialStats
-														label="Подписчики"
+														label={t('UserProfilePage.stats.subscribers')}
 														content={profileData?.subscribers}
 														// hrefTo="/subscribers/my-subscribers"
 													/>
 													<SocialStats
-														label="Друзья"
+														label={t('UserProfilePage.stats.friends')}
 														content={profileData?.friends}
 														// hrefTo="/friends/my-friends"
 													/>
 													<SocialStats
-														label="Подписки"
+														label={t('UserProfilePage.stats.subscriptions')}
 														content={profileData?.subscriptions}
 														// hrefTo="/subscribers/my-subscriptions"
 													/>
@@ -397,7 +393,9 @@ const UserProfilePage = () => {
 														}}
 														disabled={isPendingSubscribe}
 													>
-														{profileData?.isSubscribed ? 'Отписаться' : 'Подписаться'}
+														{profileData?.isSubscribed
+															? t('UserProfilePage.unsubscribe')
+															: t('UserProfilePage.subscribe')}
 													</Button>
 													<Button
 														variant={getButtonVariant()}
@@ -405,7 +403,7 @@ const UserProfilePage = () => {
 														onPress={handleFriendAction}
 														isLoading={isFriendActionPending}
 													>
-														{profileData && friendStatusLabel[profileData?.isFriend]}
+														{profileData && t(friendStatusLabel[profileData?.isFriend])}
 													</Button>
 												</View>
 												<RedirectAchievementsInfo
@@ -413,7 +411,7 @@ const UserProfilePage = () => {
 													userId={id}
 												/>
 												<ActivityInfo
-													label="Активности"
+													label={t('UserProfilePage.activity')}
 													activities={profileData?.activities || []}
 												/>
 											</View>
@@ -422,7 +420,7 @@ const UserProfilePage = () => {
 											className="text-base text-white border-b-[1px] border-b-black-44 py-[20px]"
 											style={{ fontFamily: fontFamily.bold }}
 										>
-											Лента
+											{t('UserProfilePage.postFeed')}
 										</Text>
 									</>
 								)}

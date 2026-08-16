@@ -6,7 +6,9 @@ module.exports = defineConfig([
 	expoConfig,
 	eslintPluginPrettierRecommended,
 	{
-		ignores: ['node_modules/*', '.eslint.config.js', '*.spec.ts', 'tsconfig.json', 'dist/*', '.*/*'],
+		ignores: ['expo-env.d.ts', 'nativewind-env.d.ts']
+	},
+	{
 		rules: {
 			'@typescript-eslint/interface-name-prefix': 'off',
 			'@typescript-eslint/explicit-function-return-type': 'off',

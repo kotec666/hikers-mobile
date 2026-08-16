@@ -6,8 +6,13 @@ import { IFoundPost } from '@/api/search'
 import { TrainingType } from '@/shared/enums'
 import { WorkoutTypesData } from '@/constants/WorkoutTypes'
 import { formatRelativeDate } from '@/helpers/formatRelativeDate'
+import { LngShort, locales } from '@/store/languageStorage'
+import { useTranslation } from 'react-i18next'
 
 const PostSearchResult = (props: IFoundPost) => {
+	const { i18n } = useTranslation()
+	const currentLocale = locales[i18n.language as LngShort] ?? locales[LngShort.en]
+
 	const renderIcon = (workoutType?: TrainingType) => {
 		if (!workoutType) return
 		const found = WorkoutTypesData.find((w) => w.type === workoutType)
@@ -40,7 +45,7 @@ const PostSearchResult = (props: IFoundPost) => {
 				</View>
 
 				<Text className="text-xs text-gray-ab ml-8 shrink-0" style={{ fontFamily: fontFamily.regular }}>
-					{formatRelativeDate(props.createdAt)}
+					{formatRelativeDate(props.createdAt, currentLocale)}
 				</Text>
 			</View>
 		</Link>

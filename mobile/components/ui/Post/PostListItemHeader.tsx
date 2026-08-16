@@ -9,12 +9,13 @@ import { ReportType, TrainingType } from '@/shared/enums'
 import { useSafeNavigation } from '@/hooks/useSafeNavigation'
 import { useToggleSubscribeMutation } from '@/queries/subscriptions'
 import MoreOptionsSvg from '@/components/svg/MoreOptionsSvg'
-import PopupMenuItem from '@/components/ui/Popup/PopupMenuItem'
-import PopupMenu from '@/components/ui/Popup/PopupMenu'
 import { useCreateReportMutation } from '@/queries/reports'
 import { getFieldsErrors } from '@/helpers/getFieldsErrors'
 import FinishedFlagSvg from '@/components/svg/FinishedFlagSvg'
 import { Colors } from '@/constants/Colors'
+import { LngShort, locales } from '@/store/languageStorage'
+import { useTranslation } from 'react-i18next'
+import { Menu } from '@/components/ui/Menu/Menu'
 
 interface IProps {
 	postId?: string
@@ -41,18 +42,21 @@ const PostListItemHeader = ({
 	workoutType
 }: IProps) => {
 	const { push } = useSafeNavigation()
+	const { t, i18n } = useTranslation()
+	const currentLocale = locales[i18n.language as LngShort] ?? locales[LngShort.en]
+
 	const { mutateAsync: toggleSubscribe, isPending: isPendingSubscribe } = useToggleSubscribeMutation()
 	const { mutateAsync: createReportMutation, isPending: isPendingCreateReport } = useCreateReportMutation()
 
 	const handleSubmitReport = async () => {
-		if (!postId) return
+		if (isPendingCreateReport || !postId) return
 		try {
 			const formData = new FormData()
 			formData.append('type', ReportType.TO_POST)
 			formData.append('relEntityId', postId)
 			await createReportMutation(formData)
 		} catch (e: unknown) {
-			await getFieldsErrors(e)
+			await getFieldsErrors(e, t)
 		}
 	}
 
@@ -106,7 +110,7 @@ const PostListItemHeader = ({
 							</View>
 							<View>
 								<Text className="text-[13px] text-gray-ab" style={{ fontFamily: fontFamily.regular }}>
-									{formatRelativeDate(createdAt)}
+									{formatRelativeDate(createdAt, currentLocale)}
 								</Text>
 							</View>
 						</View>
@@ -122,28 +126,28 @@ const PostListItemHeader = ({
 							disabled={isPendingSubscribe}
 						>
 							<Text className="text-white text-xs" style={{ fontFamily: fontFamily.bold }}>
-								{!subscribeData?.isSubscribed ? 'Подписаться' : 'Вы подписаны'}
+								{!subscribeData?.isSubscribed ? t('Post.subscribe') : t('Post.unsubscribe')}
 							</Text>
 						</Pressable>
-						<PopupMenu
+						<Menu
 							blurDisabled
 							menuWidth={180}
 							menuHeight={180}
-							trigger={({ open }) => (
-								<Pressable onPress={open} hitSlop={20}>
-									<MoreOptionsSvg />
-								</Pressable>
-							)}
+							actions={[
+								{
+									id: 'report',
+									title: t('Post.report'),
+									image: 'exclamationmark.bubble',
+									destructive: true,
+									icon: <FinishedFlagSvg size={16} color={Colors['red-ff4']} />,
+									onPress: handleSubmitReport
+								}
+							]}
 						>
-							<PopupMenuItem onPress={handleSubmitReport} disabled={isPendingCreateReport}>
-								<View className="flex-row items-center gap-3">
-									<FinishedFlagSvg size={16} color={Colors['red-ff4']} />
-									<Text className="text-base" style={{ color: Colors['red-ff4'] }}>
-										Пожаловаться
-									</Text>
-								</View>
-							</PopupMenuItem>
-						</PopupMenu>
+							<Pressable>
+								<MoreOptionsSvg />
+							</Pressable>
+						</Menu>
 					</View>
 				)}
 			</View>

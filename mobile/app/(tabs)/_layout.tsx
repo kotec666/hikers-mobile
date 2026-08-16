@@ -5,37 +5,11 @@ import NativeTabsComponent from '@/components/ui/Navbar/NativeTabsComponent'
 import NavBar from '@/components/ui/Navbar/NavBar'
 import { Colors } from '@/constants/Colors'
 import { isLiquidGlassAvailable } from 'expo-glass-effect'
-import { useCallback, useEffect } from 'react'
+import { useCallback, useEffect, useMemo } from 'react'
 import * as QuickActions from 'expo-quick-actions'
 import { useQuickActionRouting } from 'expo-quick-actions/router'
 import type { RouterAction } from 'expo-quick-actions/router'
-
-const QUICK_ACTION_ITEMS: RouterAction<string>[] = [
-	{
-		id: 'new-training',
-		title: 'Новая тренировка',
-		icon: Platform.select({ ios: 'add', android: 'quick_action_new_training' }),
-		params: {
-			href: '/newTraining'
-		}
-	},
-	{
-		id: 'search',
-		title: 'Поиск',
-		icon: Platform.select({ ios: 'search', android: 'quick_action_search' }),
-		params: {
-			href: '/posts?quickAction=search'
-		}
-	},
-	{
-		id: 'report-a-problem',
-		title: 'Сообщить о проблеме',
-		icon: Platform.select({ ios: 'compose', android: 'quick_action_report_a_problem' }),
-		params: {
-			href: '/(about)/report-a-problem'
-		}
-	}
-]
+import { useTranslation } from 'react-i18next'
 
 const AppNavigator = (props: { isAuthenticated: boolean }) => {
 	return (
@@ -50,7 +24,7 @@ const AppNavigator = (props: { isAuthenticated: boolean }) => {
 					backgroundColor: Colors['black-0d']
 				}
 			}}
-			tabBar={() => <NavBar />}
+			tabBar={(props) => <NavBar state={props.state} />}
 		>
 			<Stack.Protected guard={props.isAuthenticated}>
 				<Tabs.Screen name="profile" />
@@ -75,6 +49,37 @@ export default function TabLayout() {
 	const { isAuthenticated } = useAuthStore()
 	const pathname = usePathname()
 	const router = useRouter()
+	const { t } = useTranslation()
+
+	const quickActionItems = useMemo<RouterAction<string>[]>(
+		() => [
+			{
+				id: 'new-training',
+				title: t('QuickActions.newTraining'),
+				icon: Platform.select({ ios: 'add', android: 'quick_action_new_training' }),
+				params: {
+					href: '/newTraining'
+				}
+			},
+			{
+				id: 'search',
+				title: t('QuickActions.search'),
+				icon: Platform.select({ ios: 'search', android: 'quick_action_search' }),
+				params: {
+					href: '/posts?quickAction=search'
+				}
+			},
+			{
+				id: 'report-a-problem',
+				title: t('QuickActions.reportProblem'),
+				icon: Platform.select({ ios: 'compose', android: 'quick_action_report_a_problem' }),
+				params: {
+					href: '/(about)/report-a-problem'
+				}
+			}
+		],
+		[t]
+	)
 
 	const handleQuickAction = useCallback(
 		(action: QuickActions.Action) => {
@@ -96,8 +101,8 @@ export default function TabLayout() {
 	useQuickActionRouting(handleQuickAction)
 
 	useEffect(() => {
-		QuickActions.setItems<RouterAction<string>>(QUICK_ACTION_ITEMS).catch(console.warn)
-	}, [])
+		QuickActions.setItems<RouterAction<string>>(quickActionItems).catch(console.warn)
+	}, [quickActionItems])
 
 	if (!isAuthenticated) {
 		return <Redirect href="/auth" />

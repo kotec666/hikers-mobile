@@ -14,8 +14,10 @@ import { refetchAndHaptics } from '@/helpers/refetchAndHaptics'
 import { FlashList } from '@shopify/flash-list'
 import LoadQueryErrorRetry from '@/components/LoadQueryErrorRetry'
 import { UserListSkeleton } from '@/components/ui/skeleton'
+import { useTranslation } from 'react-i18next'
 
 const FriendRequestsPage = () => {
+	const { t } = useTranslation()
 	const {
 		data: friendRequests = [],
 		fetchNextPage,
@@ -69,21 +71,33 @@ const FriendRequestsPage = () => {
 		}
 
 		if (isError) {
-			return <LoadQueryErrorRetry text="Не удалось загрузить заявки в друзья" onRetry={handleRetry} />
+			return (
+				<LoadQueryErrorRetry
+					text={t('LoadQueryErrorRetry.label.failedToLoadFriendRequests')}
+					buttonText={t('LoadQueryErrorRetry.action.tryAgain')}
+					onRetry={handleRetry}
+				/>
+			)
 		}
 
 		return (
 			<View style={{ flex: 1 }} className="items-center justify-center">
 				<Text style={{ fontFamily: fontFamily.regular }} className="text-gray-ab text-base">
-					У вас нет заявок в друзья
+					{t('EmptyListText.noFriendRequests')}
 				</Text>
 			</View>
 		)
-	}, [isLoading, isError, handleRetry])
+	}, [isLoading, isError, t, handleRetry])
 
 	const renderFooter = useCallback(() => {
 		if (isError && friendRequests.length > 0) {
-			return <LoadQueryErrorRetry text="Не удалось загрузить ещё" buttonText="Повторить" onRetry={handleRetry} />
+			return (
+				<LoadQueryErrorRetry
+					text={t('LoadQueryErrorRetry.label.cantLoadMore')}
+					buttonText={t('LoadQueryErrorRetry.action.retry')}
+					onRetry={handleRetry}
+				/>
+			)
 		}
 		if (!isFetchingNextPage) return null
 		return (
@@ -91,12 +105,12 @@ const FriendRequestsPage = () => {
 				<ActivityIndicator size="small" color={Colors['green-main']} />
 			</View>
 		)
-	}, [isFetchingNextPage, isError, friendRequests.length, handleRetry])
+	}, [isError, friendRequests.length, isFetchingNextPage, t, handleRetry])
 
 	return (
 		<Page>
 			<Container className="gap-[20px] flex-1">
-				<HeaderBack>Запросы в друзья</HeaderBack>
+				<HeaderBack>{t('FriendRequestsPage.header')}</HeaderBack>
 				<FlashList
 					data={friendRequests}
 					renderItem={({ item }) => (

@@ -14,11 +14,13 @@ import { refetchAndHaptics } from '@/helpers/refetchAndHaptics'
 import { FlashList } from '@shopify/flash-list'
 import LoadQueryErrorRetry from '@/components/LoadQueryErrorRetry'
 import { UserListSkeleton } from '@/components/ui/skeleton'
+import { useTranslation } from 'react-i18next'
 
 /**
  * Мои подписки, на кого подписан я
  * */
 const MySubscriptionsPage = () => {
+	const { t } = useTranslation()
 	const {
 		data: subscriptions = [],
 		fetchNextPage,
@@ -65,7 +67,13 @@ const MySubscriptionsPage = () => {
 
 	const renderFooter = useCallback(() => {
 		if (isError && subscriptions.length > 0) {
-			return <LoadQueryErrorRetry text="Не удалось загрузить ещё" buttonText="Повторить" onRetry={handleRetry} />
+			return (
+				<LoadQueryErrorRetry
+					text={t('LoadQueryErrorRetry.label.cantLoadMore')}
+					buttonText={t('LoadQueryErrorRetry.action.retry')}
+					onRetry={handleRetry}
+				/>
+			)
 		}
 		if (!isFetchingNextPage) return null
 		return (
@@ -73,7 +81,7 @@ const MySubscriptionsPage = () => {
 				<ActivityIndicator size="small" color={Colors['green-main']} />
 			</View>
 		)
-	}, [isFetchingNextPage, isError, subscriptions.length, handleRetry])
+	}, [isError, subscriptions.length, isFetchingNextPage, t, handleRetry])
 
 	const renderEmpty = useCallback(() => {
 		if (isLoading) {
@@ -81,23 +89,29 @@ const MySubscriptionsPage = () => {
 		}
 
 		if (isError) {
-			return <LoadQueryErrorRetry text="Не удалось загрузить подписки" onRetry={handleRetry} />
+			return (
+				<LoadQueryErrorRetry
+					text={t('LoadQueryErrorRetry.label.failedToLoadSubscriptions')}
+					buttonText={t('LoadQueryErrorRetry.action.tryAgain')}
+					onRetry={handleRetry}
+				/>
+			)
 		}
 
 		return (
 			<View style={{ flex: 1 }} className="items-center justify-center">
 				<Text style={{ fontFamily: fontFamily.regular }} className="text-gray-ab text-base">
-					Вы ни на кого не подписаны
+					{t('EmptyListText.noSubscriptions')}
 				</Text>
 			</View>
 		)
-	}, [isLoading, isError, handleRetry])
+	}, [isLoading, isError, t, handleRetry])
 
 	return (
 		<Page>
 			<View style={{ flex: 1 }}>
 				<Container className="gap-[20px] flex-1">
-					<HeaderBack>Подписки</HeaderBack>
+					<HeaderBack>{t('SubscriptionsPage.header')}</HeaderBack>
 					<FlashList
 						data={subscriptions}
 						renderItem={renderItem}

@@ -18,6 +18,7 @@ import RotateLeftSvg from '@/components/svg/RotateLeftSvg'
 import RotateRightSvg from '@/components/svg/RotateRightSvg'
 import FlipHorizontalSvg from '@/components/svg/FlipHorizontalSvg'
 import { Colors } from '@/constants/Colors'
+import { useTranslation } from 'react-i18next'
 
 type ImageEditorProps = {
 	visible: boolean
@@ -89,6 +90,7 @@ function ImageEditorContent({
 	onCancel,
 	onDone
 }: ContentProps) {
+	const { t } = useTranslation()
 	const editor = useImageEditor({ sourceUri, containerWidth, containerHeight, frame })
 	const busy = editor.isProcessing || isSaving
 
@@ -96,12 +98,12 @@ function ImageEditorContent({
 		<ScrollView style={styles.root}>
 			<View style={styles.header}>
 				<Pressable onPress={onCancel} hitSlop={12}>
-					<Text style={styles.headerAction}>Отмена</Text>
+					<Text style={styles.headerAction}>{t('common.cancel')}</Text>
 				</Pressable>
-				<Text style={styles.headerTitle}>Редактирование</Text>
+				<Text style={styles.headerTitle}>{t('common.edit')}</Text>
 				<Pressable onPress={() => onDone(editor.finalize)} hitSlop={12} disabled={busy}>
 					<Text style={[styles.headerAction, styles.headerActionPrimary, busy && styles.disabled]}>
-						Готово
+						{t('common.ready')}
 					</Text>
 				</Pressable>
 			</View>

@@ -1,6 +1,7 @@
 import React, { forwardRef, useImperativeHandle, useState } from 'react'
 import Parameter from '@/components/training/Parameter'
 import { mpsToKmph } from '@/helpers/mpsToKmph'
+import { useTranslation } from 'react-i18next'
 
 interface IProps {
 	isPaused: boolean
@@ -11,17 +12,19 @@ export interface MetricSpeedHandle {
 }
 
 const MetricSpeed = forwardRef<MetricSpeedHandle, IProps>((props, ref) => {
-	const [speedKmh, setSpeedKmh] = useState('0км/ч')
+	const { t } = useTranslation()
+	const kmh = t('measurementUnits.kmh') // км/ч
+	const [speedKmh, setSpeedKmh] = useState(`0${kmh}`)
 
 	useImperativeHandle(ref, () => ({
 		setSpeed: (speed: number) => {
-			const resultString = mpsToKmph(speed) + 'км/ч'
+			const resultString = mpsToKmph(speed) + kmh
 			if (resultString === speedKmh) return
 			setSpeedKmh(resultString)
 		}
 	}))
 
-	return <Parameter isPaused={props.isPaused} label="Скорость" value={speedKmh} />
+	return <Parameter isPaused={props.isPaused} label={t('measurementUnits.speed')} value={speedKmh} />
 })
 
 MetricSpeed.displayName = 'MetricSpeed'

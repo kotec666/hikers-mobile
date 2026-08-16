@@ -1,3 +1,5 @@
+import i18n from '@/i18next/i18next'
+
 export const formatTime = (ms: number) => {
 	const totalSec = Math.floor(ms / 1000)
 	const h = String(Math.floor(totalSec / 3600)).padStart(2, '0')
@@ -12,18 +14,22 @@ export const formatTime = (ms: number) => {
 export const formatTimeFromSecondsCompact = (seconds: number | undefined): string => {
 	if (seconds === undefined || seconds === null) return '-'
 
+	const secondsText = i18n.t('measurementUnits.seconds.short')
+	const minutesText = i18n.t('measurementUnits.minutes.short')
+	const hoursText = i18n.t('measurementUnits.hours.short')
+
 	if (seconds < 60) {
-		return `${seconds} сек`
+		return `${seconds} ${secondsText}`
 	}
 
 	const hours = Math.floor(seconds / 3600)
 	const minutes = Math.floor((seconds % 3600) / 60)
 
 	const parts = []
-	if (hours > 0) parts.push(`${hours} ч`)
-	if (minutes > 0 || hours === 0) parts.push(`${minutes} мин`)
+	if (hours > 0) parts.push(`${hours} ${hoursText}`)
+	if (minutes > 0 || hours === 0) parts.push(`${minutes} ${minutesText}`)
 
-	return parts.join(' ') || '0 мин'
+	return parts.join(' ') || `0 ${minutesText}`
 }
 
 // 45000      -> 0:45

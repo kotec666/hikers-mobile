@@ -4,15 +4,17 @@ import { createReport, getReportsMy, IReport } from '@/api/reports'
 import { QUERY_KEYS } from '@/constants/query-keys'
 import { getFieldsErrors } from '@/helpers/getFieldsErrors'
 import { ReportType } from '@shared/enums'
+import { useTranslation } from 'react-i18next'
 
 export const useCreateReportMutation = () => {
 	// const queryClient = useQueryClient()
+	const { t } = useTranslation()
 	const toast = useToast()
 
 	return useMutation({
 		mutationFn: (reportData: FormData) => createReport(reportData),
 		onSuccess: () => {
-			toast.success('Жалоба отправлена')
+			toast.success(t('ToastMessage.success.reportSent'))
 			// queryClient.setQueryData<IPost>([...QUERY_KEYS.REPORT_DETAILS, newReport.id], newReport)
 			// queryClient.setQueryData<InfiniteData<IPost[]>>(QUERY_KEYS.MY_REPORTS, (old) => {
 			// 	if (!old) return old
@@ -26,8 +28,10 @@ export const useCreateReportMutation = () => {
 	})
 }
 
-export const useReportsQuery = (types?: ReportType[], limit = 5) =>
-	useInfiniteQuery<IReport[], Error, IReport[], typeof QUERY_KEYS.MY_REPORTS, number>({
+export const useReportsQuery = (types?: ReportType[], limit = 5) => {
+	const { t } = useTranslation()
+
+	return useInfiniteQuery<IReport[], Error, IReport[], typeof QUERY_KEYS.MY_REPORTS, number>({
 		queryKey: QUERY_KEYS.MY_REPORTS,
 		queryFn: async ({ pageParam }) => {
 			try {
@@ -37,7 +41,7 @@ export const useReportsQuery = (types?: ReportType[], limit = 5) =>
 					types
 				})
 			} catch (e) {
-				await getFieldsErrors(e)
+				await getFieldsErrors(e, t)
 				throw e
 			}
 		},
@@ -48,3 +52,4 @@ export const useReportsQuery = (types?: ReportType[], limit = 5) =>
 		},
 		select: (data) => data.pages.flat()
 	})
+}

@@ -6,6 +6,7 @@ import { IAchievement } from '@/api/achievements'
 import { PATH_TO_IMAGE } from '@/constants/PATH_TO_FILES'
 import { LinearGradient } from 'expo-linear-gradient'
 import { hexToRgba } from '@/helpers/colors/hexToRgba'
+import { useTranslation } from 'react-i18next'
 // import AchievementsMedalSvg from '@/components/svg/AchievementsMedalSvg'
 
 interface IProps {
@@ -14,6 +15,7 @@ interface IProps {
 
 const AchievementDetailed = (props: IProps) => {
 	const { achievement } = props
+	const { t } = useTranslation()
 
 	const MAX_HEIGHT = 80
 	const progress = achievement.progress
@@ -65,7 +67,8 @@ const AchievementDetailed = (props: IProps) => {
 							{achievement.title}
 						</Text>
 						<Text style={{ fontFamily: fontFamily.medium }} className="text-gray-ab text-sm">
-							Есть у {achievement.claimedPercent ?? 0}% пользователей
+							{t('AchievementsPage.have')} {achievement.claimedPercent ?? 0}%{' '}
+							{t('AchievementsPage.users')}
 						</Text>
 					</View>
 					<Text style={{ fontFamily: fontFamily.medium }} className="text-gray-ab text-base text-center">

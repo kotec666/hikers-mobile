@@ -18,12 +18,14 @@ import { createTimer, isRateLimited, TimerType } from '@/store/timerStorage'
 import { KeyboardGestureArea } from 'react-native-keyboard-controller'
 import Animated from 'react-native-reanimated'
 import { useKeyboardAnimation } from '@/hooks/useKeyboardAnimation'
+import { useTranslation } from 'react-i18next'
 
 interface IRecoveryPasswordFirstStepFormState {
 	email: string
 }
 
 const FirstStepPage = () => {
+	const { t } = useTranslation()
 	const { push } = useSafeNavigation()
 	const [serverErrors, setServerErrors] = useState<FieldErrors>({} as FieldErrors)
 
@@ -60,7 +62,7 @@ const FirstStepPage = () => {
 
 			push(`/(password-restore)/secondStep?email=${email}`)
 		} catch (e: unknown) {
-			const formattedErrors = await getFieldsErrors(e)
+			const formattedErrors = await getFieldsErrors(e, t)
 			setServerErrors(formattedErrors)
 			await Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error)
 		}
@@ -72,24 +74,18 @@ const FirstStepPage = () => {
 				<Pressable onPress={Keyboard.dismiss} className="flex-1">
 					<Container className="flex-1">
 						<View className="flex-1 items-start">
-							<HeaderBack>Назад</HeaderBack>
-							<Animated.View
-								style={animatedKeyboardStyle}
-								// onLayout={(e) => {
-								// 	console.log(e.nativeEvent.layout.height)
-								// }}
-								className="flex-1 justify-center gap-[24px]"
-							>
+							<HeaderBack>{t('common.back')}</HeaderBack>
+							<Animated.View style={animatedKeyboardStyle} className="flex-1 justify-center gap-[24px]">
 								<View className="gap-[32px]">
 									<View className="gap-[8px]">
 										<Text className="text-2xl text-white" style={{ fontFamily: fontFamily.medium }}>
-											Введите почту
+											{t('PasswordRestorePage.enterEmail')}
 										</Text>
 										<Text
 											className="text-base text-gray-9a"
 											style={{ fontFamily: fontFamily.medium }}
 										>
-											Мы отправим на неё код для восстановления пароля
+											{t('PasswordRestorePage.weWillSendYouCode')}
 										</Text>
 									</View>
 									<Controller
@@ -117,7 +113,7 @@ const FirstStepPage = () => {
 											<InputIcon
 												textContentType="emailAddress"
 												keyboardType="email-address"
-												placeholder="Введите email"
+												placeholder={t('PasswordRestorePage.inputPlaceholder.email')}
 												error={error?.message || serverErrors?.email}
 												svg={
 													<EmailSvg
@@ -133,7 +129,7 @@ const FirstStepPage = () => {
 									/>
 								</View>
 								<Button variant="black" isLoading={isSubmitting} onPress={handleSubmit(onSubmit)}>
-									Отправить код
+									{t('PasswordRestorePage.actions.sendCode')}
 								</Button>
 							</Animated.View>
 						</View>

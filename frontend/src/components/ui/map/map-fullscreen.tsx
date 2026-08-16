@@ -1,9 +1,8 @@
 'use client'
-
+import { useRef } from 'react'
 import { useState } from 'react'
 import { Maximize2 } from 'lucide-react'
-import { MapProvider } from '@/components/providers/map-provider'
-import YandexMap from '@/components/ui/map/yandex-map'
+import YandexMap, { YandexMapHandle } from '@/components/ui/map/yandex-map'
 import { FullscreenViewer } from '@/components/ui/lightbox/fullscreen-viewer'
 import { ITrainingPoint } from '@/api/workout'
 
@@ -19,6 +18,7 @@ interface MapFullscreenTriggerProps {
  */
 export function MapFullscreenTrigger({ points, routeColor }: MapFullscreenTriggerProps) {
 	const [open, setOpen] = useState(false)
+	const mapHandle = useRef<YandexMapHandle>(null)
 
 	if (!points.length) return null
 
@@ -33,13 +33,15 @@ export function MapFullscreenTrigger({ points, routeColor }: MapFullscreenTrigge
 				<Maximize2 className="w-4 h-4 text-white" strokeWidth={2} />
 			</button>
 
-			<FullscreenViewer open={open} onOpenChange={setOpen} title="Карта тренировки" className="bg-black">
+			<FullscreenViewer
+				open={open}
+				onOpenChange={setOpen}
+				title="Карта тренировки"
+				className="bg-black"
+				onAnimationComplete={() => mapHandle.current?.setPath(points)}
+			>
 				<div className="absolute inset-0">
-					<MapProvider
-						apiUrl={`https://api-maps.yandex.ru/v3/?apikey=${process.env.NEXT_PUBLIC_YANDEX_MAPS_KEY}&lang=ru_RU`}
-					>
-						<YandexMap className="w-full h-full" points={points} routeColor={routeColor} />
-					</MapProvider>
+					<YandexMap ref={mapHandle} className="w-full h-full" points={points} routeColor={routeColor} />
 				</div>
 			</FullscreenViewer>
 		</>

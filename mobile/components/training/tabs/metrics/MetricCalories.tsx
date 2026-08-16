@@ -2,6 +2,7 @@ import React, { forwardRef, memo, useImperativeHandle, useState } from 'react'
 import Parameter from '@/components/training/Parameter'
 import { calculateCalories } from '@/helpers/calculateCalories'
 import { TrainingType } from '@shared/enums'
+import { useTranslation } from 'react-i18next'
 
 interface IProps {
 	isPaused: boolean
@@ -12,6 +13,7 @@ export interface MetricCaloriesHandle {
 }
 
 const MetricCalories = forwardRef<MetricCaloriesHandle, IProps>((props, ref) => {
+	const { t } = useTranslation()
 	const [calories, setCalories] = useState(0)
 
 	useImperativeHandle(ref, () => ({
@@ -20,7 +22,7 @@ const MetricCalories = forwardRef<MetricCaloriesHandle, IProps>((props, ref) => 
 		}
 	}))
 
-	return <Parameter isPaused={props.isPaused} label="Ккал" value={calories} />
+	return <Parameter isPaused={props.isPaused} label={t('measurementUnits.kcal')} value={calories} />
 })
 
 MetricCalories.displayName = 'MetricCalories'

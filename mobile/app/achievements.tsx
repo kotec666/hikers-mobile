@@ -14,8 +14,10 @@ import LoadQueryErrorRetry from '@/components/LoadQueryErrorRetry'
 import { Colors } from '@/constants/Colors'
 import { refetchAndHaptics } from '@/helpers/refetchAndHaptics'
 import { AchievementsListSkeleton } from '@/components/ui/skeleton'
+import { useTranslation } from 'react-i18next'
 
 const AchievementsPage = () => {
+	const { t } = useTranslation()
 	const { id } = useLocalSearchParams<{ id?: string }>()
 
 	const bottomSheetRef = useRef<BottomSheetHandle>(null)
@@ -65,13 +67,17 @@ const AchievementsPage = () => {
 		<Page>
 			<BlurProvider>
 				<Container className="gap-[20px] flex-1">
-					<HeaderBack>Мои достижения</HeaderBack>
+					<HeaderBack>{t('AchievementsPage.header')}</HeaderBack>
 
 					{isLoading ? (
 						<AchievementsListSkeleton />
 					) : isError && allAchievements.length === 0 ? (
 						<View style={{ flex: 1 }} className="items-center justify-center px-4">
-							<LoadQueryErrorRetry text="Не удалось загрузить достижения" onRetry={handleRetry} />
+							<LoadQueryErrorRetry
+								text={t('LoadQueryErrorRetry.label.failedToLoadAchievements')}
+								buttonText={t('LoadQueryErrorRetry.action.tryAgain')}
+								onRetry={handleRetry}
+							/>
 						</View>
 					) : (
 						<ScrollView
@@ -88,15 +94,15 @@ const AchievementsPage = () => {
 							<View className="gap-[10px]">
 								{isError && (
 									<Text className="text-red-500 text-sm">
-										Не удалось обновить достижения.{' '}
+										{t('LoadQueryErrorRetry.label.failedToUpdateAchievements')}{' '}
 										<Text onPress={handleRetry} className="underline">
-											Повторить
+											{t('LoadQueryErrorRetry.action.retry')}
 										</Text>
 									</Text>
 								)}
 								{claimedAchievements.length > 0 ? (
 									<Text className="text-base text-white" style={{ fontFamily: fontFamily.bold }}>
-										Полученные
+										{t('AchievementsPage.received')}
 									</Text>
 								) : null}
 								{claimedAchievements.map((achievement) => (
@@ -112,7 +118,7 @@ const AchievementsPage = () => {
 								))}
 								{unClaimedAchievements.length > 0 ? (
 									<Text className="text-base text-white" style={{ fontFamily: fontFamily.bold }}>
-										Не полученные
+										{t('AchievementsPage.notReceived')}
 									</Text>
 								) : null}
 								{unClaimedAchievements.map((achievement) => (

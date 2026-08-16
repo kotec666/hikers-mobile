@@ -1,0 +1,13 @@
+{
+  "android": {
+    "app_name": "хайкерс"
+  },
+  "ios": {
+    "CFBundleDisplayName": "хайкерс",
+    "NSMotionUsageDescription": "Разрешите хайкерс доступ к датчикам устройства",
+    "NSLocationWhenInUseUsageDescription": "Используем геолокацию для записи ваших тренировок и маршрутов",
+    "NSLocationAlwaysAndWhenInUseUsageDescription": "Разрешение на фоновую геолокацию позволяет продолжать запись тренировки при заблокированном экране",
+    "NSPhotoLibraryUsageDescription": "Приложению требуется доступ к вашей галерее для выбора изображения",
+    "NSCameraUsageDescription": "Приложению требуется доступ к вашей камере для добавления изображения"
+  }
+}

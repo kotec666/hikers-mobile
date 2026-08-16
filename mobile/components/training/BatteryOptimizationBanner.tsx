@@ -8,12 +8,14 @@ import * as Battery from 'expo-battery'
 import * as IntentLauncher from 'expo-intent-launcher'
 import * as Application from 'expo-application'
 import { isBatteryOptimizationSnoozed, setBatteryOptimizationDismissedAt } from '@/store/batteryStorage'
+import { useTranslation } from 'react-i18next'
 
 /**
  * Показывается только если Battery.isBatteryOptimizationEnabledAsync() === true (Android only)
  * и баннер не находится в snooze-периоде после последнего закрытия крестиком (см. batteryStorage.ts).
  */
 const BatteryOptimizationBanner = () => {
+	const { t } = useTranslation()
 	const insets = useSafeAreaInsets()
 	const appId = Application.applicationId
 	const isAndroid = Platform.OS === 'android'
@@ -124,15 +126,15 @@ const BatteryOptimizationBanner = () => {
 		>
 			<View className="mx-[16px] mt-[12px] flex-row items-start justify-between rounded-[16px] bg-black/80 p-[14px] gap-[10px]">
 				<Text style={{ fontFamily: fontFamily.regular }} className="flex-1 text-white text-sm leading-[19px]">
-					Отключите{' '}
+					{t('BatteryOptimizationBanner.disable')}{' '}
 					<Text
 						onPress={requestDisableBatteryOptimization}
 						style={{ fontFamily: fontFamily.bold }}
 						className="text-green-main underline"
 					>
-						оптимизацию батареи
+						{t('BatteryOptimizationBanner.batteryOptimization')}
 					</Text>{' '}
-					для правильной работы геолокации
+					{t('BatteryOptimizationBanner.workProperly')}
 				</Text>
 				<Pressable onPress={dismiss} hitSlop={10} className="pt-[2px]">
 					<CloseSvg />

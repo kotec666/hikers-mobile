@@ -2,7 +2,7 @@ import ky from 'ky'
 import { Platform } from 'react-native'
 import { api } from '@/constants/Variables'
 import { getAuthData } from '@/services/tokenService'
-import { authStore } from '@/store/authStore'
+import { authStore, RefreshResult } from '@/store/authStore'
 import { EXPIRATION_BUFFER_MS } from '@/helpers/getTokenExpirationTime'
 
 const baseFetcher = ky.extend({
@@ -11,7 +11,7 @@ const baseFetcher = ky.extend({
 })
 
 // Дедупликация параллельных рефрешей
-let refreshPromise: Promise<boolean> | null = null
+let refreshPromise: Promise<RefreshResult> | null = null
 
 const ensureFreshToken = async (): Promise<string | null | undefined> => {
 	const authData = await getAuthData()
@@ -37,8 +37,10 @@ const ensureFreshToken = async (): Promise<string | null | undefined> => {
 
 	const ok = await refreshPromise
 
-	if (!ok) {
-		await authStore.getState().logout()
+	// Рефреш не удался — отдаём запрос без токена. Разлогинивание при этом уже
+	// разруливается внутри refreshAccessToken: сессия сбрасывается только при
+	// явном отказе сервера, а не при проблемах с соединением или активной тренировке.
+	if (ok !== 'signed-in') {
 		return null
 	}
 

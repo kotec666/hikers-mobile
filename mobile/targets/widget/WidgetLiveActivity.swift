@@ -275,7 +275,7 @@ struct MetricsRow: View {
       MetricColumn(valueSize: valueSize, labelSize: labelSize) {
         TimerText(state: state, size: valueSize)
       } label: {
-        Text(state.isRunning() ? "Время" : "Пауза")
+        Text(state.isRunning() ? state.timeRunningLabel : state.timePausedLabel)
           .foregroundStyle(state.isRunning() ? activityTextMuted : activityYellow)
       }
       .frame(maxWidth: .infinity, alignment: .leading)
@@ -283,7 +283,7 @@ struct MetricsRow: View {
       MetricColumn(valueSize: valueSize, labelSize: labelSize) {
         Text(state.distanceText)
       } label: {
-        Text("Дистанция (км)")
+        Text(state.distanceLabel)
           .foregroundStyle(activityTextMuted)
       }
       .frame(maxWidth: .infinity, alignment: .center)
@@ -292,8 +292,8 @@ struct MetricsRow: View {
         Text(state.isRunning() ? state.speedText : state.averageSpeedText)
       } label: {
         VStack(alignment: .center, spacing: 0) {
-          Text(state.isRunning() ? "Скорость" : "Ср. скорость")
-          Text("(км/ч)")
+          Text(state.isRunning() ? state.speedLabel : state.averageSpeedLabel)
+          Text(state.speedUnitLabel)
         }
         .foregroundStyle(activityTextMuted)
       }

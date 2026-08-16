@@ -27,6 +27,7 @@ private enum LiveActivityTimer {
   static func startActivity(
     activityName: String,
     activityIcon: String,
+    labels: [String: String],
     startedAtTimestamp: Double?,
     pausedAtTimestamp: Double?
   ) throws -> Activity<LiveActivityAttributes> {
@@ -34,7 +35,16 @@ private enum LiveActivityTimer {
     let startedAt = startedAtTimestamp.map { Date(timeIntervalSince1970: $0 / 1000) } ?? Date()
     let pausedAt = pausedAtTimestamp.map { Date(timeIntervalSince1970: $0 / 1000) }
     let content = ActivityContent(
-      state: LiveActivityAttributes.ContentState(startedAt: startedAt, pausedAt: pausedAt),
+      state: LiveActivityAttributes.ContentState(
+        startedAt: startedAt,
+        pausedAt: pausedAt,
+        timeRunningLabel: labels["timeRunning"] ?? "",
+        timePausedLabel: labels["timePaused"] ?? "",
+        distanceLabel: labels["distance"] ?? "",
+        speedLabel: labels["speed"] ?? "",
+        averageSpeedLabel: labels["averageSpeed"] ?? "",
+        speedUnitLabel: labels["speedUnit"] ?? ""
+      ),
       staleDate: nil
     )
 
@@ -61,7 +71,13 @@ private enum LiveActivityTimer {
       lastLocationTimestamp: currentState.lastLocationTimestamp,
       distanceText: currentState.distanceText,
       speedText: currentState.speedText,
-      averageSpeedText: currentState.averageSpeedText
+      averageSpeedText: currentState.averageSpeedText,
+      timeRunningLabel: currentState.timeRunningLabel,
+      timePausedLabel: currentState.timePausedLabel,
+      distanceLabel: currentState.distanceLabel,
+      speedLabel: currentState.speedLabel,
+      averageSpeedLabel: currentState.averageSpeedLabel,
+      speedUnitLabel: currentState.speedUnitLabel
     )
     await activity.update(ActivityContent(
       state: pausedState,
@@ -88,7 +104,13 @@ private enum LiveActivityTimer {
       lastLocationTimestamp: currentState.lastLocationTimestamp,
       distanceText: currentState.distanceText,
       speedText: currentState.speedText,
-      averageSpeedText: currentState.averageSpeedText
+      averageSpeedText: currentState.averageSpeedText,
+      timeRunningLabel: currentState.timeRunningLabel,
+      timePausedLabel: currentState.timePausedLabel,
+      distanceLabel: currentState.distanceLabel,
+      speedLabel: currentState.speedLabel,
+      averageSpeedLabel: currentState.averageSpeedLabel,
+      speedUnitLabel: currentState.speedUnitLabel
     )
     await activity.update(ActivityContent(
       state: resumedState,
@@ -112,7 +134,13 @@ private enum LiveActivityTimer {
       lastLocationTimestamp: currentState.lastLocationTimestamp,
       distanceText: currentState.distanceText,
       speedText: currentState.speedText,
-      averageSpeedText: currentState.averageSpeedText
+      averageSpeedText: currentState.averageSpeedText,
+      timeRunningLabel: currentState.timeRunningLabel,
+      timePausedLabel: currentState.timePausedLabel,
+      distanceLabel: currentState.distanceLabel,
+      speedLabel: currentState.speedLabel,
+      averageSpeedLabel: currentState.averageSpeedLabel,
+      speedUnitLabel: currentState.speedUnitLabel
     )
 
     await activity.end(
@@ -128,7 +156,8 @@ private enum LiveActivityTimer {
     distanceText: String,
     speedText: String,
     averageSpeedText: String,
-    lastLocationTimestamp: Double
+    lastLocationTimestamp: Double,
+    labels: [String: String]
   ) async -> (activity: Activity<LiveActivityAttributes>, state: LiveActivityAttributes.ContentState)? {
     guard let activity = findActivity(activityId: activityId) else {
       return nil
@@ -141,7 +170,13 @@ private enum LiveActivityTimer {
       lastLocationTimestamp: lastLocationTimestamp,
       distanceText: distanceText,
       speedText: speedText,
-      averageSpeedText: averageSpeedText
+      averageSpeedText: averageSpeedText,
+      timeRunningLabel: labels["timeRunning"] ?? currentState.timeRunningLabel,
+      timePausedLabel: labels["timePaused"] ?? currentState.timePausedLabel,
+      distanceLabel: labels["distance"] ?? currentState.distanceLabel,
+      speedLabel: labels["speed"] ?? currentState.speedLabel,
+      averageSpeedLabel: labels["averageSpeed"] ?? currentState.averageSpeedLabel,
+      speedUnitLabel: labels["speedUnit"] ?? currentState.speedUnitLabel
     )
 
     await activity.update(ActivityContent(
@@ -214,6 +249,7 @@ public class ExpoLiveActivityModule: Module {
 
     OnCreate {
       startObservingWidgetActions()
+      NSLog("[LiveActivities] module v4: startActivity expects 5 args, updateActivity expects 6 args")
     }
 
     OnDestroy {
@@ -231,6 +267,7 @@ public class ExpoLiveActivityModule: Module {
     AsyncFunction("startActivity") { (
       activityName: String,
       activityIcon: String,
+      labels: [String: String],
       startedAtTimestamp: Double?,
       pausedAtTimestamp: Double?,
       promise: Promise
@@ -244,6 +281,7 @@ public class ExpoLiveActivityModule: Module {
         let activity = try LiveActivityTimer.startActivity(
           activityName: activityName,
           activityIcon: activityIcon,
+          labels: labels,
           startedAtTimestamp: startedAtTimestamp,
           pausedAtTimestamp: pausedAtTimestamp
         )
@@ -261,13 +299,17 @@ public class ExpoLiveActivityModule: Module {
       }
 
       Task {
-        guard let result = await LiveActivityTimer.pauseActivity(activityId: activityId) else {
-          promise.resolve(false)
-          return
-        }
+        do {
+          guard let result = await LiveActivityTimer.pauseActivity(activityId: activityId) else {
+            promise.resolve(false)
+            return
+          }
 
-        sendEvent(onLiveActivityUpdate, LiveActivityTimer.statusPayload(for: result.activity, state: result.state))
-        promise.resolve(true)
+          sendEvent(onLiveActivityUpdate, LiveActivityTimer.statusPayload(for: result.activity, state: result.state))
+          promise.resolve(true)
+        } catch {
+          promise.reject(UnexpectedException(error))
+        }
       }
     }
 
@@ -278,13 +320,17 @@ public class ExpoLiveActivityModule: Module {
       }
 
       Task {
-        guard let result = await LiveActivityTimer.resumeActivity(activityId: activityId) else {
-          promise.resolve(false)
-          return
-        }
+        do {
+          guard let result = await LiveActivityTimer.resumeActivity(activityId: activityId) else {
+            promise.resolve(false)
+            return
+          }
 
-        sendEvent(onLiveActivityUpdate, LiveActivityTimer.statusPayload(for: result.activity, state: result.state))
-        promise.resolve(true)
+          sendEvent(onLiveActivityUpdate, LiveActivityTimer.statusPayload(for: result.activity, state: result.state))
+          promise.resolve(true)
+        } catch {
+          promise.reject(UnexpectedException(error))
+        }
       }
     }
 
@@ -294,6 +340,7 @@ public class ExpoLiveActivityModule: Module {
       speedText: String,
       averageSpeedText: String,
       lastLocationTimestamp: Double,
+      labels: [String: String],
       promise: Promise
     ) in
       guard #available(iOS 16.2, *) else {
@@ -302,19 +349,24 @@ public class ExpoLiveActivityModule: Module {
       }
 
       Task {
-        guard let result = await LiveActivityTimer.updateMetrics(
-          activityId: activityId,
-          distanceText: distanceText,
-          speedText: speedText,
-          averageSpeedText: averageSpeedText,
-          lastLocationTimestamp: lastLocationTimestamp
-        ) else {
-          promise.resolve(false)
-          return
-        }
+        do {
+          guard let result = await LiveActivityTimer.updateMetrics(
+            activityId: activityId,
+            distanceText: distanceText,
+            speedText: speedText,
+            averageSpeedText: averageSpeedText,
+            lastLocationTimestamp: lastLocationTimestamp,
+            labels: labels
+          ) else {
+            promise.resolve(false)
+            return
+          }
 
-        sendEvent(onLiveActivityUpdate, LiveActivityTimer.statusPayload(for: result.activity, state: result.state))
-        promise.resolve(true)
+          sendEvent(onLiveActivityUpdate, LiveActivityTimer.statusPayload(for: result.activity, state: result.state))
+          promise.resolve(true)
+        } catch {
+          promise.reject(UnexpectedException(error))
+        }
       }
     }
 
@@ -325,18 +377,22 @@ public class ExpoLiveActivityModule: Module {
       }
 
       Task {
-        guard let activity = await LiveActivityTimer.endActivity(activityId: activityId) else {
-          promise.resolve(false)
-          return
+        do {
+          guard let activity = await LiveActivityTimer.endActivity(activityId: activityId) else {
+            promise.resolve(false)
+            return
+          }
+
+          let finalState = [
+            "id": activity.id,
+            "endedAt": Int(Date().timeIntervalSince1970)
+          ]
+
+          sendEvent(onLiveActivityEnd, finalState)
+          promise.resolve(true)
+        } catch {
+          promise.reject(UnexpectedException(error))
         }
-
-        let finalState = [
-          "id": activity.id,
-          "endedAt": Int(Date().timeIntervalSince1970)
-        ]
-
-        sendEvent(onLiveActivityEnd, finalState)
-        promise.resolve(true)
       }
     }
 

@@ -12,9 +12,12 @@ import {
 import { NotificationType } from '@shared/enums'
 import { getFieldsErrors } from '@/helpers/getFieldsErrors'
 import { useToast } from '@/hooks/useToast'
+import { useTranslation } from 'react-i18next'
 
-export const useNotificationsListQuery = (limit = 15) =>
-	useInfiniteQuery<INotification[], Error, INotification[], typeof QUERY_KEYS.NOTIFICATIONS_LIST, number>({
+export const useNotificationsListQuery = (limit = 15) => {
+	const { t } = useTranslation()
+
+	return useInfiniteQuery<INotification[], Error, INotification[], typeof QUERY_KEYS.NOTIFICATIONS_LIST, number>({
 		queryKey: QUERY_KEYS.NOTIFICATIONS_LIST,
 		queryFn: async ({ pageParam }) => {
 			try {
@@ -23,7 +26,7 @@ export const useNotificationsListQuery = (limit = 15) =>
 					limit
 				})
 			} catch (e) {
-				await getFieldsErrors(e)
+				await getFieldsErrors(e, t)
 				throw e
 			}
 		},
@@ -34,34 +37,42 @@ export const useNotificationsListQuery = (limit = 15) =>
 		},
 		select: (data) => data.pages.flat()
 	})
+}
 
-export const useUnreadNotificationsQuery = () =>
-	useQuery<INotificationUnread>({
+export const useUnreadNotificationsQuery = () => {
+	const { t } = useTranslation()
+
+	return useQuery<INotificationUnread>({
 		queryKey: QUERY_KEYS.NOTIFICATIONS_UNREAD,
 		queryFn: async () => {
 			try {
 				return await checkIsUnreadNotificationsExists()
 			} catch (e) {
-				await getFieldsErrors(e)
+				await getFieldsErrors(e, t)
 				throw e
 			}
 		}
 	})
+}
 
-export const useNotificationsSettingsQuery = () =>
-	useQuery<NotificationSettings>({
+export const useNotificationsSettingsQuery = () => {
+	const { t } = useTranslation()
+
+	return useQuery<NotificationSettings>({
 		queryKey: QUERY_KEYS.NOTIFICATIONS_SETTINGS,
 		queryFn: async () => {
 			try {
 				return await getNotificationSettings()
 			} catch (e) {
-				await getFieldsErrors(e)
+				await getFieldsErrors(e, t)
 				throw e
 			}
 		}
 	})
+}
 
 export const useOnNewNotificationMutation = () => {
+	const { t } = useTranslation()
 	const queryClient = useQueryClient()
 
 	return useMutation({
@@ -124,7 +135,7 @@ export const useOnNewNotificationMutation = () => {
 		},
 		onError: async (e, _ids, context) => {
 			// rollback если ошибка
-			await getFieldsErrors(e)
+			await getFieldsErrors(e, t)
 			if (context?.previousNotifications) {
 				queryClient.setQueryData(QUERY_KEYS.NOTIFICATIONS_LIST, context.previousNotifications)
 			}
@@ -136,22 +147,24 @@ export const useOnNewNotificationMutation = () => {
 }
 
 export const useUpdateNotificationsSettingsMutation = () => {
+	const { t } = useTranslation()
 	const queryClient = useQueryClient()
 	const toast = useToast()
 
 	return useMutation({
 		mutationFn: (updatedData: NotificationSettings) => changeNotificationSettings(updatedData),
 		onSuccess: (_data, updatedData) => {
-			toast.success('Настройки уведомлений сохранены')
+			toast.success(t('ToastMessage.success.notificationSettingsSaved'))
 			queryClient.setQueryData<NotificationSettings>(QUERY_KEYS.NOTIFICATIONS_SETTINGS, () => updatedData)
 		},
 		onError: async (e, _ids, _context) => {
-			await getFieldsErrors(e)
+			await getFieldsErrors(e, t)
 		}
 	})
 }
 
 export const useDeleteNotificationsMutation = () => {
+	const { t } = useTranslation()
 	const queryClient = useQueryClient()
 
 	return useMutation({
@@ -194,7 +207,7 @@ export const useDeleteNotificationsMutation = () => {
 		},
 		onError: async (e, _ids, context) => {
 			// rollback если ошибка
-			await getFieldsErrors(e)
+			await getFieldsErrors(e, t)
 			if (context?.previousNotificationsData) {
 				queryClient.setQueryData(QUERY_KEYS.NOTIFICATIONS_LIST, context.previousNotificationsData)
 			}
@@ -203,6 +216,7 @@ export const useDeleteNotificationsMutation = () => {
 }
 
 export const useMarkNotificationsAsReadMutation = () => {
+	const { t } = useTranslation()
 	const queryClient = useQueryClient()
 
 	return useMutation({
@@ -240,7 +254,7 @@ export const useMarkNotificationsAsReadMutation = () => {
 		},
 		onError: async (e, _ids, context) => {
 			// rollback при ошибке
-			await getFieldsErrors(e)
+			await getFieldsErrors(e, t)
 			if (context?.previousNotificationsData) {
 				queryClient.setQueryData(QUERY_KEYS.NOTIFICATIONS_LIST, context.previousNotificationsData)
 			}

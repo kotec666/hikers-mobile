@@ -5,12 +5,14 @@ import AchievementsStats from '@/components/ui/Profile/AchievementsStats'
 import { IProfileAchievement } from '@/api/profile'
 import { useSafeNavigation } from '@/hooks/useSafeNavigation'
 import ArrowDownSvg from '@/components/svg/ArrowDownSvg'
+import { useTranslation } from 'react-i18next'
 
 const RedirectAchievementsInfo = (props: {
 	achievements?: IProfileAchievement[]
 	isMyProfile?: boolean
 	userId?: string
 }) => {
+	const { t } = useTranslation()
 	const { push } = useSafeNavigation()
 
 	const handleClickRedirect = () => {
@@ -30,7 +32,7 @@ const RedirectAchievementsInfo = (props: {
 			<TouchableOpacity onPress={handleClickRedirect}>
 				<View className="flex-row justify-between">
 					<Text className="text-base text-white" style={{ fontFamily: fontFamily.bold }}>
-						Достижения
+						{t('ProfilePage.achievements')}
 					</Text>
 					<ArrowDownSvg style={{ transform: [{ rotate: '-90deg' }] }} size={20} />
 				</View>

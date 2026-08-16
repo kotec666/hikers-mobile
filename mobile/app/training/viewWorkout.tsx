@@ -55,6 +55,10 @@ import PenSvg from '@/components/svg/PenSvg'
 import { POST_MAX_FILES_COUNT } from '@shared/constants'
 import { getNoun } from '@/helpers/getNoun'
 import { useFullscreenImageViewer } from '@/hooks/useFullscreenImageViewer'
+import { useTranslation } from 'react-i18next'
+import { LngShort, locales } from '@/store/languageStorage'
+import { translateArr } from '@/helpers/arrTranslator'
+import { TFunction } from 'i18next'
 
 type Param = {
 	label: string
@@ -73,27 +77,31 @@ const getWorkoutResultImage = (workoutType?: TrainingType | null) => {
 }
 
 const getWorkoutParams = ({
+	t,
 	mode,
 	results,
+	locale,
 	creatorMetrics,
 	myMetrics
 }: {
+	t: TFunction<'translation', undefined>
 	mode: VIEW_WORKOUT_MODE
 	results: IWorkoutResultsStore
+	locale: string
 	creatorMetrics?: ITrainingMetrics
 	myMetrics?: ITrainingMetrics
 }): [Param[], Param[]] => {
 	if (mode === VIEW_WORKOUT_MODE.VIEW) {
 		return [
 			[
-				{ label: 'Время', value: results.metrics?.totalTimeFormatted },
-				{ label: 'Дистанция', value: results.metrics?.totalDistanceFormatted },
-				{ label: 'Ккал', value: results.metrics?.totalCalories }
+				{ label: 'measurementUnits.time', value: results.metrics?.totalTimeFormatted },
+				{ label: 'measurementUnits.range', value: results.metrics?.totalDistanceFormatted },
+				{ label: 'measurementUnits.kcal', value: results.metrics?.totalCalories }
 			],
 			[
-				{ label: 'Высота', value: results.metrics?.totalHeight },
-				{ label: 'Ср. скорость', value: results.metrics?.totalAvgSpeed },
-				{ label: 'Cр. темп', value: results.metrics?.totalAvgPace }
+				{ label: 'measurementUnits.height', value: results.metrics?.totalHeight },
+				{ label: 'measurementUnits.avgSpeed', value: results.metrics?.totalAvgSpeed },
+				{ label: 'measurementUnits.avgPace', value: results.metrics?.totalAvgPace }
 			]
 		]
 	}
@@ -103,26 +111,26 @@ const getWorkoutParams = ({
 	return [
 		[
 			{
-				label: 'Время',
+				label: 'measurementUnits.time',
 				value: formatTimeFromSecondsCompact(metrics?.timeSec)
 			},
 			{
-				label: 'Дистанция',
-				value: formatDistance(metrics?.distanceM || 0)
+				label: 'measurementUnits.range',
+				value: formatDistance(metrics?.distanceM || 0, locale)
 			},
-			{ label: 'Ккал', value: metrics?.kkcal }
+			{ label: 'measurementUnits.kcal', value: metrics?.kkcal }
 		],
 		[
 			{
-				label: 'Высота',
-				value: `${metrics?.altitudeGainM || '-'} м`
+				label: 'measurementUnits.height',
+				value: `${metrics?.altitudeGainM || '-'} ${t('measurementUnits.meters.short')}`
 			},
 			{
-				label: 'Ср. скорость',
+				label: 'measurementUnits.avgSpeed',
 				value: mpsToKmph(metrics?.avgSpeedMPerSec || 0)
 			},
 			{
-				label: 'Cр. темп',
+				label: 'measurementUnits.avgPace',
 				value: formatBackendPace(metrics?.avgTempoSecondsPerKm)
 			}
 		]
@@ -161,6 +169,10 @@ const generateId = () => `${Date.now()}-${Math.random().toString(36).slice(2)}`
 
 export default function ViewWorkout() {
 	const { user } = useAuthStore()
+	const { t, i18n } = useTranslation()
+
+	const currentLocale = locales[i18n.language as LngShort] ?? locales[LngShort.en]
+
 	const isIOS = Platform.OS === 'ios'
 	const router = useRouter()
 	const insets = useSafeAreaInsets()
@@ -254,7 +266,7 @@ export default function ViewWorkout() {
 			return await saveSingleWorkout(WorkoutSource.UNSAVED, Number(unsavedStartedAt), finishWorkout, user?.id)
 		} catch (e) {
 			console.error(e)
-			toast.error('Ошибка при сохранении тренировки, её можно будет сохранить позже')
+			toast.error(t('ToastMessage.error.thereWasAnErrorSavingTheWorkoutYouCanSaveItLater'))
 			return null
 		}
 	}
@@ -308,7 +320,7 @@ export default function ViewWorkout() {
 			}
 			return router.replace('/(tabs)/profile')
 		} catch (e: unknown) {
-			const formattedErrors = await getFieldsErrors(e)
+			const formattedErrors = await getFieldsErrors(e, t)
 			setState((s) => ({ ...s, errors: formattedErrors }))
 		} finally {
 			setState((s) => ({ ...s, isLoading: false }))
@@ -343,8 +355,13 @@ export default function ViewWorkout() {
 
 			const availableSlots = POST_MAX_FILES_COUNT - imageItems.length
 			if (availableSlots <= 0) {
-				const { number, word } = getNoun(POST_MAX_FILES_COUNT, 'файла', 'файлов', 'файлов')
-				toast.error(`Нельзя загружать больше ${number} ${word}`)
+				const { number, word } = getNoun(
+					POST_MAX_FILES_COUNT,
+					t('WorkoutResultsPage.filePlurals.one'),
+					t('WorkoutResultsPage.filePlurals.two'),
+					t('WorkoutResultsPage.filePlurals.five')
+				)
+				toast.error(`${t('WorkoutResultsPage.cantLoadMoreFiles')} ${number} ${word}`)
 				return
 			}
 
@@ -354,7 +371,7 @@ export default function ViewWorkout() {
 			const { isValid, errorMessage } = validateFile(imagesToAdd)
 
 			if (!isValid) {
-				toast.error(errorMessage || 'Файл не прошёл проверку')
+				toast.error(errorMessage || t('ToastMessage.error.fileDidNotPassVerification'))
 				return
 			}
 
@@ -364,14 +381,24 @@ export default function ViewWorkout() {
 			])
 
 			if (skippedCount > 0) {
-				const { number, word } = getNoun(POST_MAX_FILES_COUNT, 'файла', 'файлов', 'файлов')
-				const { number: skippedNumber, word: skippedWord } = getNoun(skippedCount, 'файл', 'файла', 'файлов')
+				const { number, word } = getNoun(
+					POST_MAX_FILES_COUNT,
+					t('WorkoutResultsPage.filePlurals.one'),
+					t('WorkoutResultsPage.filePlurals.two'),
+					t('WorkoutResultsPage.filePlurals.five')
+				)
+				const { number: skippedNumber, word: skippedWord } = getNoun(
+					skippedCount,
+					t('WorkoutResultsPage.filePluralsSecond.one'),
+					t('WorkoutResultsPage.filePluralsSecond.two'),
+					t('WorkoutResultsPage.filePluralsSecond.five')
+				)
 				toast.error(
-					`Добавлено ${imagesToAdd.length} из ${images.length} — лимит ${number} ${word} на пост. ${skippedNumber} ${skippedWord} не добавлено`
+					`${t('WorkoutResultsPage.addedFilesRestrictions.added')} ${imagesToAdd.length} ${t('WorkoutResultsPage.addedFilesRestrictions.from')} ${images.length} — ${t('WorkoutResultsPage.addedFilesRestrictions.limit')} ${number} ${word} ${t('WorkoutResultsPage.addedFilesRestrictions.perPost')} ${skippedNumber} ${skippedWord} ${t('WorkoutResultsPage.addedFilesRestrictions.notAdded')}`
 				)
 			}
 		} catch {
-			toast.error('Ошибка при загрузке изображения')
+			toast.error(t('ToastMessage.error.errorLoadingImage'))
 		}
 	}
 
@@ -396,11 +423,11 @@ export default function ViewWorkout() {
 
 	const distanceText = isView
 		? results.metrics?.totalDistanceFormatted
-		: formatDistance((isEdit ? creatorMetrics : myMetrics)?.distanceM || 0)
+		: formatDistance((isEdit ? creatorMetrics : myMetrics)?.distanceM || 0, i18n.language)
 
 	const dateText = isView
-		? `Сегодня, ${results.startedAt ? format(results.startedAt, 'HH:mm') : ''} - ${format(viewedAt, 'HH:mm')}`
-		: formatRelativeDate(isEdit ? existPost?.createdAt : extendedTrainingDetails?.createdAt)
+		? `${t('common.today')}, ${results.startedAt ? format(results.startedAt, 'HH:mm') : ''} - ${format(viewedAt, 'HH:mm')}`
+		: formatRelativeDate(isEdit ? existPost?.createdAt : extendedTrainingDetails?.createdAt, currentLocale)
 
 	const mapLocations = isView ? frozenPoints : isEdit ? adaptedLocations : adaptedLocationsFromHistory
 	const chartPoints = isView ? results.points : isEdit ? adaptedLocations : adaptedLocationsFromHistory
@@ -424,27 +451,34 @@ export default function ViewWorkout() {
 	const currentWorkoutImage = getWorkoutResultImage(currentWorkout?.type)
 
 	const [leftParams, rightParams] = getWorkoutParams({
+		t,
 		mode,
 		results,
+		locale: i18n.language,
 		creatorMetrics,
 		myMetrics
 	})
 
+	const leftParamsTranslated = translateArr(leftParams, 'label', t)
+	const rightParamsTranslated = translateArr(rightParams, 'label', t)
+
 	const getSubmitButtonText = () => {
-		if (isView) return 'Поделиться'
-		if (isEdit) return 'Отредактировать'
+		if (isView) return 'common.share'
+		if (isEdit) return 'WorkoutResultsPage.edit'
 
 		if (isFromHistory) {
-			if (existPost) return 'Отредактировать'
-			return 'Поделиться'
+			if (existPost) return 'WorkoutResultsPage.edit'
+			return 'common.share'
 		}
+		return ''
 	}
 
 	const getTitleText = () => {
-		if (isView) return 'Публикация'
-		if (isEdit) return 'Редактирование публикации'
-		if (isFromHistory && isTrainingAuthor && existPost) return 'Редактирование публикации'
-		if (isFromHistory && isTrainingAuthor && !existPost) return 'Публикация'
+		if (isView) return 'WorkoutResultsPage.publication'
+		if (isEdit) return 'WorkoutResultsPage.editPublication'
+		if (isFromHistory && isTrainingAuthor && existPost) return 'WorkoutResultsPage.editPublication'
+		if (isFromHistory && isTrainingAuthor && !existPost) return 'WorkoutResultsPage.publication'
+		return ''
 	}
 
 	const handlePressGoBack = () => {
@@ -492,7 +526,7 @@ export default function ViewWorkout() {
 			setEditingItemId(item.id)
 			setTempDownloadedUri(localFile.uri)
 		} catch {
-			toast.error('Не удалось загрузить изображение для редактирования')
+			toast.error(t('ToastMessage.error.failedToUploadImageForEditing'))
 		} finally {
 			setPreparingItemId(null)
 		}
@@ -526,17 +560,17 @@ export default function ViewWorkout() {
 				isOpen={isPhotoModalOpen}
 				blurDisabled
 				handleClose={() => setIsPhotoModalOpen(false)}
-				label="Фото поста"
+				label={t('WorkoutResultsPage.postPhoto')}
 				labelSize={16}
 			>
 				<View className="flex-row gap-[10px] justify-between">
 					<ImagePickerButton
-						title="Камера"
+						title={t('PhotoPicker.camera')}
 						icon={<CameraSvg />}
 						onPress={() => pickPostImage(ImagePickMode.CAMERA)}
 					/>
 					<ImagePickerButton
-						title="Галерея"
+						title={t('PhotoPicker.gallery')}
 						icon={<GallerySvg />}
 						onPress={() => pickPostImage(ImagePickMode.GALLERY)}
 					/>
@@ -546,12 +580,12 @@ export default function ViewWorkout() {
 				isOpen={isExitWithoutCreatePostModal}
 				blurDisabled
 				handleClose={() => setIsExitWithoutCreatePostModal(false)}
-				label="Выйти без создания публикации?"
+				label={t('WorkoutResultsPage.quitWithoutCreatePost')}
 				labelSize={16}
 			>
 				<View className="gap-[20px]">
 					<Text className="text-white text-sm" style={{ fontFamily: fontFamily.bold }}>
-						Тренировка сохранена в истории, а пост создать можно будет позже.
+						{t('WorkoutResultsPage.workoutSavedPostLater')}
 					</Text>
 					<View className="flex-row gap-[10px]">
 						<Button
@@ -559,14 +593,14 @@ export default function ViewWorkout() {
 							variant="white"
 							buttonContainerClassName="flex-1"
 						>
-							Да
+							{t('common.yes')}
 						</Button>
 						<Button
 							onPress={() => setIsExitWithoutCreatePostModal(false)}
 							variant="white"
 							buttonContainerClassName="flex-1"
 						>
-							Нет
+							{t('common.no')}
 						</Button>
 					</View>
 				</View>
@@ -617,17 +651,17 @@ export default function ViewWorkout() {
 					<View className="gap-[15px]">
 						<View className="bg-black-25 rounded-[25px] p-[15px] gap-[15px]">
 							<Text className="text-base text-white" style={{ fontFamily: fontFamily.bold }}>
-								Сведения о тренировке
+								{t('WorkoutResultsPage.trainingInformation')}
 							</Text>
 							<View className="w-full flex-row justify-between">
 								<View className="gap-[15px]">
-									{leftParams.map((p) => (
+									{leftParamsTranslated.map((p) => (
 										<Parameter key={p.label} label={p.label} value={p.value} />
 									))}
 								</View>
 
 								<View className="gap-[15px]">
-									{rightParams.map((p) => (
+									{rightParamsTranslated.map((p) => (
 										<Parameter key={p.label} label={p.label} value={p.value} />
 									))}
 								</View>
@@ -639,14 +673,14 @@ export default function ViewWorkout() {
 								buttonContainerClassName="flex-col flex-1"
 								variant={state.switchChartView === 'map' ? 'white' : 'black'}
 							>
-								Карта
+								{t('WorkoutResultsPage.switchMode.map')}
 							</Button>
 							<Button
 								onPress={() => setState((s) => ({ ...s, switchChartView: 'chart' }))}
 								buttonContainerClassName="flex-col flex-1"
 								variant={state.switchChartView === 'chart' ? 'white' : 'black'}
 							>
-								График
+								{t('WorkoutResultsPage.switchMode.chart')}
 							</Button>
 						</View>
 						{state.switchChartView === 'map' && (
@@ -665,7 +699,7 @@ export default function ViewWorkout() {
 							<View className="rounded-[25px] p-[15px] items-center justify-center bg-black-25 h-[320px]">
 								<View className="w-full pb-[15px]">
 									<Text className="text-base text-white" style={{ fontFamily: fontFamily.bold }}>
-										График темпа
+										{t('WorkoutResultsPage.paceChart')}
 									</Text>
 								</View>
 								<LineChart points={chartPoints} />
@@ -674,7 +708,7 @@ export default function ViewWorkout() {
 					</View>
 					<View className="mt-[20px] gap-[15px] hidden">
 						<Text className="text-white text-base" style={{ fontFamily: fontFamily.bold }}>
-							Участники
+							{t('WorkoutResultsPage.members')}
 						</Text>
 						<View className="gap-[15px]">
 							{data.map((user) => (
@@ -696,7 +730,7 @@ export default function ViewWorkout() {
 					{canPublish ? (
 						<View className="mt-[20px] gap-[15px]">
 							<Text className="text-white text-base" style={{ fontFamily: fontFamily.bold }}>
-								{getTitleText()}
+								{t(getTitleText())}
 							</Text>
 							<View className="gap-[10px]">
 								<Controller
@@ -719,13 +753,13 @@ export default function ViewWorkout() {
 									render={({ field: { onChange, onBlur, value }, fieldState: { error } }) => (
 										<Input
 											className="rounded-[8px]"
-											placeholder="Введите заголовок"
+											placeholder={t('WorkoutResultsPage.inputPlaceholder.title')}
 											error={error?.message || state.errors?.title}
 											onChangeText={onChange}
 											value={value}
 											onBlur={onBlur}
 											returnKeyType="next"
-											returnKeyLabel="Далее"
+											returnKeyLabel={t('common.next')}
 											submitBehavior="submit"
 											onSubmitEditing={() => descriptionRef.current?.focus()}
 										/>
@@ -753,7 +787,7 @@ export default function ViewWorkout() {
 												<Input
 													ref={descriptionRef}
 													multiline
-													placeholder="Введите описание"
+													placeholder={t('WorkoutResultsPage.inputPlaceholder.description')}
 													error={error?.message || state.errors?.description}
 													onChangeText={onChange}
 													value={value}
@@ -824,14 +858,14 @@ export default function ViewWorkout() {
 							</View>
 							<View className="gap-[10px] mt-[15px]">
 								<Button variant="white" onPress={() => setIsPhotoModalOpen(true)}>
-									Добавить фото
+									{t('WorkoutResultsPage.addPhoto')}
 								</Button>
 								<Button
 									variant="green"
 									onPress={handleSubmit(onSubmit)}
 									isLoading={isPendingCreate || isPendingUpdate}
 								>
-									{getSubmitButtonText()}
+									{t(getSubmitButtonText())}
 								</Button>
 							</View>
 						</View>
@@ -841,7 +875,7 @@ export default function ViewWorkout() {
 								style={{ fontFamily: fontFamily.medium }}
 								className="text-gray-ab text-base text-center"
 							>
-								Опубликовать пост может только создатель тренировки
+								{t('WorkoutResultsPage.onlyCreatorCanPublish')}
 							</Text>
 						</View>
 					)}

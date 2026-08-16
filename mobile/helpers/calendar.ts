@@ -1,6 +1,6 @@
 import { addMonths, eachDayOfInterval, endOfMonth, format, startOfMonth } from 'date-fns'
 import { capitalizeFirstLetter } from '@/helpers/capitalizeFirstLetter'
-import { ru } from 'date-fns/locale'
+import { LngShort, locales } from '@/store/languageStorage'
 
 export interface CalendarDay {
 	date: Date
@@ -19,7 +19,7 @@ export interface GeneratedMonthsResult {
 	currentMonthIndex: number
 }
 
-export const generateMonth = (date: Date): CalendarMonth => {
+export const generateMonth = (date: Date, language: LngShort = LngShort.en): CalendarMonth => {
 	const monthStart = startOfMonth(date)
 	const monthEnd = endOfMonth(date)
 
@@ -32,12 +32,14 @@ export const generateMonth = (date: Date): CalendarMonth => {
 
 	const startOffset = firstDayWeekday === 0 ? 6 : firstDayWeekday - 1
 
+	const locale = locales[language] ?? locales[LngShort.en]
+
 	return {
 		startOffset,
 		id: format(date, 'yyyy-MM'),
 		title: capitalizeFirstLetter(
 			format(date, 'LLLL yyyy', {
-				locale: ru
+				locale
 			})
 		),
 		days: days.map((date) => ({
@@ -47,7 +49,11 @@ export const generateMonth = (date: Date): CalendarMonth => {
 	}
 }
 
-export const generateMonthsRange = (startOffset: number, endOffset: number): GeneratedMonthsResult => {
+export const generateMonthsRange = (
+	startOffset: number,
+	endOffset: number,
+	language: LngShort = LngShort.en
+): GeneratedMonthsResult => {
 	const now = new Date()
 	const months: CalendarMonth[] = []
 	let currentMonthIndex = 0
@@ -59,7 +65,7 @@ export const generateMonthsRange = (startOffset: number, endOffset: number): Gen
 			currentMonthIndex = months.length
 		}
 
-		months.push(generateMonth(monthDate))
+		months.push(generateMonth(monthDate, language))
 	}
 
 	return {
@@ -78,3 +84,5 @@ export const RING_SIZE = 30
 export const TEXT_ZONE_HEIGHT = 24
 export const ROW_GAP = 20
 export const ROW_HEIGHT = TEXT_ZONE_HEIGHT + RING_SIZE + ROW_GAP
+
+export const WEEKDAY_I18N_KEYS = ['monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday', 'sunday'] as const

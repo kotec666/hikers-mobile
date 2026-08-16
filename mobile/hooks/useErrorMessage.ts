@@ -1,4 +1,5 @@
 import { getNoun } from '@/helpers/getNoun'
+import { useTranslation } from 'react-i18next'
 
 export interface IErrorMessages {
 	minLength: string
@@ -14,10 +15,12 @@ export interface IErrorMessages {
 }
 
 export const useErrorMessage = (minCount: number = 1, maxCount: number = 100) => {
+	const { t } = useTranslation()
+
 	const symbolWord = {
-		one: 'символ',
-		two: 'символа',
-		five: 'символов'
+		one: t('FormErrors.one'),
+		two: t('FormErrors.two'),
+		five: t('FormErrors.five')
 	}
 
 	const getParameterNoun = (count: number) => {
@@ -26,18 +29,18 @@ export const useErrorMessage = (minCount: number = 1, maxCount: number = 100) =>
 	}
 
 	const ErrorMessages: IErrorMessages = {
-		minLength: `Минимальная длина ${getParameterNoun(minCount)}`,
-		maxLength: `Максимальная длина ${getParameterNoun(maxCount)}`,
-		required: 'Обязательное поле',
-		email: 'Некорректный email',
-		isNumber: 'Поле может содержать только цифры',
-		notNumber: 'Поле может содержать только буквы',
-		passwordsNotEquals: 'Пароли не совпадают',
+		minLength: `${t('FormErrors.minLength')} ${getParameterNoun(minCount)}`,
+		maxLength: `${t('FormErrors.maxLength')} ${getParameterNoun(maxCount)}`,
+		required: t('FormErrors.required'),
+		email: t('FormErrors.email'),
+		isNumber: t('FormErrors.isNumber'),
+		notNumber: t('FormErrors.notNumber'),
+		passwordsNotEquals: t('FormErrors.passwordsNotEquals'),
 		optionalMin: (count: number) => {
-			return `Минимальная длина ` + getParameterNoun(count)
+			return `${t('FormErrors.minLength')} ` + getParameterNoun(count)
 		},
 		optionalMax: (count: number) => {
-			return `Максимальная длина ` + getParameterNoun(count)
+			return `${t('FormErrors.maxLength')} ` + getParameterNoun(count)
 		},
 		customMessage: (string: string) => {
 			return `${string}`

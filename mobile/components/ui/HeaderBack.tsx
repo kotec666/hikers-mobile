@@ -7,27 +7,30 @@ import { Motion } from '@legendapp/motion'
 import ArrowDownSvg from '@/components/svg/ArrowDownSvg'
 import { BlurView } from 'expo-blur'
 import { GlassView, isLiquidGlassAvailable } from 'expo-glass-effect'
+import Animated, { SharedValue, useAnimatedStyle } from 'react-native-reanimated'
 
 interface IProps {
 	className?: string
 	returnCallback?: () => void
 	children: ReactNode
+	progress?: SharedValue<number>
+	isProgressExist?: boolean
 }
 
 interface IRoundedButtonProps {
-	onPress: () => void
+	onPress?: () => void
 	icon?: React.JSX.Element
 }
 
 export const RoundedButton = memo(({ onPress, icon }: IRoundedButtonProps) => {
-	const isIos = Platform.OS === 'ios'
-	const isGlassAvailable = isIos && isLiquidGlassAvailable()
+	const isIOS = Platform.OS === 'ios'
+	const isGlassAvailable = isIOS && isLiquidGlassAvailable()
 
 	const buttonContent = (
 		<Motion.View
 			className={cn('w-[50px] h-[50px] items-center justify-center ', {
 				'border border-black-44 rounded-full': !isGlassAvailable,
-				'bg-black-0d': !isIos
+				'bg-black-0d': !isIOS
 			})}
 			whileTap={{ scale: 0.8 }}
 			transition={{
@@ -40,20 +43,36 @@ export const RoundedButton = memo(({ onPress, icon }: IRoundedButtonProps) => {
 		</Motion.View>
 	)
 
-	const renderWithEffect = (EffectComponent: React.ComponentType<any>, effectProps: any) => (
-		<Motion.Pressable onPress={onPress} className="w-[50px] h-[50px]">
+	const renderWithEffect = (EffectComponent: React.ComponentType<any>, effectProps: any) => {
+		const content = (
 			<EffectComponent style={{ borderRadius: 999, overflow: 'hidden' }} {...effectProps}>
 				{buttonContent}
 			</EffectComponent>
-		</Motion.Pressable>
-	)
+		)
+
+		if (!onPress) {
+			return <View className="w-[50px] h-[50px]">{content}</View>
+		}
+
+		return (
+			<Motion.Pressable onPress={onPress} className="w-[50px] h-[50px]">
+				{content}
+			</Motion.Pressable>
+		)
+	}
 
 	if (isGlassAvailable) {
 		return renderWithEffect(GlassView, { colorScheme: 'dark' })
 	}
 
-	if (isIos) {
+	if (isIOS) {
 		return renderWithEffect(BlurView, { tint: 'dark', intensity: 10 })
+	}
+
+	// Без onPress рендерим не-pressable враппер: вложенный Motion.Pressable перехватывает
+	// тач и не даёт открыться внешнему триггеру (например, Menu на Android) — «кнопка в кнопке».
+	if (!onPress) {
+		return <View className="w-[50px] h-[50px]">{buttonContent}</View>
 	}
 
 	return <Motion.Pressable onPress={onPress}>{buttonContent}</Motion.Pressable>
@@ -63,6 +82,15 @@ RoundedButton.displayName = 'RoundedButton'
 
 const HeaderBack = memo((props: IProps) => {
 	const router = useRouter()
+	const isIOS = Platform.OS === 'ios'
+	const isGlassAvailable = isIOS && isLiquidGlassAvailable()
+
+	const progress = props.progress
+
+	const progressBarStyle = useAnimatedStyle(() => ({
+		transformOrigin: 'left',
+		transform: [{ scaleX: progress?.value ?? 0 }]
+	}))
 
 	const handleClickBack = () => {
 		if (props.returnCallback) {
@@ -72,14 +100,49 @@ const HeaderBack = memo((props: IProps) => {
 		}
 	}
 
-	return (
-		<View className={cn('flex-row items-center gap-x-[16px]', props.className)}>
-			<RoundedButton onPress={handleClickBack} />
+	const headerRow = (
+		<View className="h-[50px] px-4 items-center justify-center overflow-hidden rounded-full">
+			{props.progress !== undefined && props.isProgressExist && (
+				<Animated.View className="absolute inset-0 bg-black-25" style={progressBarStyle} />
+			)}
 			<Text className="text-[20px] text-white" style={{ fontFamily: fontFamily.bold }}>
 				{props.children}
 			</Text>
 		</View>
 	)
+
+	const renderWithButton = (content: React.ReactNode) => (
+		<View className="flex-row items-center gap-x-[16px]">
+			<RoundedButton onPress={handleClickBack} />
+			{content}
+		</View>
+	)
+
+	if (props.progress !== undefined && props.isProgressExist && isGlassAvailable) {
+		return (
+			<View className={props.className}>
+				{renderWithButton(
+					<GlassView style={{ borderRadius: 999, overflow: 'hidden' }} colorScheme="dark">
+						{headerRow}
+					</GlassView>
+				)}
+			</View>
+		)
+	}
+
+	if (props.progress !== undefined && props.isProgressExist && isIOS) {
+		return (
+			<View className={props.className}>
+				{renderWithButton(
+					<BlurView style={{ borderRadius: 999, overflow: 'hidden' }} tint="dark" intensity={10}>
+						{headerRow}
+					</BlurView>
+				)}
+			</View>
+		)
+	}
+
+	return <View className={props.className}>{renderWithButton(headerRow)}</View>
 })
 
 HeaderBack.displayName = 'HeaderBack'

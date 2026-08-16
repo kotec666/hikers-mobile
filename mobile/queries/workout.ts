@@ -10,9 +10,12 @@ import {
 } from '@/api/workout'
 import { getTrainingMembersByPostId, ITrainingMember } from '@/api/posts'
 import { getFieldsErrors } from '@/helpers/getFieldsErrors'
+import { useTranslation } from 'react-i18next'
 
-export const useWorkoutsQuery = (selectedType: string, limit = 15) =>
-	useInfiniteQuery<
+export const useWorkoutsQuery = (selectedType: string, limit = 15) => {
+	const { t } = useTranslation()
+
+	return useInfiniteQuery<
 		ITrainingHistoryItem[],
 		Error,
 		ITrainingHistoryItem[],
@@ -29,7 +32,7 @@ export const useWorkoutsQuery = (selectedType: string, limit = 15) =>
 					types: selectedType
 				})
 			} catch (e) {
-				await getFieldsErrors(e)
+				await getFieldsErrors(e, t)
 				throw e
 			}
 		},
@@ -40,24 +43,30 @@ export const useWorkoutsQuery = (selectedType: string, limit = 15) =>
 		},
 		select: (data) => data.pages.flat()
 	})
+}
 
-export const useExtendedDetailsWorkoutQuery = (trainingId?: string) =>
-	useQuery<IExtendedTrainingResponse>({
+export const useExtendedDetailsWorkoutQuery = (trainingId?: string) => {
+	const { t } = useTranslation()
+
+	return useQuery<IExtendedTrainingResponse>({
 		queryKey: [...QUERY_KEYS.WORKOUT_DETAILS, trainingId],
 		queryFn: async () => {
 			try {
 				return await getExtendedDetails(trainingId!)
 			} catch (e) {
-				await getFieldsErrors(e)
+				await getFieldsErrors(e, t)
 				throw e
 			}
 		},
 		enabled: !!trainingId
 		// retry: 1
 	})
+}
 
-export const useWorkoutMembersQuery = (postId: string, limit = 15) =>
-	useInfiniteQuery<
+export const useWorkoutMembersQuery = (postId: string, limit = 15) => {
+	const { t } = useTranslation()
+
+	return useInfiniteQuery<
 		ITrainingMember[],
 		Error,
 		ITrainingMember[],
@@ -72,7 +81,7 @@ export const useWorkoutMembersQuery = (postId: string, limit = 15) =>
 					limit
 				})
 			} catch (e) {
-				await getFieldsErrors(e)
+				await getFieldsErrors(e, t)
 				throw e
 			}
 		},
@@ -83,6 +92,7 @@ export const useWorkoutMembersQuery = (postId: string, limit = 15) =>
 		},
 		select: (data) => data.pages.flat()
 	})
+}
 
 // Мутация для завершения тренировки (онлайн/оффлайн)
 export const useFinishWorkoutMutation = () => {

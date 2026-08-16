@@ -6,6 +6,7 @@ import CheckMarkIconSvg from '@/components/svg/CheckMarkIconSvg'
 import { cn } from '@/helpers/cn'
 import { MeasuringUnit } from '@/shared/enums'
 import { getNoun } from '@/helpers/getNoun'
+import { useTranslation } from 'react-i18next'
 
 const WorkoutStats = (props: {
 	style?: StyleProp<ViewStyle>
@@ -16,21 +17,38 @@ const WorkoutStats = (props: {
 	goal: number
 	measuringUnit: MeasuringUnit
 }) => {
+	const { t } = useTranslation()
+
 	const getMeasuringUnit = (unit: MeasuringUnit, goal: number) => {
+		const symbolWord = {
+			one: {
+				count: t('measurementUnits.count.one'),
+				reps: t('measurementUnits.reps.one')
+			},
+			two: {
+				count: t('measurementUnits.count.two'),
+				reps: t('measurementUnits.reps.two')
+			},
+			five: {
+				count: t('measurementUnits.count.five'),
+				reps: t('measurementUnits.reps.five')
+			}
+		}
+
 		switch (unit) {
 			case MeasuringUnit.METER:
-				return 'м'
+				return 'measurementUnits.meters.short'
 
 			case MeasuringUnit.KILOMETER:
-				return 'км'
+				return 'measurementUnits.km.short'
 
 			case MeasuringUnit.COUNT: {
-				const { word } = getNoun(goal, 'раз', 'раза', 'раз')
+				const { word } = getNoun(goal, symbolWord.one.count, symbolWord.two.count, symbolWord.five.count)
 				return word
 			}
 
 			case MeasuringUnit.REPEATS: {
-				const { word } = getNoun(goal, 'повторение', 'повторения', 'повторений')
+				const { word } = getNoun(goal, symbolWord.one.reps, symbolWord.two.reps, symbolWord.five.reps)
 				return word
 			}
 
@@ -46,7 +64,7 @@ const WorkoutStats = (props: {
 					{props.label}
 				</Text>
 				<Text className="text-xs text-green-main" style={{ fontFamily: fontFamily.bold }}>
-					{props.goal} {getMeasuringUnit(props.measuringUnit, props.goal)}
+					{props.goal} {t(getMeasuringUnit(props.measuringUnit, props.goal))}
 				</Text>
 			</View>
 			{props.isEditMode && (

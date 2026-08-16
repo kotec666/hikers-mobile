@@ -2,7 +2,9 @@ import { create } from 'zustand'
 import { getAuthData, removeAuthData, setAuthData } from '@/services/tokenService'
 import { refreshTokenAPI } from '@/api/refresh'
 import { getTokenExpirationTime } from '@/helpers/getTokenExpirationTime'
+import { isAuthFailureError } from '@/helpers/authError'
 import { setIsAccountExist } from '@/store/authStorage'
+import { getWorkoutMeta } from '@/store/workoutStorage'
 import { queryClient } from '@/queries/queryClient'
 
 export interface IUser {
@@ -14,6 +16,10 @@ export interface IUser {
 	avatarFilename: null | string
 }
 
+// signed-in — токен обновлён; logged-out — рефреш отклонён сервером и сессия сброшена;
+// kept-session — рефреш не удался (сеть/сервер недоступны или идёт активная тренировка), сессия сохранена.
+export type RefreshResult = 'signed-in' | 'kept-session' | 'logged-out'
+
 interface AuthStore {
 	// accessToken: string | null
 	user: IUser | null
@@ -23,7 +29,7 @@ interface AuthStore {
 
 	login: (token: string, user: IUser, accessTokenExpiration?: number | null) => Promise<void>
 	logout: () => Promise<void>
-	refreshAccessToken: () => Promise<boolean>
+	refreshAccessToken: () => Promise<RefreshResult>
 	checkAuth: () => Promise<void>
 	setUser: (user: IUser) => void
 }
@@ -68,11 +74,11 @@ export const useAuthStore = create<AuthStore>((set, get) => ({
 		})
 	},
 
-	refreshAccessToken: async () => {
+	refreshAccessToken: async (): Promise<RefreshResult> => {
 		const authData = await getAuthData()
 		const accessToken = authData?.accessToken
 		const user = authData?.user ?? get().user
-		if (!accessToken) return false
+		if (!accessToken) return 'logged-out'
 
 		try {
 			const newToken = await refreshTokenAPI(accessToken)
@@ -92,10 +98,18 @@ export const useAuthStore = create<AuthStore>((set, get) => ({
 				user
 			})
 
-			return true
-		} catch {
+			return 'signed-in'
+		} catch (error) {
+			// Сессию сбрасываем только если сервер явно отклонил refresh token.
+			// Если идёт активная тренировка или проблемы с соединением (сеть, 5xx,
+			// таймаут) — не разлогиниваемся: рефреш повторится при следующем запросе.
+			const isWorkoutActive = !!user && !!getWorkoutMeta(user.id)
+			if (isWorkoutActive || !isAuthFailureError(error)) {
+				return 'kept-session'
+			}
+
 			await get().logout()
-			return false
+			return 'logged-out'
 		}
 	},
 
@@ -113,9 +127,9 @@ export const useAuthStore = create<AuthStore>((set, get) => ({
 			return
 		}
 
-		const ok = await get().refreshAccessToken()
+		const result = await get().refreshAccessToken()
 
-		set({ isAuthChecked: true, isAuthenticated: ok })
+		set({ isAuthChecked: true, isAuthenticated: result !== 'logged-out' })
 	}
 }))
 

@@ -9,6 +9,7 @@ import { cn } from '@/helpers/cn'
 import { IActivity } from '@/api/activities'
 import { useEditActivitiesStore } from '@/store/editActivitiesStore'
 import { UserActivity } from '@shared/enums'
+import { useTranslation } from 'react-i18next'
 
 interface IProps {
 	label?: string
@@ -20,12 +21,13 @@ interface IProps {
 export type PositionsMap = Record<string, number>
 
 const ActivityInfo = (props: IProps) => {
+	const { t } = useTranslation()
 	const { newActivitiesOrder, setNewActivitiesOrder } = useEditActivitiesStore()
 	const names = {
-		[UserActivity.RUN]: 'Бег',
-		[UserActivity.TRACK]: 'Трек',
-		[UserActivity.BICYCLE]: 'Велосипед',
-		[UserActivity.STEPS]: 'Шаги'
+		[UserActivity.RUN]: 'ProfilePage.activityList.run',
+		[UserActivity.TRACK]: 'ProfilePage.activityList.track',
+		[UserActivity.BICYCLE]: 'ProfilePage.activityList.bicycle',
+		[UserActivity.STEPS]: 'ProfilePage.activityList.steps'
 	}
 
 	const positions: SharedValue<PositionsMap> = useSharedValue(
@@ -90,7 +92,7 @@ const ActivityInfo = (props: IProps) => {
 									width: CELL_W,
 									height: CELL_H
 								}}
-								label={names[item.name]}
+								label={t(names[item.name])}
 								goal={item.goal}
 								measuringUnit={item.measuringUnit}
 								isCheckmarkExist={Object.values(orderMap)
@@ -112,7 +114,7 @@ const ActivityInfo = (props: IProps) => {
 							renderItem={(activityItem) => (
 								<WorkoutStats
 									className="flex-1"
-									label={names[activityItem.item.name]}
+									label={t(names[activityItem.item.name])}
 									goal={activityItem.item.goal}
 									measuringUnit={activityItem.item.measuringUnit}
 									isEditMode={props.isEditMode}

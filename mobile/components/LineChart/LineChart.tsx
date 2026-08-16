@@ -16,6 +16,7 @@ import { Colors } from '@/constants/Colors'
 import { IWorkoutLocationStorageItem } from '@/store/workoutStorage'
 import { haversineDistance } from '@shared/helpers'
 import { fontFamily } from '@/constants/Fonts'
+import { useTranslation } from 'react-i18next'
 
 const manrope = require('@/assets/fonts/Manrope-Regular-400.otf')
 
@@ -87,6 +88,7 @@ const buildPaceChartData = (points: IWorkoutLocationStorageItem[]): PacePoint[] 
 }
 
 export const LineChart = (props: { points: IWorkoutLocationStorageItem[] | null }) => {
+	const { t } = useTranslation()
 	const font = useFont(manrope, 12)
 	const { state, isActive } = useChartPressState({ x: 0, y: { pace: 0 } })
 	const { state: transformState } = useChartTransformState()
@@ -102,7 +104,7 @@ export const LineChart = (props: { points: IWorkoutLocationStorageItem[] | null 
 				{chartData.length === 0 ? (
 					<View className="flex-1 items-center justify-center">
 						<Text style={{ fontFamily: fontFamily.medium }} className="text-gray-ab text-base text-center">
-							Недостаточно данных для отображения графика
+							{t('WorkoutResultsPage.notEnoughDataChart')}
 						</Text>
 					</View>
 				) : (

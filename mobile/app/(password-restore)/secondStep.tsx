@@ -20,6 +20,7 @@ import { formatCountdown } from '@/helpers/formatTime'
 import { KeyboardGestureArea } from 'react-native-keyboard-controller'
 import { useKeyboardAnimation } from '@/hooks/useKeyboardAnimation'
 import Animated from 'react-native-reanimated'
+import { useTranslation } from 'react-i18next'
 
 const isWrongCodeError = (
 	data: any
@@ -32,6 +33,7 @@ const isWrongCodeError = (
 }
 
 const SecondStepPage = () => {
+	const { t } = useTranslation()
 	const { push, replace } = useSafeNavigation()
 	const { email } = useLocalSearchParams<{
 		email?: string
@@ -71,7 +73,7 @@ const SecondStepPage = () => {
 							}
 
 							setErrors({
-								code: 'Слишком много попыток. Попробуйте позже.'
+								code: t('PasswordRestorePage.tooManyAttempts')
 							})
 
 							await Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error)
@@ -81,8 +83,8 @@ const SecondStepPage = () => {
 
 						const attemptsText =
 							remainAttempts !== null && remainAttempts <= 3
-								? `Неверный код, осталось попыток: ${remainAttempts}`
-								: 'Неверный код.'
+								? `${t('PasswordRestorePage.invalidCodeAttemptsRemaining')} ${remainAttempts}`
+								: t('PasswordRestorePage.invalidCode')
 
 						setErrors({
 							code: attemptsText
@@ -92,19 +94,19 @@ const SecondStepPage = () => {
 					}
 
 					// все остальные ошибки
-					const formattedErrors = await getFieldsErrors(errorData ?? e)
+					const formattedErrors = await getFieldsErrors(errorData ?? e, t)
 					setErrors(formattedErrors)
 				} catch (parseError) {
 					// если вообще не удалось распарсить response
 					console.log('parseError', parseError)
-					const formattedErrors = await getFieldsErrors(e)
+					const formattedErrors = await getFieldsErrors(e, t)
 					setErrors(formattedErrors)
 				}
 
 				await Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error)
 			}
 		},
-		[email, push]
+		[email, push, t]
 	)
 
 	const handleClearOTPError = () => {
@@ -127,7 +129,7 @@ const SecondStepPage = () => {
 			createTimer(TimerType.PASSWORD_RECOVERY, email, requestCodeResult.waitMs)
 		} catch (e) {
 			console.log('Ошибка при запросе нового кода', e)
-			const formattedErrors = await getFieldsErrors(e)
+			const formattedErrors = await getFieldsErrors(e, t)
 			setErrors(formattedErrors)
 			await Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error)
 		}
@@ -146,23 +148,23 @@ const SecondStepPage = () => {
 				<Pressable onPress={Keyboard.dismiss} style={{ flex: 1 }} accessible={false}>
 					<Container className="flex-1">
 						<View className="flex-1 items-start">
-							<HeaderBack>Назад</HeaderBack>
+							<HeaderBack>{t('common.back')}</HeaderBack>
 							<Animated.View style={animatedKeyboardStyle} className="flex-1 justify-center gap-[24px]">
 								<View className="gap-[32px]">
 									<View className="gap-[8px]">
 										<Text className="text-2xl text-white" style={{ fontFamily: fontFamily.medium }}>
-											Отправили вам код
+											{t('PasswordRestorePage.codeSent')}
 										</Text>
 										<Text
 											className="text-base text-gray-9a"
 											style={{ fontFamily: fontFamily.medium }}
 										>
-											Мы отправили код для восстановления пароля на {email}
+											{t('PasswordRestorePage.weSentCode')} {email}
 										</Text>
 									</View>
 									<View className="gap-[12px]">
 										<Text className="text-lg text-white" style={{ fontFamily: fontFamily.medium }}>
-											Введите код
+											{t('PasswordRestorePage.enterCode')}
 										</Text>
 										<OTPInput
 											hasError={hasError}
@@ -176,8 +178,8 @@ const SecondStepPage = () => {
 									{hasError && <ErrorMessageIcon errorText={errors.code} />}
 									<Button variant="black" onPress={handleResendOTP} disabled={isBlocked}>
 										{isBlocked
-											? `Отправить код повторно (${formattedTime})`
-											: 'Отправить код повторно'}
+											? `${t('PasswordRestorePage.actions.resendCode')} (${formattedTime})`
+											: t('PasswordRestorePage.actions.resendCode')}
 									</Button>
 									<CheckSpam />
 								</View>

@@ -1,17 +1,17 @@
 export const slides = [
 	{
 		image: require('@/assets/images/carousel/carousel-2.avif'),
-		title: 'Ваш маршрут.\n' + 'Наша забота.',
-		description: 'Мониторинг всех тренировочных данных и результатов'
+		title: 'HelloPage.firstSlide.title',
+		description: 'HelloPage.firstSlide.description'
 	},
 	{
 		image: require('@/assets/images/carousel/carousel-1.avif'),
-		title: 'Включил.\n' + 'Побежал.',
-		description: 'Синхронизируйте шаги с теми,\n' + 'кто разделяет вашу страсть к бегу'
+		title: 'HelloPage.secondSlide.title',
+		description: 'HelloPage.secondSlide.description'
 	},
 	{
 		image: require('@/assets/images/carousel/carousel-3.avif'),
-		title: 'Делись.\n' + 'Вдохновляй.',
-		description: 'Делитесь статистикой, обсуждайте тренировки, становитесь лучше вместе'
+		title: 'HelloPage.thirdSlide.title',
+		description: 'HelloPage.thirdSlide.description'
 	}
 ]

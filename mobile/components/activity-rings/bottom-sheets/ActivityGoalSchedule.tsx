@@ -6,6 +6,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context'
 import WeeklyGoalsChart from '@/components/activity-rings/WeeklyGoalsChart'
 import WeekDaySettingButton from '@/components/activity-rings/WeekDaySettingButton'
 import { DayGoal } from '@/app/daily-activity/kcal'
+import { useTranslation } from 'react-i18next'
 
 interface IProps {
 	schedule: DayGoal[]
@@ -17,6 +18,7 @@ interface IProps {
 
 const ActivityGoalSchedule = ({ schedule, updateGoal, onLongPressStart, onLongPressStop, isVisible }: IProps) => {
 	const insets = useSafeAreaInsets()
+	const { t } = useTranslation()
 
 	return (
 		<ScrollView
@@ -26,11 +28,10 @@ const ActivityGoalSchedule = ({ schedule, updateGoal, onLongPressStart, onLongPr
 			<Container className="gap-3">
 				<View className="gap-2">
 					<Text className="text-white" style={{ fontSize: 16, fontFamily: fontFamily.bold }}>
-						Расписание целей подвижности
+						{t('DailyActivity.goalSchedule.title')}
 					</Text>
 					<Text className="text-gray-a1" style={{ fontSize: 14, fontFamily: fontFamily.regular }}>
-						Задайте ежедневную цель в зависимости от Вашего реального или желаемого уровня физической
-						активности.
+						{t('DailyActivity.goalEveryDay.description')}
 					</Text>
 				</View>
 				<View className="gap-3">

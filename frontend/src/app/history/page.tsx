@@ -3,11 +3,11 @@ import React, { useRef, useState } from 'react'
 import { format } from 'date-fns'
 import { getExtendedDetails, getMyHistory, ITraining } from '@/api/workout'
 import { MapProvider } from '@/components/providers/map-provider'
-import YandexMap, { YandexMapRef } from '@/components/ui/map/yandex-map'
+import YandexMap, { YandexMapHandle } from '@/components/ui/map/yandex-map'
 import { cn } from '@/lib/utils'
 
 export default function Page() {
-	const mapRef = useRef<YandexMapRef>(null)
+	const mapRef = useRef<YandexMapHandle>(null)
 	const [token, setToken] = useState('')
 	const [history, setHistory] = useState<ITraining[]>([])
 	const [selectedId, setSelectedId] = useState<string | null>(null)

@@ -3,6 +3,7 @@ import StoreButton, { StoreButtonType } from '@/components/ui/store-button'
 import GoToSectionButton from '@/components/main-page/go-to-section-button'
 import { SectionId } from '@/app/page'
 import { preload } from 'react-dom'
+import HeroVideo from '@/components/main-page/hero-video'
 
 preload('/images/hikers-poster.avif', {
 	as: 'image',
@@ -16,7 +17,7 @@ const HeroSection = ({ firstSectionId }: { firstSectionId: SectionId }) => {
 			aria-labelledby="hero-title"
 			className="relative overflow-hidden h-screen py-20 md:pb-15 px-4 sm:px-6 lg:px-8 flex flex-col"
 		>
-			<video
+			<HeroVideo
 				autoPlay
 				loop
 				muted
@@ -30,7 +31,7 @@ const HeroSection = ({ firstSectionId }: { firstSectionId: SectionId }) => {
 			>
 				<source src="/video/hikers.webm" type="video/webm" />
 				<source src="/video/hikers.mp4" type="video/mp4" />
-			</video>
+			</HeroVideo>
 			<div aria-hidden="true" className="absolute inset-0 bg-black/50 z-1" />
 
 			<div className="max-w-4xl mx-auto text-center gap-8 h-full flex flex-col justify-center items-center z-2">

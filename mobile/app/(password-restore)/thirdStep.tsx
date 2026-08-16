@@ -20,6 +20,7 @@ import { removeTimer, TimerType } from '@/store/timerStorage'
 import { KeyboardGestureArea } from 'react-native-keyboard-controller'
 import Animated from 'react-native-reanimated'
 import { useKeyboardAnimation } from '@/hooks/useKeyboardAnimation'
+import { useTranslation } from 'react-i18next'
 
 interface IRecoveryPasswordThirdStepFormState {
 	password: string
@@ -27,6 +28,7 @@ interface IRecoveryPasswordThirdStepFormState {
 }
 
 const ThirdStepPage = () => {
+	const { t } = useTranslation()
 	const { push, replace } = useSafeNavigation()
 	const toast = useToast()
 	const { email, code } = useLocalSearchParams<{
@@ -70,9 +72,9 @@ const ThirdStepPage = () => {
 			}
 
 			push('/')
-			toast.success('Пароль успешно изменён')
+			toast.success(t('ToastMessage.success.passwordSuccessfullyChanged'))
 		} catch (e: unknown) {
-			const formattedErrors = await getFieldsErrors(e)
+			const formattedErrors = await getFieldsErrors(e, t)
 			setServerErrors(formattedErrors)
 			await Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error)
 		}
@@ -85,18 +87,18 @@ const ThirdStepPage = () => {
 				<Pressable onPress={Keyboard.dismiss} style={{ flex: 1 }} accessible={false}>
 					<Container className="flex-1">
 						<View className="flex-1 items-start">
-							<HeaderBack>Назад</HeaderBack>
+							<HeaderBack>{t('common.back')}</HeaderBack>
 							<Animated.View style={animatedKeyboardStyle} className="flex-1 justify-center gap-[24px]">
 								<View className="gap-[32px]">
 									<View className="gap-[8px]">
 										<Text className="text-2xl text-white" style={{ fontFamily: fontFamily.medium }}>
-											Восстановление пароля
+											{t('PasswordRestorePage.passwordRestore')}
 										</Text>
 										<Text
 											className="text-base text-gray-9a"
 											style={{ fontFamily: fontFamily.medium }}
 										>
-											Придумайте новый пароль
+											{t('PasswordRestorePage.createANewPassword')}
 										</Text>
 									</View>
 									<View className="gap-[8px]">
@@ -121,7 +123,7 @@ const ThirdStepPage = () => {
 												<InputIcon
 													isPassword
 													autoCapitalize="none"
-													placeholder="Введите пароль"
+													placeholder={t('PasswordRestorePage.inputPlaceholder.password')}
 													textContentType="password"
 													keyboardType="numbers-and-punctuation"
 													svg={
@@ -164,7 +166,9 @@ const ThirdStepPage = () => {
 												<InputIcon
 													isPassword
 													autoCapitalize="none"
-													placeholder="Повтор пароля"
+													placeholder={t(
+														'PasswordRestorePage.inputPlaceholder.passwordConfirm'
+													)}
 													textContentType="password"
 													keyboardType="numbers-and-punctuation"
 													svg={
@@ -184,7 +188,7 @@ const ThirdStepPage = () => {
 									</View>
 								</View>
 								<Button variant="black" isLoading={isSubmitting} onPress={handleSubmit(onSubmit)}>
-									Сохранить новый пароль
+									{t('PasswordRestorePage.actions.saveNewPassword')}
 								</Button>
 							</Animated.View>
 						</View>

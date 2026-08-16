@@ -1,5 +1,6 @@
 import { memo } from 'react'
 import Parameter from '@/components/training/Parameter'
+import { useTranslation } from 'react-i18next'
 
 interface IProps {
 	isPaused: boolean
@@ -7,7 +8,8 @@ interface IProps {
 }
 
 const MetricTime = memo((props: IProps) => {
-	return <Parameter isPaused={props.isPaused} label="Время" value={props.workoutTimeFormatted} />
+	const { t } = useTranslation()
+	return <Parameter isPaused={props.isPaused} label={t('measurementUnits.time')} value={props.workoutTimeFormatted} />
 })
 
 MetricTime.displayName = 'MetricTime'

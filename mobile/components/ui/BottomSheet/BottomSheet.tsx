@@ -8,8 +8,26 @@ import { PositionChangeEvent, TrueSheet, TrueSheetProps } from '@lodev09/react-n
 import { Button } from '@/components/ui/Button'
 import Animated, { interpolate, useAnimatedStyle, useSharedValue } from 'react-native-reanimated'
 import { scheduleOnRN } from 'react-native-worklets'
+import { useTranslation } from 'react-i18next'
 
 const { height: screenHeight } = Dimensions.get('screen')
+
+// --- Геометрия шита и плавающей кнопки «Готово» (единая точка правды) ---
+const DEFAULT_DETENT = 0.5 // высота шита при открытии по умолчанию (доля экрана)
+const GRABBER_TOP_MARGIN = 10 // grabberOptions.topMargin
+const SHEET_TOP_PADDING = 20 // внутренний отступ сверху у шита
+const CLOSED_POSITION_Y = screenHeight // верхняя кромка шита в закрытом положении
+const OPEN_POSITION_Y = screenHeight * (1 - DEFAULT_DETENT) // верхняя кромка в открытом положении
+const CLOSE_THRESHOLD = 10 // допуск для признания шита закрытым
+const OPACITY_FADE_DISTANCE = 50 // на каком расстоянии от закрытого положения кнопка полностью исчезает
+const BUTTON_HIDDEN_TOP = screenHeight + 20 // положение кнопки за пределами экрана
+const BUTTON_SLIDE_LIFT = 30 // дополнительное смещение кнопки вниз по мере открытия шита
+// Отступ от верхней кромки шита до кнопки задан долей высоты открытого шита,
+// а не плоскими пикселями: так кнопка держит одинаковое относительное положение
+// на любом размере экрана и одинаково на iOS/Android. Кнопка «виснет» на 1/5
+// высоты открытого шита выше его кромки (эквивалент старого фикс. отступа ~70dp).
+const BUTTON_GAP_RATIO = 0.3
+const BUTTON_TOP_OFFSET = OPEN_POSITION_Y * BUTTON_GAP_RATIO
 
 export interface BottomSheetProps extends TrueSheetProps {
 	children: React.ReactNode
@@ -23,15 +41,14 @@ export interface BottomSheetHandle {
 }
 
 const BottomSheet = forwardRef<BottomSheetHandle, BottomSheetProps>((props, ref) => {
+	const { t } = useTranslation()
 	const { blurDisabled, onDone, children, ...restProps } = props
 	const bottomSheetRef = useRef<TrueSheet | null>(null)
 	const blurTargetRef = useBlurContext()
 	const isIOS = Platform.OS === 'ios'
 	const isGlassAvailable = isIOS && isLiquidGlassAvailable()
 
-	const closedPositionY = screenHeight
-
-	const sheetPosition = useSharedValue(closedPositionY)
+	const sheetPosition = useSharedValue(CLOSED_POSITION_Y)
 
 	const renderBackground = () => {
 		if (blurDisabled) return null
@@ -107,17 +124,31 @@ const BottomSheet = forwardRef<BottomSheetHandle, BottomSheetProps>((props, ref)
 		sheetPosition.value = e.nativeEvent.position
 	}
 
-	const floatingButtonStyle = useAnimatedStyle(() => {
-		const opacity = interpolate(sheetPosition.value, [closedPositionY - 50, screenHeight * 0.5], [0, 1])
-		const isClosed = sheetPosition.value > closedPositionY - 10
+	const handleDidDismiss = useCallback(() => {
+		// TrueSheet не всегда доезжает до финальной позиции в onPositionChange —
+		// если не вернуть shared value в закрытое положение, плавающая кнопка
+		// застрянет на экране после dismiss.
+		sheetPosition.value = CLOSED_POSITION_Y
+	}, [sheetPosition])
 
-		const buttonPosition = isIOS ? 180 : 150
+	const floatingButtonStyle = useAnimatedStyle(() => {
+		const opacity = interpolate(
+			sheetPosition.value,
+			[CLOSED_POSITION_Y - OPACITY_FADE_DISTANCE, OPEN_POSITION_Y],
+			[0, 1]
+		)
+		const isClosed = sheetPosition.value > CLOSED_POSITION_Y - CLOSE_THRESHOLD
+
 		return {
-			top: isClosed ? screenHeight + 20 : sheetPosition.value - buttonPosition,
+			top: isClosed ? BUTTON_HIDDEN_TOP : sheetPosition.value - BUTTON_TOP_OFFSET,
 			opacity,
 			transform: [
 				{
-					translateY: interpolate(sheetPosition.value, [screenHeight, screenHeight * 0.5], [0, 30])
+					translateY: interpolate(
+						sheetPosition.value,
+						[CLOSED_POSITION_Y, OPEN_POSITION_Y],
+						[0, BUTTON_SLIDE_LIFT]
+					)
 				}
 			]
 		}
@@ -139,7 +170,7 @@ const BottomSheet = forwardRef<BottomSheetHandle, BottomSheetProps>((props, ref)
 					]}
 				>
 					<Button variant="black" onPress={onDone}>
-						Готово
+						{t('common.ready')}
 					</Button>
 				</Animated.View>
 			)}
@@ -148,16 +179,17 @@ const BottomSheet = forwardRef<BottomSheetHandle, BottomSheetProps>((props, ref)
 				ref={bottomSheetRef}
 				cornerRadius={24}
 				backgroundColor={blurDisabled ? 'rgba(0, 0, 0, 1)' : 'transparent'}
-				detents={restProps.detents ?? [0.5]}
+				detents={restProps.detents ?? [DEFAULT_DETENT]}
 				grabberOptions={{
-					topMargin: 10,
+					topMargin: GRABBER_TOP_MARGIN,
 					color: Colors['gray-d9'],
 					adaptive: false
 				}}
 				style={{
-					paddingTop: 20
+					paddingTop: SHEET_TOP_PADDING
 				}}
 				onPositionChange={handlePositionChange}
+				onDidDismiss={handleDidDismiss}
 				{...restProps}
 			>
 				{renderBackground()}

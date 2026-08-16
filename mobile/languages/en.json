@@ -1,0 +1,13 @@
+{
+  "android": {
+    "app_name": "hikers"
+  },
+  "ios": {
+    "CFBundleDisplayName": "hikers",
+    "NSMotionUsageDescription": "Allow Hikers to access your device sensors",
+    "NSLocationWhenInUseUsageDescription": "We use your location to record your workouts and routes",
+    "NSLocationAlwaysAndWhenInUseUsageDescription": "Background location permission lets you continue recording your workout while the screen is locked",
+    "NSPhotoLibraryUsageDescription": "The app needs access to your photo library to choose an image",
+    "NSCameraUsageDescription": "The app needs access to your camera to add an image"
+  }
+}

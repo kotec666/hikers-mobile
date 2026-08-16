@@ -11,10 +11,11 @@ type TitlePart = {
 
 interface IProps {
 	title: string | TitlePart[]
+	icon?: React.ReactElement
 	onPress: () => void
 }
 
-const Setting = ({ title, onPress }: IProps) => {
+const Setting = ({ title, icon, onPress }: IProps) => {
 	const renderTitle = () => {
 		if (Array.isArray(title)) {
 			return title.map((part, index) => (
@@ -32,7 +33,7 @@ const Setting = ({ title, onPress }: IProps) => {
 			<Text className="text-base text-gray-ab flex-1 mr-2" style={{ fontFamily: fontFamily.medium }}>
 				{renderTitle()}
 			</Text>
-			<ArrowDownSvg style={{ transform: [{ rotate: '-90deg' }] }} size={22} />
+			{icon || <ArrowDownSvg style={{ transform: [{ rotate: '-90deg' }] }} size={22} />}
 		</Pressable>
 	)
 }

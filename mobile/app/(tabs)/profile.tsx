@@ -25,8 +25,6 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context'
 import WorkoutMap from '@/components/map/WorkoutMap'
 import DailyActivityRedirect from '@/components/activity-rings/DailyActivityRedirect'
 import { RoundedButton } from '@/components/ui/HeaderBack'
-import PopupMenuItem from '@/components/ui/Popup/PopupMenuItem'
-import PopupMenu from '@/components/ui/Popup/PopupMenu'
 import { EmojiSheetModule } from 'expo-native-sheet-emojis'
 import { FlashList, FlashListRef } from '@shopify/flash-list'
 import EditSvg from '@/components/svg/EditSvg'
@@ -34,6 +32,8 @@ import ExitSvg from '@/components/svg/ExitSvg'
 import AboutSvg from '@/components/svg/AboutSvg'
 import LoadQueryErrorRetry from '@/components/LoadQueryErrorRetry'
 import { PostListItemSkeleton, ProfileHeaderSkeleton } from '@/components/ui/skeleton'
+import { useTranslation } from 'react-i18next'
+import { Menu } from '@/components/ui/Menu/Menu'
 
 /**
  *
@@ -55,6 +55,7 @@ const Profile = () => {
 	const insets = useSafeAreaInsets()
 	const { push } = useSafeNavigation()
 	const { user, logout } = useAuthStore()
+	const { t } = useTranslation()
 	const params = useLocalSearchParams()
 	const flashListRef = useRef<FlashListRef<IPost>>(null)
 
@@ -129,20 +130,20 @@ const Profile = () => {
 				// categoryBarBackgroundColor?: string;
 			},
 			translations: {
-				searchPlaceholder: 'Поиск эмодзи',
-				noResultsText: 'Ничего не найдено',
+				searchPlaceholder: t('EmojiPicker.searchPlaceholder'),
+				noResultsText: t('EmojiPicker.noResultsText'),
 				categoryNames: {
-					search_results: 'Результаты поиска',
-					frequently_used: 'Недавно использованные',
-					smileys_emotion: 'Смайлики и эмоции',
-					people_body: 'Люди и тело',
-					animals_nature: 'Животные и природа',
-					food_drink: 'Еда и напитки',
-					travel_places: 'Путешествия и места',
-					activities: 'Активности',
-					objects: 'Объекты',
-					symbols: 'Символы',
-					flags: 'Флаги'
+					search_results: t('EmojiPicker.categoryNames.search_results'),
+					frequently_used: t('EmojiPicker.categoryNames.frequently_used'),
+					smileys_emotion: t('EmojiPicker.categoryNames.smileys_emotion'),
+					people_body: t('EmojiPicker.categoryNames.people_body'),
+					animals_nature: t('EmojiPicker.categoryNames.animals_nature'),
+					food_drink: t('EmojiPicker.categoryNames.food_drink'),
+					travel_places: t('EmojiPicker.categoryNames.travel_places'),
+					activities: t('EmojiPicker.categoryNames.activities'),
+					objects: t('EmojiPicker.categoryNames.objects'),
+					symbols: t('EmojiPicker.categoryNames.symbols'),
+					flags: t('EmojiPicker.categoryNames.flags')
 				}
 			}
 		})
@@ -196,8 +197,8 @@ const Profile = () => {
 		if (isPostsError && posts.length > 0) {
 			return (
 				<LoadQueryErrorRetry
-					text="Не удалось загрузить ещё"
-					buttonText="Повторить"
+					text={t('LoadQueryErrorRetry.label.cantLoadMore')}
+					buttonText={t('LoadQueryErrorRetry.action.retry')}
 					onRetry={handleRetryPosts}
 				/>
 			)
@@ -208,7 +209,7 @@ const Profile = () => {
 				<ActivityIndicator size="small" color={Colors['green-main']} />
 			</View>
 		)
-	}, [isFetchingPostsNextPage, isPostsError, posts.length, handleRetryPosts])
+	}, [isPostsError, posts.length, isFetchingPostsNextPage, t, handleRetryPosts])
 
 	const renderEmpty = useCallback(() => {
 		if (isPostsLoading) {
@@ -221,18 +222,28 @@ const Profile = () => {
 		}
 
 		if (isPostsError) {
-			return <LoadQueryErrorRetry onRetry={handleRetryPosts} />
+			return (
+				<LoadQueryErrorRetry
+					text={t('LoadQueryErrorRetry.label.failedToLoadPublications')}
+					buttonText={t('LoadQueryErrorRetry.action.tryAgain')}
+					onRetry={handleRetryPosts}
+				/>
+			)
 		}
 
-		return <TrainingsEmpty text="Постов еще не существует, опубликуйте пост после тренировки" />
-	}, [isPostsLoading, isPostsError, handleRetryPosts])
+		return <TrainingsEmpty text={t('TrainingsEmpty.label.postsNotExistProfile')} />
+	}, [isPostsLoading, isPostsError, t, handleRetryPosts])
 
 	const SEPARATOR = () => <View style={{ height: 16 }} />
 
 	if (isProfileError && !profileData) {
 		return (
 			<View className="flex-1 items-center justify-center px-4">
-				<LoadQueryErrorRetry text="Не удалось загрузить профиль" onRetry={handleRetryProfile} />
+				<LoadQueryErrorRetry
+					text={t('LoadQueryErrorRetry.label.failedToLoadProfile')}
+					buttonText={t('LoadQueryErrorRetry.action.tryAgain')}
+					onRetry={handleRetryProfile}
+				/>
 			</View>
 		)
 	}
@@ -270,68 +281,53 @@ const Profile = () => {
 							) : (
 								<View className="gap-[20px]">
 									<View className="gap-[16px]">
-										{/*<EmailNotConfirmed*/}
-										{/*	isVisible={shouldShowEmailConfirmation}*/}
-										{/*	email={profileData?.user?.email}*/}
-										{/*/>*/}
 										<View className="flex-row justify-between w-full">
 											<AnimatedProfilePicture
 												size={117}
 												bordered
 												imageUrl={`${PATH_TO_IMAGE}${profileData?.user?.avatarFilename}`}
 											/>
-											<PopupMenu
+											<Menu
 												menuWidth={230}
 												menuHeight={300}
-												trigger={({ open }) => (
-													<RoundedButton onPress={open} icon={<SettingsSvg />} />
-												)}
+												actions={[
+													{
+														id: 'edit',
+														title: t('ProfilePage.menu.editProfile'),
+														image: 'square.and.pencil',
+														icon: <EditSvg size={18} color="white" />,
+														onPress: () => handleClickRedirect(ALLOWED_ROUTES.EDIT_PROFILE)
+													},
+													{
+														id: 'about',
+														title: t('ProfilePage.menu.about'),
+														image: 'ellipsis.circle',
+														icon: <AboutSvg size={18} color="white" />,
+														onPress: () => handleClickRedirect(ALLOWED_ROUTES.ABOUT)
+													},
+													{
+														id: 'settings',
+														title: t('common.settings'),
+														image: 'gearshape',
+														icon: <SettingsSvg size={18} color="white" />,
+														onPress: () => handleClickRedirect(ALLOWED_ROUTES.SETTINGS)
+													},
+													{
+														id: 'exit',
+														title: t('ProfilePage.menu.exit'),
+														image: 'rectangle.portrait.and.arrow.right',
+														icon: <ExitSvg size={18} color="white" />,
+														onPress: handleClickExit
+													}
+												]}
 											>
-												<PopupMenuItem
-													title="Редактировать профиль"
-													onPress={() => handleClickRedirect(ALLOWED_ROUTES.EDIT_PROFILE)}
-												>
-													<View className="flex-row items-center gap-3">
-														<EditSvg size={18} color="white" />
-														<Text className="text-white text-base">
-															Редактировать профиль
-														</Text>
-													</View>
-												</PopupMenuItem>
-												<PopupMenuItem
-													title="О приложении"
-													onPress={() => handleClickRedirect(ALLOWED_ROUTES.ABOUT)}
-												>
-													<View className="flex-row items-center gap-3">
-														<AboutSvg size={18} color="white" />
-														<Text className="text-white text-base">О приложении</Text>
-													</View>
-												</PopupMenuItem>
-												<PopupMenuItem
-													title="Настройки"
-													onPress={() => handleClickRedirect(ALLOWED_ROUTES.SETTINGS)}
-												>
-													<View className="flex-row items-center gap-3">
-														<SettingsSvg size={18} color="white" />
-														<Text className="text-white text-base">Настройки</Text>
-													</View>
-												</PopupMenuItem>
-												{/*<PopupMenuItem*/}
-												{/*	title="results page"*/}
-												{/*	onPress={() => handleClickRedirect(ALLOWED_ROUTES.RESULTS_PAGE)}*/}
-												{/*/>*/}
-												<PopupMenuItem title="Выход" onPress={handleClickExit}>
-													<View className="flex-row items-center gap-3">
-														<ExitSvg size={18} color="white" />
-														<Text className="text-white text-base">Выход</Text>
-													</View>
-												</PopupMenuItem>
-											</PopupMenu>
+												<RoundedButton icon={<SettingsSvg />} />
+											</Menu>
 										</View>
 										<View>
 											<Pressable
 												onPress={handlePressEmojiPick}
-												className="flex-row items-center gap-3"
+												className="flex-row items-center gap-3 self-start"
 											>
 												{profileData?.user?.name && (
 													<Text
@@ -356,35 +352,38 @@ const Profile = () => {
 										</View>
 										{isProfileError && profileData && (
 											<Text className="text-red-500 text-sm">
-												Не удалось обновить профиль.{' '}
+												{t('ProfilePage.profileLoadError.text')}{' '}
 												<Text onPress={handleRetryProfile} className="underline">
-													Повторить
+													{t('ProfilePage.profileLoadError.action')}
 												</Text>
 											</Text>
 										)}
 									</View>
 									<View className="flex-row justify-between gap-[10px]">
 										<SocialStats
-											label="Подписчики"
+											label={t('ProfilePage.stats.subscribers')}
 											content={profileData?.subscribers}
 											hrefTo="/subscribers/my-subscribers"
 										/>
 										<SocialStats
-											label="Друзья"
+											label={t('ProfilePage.stats.friends')}
 											content={profileData?.friends}
 											hrefTo="/friends/my-friends"
 										/>
 										<SocialStats
-											label="Подписки"
+											label={t('ProfilePage.stats.subscriptions')}
 											content={profileData?.subscriptions}
 											hrefTo="/subscribers/my-subscriptions"
 										/>
 									</View>
 									<Button variant="white" onPress={() => push('/workout-history')}>
-										История тренировок
+										{t('ProfilePage.workoutHistory')}
 									</Button>
 									<RedirectAchievementsInfo achievements={profileData?.achievements} isMyProfile />
-									<ActivityInfo label="Активности" activities={profileData?.activities || []} />
+									<ActivityInfo
+										label={t('ProfilePage.activity')}
+										activities={profileData?.activities || []}
+									/>
 									<DailyActivityRedirect />
 								</View>
 							)}
@@ -393,7 +392,7 @@ const Profile = () => {
 								className="text-base text-white border-b-[1px] border-b-black-44 py-[20px]"
 								style={{ fontFamily: fontFamily.bold }}
 							>
-								Лента
+								{t('ProfilePage.postFeed')}
 							</Text>
 						</View>
 					}

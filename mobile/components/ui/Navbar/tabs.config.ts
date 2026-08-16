@@ -7,7 +7,7 @@ export const tabsConfig = [
 		id: 'posts',
 		route: 'posts', // для NativeTabs
 		href: '/posts', // для router и pathname
-		label: 'Лента',
+		label: 'NativeTabs.feedPage',
 		icon: NavBarPostsSvg,
 		nativeIcon: {
 			sf: 'book',
@@ -18,7 +18,7 @@ export const tabsConfig = [
 		id: 'newTraining',
 		route: 'newTraining', // для NativeTabs
 		href: '/newTraining', // для router и pathname
-		label: 'Тренировка',
+		label: 'NativeTabs.workoutPage',
 		icon: NavBarMapSvg,
 		nativeIcon: {
 			sf: 'globe',
@@ -29,7 +29,7 @@ export const tabsConfig = [
 		id: 'profile',
 		route: 'profile', // для NativeTabs
 		href: '/profile', // для router и pathname
-		label: 'Профиль',
+		label: 'NativeTabs.profilePage',
 		icon: NavBarAccountSvg,
 		nativeIcon: {
 			sf: 'person',

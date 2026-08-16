@@ -1,14 +1,24 @@
 import React, { useCallback, useEffect } from 'react'
 import { StyleSheet, View, Pressable, Platform } from 'react-native'
-import Animated, { useSharedValue, useAnimatedStyle, withTiming, interpolateColor } from 'react-native-reanimated'
+import Animated, {
+	useSharedValue,
+	useAnimatedStyle,
+	withTiming,
+	interpolate,
+	interpolateColor
+} from 'react-native-reanimated'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
 import { Colors } from '@/constants/Colors'
 import { RelativePathString, usePathname } from 'expo-router'
 import { BlurView } from 'expo-blur'
-import { useNavBarVisibility } from '@/hooks/useNavBarVisibility'
 import { tabsConfig } from '@/components/ui/Navbar/tabs.config'
 import { useSafeNavigation } from '@/hooks/useSafeNavigation'
 import { isLiquidGlassAvailable } from 'expo-glass-effect'
+
+type TabBarState = {
+	index: number
+	routes: { name: string }[]
+}
 
 type AnimatedButtonProps = {
 	isActive: boolean
@@ -24,7 +34,7 @@ const AnimatedButton: React.FC<AnimatedButtonProps> = ({ isActive, onPress, Icon
 	}, [isActive, progress])
 
 	const animatedStyle = useAnimatedStyle(() => {
-		const scale = withTiming(isActive ? 1.1 : 1, { duration: 250 })
+		const scale = interpolate(progress.value, [0, 1], [1, 1.1])
 		const backgroundColor = interpolateColor(progress.value, [0, 1], ['transparent', Colors.white])
 
 		return {
@@ -44,12 +54,25 @@ const AnimatedButton: React.FC<AnimatedButtonProps> = ({ isActive, onPress, Icon
 	)
 }
 
-const NavBar = () => {
+const NavBar = ({ state }: { state?: TabBarState }) => {
 	const insets = useSafeAreaInsets()
 	const { push } = useSafeNavigation()
 	const pathname = usePathname()
 
-	const hidden = useNavBarVisibility(['/newTraining'])
+	// Активная вкладка определяется по pathname (глобальный контекст expo-router
+	// всегда перерисует NavBar при любой навигации), а НЕ по state табов.
+	// state.routes[state.index] в момент тяжёлого маунта экрана тренировки
+	// (инициализация карты, открытие BottomSheet геолокации, низкий FPS) может
+	// «зависнуть» на прошлой вкладке, и панель не скроется до повторного входа.
+	void state
+	const activeRouteName = tabsConfig.find((tab) => pathname.startsWith(tab.href))?.id
+	const shouldHide = activeRouteName === 'newTraining'
+
+	const hidden = useSharedValue(shouldHide ? 1 : 0)
+
+	useEffect(() => {
+		hidden.value = withTiming(shouldHide ? 1 : 0, { duration: 250 })
+	}, [shouldHide, hidden])
 
 	const animatedContainer = useAnimatedStyle(() => ({
 		opacity: 1 - hidden.value,
@@ -57,7 +80,7 @@ const NavBar = () => {
 	}))
 
 	const getActiveId = () => {
-		const found = tabsConfig.find((t) => pathname.startsWith(t.href))
+		const found = tabsConfig.find((tab) => tab.id === activeRouteName)
 		return found?.id
 	}
 
@@ -75,7 +98,7 @@ const NavBar = () => {
 		[pathname, push]
 	)
 
-	// Костыль, потому что на странице новой тренировки из-за NativeTabs нельзя перетаскивать BottomSheetResizable
+	// Костыль, потому что на странице новой тренировки из-за NativeTabs нельзя перетаскивать BottomSheetResizable @TODO перепроверить сохраняется ли проблема
 	const isGlassAvailable = Platform.OS === 'ios' && isLiquidGlassAvailable()
 	if (isGlassAvailable) {
 		return null

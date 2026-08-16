@@ -4,8 +4,13 @@ import Animated, { useSharedValue, useAnimatedProps, withTiming } from 'react-na
 
 const AnimatedPath = Animated.createAnimatedComponent(Path)
 
-const SvgComponent = () => {
-	const pathLength = 12
+interface IProps {
+	size?: number
+	color?: string
+}
+
+const SvgComponent = ({ size = 12, color = '#000' }: IProps) => {
+	const pathLength = size
 	const progress = useSharedValue(0)
 
 	useEffect(() => {
@@ -17,10 +22,10 @@ const SvgComponent = () => {
 	}))
 
 	return (
-		<Svg width={12} height={12} fill="none">
+		<Svg width={size} height={size} fill="none" viewBox="0 0 12 12">
 			<AnimatedPath
 				d="M2 6.727 L4.5 9 L10 4"
-				stroke="#000"
+				stroke={color}
 				strokeWidth={1.6}
 				strokeLinecap="round"
 				strokeLinejoin="round"

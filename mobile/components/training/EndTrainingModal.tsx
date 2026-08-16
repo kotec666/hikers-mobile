@@ -3,7 +3,7 @@ import { Text, View } from 'react-native'
 import { fontFamily } from '@/constants/Fonts'
 import { Button } from '@/components/ui/Button'
 import Modal from '@/components/ui/Modal/Modal'
-import { debounce } from '@/helpers/debounce'
+import { useTranslation } from 'react-i18next'
 
 interface IProps {
 	open: boolean
@@ -13,25 +13,25 @@ interface IProps {
 }
 
 const EndTrainingModal = memo((props: IProps) => {
-	const endDebounced = debounce(props.handleClickEnd, 300)
+	const { t } = useTranslation()
 
 	return (
 		<Modal
 			isOpen={props.open}
 			blurDisabled={props.blurDisabled}
 			handleClose={props.handleClose}
-			label="Вы действительно хотите завершить тренировку?"
+			label={t('WorkoutPage.finishWorkout')}
 		>
 			<View className="gap-[20px]">
 				<Text className="text-white text-sm" style={{ fontFamily: fontFamily.bold }}>
-					Это действие нельзя отменить
+					{t('common.actionCannotBeUndone')}
 				</Text>
 				<View className="flex-row gap-[10px]">
-					<Button onPress={endDebounced} variant="white" buttonContainerClassName="flex-1">
-						Да
+					<Button onPress={props.handleClickEnd} variant="white" buttonContainerClassName="flex-1">
+						{t('common.yes')}
 					</Button>
 					<Button onPress={props.handleClose} variant="white" buttonContainerClassName="flex-1">
-						Нет
+						{t('common.no')}
 					</Button>
 				</View>
 			</View>

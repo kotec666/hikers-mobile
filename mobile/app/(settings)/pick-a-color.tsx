@@ -17,14 +17,14 @@ import MapComponentColorPick from '@/components/map/MapComponentColorPick'
 import { useAnimatedColorPickProps } from '@/hooks/useAnimatedColorPickProps'
 import { useProfileQuery, useUpdateProfileColorMutation } from '@/queries/my-profile'
 import { RNMapColorPickHandle } from '@/components/map/RNMapComponentColorPick'
-import { scheduleOnRN } from 'react-native-worklets'
 import { RNMapsUserLocationMarkerHandle } from '@/components/map/markers/UserLocationMarker/RNMapsUserLocationMarker'
+import { useTranslation } from 'react-i18next'
 
 const { height } = Dimensions.get('screen')
 const { width } = Dimensions.get('window')
 
-const GAP = 15
-const COLUMNS = 7
+const GAP = 20
+const COLUMNS = 6
 const CONTAINER_PADDING = 16
 const MAP_HEIGHT = height / 3.2
 
@@ -32,17 +32,50 @@ const Divider = () => {
 	return <View style={{ height: 1, backgroundColor: Colors['gray-3a'] }} />
 }
 
-const ColorBox = ({ color, size, onPress }: { color: string; size: number; onPress?: (color: string) => void }) => {
+const ColorBox = ({
+	color,
+	chosenColor,
+	size,
+	onPress
+}: {
+	color: string
+	chosenColor: string
+	size: number
+	onPress?: (color: string) => void
+}) => {
+	const PADDING = 6
+	const innerSize = size - PADDING * 2
+
+	const baseStyles = {
+		width: size,
+		height: size,
+		borderRadius: size / 2,
+		justifyContent: 'center' as const,
+		alignItems: 'center' as const,
+		borderWidth: 1,
+		borderColor: Colors['gray-92']
+	}
+
+	const activeStyles = {
+		borderWidth: 2,
+		borderColor: 'white'
+	}
+
+	const normalizeColor = (value: string) => value.replace(/\s+/g, '').toUpperCase()
+
+	const isActive = normalizeColor(chosenColor) === normalizeColor(color)
+
 	return (
-		<Pressable
-			onPress={() => onPress?.(color)}
-			className="w-[40px] h-[40px] border-2 border-white rounded-[4px]"
-			style={{ backgroundColor: color, width: size, height: size }}
-		/>
+		<Pressable onPress={() => onPress?.(color)} style={[baseStyles, isActive && activeStyles]}>
+			<View
+				style={{ backgroundColor: color, width: innerSize, height: innerSize, borderRadius: innerSize / 2 }}
+			/>
+		</Pressable>
 	)
 }
 
 const SettingsPickAColorPage = () => {
+	const { t } = useTranslation()
 	const [notSavedModal, setNotSavedModal] = useState(false)
 	const router = useRouter()
 
@@ -125,7 +158,17 @@ const SettingsPickAColorPage = () => {
 	const onColorChange = (color: ColorFormatsObject) => {
 		'worklet'
 		currentColor.value = color.rgb
-		scheduleOnRN(setColorOnMap, color.rgb)
+	}
+
+	// const onColorChange = (color: ColorFormatsObject) => {
+	// 		'worklet'
+	// 		currentColor.value = color.rgb
+	// 		if(isIOS) { scheduleOnRN(setColorOnMap, color.rgb) }
+	// 	}
+
+	// runs on the js thread during color picker drag
+	const onColorChangeJS = (color: ColorFormatsObject) => {
+		setColorOnMap(color.rgb)
 	}
 
 	const colorBoxSize = (width - CONTAINER_PADDING * 2 - GAP * (COLUMNS - 1)) / COLUMNS
@@ -141,20 +184,20 @@ const SettingsPickAColorPage = () => {
 				<Modal
 					isOpen={notSavedModal}
 					handleClose={handleCloseNotSavedModal}
-					label="Выйти без сохранения данных?"
+					label={t('common.quitWithoutSave')}
 					labelSize={16}
 				>
 					<View className="gap-[20px]">
 						<View className="flex-row gap-[10px]">
 							<Button onPress={exitWithoutSave} variant="white" buttonContainerClassName="flex-1">
-								Да
+								{t('common.yes')}
 							</Button>
 							<Button
 								onPress={handleCloseNotSavedModal}
 								variant="white"
 								buttonContainerClassName="flex-1"
 							>
-								Нет
+								{t('common.no')}
 							</Button>
 						</View>
 					</View>
@@ -167,12 +210,12 @@ const SettingsPickAColorPage = () => {
 				>
 					<Container className="gap-[20px] flex-1">
 						<HeaderBack returnCallback={handleGoBack}>
-							Выбор{' '}
+							{t('SettingsPage.pickAColor.header.choose')}{' '}
 							<Animated.Text
 								className="text-[20px]"
 								style={[{ fontFamily: fontFamily.bold }, animatedTextStyle]}
 							>
-								цвета
+								{t('SettingsPage.pickAColor.header.color')}
 							</Animated.Text>
 						</HeaderBack>
 						<MapComponentColorPick
@@ -196,6 +239,7 @@ const SettingsPickAColorPage = () => {
 									thumbSize={24}
 									thumbShape="circle"
 									onChange={onColorChange}
+									onChangeJS={onColorChangeJS}
 									onCompleteJS={onColorPick}
 									style={colorPickerStyle.picker}
 									boundedThumb
@@ -213,11 +257,12 @@ const SettingsPickAColorPage = () => {
 							</View>
 						) : (
 							<View className="flex-row flex-wrap" style={{ gap: GAP }}>
-								{Object.values(FREE_COLORS).map((color) => {
+								{Object.values(FREE_COLORS).map((boxColor) => {
 									return (
 										<ColorBox
-											key={color}
-											color={color}
+											key={boxColor}
+											chosenColor={color}
+											color={boxColor}
 											size={colorBoxSize}
 											onPress={(newColor) => onColorPick(newColor)}
 										/>
@@ -231,7 +276,7 @@ const SettingsPickAColorPage = () => {
 								onPress={onPressSaveColor}
 								isLoading={isPending || isProfileFetching}
 							>
-								Сохранить
+								{t('common.save')}
 							</Button>
 						</View>
 					</Container>

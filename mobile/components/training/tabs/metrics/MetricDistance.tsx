@@ -1,6 +1,7 @@
 import React, { memo, forwardRef, useImperativeHandle, useState } from 'react'
 import Parameter from '@/components/training/Parameter'
 import { formatDistance } from '@/helpers/distance'
+import { useTranslation } from 'react-i18next'
 
 interface IProps {
 	isPaused: boolean
@@ -11,15 +12,17 @@ export interface MetricDistanceHandle {
 }
 
 const MetricDistance = forwardRef<MetricDistanceHandle, IProps>((props, ref) => {
-	const [distanceStr, setDistanceStr] = useState('0м')
+	const { t, i18n } = useTranslation()
+	const metersShort = t('measurementUnits.meters.short')
+	const [distanceStr, setDistanceStr] = useState(`0${metersShort}`)
 
 	useImperativeHandle(ref, () => ({
 		setDistance: (meters: number) => {
-			setDistanceStr(formatDistance(meters))
+			setDistanceStr(formatDistance(meters, i18n.language))
 		}
 	}))
 
-	return <Parameter isPaused={props.isPaused} label="Дистанция" value={distanceStr} />
+	return <Parameter isPaused={props.isPaused} label={t('measurementUnits.range')} value={distanceStr} />
 })
 
 MetricDistance.displayName = 'MetricDistance'

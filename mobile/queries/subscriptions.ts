@@ -5,9 +5,12 @@ import { IPost, ITrainingMember } from '@/api/posts'
 import { INotMyProfile, IProfile } from '@/api/profile'
 import { findUserInCacheForSubscription } from '@/queries/query-helpers'
 import { getFieldsErrors } from '@/helpers/getFieldsErrors'
+import { useTranslation } from 'react-i18next'
 
-export const useMySubscriptionsQuery = (limit = 15) =>
-	useInfiniteQuery<ISubscribe[], Error, ISubscribe[], typeof QUERY_KEYS.MY_SUBSCRIPTIONS, number>({
+export const useMySubscriptionsQuery = (limit = 15) => {
+	const { t } = useTranslation()
+
+	return useInfiniteQuery<ISubscribe[], Error, ISubscribe[], typeof QUERY_KEYS.MY_SUBSCRIPTIONS, number>({
 		queryKey: QUERY_KEYS.MY_SUBSCRIPTIONS,
 		queryFn: async ({ pageParam }) => {
 			try {
@@ -16,7 +19,7 @@ export const useMySubscriptionsQuery = (limit = 15) =>
 					limit
 				})
 			} catch (e) {
-				await getFieldsErrors(e)
+				await getFieldsErrors(e, t)
 				throw e
 			}
 		},
@@ -27,9 +30,11 @@ export const useMySubscriptionsQuery = (limit = 15) =>
 		},
 		select: (data) => data.pages.flat()
 	})
+}
 
 // подписка / отписка (на/от) пользователя
 export const useToggleSubscribeMutation = () => {
+	const { t } = useTranslation()
 	const queryClient = useQueryClient()
 
 	return useMutation({
@@ -182,7 +187,7 @@ export const useToggleSubscribeMutation = () => {
 		onError: async (e, { userId }, context) => {
 			// rollback если ошибка
 			console.log('Ошибка при подписке/отписке на/от пользователя', e)
-			await getFieldsErrors(e)
+			await getFieldsErrors(e, t)
 			if (!context) return
 
 			queryClient.setQueryData(QUERY_KEYS.POSTS_FEED, context.previousFeed)

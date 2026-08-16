@@ -50,6 +50,7 @@ const InAppNotificationProvider = () => {
 					return
 				}
 
+				// @TODO перевод
 				toast.info(socketData.action.text, onPressNotification)
 			}
 

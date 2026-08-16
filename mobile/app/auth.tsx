@@ -24,6 +24,7 @@ import EmailSvg from '@/components/svg/EmailSvg'
 import { useKeyboardHeight } from '@/hooks/useKeyboardHeight'
 import MailConfirmation from '@/components/auth/mail-confirmation'
 import { Colors } from '@/constants/Colors'
+import { useTranslation } from 'react-i18next'
 
 export enum AUTH_MODE {
 	AUTH = 'auth',
@@ -43,6 +44,7 @@ interface IAuthFormState {
 }
 
 const AuthPage = () => {
+	const { t } = useTranslation()
 	const { login } = useAuthStore()
 	const { mode } = useLocalSearchParams<{ mode: AUTH_MODE }>()
 
@@ -89,7 +91,7 @@ const AuthPage = () => {
 
 				await login(loginData.token, restParameters)
 			} catch (e: unknown) {
-				const formattedErrors = await getFieldsErrors(e)
+				const formattedErrors = await getFieldsErrors(e, t)
 				setData((s) => ({ ...s, errors: formattedErrors }))
 				Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error)
 				// Alert.alert('Ошибка', 'Неверные учетные данные')
@@ -120,7 +122,7 @@ const AuthPage = () => {
 					currentEmail: authFormState.email
 				}))
 			} catch (e: unknown) {
-				const formattedErrors = await getFieldsErrors(e)
+				const formattedErrors = await getFieldsErrors(e, t)
 				setData((s) => ({ ...s, errors: formattedErrors, currentEmail: null }))
 				Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error)
 				// Alert.alert('Ошибка', 'Неверные учетные данные')
@@ -156,7 +158,7 @@ const AuthPage = () => {
 				>
 					<Container className="flex-1">
 						<Text className="text-white text-xl" style={{ fontFamily: fontFamily.bold }}>
-							{isAuth ? 'Авторизация' : 'Регистрация'}
+							{isAuth ? t('AuthPage.header.signIn') : t('AuthPage.header.signUp')}
 						</Text>
 						<View
 							className="gap-[10px]"
@@ -189,7 +191,7 @@ const AuthPage = () => {
 									<InputIcon
 										textContentType="emailAddress"
 										keyboardType="email-address"
-										placeholder="Введите email"
+										placeholder={t('AuthPage.inputPlaceholder.email')}
 										autoComplete="email"
 										importantForAutofill="yes"
 										error={error?.message || data.errors?.email}
@@ -199,7 +201,7 @@ const AuthPage = () => {
 										value={value}
 										onBlur={onBlur}
 										returnKeyType="next"
-										returnKeyLabel="Далее"
+										returnKeyLabel={t('common.next')}
 										submitBehavior="submit"
 										onSubmitEditing={() => {
 											if (isAuth) {
@@ -224,7 +226,7 @@ const AuthPage = () => {
 										pattern: {
 											value: /^[A-Za-z0-9_]+$/,
 											message: ErrorMessages.customMessage(
-												'Никнейм содержит недопустимые символы'
+												t('FormErrors.customMessage.username.badSymbol')
 											)
 										},
 										minLength: {
@@ -240,7 +242,7 @@ const AuthPage = () => {
 										<InputIcon
 											ref={loginRef}
 											textContentType="username"
-											placeholder="Введите логин"
+											placeholder={t('AuthPage.inputPlaceholder.username')}
 											autoComplete="username"
 											importantForAutofill="yes"
 											error={error?.message || data.errors?.username}
@@ -254,7 +256,7 @@ const AuthPage = () => {
 											value={value}
 											onBlur={onBlur}
 											returnKeyType="next"
-											returnKeyLabel="Далее"
+											returnKeyLabel={t('common.next')}
 											submitBehavior="submit"
 											onSubmitEditing={() => passwordRef.current?.focus()}
 										/>
@@ -283,7 +285,7 @@ const AuthPage = () => {
 										ref={passwordRef}
 										isPassword
 										autoCapitalize="none"
-										placeholder="Введите пароль"
+										placeholder={t('AuthPage.inputPlaceholder.password')}
 										textContentType="password"
 										autoComplete={isAuth ? 'current-password' : 'new-password'}
 										importantForAutofill="yes"
@@ -306,7 +308,7 @@ const AuthPage = () => {
 							{isAuth && (
 								<LinkCustom
 									href="/(password-restore)/firstStep"
-									text="Забыли пароль?"
+									text={t('AuthPage.forgotPassword')}
 									style={{
 										color: Colors['blue-3d']
 									}}
@@ -342,18 +344,18 @@ const AuthPage = () => {
 										})}
 										style={{ fontFamily: fontFamily.regular }}
 									>
-										Согласен с{' '}
+										{t('AuthPage.agreement.agreeWith')}{' '}
 										<LinkCustom
 											href="/document"
-											text="условиями обработки"
+											text={t('AuthPage.agreement.processingConditions')}
 											style={{
 												color: errors.agree?.message ? Colors['red-ff4'] : Colors['blue-3d']
 											}}
 										/>{' '}
-										персональных данных и{' '}
+										{t('AuthPage.agreement.personalDataAnd')}{' '}
 										<LinkCustom
 											href="/document"
-											text="политикой конфиденциальности"
+											text={t('AuthPage.agreement.privacyPolicy')}
 											style={{
 												color: errors.agree?.message ? Colors['red-ff4'] : Colors['blue-3d']
 											}}
@@ -373,13 +375,13 @@ const AuthPage = () => {
 						isLoading={data.isLoading}
 						className="mt-auto"
 					>
-						{isAuth ? 'Войти' : 'Зарегистрироваться'}
+						{isAuth ? t('AuthPage.actions.signIn') : t('AuthPage.actions.signUp')}
 					</Button>
 				</Container>
 			</KeyboardStickyView>
 			<Container>
 				<Button variant="white" onPress={handleClickRedirect}>
-					{isAuth ? 'Зарегистрироваться' : 'Войти'}
+					{isAuth ? t('AuthPage.actions.signUp') : t('AuthPage.actions.signIn')}
 				</Button>
 			</Container>
 		</Page>

@@ -6,7 +6,8 @@ import BlurProvider from '@/components/providers/BlurProvider'
 import ActivityGoalSchedule from '@/components/activity-rings/bottom-sheets/ActivityGoalSchedule'
 import ActivityGoalEveryDay from '@/components/activity-rings/bottom-sheets/ActivityGoalEveryDay'
 import ActivityGoalToday from '@/components/activity-rings/bottom-sheets/ActivityGoalToday'
-import { generateMonthsRange } from '@/helpers/calendar'
+import { generateMonthsRange, WEEKDAY_I18N_KEYS } from '@/helpers/calendar'
+import { LngShort } from '@/store/languageStorage'
 import ActivityGoalPerMonth from '@/components/activity-rings/bottom-sheets/ActivityGoalPerMonth'
 import PagerView from 'react-native-pager-view'
 import { canGoNextDay, canGoNextWeek, TODAY } from '@/helpers/date'
@@ -14,6 +15,7 @@ import { addDays, addWeeks, isAfter, isSameDay } from 'date-fns'
 import ActivityRingsHeader from '@/components/activity-rings/ActivityRingsHeader'
 import ActivityPageMainContent from '@/components/activity-rings/ActivityPageMainContent'
 import BottomSheet, { BottomSheetHandle } from '@/components/ui/BottomSheet/BottomSheet'
+import { useTranslation } from 'react-i18next'
 
 export interface DayGoal {
 	day: string
@@ -37,17 +39,10 @@ const LOAD_MORE_STEP = 6
 const MIN_CALORIE_LIMIT = 10
 const MAX_CALORIE_LIMIT = 9990
 
-const SCHEDULE_INITIAL_DATA = [
-	{ day: 'Пн', label: 'Понедельник', goal: 200 },
-	{ day: 'Вт', label: 'Вторник', goal: 200 },
-	{ day: 'Ср', label: 'Среда', goal: 250 },
-	{ day: 'Чт', label: 'Четверг', goal: 200 },
-	{ day: 'Пт', label: 'Пятница', goal: 200 },
-	{ day: 'Сб', label: 'Суббота', goal: 200 },
-	{ day: 'Вс', label: 'Воскресенье', goal: 200 }
-]
+const SCHEDULE_INITIAL_GOALS = [200, 200, 250, 200, 200, 200, 200]
 
 const Kcal = () => {
+	const { t, i18n } = useTranslation()
 	const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null)
 
 	const bottomSheetRef = useRef<BottomSheetHandle>(null)
@@ -59,15 +54,25 @@ const Kcal = () => {
 
 	const [bottomSheetType, setBottomSheetType] = useState<BottomSheetType>(null)
 	const [pastMonthsCount, setPastMonthsCount] = useState(INITIAL_PAST_MONTHS)
-	const [schedule, setSchedule] = useState<DayGoal[]>(SCHEDULE_INITIAL_DATA)
+	const [goals, setGoals] = useState<number[]>(SCHEDULE_INITIAL_GOALS)
+
+	const schedule = useMemo<DayGoal[]>(
+		() =>
+			WEEKDAY_I18N_KEYS.map((key, index) => ({
+				day: t(`DailyActivity.weekdaysShort.${key}`),
+				label: t(`DailyActivity.weekdaysLong.${key}`),
+				goal: goals[index]
+			})),
+		[goals, t]
+	)
 
 	const isToday = useMemo(() => {
 		return isSameDay(selectedDate, TODAY)
 	}, [selectedDate])
 
 	const { months, currentMonthIndex } = useMemo(() => {
-		return generateMonthsRange(-pastMonthsCount, FUTURE_MONTHS)
-	}, [pastMonthsCount])
+		return generateMonthsRange(-pastMonthsCount, FUTURE_MONTHS, i18n.language as LngShort)
+	}, [pastMonthsCount, i18n.language])
 
 	const canSwipeNextDay = useMemo(() => {
 		return canGoNextDay(selectedDate)
@@ -163,14 +168,9 @@ const Kcal = () => {
 	}
 
 	const updateGoal = (index: number, delta: number) => {
-		setSchedule((prev) =>
-			prev.map((item, i) =>
-				i === index
-					? {
-							...item,
-							goal: Math.max(MIN_CALORIE_LIMIT, Math.min(MAX_CALORIE_LIMIT, item.goal + delta))
-						}
-					: item
+		setGoals((prev) =>
+			prev.map((goal, i) =>
+				i === index ? Math.max(MIN_CALORIE_LIMIT, Math.min(MAX_CALORIE_LIMIT, goal + delta)) : goal
 			)
 		)
 	}
@@ -224,7 +224,7 @@ const Kcal = () => {
 				<BottomSheet ref={bottomSheetRef} detents={isBigSheet ? [1] : [0.5]} scrollable={isBigSheet}>
 					{bottomSheetType === BottomSheetTypes.TODAY && (
 						<ActivityGoalToday
-							currentGoal={schedule[0].goal}
+							currentGoal={goals[0]}
 							updateGoal={updateGoal}
 							onLongPressStart={onLongPressStart}
 							onLongPressStop={onLongPressStop}
@@ -233,7 +233,7 @@ const Kcal = () => {
 
 					{bottomSheetType === BottomSheetTypes.EVERY_DAY && (
 						<ActivityGoalEveryDay
-							currentGoal={schedule[0].goal}
+							currentGoal={goals[0]}
 							updateGoal={updateGoal}
 							onLongPressStart={onLongPressStart}
 							onLongPressStop={onLongPressStop}

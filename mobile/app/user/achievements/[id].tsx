@@ -14,8 +14,10 @@ import { refetchAndHaptics } from '@/helpers/refetchAndHaptics'
 import { Colors } from '@/constants/Colors'
 import LoadQueryErrorRetry from '@/components/LoadQueryErrorRetry'
 import { AchievementsListSkeleton } from '@/components/ui/skeleton'
+import { useTranslation } from 'react-i18next'
 
 const UserAchievementsPage = () => {
+	const { t } = useTranslation()
 	const { id } = useLocalSearchParams<{ id: string }>()
 	const bottomSheetRef = useRef<BottomSheetHandle>(null)
 	const [bottomSheetContent, setBottomSheetContent] = useState<React.ReactNode>(null)
@@ -44,12 +46,16 @@ const UserAchievementsPage = () => {
 		<Page>
 			<BlurProvider>
 				<Container className="gap-[20px] flex-1">
-					<HeaderBack>Достижения</HeaderBack>
+					<HeaderBack>{t('UserAchievementsPage.header')}</HeaderBack>
 					{isLoading ? (
 						<AchievementsListSkeleton />
 					) : isError && userAchievements.length === 0 ? (
 						<View style={{ flex: 1 }} className="items-center justify-center px-4">
-							<LoadQueryErrorRetry text="Не удалось загрузить достижения" onRetry={handleRetry} />
+							<LoadQueryErrorRetry
+								text={t('LoadQueryErrorRetry.label.failedToLoadAchievements')}
+								buttonText={t('LoadQueryErrorRetry.action.tryAgain')}
+								onRetry={handleRetry}
+							/>
 						</View>
 					) : (
 						<ScrollView
@@ -66,15 +72,15 @@ const UserAchievementsPage = () => {
 							<View className="gap-[10px]">
 								{isError && (
 									<Text className="text-red-500 text-sm">
-										Не удалось обновить достижения.{' '}
+										{t('LoadQueryErrorRetry.label.failedToUpdateAchievements')}{' '}
 										<Text onPress={handleRetry} className="underline">
-											Повторить
+											{t('LoadQueryErrorRetry.action.retry')}
 										</Text>
 									</Text>
 								)}
 								{userAchievements.length > 0 && (
 									<Text className="text-base text-white" style={{ fontFamily: fontFamily.bold }}>
-										Полученные
+										{t('UserAchievementsPage.received')}
 									</Text>
 								)}
 								{userAchievements.map((achievement) => (

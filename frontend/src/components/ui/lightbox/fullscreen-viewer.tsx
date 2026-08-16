@@ -10,6 +10,7 @@ import { cn } from '@/lib/utils'
 interface FullscreenViewerProps {
 	open: boolean
 	onOpenChange: (open: boolean) => void
+	onAnimationComplete?: () => void
 	title: string
 	header?: React.ReactNode
 	children: React.ReactNode
@@ -22,7 +23,15 @@ interface FullscreenViewerProps {
  * scroll lock) so it inherits accessible behaviour "for free", but with its own
  * fully custom, immersive presentation instead of the boxed <DialogContent />.
  */
-export function FullscreenViewer({ open, onOpenChange, title, header, children, className }: FullscreenViewerProps) {
+export function FullscreenViewer({
+	open,
+	onOpenChange,
+	onAnimationComplete,
+	title,
+	header,
+	children,
+	className
+}: FullscreenViewerProps) {
 	const reduceMotion = useReducedMotion()
 
 	return (
@@ -58,6 +67,7 @@ export function FullscreenViewer({ open, onOpenChange, title, header, children, 
 								animate={{ opacity: 1 }}
 								exit={{ opacity: 0 }}
 								transition={{ duration: reduceMotion ? 0 : 0.2, delay: reduceMotion ? 0 : 0.05 }}
+								onAnimationComplete={onAnimationComplete}
 							>
 								<div
 									className="flex items-center justify-between gap-4 px-4 sm:px-6 shrink-0 relative z-10"

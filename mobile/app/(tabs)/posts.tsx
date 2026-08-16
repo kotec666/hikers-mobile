@@ -27,6 +27,7 @@ import WorkoutMap from '@/components/map/WorkoutMap'
 import { FlashList, FlashListRef } from '@shopify/flash-list'
 import LoadQueryErrorRetry from '@/components/LoadQueryErrorRetry'
 import { PostListItemSkeleton } from '@/components/ui/skeleton'
+import { useTranslation } from 'react-i18next'
 
 const isUser = (item: IFoundUser | IFoundPost): item is IFoundUser => {
 	return 'username' in item
@@ -37,6 +38,7 @@ const isPost = (item: IFoundUser | IFoundPost): item is IFoundPost => {
 }
 
 const PostsPage = () => {
+	const { t } = useTranslation()
 	const insets = useSafeAreaInsets()
 	const [state, setState] = useState<{
 		isSearchActive: boolean
@@ -189,7 +191,11 @@ const PostsPage = () => {
 	const renderFooter = useCallback(() => {
 		if (isPostsFeedError && posts.length > 0) {
 			return (
-				<LoadQueryErrorRetry text="Не удалось загрузить ещё" buttonText="Повторить" onRetry={handleRetryFeed} />
+				<LoadQueryErrorRetry
+					text={t('LoadQueryErrorRetry.label.cantLoadMore')}
+					buttonText={t('LoadQueryErrorRetry.action.retry')}
+					onRetry={handleRetryFeed}
+				/>
 			)
 		}
 		if (!isFetchingNextPage) return null
@@ -199,7 +205,7 @@ const PostsPage = () => {
 				<ActivityIndicator size="small" color={Colors['green-main']} />
 			</View>
 		)
-	}, [isFetchingNextPage, isPostsFeedError, posts.length, handleRetryFeed])
+	}, [isPostsFeedError, posts.length, isFetchingNextPage, t, handleRetryFeed])
 
 	// Функция рендеринга пустого состояния
 	const renderEmpty = useCallback(() => {
@@ -213,34 +219,47 @@ const PostsPage = () => {
 		}
 
 		if (isPostsFeedError) {
-			return <LoadQueryErrorRetry onRetry={handleRetryFeed} />
+			return (
+				<LoadQueryErrorRetry
+					text={t('LoadQueryErrorRetry.label.failedToLoadPublications')}
+					buttonText={t('LoadQueryErrorRetry.action.tryAgain')}
+					onRetry={handleRetryFeed}
+				/>
+			)
 		}
 
-		return <TrainingsEmpty text="К сожалению, постов еще не существует, опубликуйте пост после тренировки" />
-	}, [isPostsFeedLoading, isPostsFeedError, handleRetryFeed])
+		return <TrainingsEmpty text={t('TrainingsEmpty.label.postsNotExist')} />
+	}, [isPostsFeedLoading, isPostsFeedError, t, handleRetryFeed])
 
 	const renderSearchEmpty = useCallback(() => {
 		if (isFetchingSearch) return null
-
 		if (isSearchError) {
-			return <LoadQueryErrorRetry text="Не удалось выполнить поиск" onRetry={handleRetrySearch} />
+			return (
+				<LoadQueryErrorRetry
+					text={t('LoadQueryErrorRetry.label.searchFailed')}
+					buttonText={t('LoadQueryErrorRetry.action.tryAgain')}
+					onRetry={handleRetrySearch}
+				/>
+			)
 		}
 
 		return (
 			<View className="flex-1 justify-center items-center">
 				<Text className="text-gray-ab text-center text-[19px]" style={{ fontFamily: fontFamily.regular }}>
-					{searchWord.trim().length < 2 ? 'Введите хотя бы 2 символа' : 'Ничего не нашлось'}
+					{searchWord.trim().length < 2
+						? t('PostsFeedPage.atLeastTwoSymbols')
+						: t('PostsFeedPage.nothingFound')}
 				</Text>
 			</View>
 		)
-	}, [isFetchingSearch, isSearchError, handleRetrySearch, searchWord])
+	}, [isFetchingSearch, isSearchError, searchWord, t, handleRetrySearch])
 
 	const renderSearchFooter = useCallback(() => {
 		if (isSearchError && searchData.length > 0) {
 			return (
 				<LoadQueryErrorRetry
-					text="Не удалось загрузить ещё"
-					buttonText="Повторить"
+					text={t('LoadQueryErrorRetry.label.cantLoadMore')}
+					buttonText={t('LoadQueryErrorRetry.action.retry')}
 					onRetry={handleRetrySearch}
 				/>
 			)
@@ -251,7 +270,7 @@ const PostsPage = () => {
 				<ActivityIndicator size="small" color={Colors['green-main']} />
 			</View>
 		)
-	}, [isFetchingNextSearchPage, isSearchError, searchData.length, handleRetrySearch])
+	}, [isSearchError, searchData.length, isFetchingNextSearchPage, t, handleRetrySearch])
 
 	if (state.isSearchActive) {
 		return (
@@ -275,7 +294,7 @@ const PostsPage = () => {
 								onFocus={activateSearch}
 								value={searchWord}
 								onChangeText={setSearchWord}
-								placeholder="Поиск"
+								placeholder={t('common.search')}
 							/>
 							<NotificationsButton />
 						</View>
@@ -294,7 +313,7 @@ const PostsPage = () => {
 											className="w-min px-[30px]"
 											buttonContainerClassName="flex-1"
 										>
-											Люди
+											{t('PostsFeedPage.people')}
 										</Button>
 										<Button
 											onPress={() => setState((s) => ({ ...s, searchMode: SearchType.POSTS }))}
@@ -302,12 +321,14 @@ const PostsPage = () => {
 											className="w-min px-[30px]"
 											buttonContainerClassName="flex-1"
 										>
-											Посты
+											{t('PostsFeedPage.posts')}
 										</Button>
 									</View>
 
 									<Text className="text-white text-base mb-3" style={{ fontFamily: fontFamily.bold }}>
-										{state.searchMode === SearchType.USERS ? 'Люди' : 'Посты'}
+										{state.searchMode === SearchType.USERS
+											? t('PostsFeedPage.people')
+											: t('PostsFeedPage.posts')}
 									</Text>
 								</View>
 								<FlashList
@@ -381,7 +402,7 @@ const PostsPage = () => {
 							onPressIn={activateSearch}
 							value=""
 							onChangeText={setSearchWord}
-							placeholder="Поиск"
+							placeholder={t('common.search')}
 						/>
 						<NotificationsButton />
 					</View>
