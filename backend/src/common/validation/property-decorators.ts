@@ -84,7 +84,7 @@ export function IsUUID(validationOptions?: ValidationOptions) {
 					return validate(value);
 				},
 				defaultMessage() {
-					return `_${propertyName}:${ERRORS.BAD_REQUEST}`;
+					return `_${propertyName}:${ERRORS.NOT_FOUND}`;
 				},
 			},
 		});
