@@ -17,8 +17,7 @@ const PhoneSceneWrapper = () => {
 			camera={{ position: [0, 0, 5], fov: 3 }}
 		>
 			{isDesktop && <PhoneScene />}
-			{/* {process.env.NODE_ENV === 'development' && <Stats />} */}
-			<Stats />
+			{process.env.NODE_ENV === 'development' && <Stats />}
 		</Canvas>
 	)
 }
