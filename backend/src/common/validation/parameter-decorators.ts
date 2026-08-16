@@ -1,4 +1,4 @@
-﻿import { createParamDecorator, ExecutionContext, BadRequestException } from '@nestjs/common';
+﻿import { createParamDecorator, ExecutionContext, BadRequestException, NotFoundException } from '@nestjs/common';
 import { ERRORS } from '@shared/errors';
 import { validate } from 'uuid';
 
@@ -7,7 +7,7 @@ export const IsUUID = createParamDecorator((data: string, ctx: ExecutionContext)
 	const paramValue = request.params[data];
 
 	if (!validate(paramValue)) {
-		throw new BadRequestException(`_${data}:${ERRORS.NOT_FOUND}`);
+		throw new NotFoundException(`_${data}:${ERRORS.NOT_FOUND}`);
 	}
 
 	return paramValue;
