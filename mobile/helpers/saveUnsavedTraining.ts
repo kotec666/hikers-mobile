@@ -28,6 +28,18 @@ type FinishWorkoutMutation = UseMutateAsyncFunction<
 	unknown
 >
 
+type FinishWorkoutMutation = UseMutateAsyncFunction<
+	{
+		success: boolean
+	},
+	Error,
+	{
+		workoutId?: string | undefined
+		ts?: number | undefined
+	},
+	unknown
+>
+
 export enum WorkoutSource {
 	ACTIVE = 'active',
 	UNSAVED = 'unsaved'

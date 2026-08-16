@@ -7,7 +7,7 @@ export const IsUUID = createParamDecorator((data: string, ctx: ExecutionContext)
 	const paramValue = request.params[data];
 
 	if (!validate(paramValue)) {
-		throw new BadRequestException(`_${data}:${ERRORS.MISMATCH}`);
+		throw new BadRequestException(`_${data}:${ERRORS.NOT_FOUND}`);
 	}
 
 	return paramValue;

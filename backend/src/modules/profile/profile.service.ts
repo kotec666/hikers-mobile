@@ -88,14 +88,10 @@ export class ProfileService {
 		try {
 			const user = await this.users.getUserByUsername(usernameToCheck);
 			if (user.id === userId) {
-				console.log('===');
-
 				return true;
 			}
 		} catch (error) {
 			if (error instanceof NotFoundException) {
-				console.log('not found');
-
 				return true;
 			}
 		}

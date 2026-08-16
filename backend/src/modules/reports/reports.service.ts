@@ -29,12 +29,12 @@ export class ReportsService {
 			valuesToInsert['addons'] = { relEntityId: dto.relEntityId };
 		}
 
-		const [report] = await this.db.db.insert(reports).values(valuesToInsert).returning({ id: reports.id });
+		await this.db.db.insert(reports).values(valuesToInsert).returning({ id: reports.id });
 
 		// @TODO ловить ошибку на медиа
-		if (typeof dto.files !== 'undefined') {
-			await this.attachFiles(report.id, dto.files);
-		}
+		// if (typeof dto.files !== 'undefined') {
+		// 	await this.attachFiles(report.id, dto.files);
+		// }
 		// @TODO try...catch на кетч ошибки загруженные файлы откатывать
 
 		return { success: true };
