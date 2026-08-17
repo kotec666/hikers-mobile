@@ -42,6 +42,13 @@ const ru = {
 			trackingNotificationTitle: 'Отслеживание местоположения',
 			trackingNotificationBody: 'Приложение собирает данные о вашем местоположении'
 		},
+		WorkoutAutoFinish: {
+			notificationChannelName: 'Тренировки',
+			warningTitle: 'Тренировка скоро завершится',
+			warningBody: 'Через 5 минут тренировка будет завершена автоматически',
+			doneTitle: 'Тренировка завершена',
+			doneBody: 'Тренировка завершена автоматически'
+		},
 		FormErrors: {
 			one: 'символ',
 			two: 'символа',
@@ -88,7 +95,9 @@ const ru = {
 				noInternetConnectionTrainingWillTakePlaceOffline:
 					'Нет подключения к интернету, тренировка будет происходить в оффлайн режиме',
 				trainingEndedTooEarly: 'Тренировка завершена слишком рано',
-				noInternetTheWorkoutCanBeSavedLater: 'Нет доступа к интернету, тренировку можно будет сохранить позже'
+				noInternetTheWorkoutCanBeSavedLater: 'Нет доступа к интернету, тренировку можно будет сохранить позже',
+				workoutAutoFinished: 'Тренировка завершена автоматически',
+				workoutAutoFinishedNoInternet: 'Тренировка завершена автоматически, данные будут сохранены позже'
 			},
 			error: {
 				startingLocationTracking: 'Ошибка запуска отслеживания местоположения',

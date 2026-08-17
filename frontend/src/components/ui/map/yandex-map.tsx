@@ -61,69 +61,88 @@ const YandexMapInner = forwardRef<YandexMapHandle, IYandexMapProps>(
 				const segments: Segment[] = []
 				const transitions: TransitionMarker[] = []
 
-				let currentGroup: ITrainingPoint[] = [points[0]]
+				let currentPaused = points[0].paused
+				let currentPoints: [number, number][] = [[points[0].lng, points[0].lat]]
 				let minLng = points[0].lng,
 					maxLng = points[0].lng
 				let minLat = points[0].lat,
 					maxLat = points[0].lat
 
+				// Сегментация как на мобилке (useWorkoutPath): сегмент — непрерывный участок одного
+				// состояния, граничная точка дублируется в конце предыдущего и начале следующего.
+				// Так у каждого сегмента >= 2 точек (Yandex не рисует LineString из одной точки).
 				for (let i = 1; i < points.length; i++) {
-					const prev = points[i - 1],
-						curr = points[i]
+					const curr = points[i]
 					minLng = Math.min(minLng, curr.lng)
 					maxLng = Math.max(maxLng, curr.lng)
 					minLat = Math.min(minLat, curr.lat)
 					maxLat = Math.max(maxLat, curr.lat)
 
-					if (prev.paused === curr.paused) {
-						currentGroup.push(curr)
+					const coord: [number, number] = [curr.lng, curr.lat]
+
+					if (curr.paused === currentPaused) {
+						currentPoints.push(coord)
 					} else {
-						currentGroup.push(curr)
-						segments.push({ isPaused: prev.paused, points: currentGroup.map((p) => [p.lng, p.lat]) })
-						transitions.push({ type: prev.paused ? 'resume' : 'pause', position: [curr.lng, curr.lat] })
-						currentGroup = [curr]
+						const boundary = currentPoints[currentPoints.length - 1]
+
+						if (currentPoints.length >= 2) {
+							segments.push({ isPaused: currentPaused, points: currentPoints })
+						}
+
+						transitions.push({ type: currentPaused ? 'resume' : 'pause', position: boundary })
+
+						currentPaused = curr.paused
+						currentPoints = [boundary, coord]
 					}
 				}
 
-				if (currentGroup.length) {
-					segments.push({ isPaused: currentGroup[0].paused, points: currentGroup.map((p) => [p.lng, p.lat]) })
+				if (currentPoints.length >= 2) {
+					segments.push({ isPaused: currentPaused, points: currentPoints })
 				}
 
 				segments.forEach((seg) => {
-					const line = new YMapFeature({
-						geometry: { type: 'LineString', coordinates: seg.points },
-						style: { stroke: [{ width: 4, color: seg.isPaused ? pausedLineColor : activeLineColor }] }
-					})
-					mapRef.addChild(line)
-					objectsRef.current.push(line)
+					try {
+						const line = new YMapFeature({
+							geometry: { type: 'LineString', coordinates: seg.points },
+							style: { stroke: [{ width: 4, color: seg.isPaused ? pausedLineColor : activeLineColor }] }
+						})
+						mapRef.addChild(line)
+						objectsRef.current.push(line)
+					} catch (e) {
+						console.error('[yandex-map] failed to add line segment:', e)
+					}
 				})
 
 				const start = points[0],
 					end = points[points.length - 1]
-				if (start) {
-					const marker = new YMapMarker(
-						{ coordinates: [start.lng, start.lat] },
-						createMarkerElement(StartMarkerSvg, activeLineColor)
-					)
-					mapRef.addChild(marker)
-					objectsRef.current.push(marker)
-				}
-				transitions.forEach((t) => {
-					const Svg = t.type === 'pause' ? PauseMarkerSvg : ResumeMarkerSvg
-					const marker = new YMapMarker(
-						{ coordinates: t.position },
-						createMarkerElement(Svg, activeLineColor)
-					)
-					mapRef.addChild(marker)
-					objectsRef.current.push(marker)
-				})
-				if (end) {
-					const marker = new YMapMarker(
-						{ coordinates: [end.lng, end.lat] },
-						createMarkerElement(FinishMarkerFlagSvg, activeLineColor)
-					)
-					mapRef.addChild(marker)
-					objectsRef.current.push(marker)
+				try {
+					if (start) {
+						const marker = new YMapMarker(
+							{ coordinates: [start.lng, start.lat] },
+							createMarkerElement(StartMarkerSvg, activeLineColor)
+						)
+						mapRef.addChild(marker)
+						objectsRef.current.push(marker)
+					}
+					transitions.forEach((t) => {
+						const Svg = t.type === 'pause' ? PauseMarkerSvg : ResumeMarkerSvg
+						const marker = new YMapMarker(
+							{ coordinates: t.position },
+							createMarkerElement(Svg, activeLineColor)
+						)
+						mapRef.addChild(marker)
+						objectsRef.current.push(marker)
+					})
+					if (end) {
+						const marker = new YMapMarker(
+							{ coordinates: [end.lng, end.lat] },
+							createMarkerElement(FinishMarkerFlagSvg, activeLineColor)
+						)
+						mapRef.addChild(marker)
+						objectsRef.current.push(marker)
+					}
+				} catch (e) {
+					console.error('[yandex-map] failed to add markers:', e)
 				}
 
 				mapRef.update({

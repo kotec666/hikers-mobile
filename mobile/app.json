@@ -124,6 +124,13 @@
       ],
       "expo-font",
       "expo-image",
+      [
+        "expo-notifications",
+        {
+          "color": "#3a72ff",
+          "defaultChannel": "workout"
+        }
+      ],
       "expo-secure-store",
       "react-native-maps",
       "@bacons/apple-targets",

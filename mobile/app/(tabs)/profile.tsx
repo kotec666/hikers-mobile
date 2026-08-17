@@ -1,5 +1,9 @@
-import React, { useCallback, useEffect, useRef } from 'react'
-import { ActivityIndicator, Platform, Pressable, RefreshControl, Text, View } from 'react-native'
+import React, { useCallback, useEffect, useRef, useState } from 'react'
+import { ActivityIndicator, Linking, Platform, Pressable, RefreshControl, Text, View } from 'react-native'
+import * as Notifications from 'expo-notifications'
+import * as Application from 'expo-application'
+import BottomSheet, { BottomSheetHandle } from '@/components/ui/BottomSheet/BottomSheet'
+import AllowNotifications from '@/components/BottomSheets/AllowNotifications'
 import SettingsSvg from '@/components/svg/SettingsSvg'
 import { fontFamily } from '@/constants/Fonts'
 import SocialStats from '@/components/ui/Profile/SocialStats'
@@ -58,6 +62,9 @@ const Profile = () => {
 	const { t } = useTranslation()
 	const params = useLocalSearchParams()
 	const flashListRef = useRef<FlashListRef<IPost>>(null)
+	const bottomSheetRef = useRef<BottomSheetHandle>(null)
+	const [bottomSheetContent, setBottomSheetContent] = useState<React.ReactNode>(null)
+	const appId = Application.applicationId
 
 	const {
 		data: profileData,
@@ -152,6 +159,62 @@ const Profile = () => {
 			await updateProfileBadge(result.emoji)
 		}
 	}
+
+	const openBottomSheet = useCallback((newContent: React.ReactNode) => {
+		setBottomSheetContent(newContent)
+		if (bottomSheetRef.current) {
+			requestAnimationFrame(async () => await bottomSheetRef.current?.openSheet())
+		}
+	}, [])
+
+	const closeBottomSheet = useCallback(async () => {
+		if (bottomSheetRef.current) {
+			await bottomSheetRef.current?.closeSheet(() => {
+				setBottomSheetContent(null)
+			})
+		}
+	}, [])
+
+	const openAppSettings = useCallback(async () => {
+		await closeBottomSheet()
+		try {
+			if (Platform.OS === 'ios') {
+				await Linking.openSettings()
+			} else {
+				await Linking.sendIntent('android.settings.APP_NOTIFICATION_SETTINGS', [
+					{ key: 'android.provider.extra.APP_PACKAGE', value: appId || '' }
+				])
+			}
+		} catch (error) {
+			console.error('Error opening notification settings:', error)
+		}
+	}, [appId, closeBottomSheet])
+
+	const allowNotifications = useCallback(async () => {
+		await closeBottomSheet()
+		const { status, canAskAgain } = await Notifications.getPermissionsAsync()
+		if (status !== 'granted' && canAskAgain) {
+			await Notifications.requestPermissionsAsync()
+		} else if (status !== 'granted' && !canAskAgain) {
+			await openAppSettings()
+		}
+	}, [closeBottomSheet, openAppSettings])
+
+	// Если разрешения на отправку пушей нет — предлагаем включить
+	const checkNotificationPermission = useCallback(async () => {
+		const { granted, canAskAgain } = await Notifications.getPermissionsAsync()
+		if (granted) return
+		openBottomSheet(
+			<AllowNotifications allow={canAskAgain ? allowNotifications : openAppSettings} close={closeBottomSheet} />
+		)
+	}, [allowNotifications, closeBottomSheet, openAppSettings, openBottomSheet])
+
+	useEffect(() => {
+		const frame = requestAnimationFrame(() => {
+			void checkNotificationPermission()
+		})
+		return () => cancelAnimationFrame(frame)
+	}, [checkNotificationPermission])
 
 	// Функция рендеринга элемента поста
 	const renderPostItem = useCallback(
@@ -401,6 +464,9 @@ const Profile = () => {
 						paddingHorizontal: 16
 					}}
 				/>
+				<BottomSheet ref={bottomSheetRef} blurDisabled={Platform.OS === 'android'}>
+					{bottomSheetContent}
+				</BottomSheet>
 			</BlurProvider>
 		</Page>
 	)

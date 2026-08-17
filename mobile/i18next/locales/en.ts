@@ -43,6 +43,13 @@ const en: Translations = {
 			trackingNotificationTitle: 'Location tracking',
 			trackingNotificationBody: 'The app is collecting data about your location'
 		},
+		WorkoutAutoFinish: {
+			notificationChannelName: 'Workouts',
+			warningTitle: 'Workout is about to end',
+			warningBody: 'The workout will be completed automatically in 5 minutes',
+			doneTitle: 'Workout completed',
+			doneBody: 'The workout has been completed automatically'
+		},
 		FormErrors: {
 			one: 'character',
 			two: 'characters',
@@ -89,7 +96,9 @@ const en: Translations = {
 				noInternetConnectionTrainingWillTakePlaceOffline:
 					'No internet connection, the workout will take place in offline mode',
 				trainingEndedTooEarly: 'The workout ended too early',
-				noInternetTheWorkoutCanBeSavedLater: 'No internet access, the workout can be saved later'
+				noInternetTheWorkoutCanBeSavedLater: 'No internet access, the workout can be saved later',
+				workoutAutoFinished: 'The workout has been completed automatically',
+				workoutAutoFinishedNoInternet: 'The workout has been completed automatically, data will be saved later'
 			},
 			error: {
 				startingLocationTracking: 'Error starting location tracking',

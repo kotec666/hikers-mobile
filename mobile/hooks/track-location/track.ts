@@ -10,6 +10,8 @@ import { prepareLocationsForSync } from '@/helpers/prepareLocationsForSync'
 import { getItem } from '@/store/authStorage'
 import { filterLocations } from '@/helpers/location/filterLocations'
 import { updateWorkoutLiveActivityFromLastLocation } from '@/hooks/track-location/liveActivityMetrics'
+import { endWorkoutLiveActivity } from '@/hooks/track-location/liveActivity'
+import { autoFinishActiveWorkout, isWorkoutDueForAutoFinish } from '@/helpers/workoutAutoFinish'
 import i18n from '@/i18next/i18next'
 
 export const LOCATION_TASK_NAME = 'background-location-task'
@@ -68,6 +70,19 @@ TaskManager.defineTask(
 		}
 
 		const meta = getWorkoutMeta(user?.id)
+
+		// Автозавершение по истечении N: сразу останавливаем сервис геолокации,
+		// чтобы он не висел и не писал точки после дедлайна, затем завершаем тренировку.
+		if (meta && isWorkoutDueForAutoFinish(meta)) {
+			console.warn('[tracking] workout is due for auto-finish, stopping tracking...')
+			void stopTracking()
+			void endWorkoutLiveActivity()
+			void autoFinishActiveWorkout(user?.id).then((result) => {
+				console.log('[tracking] auto-finish result:', result)
+			})
+			return
+		}
+
 		if (!meta || !data?.locations?.length) return
 		const cleanedLocations = filterLocations(data.locations, { keepLast: true })
 		const savedLocations = setWorkoutItems(cleanedLocations, user?.id)

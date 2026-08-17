@@ -17,6 +17,7 @@ import { runWorkoutStorageMigrations } from '@/store/workoutVersioning'
 import { workoutStorage } from '@/store/workoutStorage'
 import { KeyboardProvider } from 'react-native-keyboard-controller'
 import { queryClient } from '@/queries/queryClient'
+import { initializeWorkoutAutoFinishNotifications } from '@/services/workoutAutoFinishNotifications'
 import { LngLong, LngShort } from '@/store/languageStorage'
 import './../global.css'
 
@@ -143,6 +144,7 @@ export default function RootLayout() {
 		// Дополнительно вызывается при первом импорте модуля workoutStorage.
 		runWorkoutStorageMigrations(workoutStorage)
 		clearExpiredTimers() // очистка истекших таймеров для восстановления пароля / подтверждения почты
+		void initializeWorkoutAutoFinishNotifications()
 	}, [])
 
 	useEffect(() => {

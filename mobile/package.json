@@ -17,7 +17,7 @@
 		"web": "expo start --web",
 		"lint": "eslint .",
 		"set-emulator-proxy": "node scripts/set-emulator-proxy.js",
-		"typecheck": "bash scripts/typecheck.sh",
+		"typecheck": "tsc --noEmit",
 		"check": "yarn lint && yarn typecheck",
 		"format": "prettier --write \"{app,components,constants,helpers,hooks,scripts}/**/*.{js,jsx,ts,tsx}\""
 	},
@@ -55,6 +55,7 @@
 		"expo-location": "~57.0.2",
 		"expo-native-sheet-emojis": "^2.1.2",
 		"expo-network": "~57.0.0",
+		"expo-notifications": "~57.0.11",
 		"expo-quick-actions": "^6.0.1",
 		"expo-router": "~57.0.4",
 		"expo-secure-store": "~57.0.0",

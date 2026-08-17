@@ -45,6 +45,12 @@ import BlurProvider from '@/components/providers/BlurProvider'
 import { saveSingleWorkout, WorkoutSource } from '@/helpers/saveUnsavedTraining'
 import EndTrainingModal from '@/components/training/EndTrainingModal'
 import { calculateAverageSpeedKmh, getWorkoutElapsedMs } from '@/helpers/workoutMetrics'
+import { autoFinishActiveWorkout, isWorkoutDueForAutoFinish, type AutoFinishResult } from '@/helpers/workoutAutoFinish'
+import {
+	cancelWorkoutAutoFinishNotifications,
+	requestWorkoutAutoFinishNotificationPermission,
+	scheduleWorkoutAutoFinishNotifications
+} from '@/services/workoutAutoFinishNotifications'
 import { restoreWorkoutLiveActivity } from '@/hooks/track-location/liveActivityMetrics'
 import {
 	addWorkoutLiveActivityWidgetActionListener,
@@ -82,6 +88,7 @@ const PAUSE_DEBOUNCE_MS = 300
 const YA_MAP_INITIAL_MAP_ZOOM = 14
 const RN_MAP_INITIAL_MAP_ZOOM = 500
 const FINISH_CLEANUP_TIMEOUT_MS = 5000
+const AUTO_FINISH_POLL_MS = 10 * 1000
 
 const withTimeout = (promise: Promise<unknown>, ms: number, label: string): Promise<unknown> =>
 	Promise.race([
@@ -225,6 +232,11 @@ export default function NewTraining() {
 
 		const checkAndReviveTracking = async () => {
 			try {
+				// Если активная тренировка уже завершена (мета удалена) или истёк дедлайн
+				// автозавершения — сервис локации не перезапускаем.
+				const meta = getWorkoutMeta(user?.id)
+				if (!meta || isWorkoutDueForAutoFinish(meta)) return
+
 				const isRunning = await isTrackingLocation()
 				if (!isRunning) {
 					console.warn('[watchdog] Tracking is not running for active workout. Restarting...')
@@ -246,7 +258,7 @@ export default function NewTraining() {
 		})
 
 		return () => sub.remove()
-	}, [isWorkoutStarted, isPaused])
+	}, [isWorkoutStarted, isPaused, user?.id])
 
 	const startTrackingLocation = useCallback(async () => {
 		try {
@@ -343,6 +355,78 @@ export default function NewTraining() {
 		}
 	}, [])
 
+	const handleAutoFinishResult = useCallback(
+		(result: AutoFinishResult) => {
+			if (result === 'no-op') return
+
+			if (result === 'finished') {
+				toast.info(t('ToastMessage.info.workoutAutoFinished'))
+			} else if (result === 'moved-to-unsaved') {
+				toast.info(t('ToastMessage.info.workoutAutoFinishedNoInternet'))
+			}
+
+			// Тренировка завершена в фоне или при возврате в приложение — сбрасываем UI
+			stopHeadingTracking()
+			stopActiveTracking()
+			void tracking.stopTracking()
+			void endWorkoutLiveActivity()
+			resetWorkoutState()
+		},
+		[toast, t, stopHeadingTracking, stopActiveTracking, tracking, resetWorkoutState]
+	)
+
+	const syncWorkoutWithAutoFinish = useCallback(async () => {
+		const meta = getWorkoutMeta(user?.id)
+
+		// Мета исчезла, а тренировка всё ещё «запущена» в UI — её завершила фоновая задача локации.
+		if (!meta) {
+			if (isWorkoutStarted) {
+				stopHeadingTracking()
+				stopActiveTracking()
+				void tracking.stopTracking()
+				void endWorkoutLiveActivity()
+				resetWorkoutState()
+			}
+			return
+		}
+
+		if (isWorkoutDueForAutoFinish(meta)) {
+			const result = await autoFinishActiveWorkout(user?.id)
+			handleAutoFinishResult(result)
+		}
+	}, [
+		user?.id,
+		isWorkoutStarted,
+		stopHeadingTracking,
+		stopActiveTracking,
+		tracking,
+		resetWorkoutState,
+		handleAutoFinishResult
+	])
+
+	// При возвращении приложения в foreground проверяем, не истёк ли дедлайн автозавершения.
+	// (Пока трекинг жив, это делает и фоновая задача локации — здесь страховка на случай её остановки.)
+	useEffect(() => {
+		const sub = AppState.addEventListener('change', (nextAppState) => {
+			if (nextAppState === 'active') {
+				void syncWorkoutWithAutoFinish()
+			}
+		})
+
+		return () => sub.remove()
+	}, [syncWorkoutWithAutoFinish])
+
+	// Опрос в foreground: фоновая задача может завершить тренировку, пока пользователь на экране.
+	useEffect(() => {
+		if (!isWorkoutStarted) return
+
+		const interval = setInterval(() => {
+			void syncWorkoutWithAutoFinish()
+		}, AUTO_FINISH_POLL_MS)
+
+		return () => clearInterval(interval)
+	}, [isWorkoutStarted, syncWorkoutWithAutoFinish])
+
 	const checkPermissions = useCallback(async () => {
 		const foregroundStatus = await Location.getForegroundPermissionsAsync()
 		const backgroundStatus = await Location.getBackgroundPermissionsAsync()
@@ -390,6 +474,14 @@ export default function NewTraining() {
 
 	const startWorkout = useCallback(
 		async (workoutType: TrainingType, afterReboot: boolean) => {
+			// Автозавершение по истечении N (например, холодный старт, когда дедлайн уже прошёл)
+			const activeMeta = getWorkoutMeta(user?.id)
+			if (activeMeta && isWorkoutDueForAutoFinish(activeMeta)) {
+				const result = await autoFinishActiveWorkout(user?.id)
+				handleAutoFinishResult(result)
+				return
+			}
+
 			const shortWorkouts = getShortWorkouts(user?.id)
 			const isShortWorkoutsExist = shortWorkouts.length
 
@@ -462,6 +554,14 @@ export default function NewTraining() {
 				setIsWorkoutStarted(true)
 				startAndStoreNewActiveWorkout(workoutType, newTrainingId, user?.id)
 				acceptLivePointsRef.current = true // включаем live точки сразу после старта
+
+				// Планируем локальные уведомления о предупреждении и автозавершении
+				const startedAt = getWorkoutMeta(user?.id)?.startedAt
+				if (startedAt) {
+					void requestWorkoutAutoFinishNotificationPermission().then((granted) => {
+						if (granted) void scheduleWorkoutAutoFinishNotifications(startedAt)
+					})
+				}
 			}
 
 			if (afterReboot) {
@@ -477,6 +577,7 @@ export default function NewTraining() {
 		[
 			acceptLivePointsRef,
 			checkPermissions,
+			handleAutoFinishResult,
 			isInternetConnectedRef,
 			setIsWorkoutStarted,
 			startHeadingTracking,
@@ -705,6 +806,7 @@ export default function NewTraining() {
 			stopHeadingTracking()
 
 			const meta = getWorkoutMeta(user?.id)
+			if (meta?.startedAt) void cancelWorkoutAutoFinishNotifications(meta.startedAt)
 			calculateMetricsWhenFinished(meta)
 
 			// Если завершил рано
