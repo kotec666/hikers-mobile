@@ -15,7 +15,7 @@ const AllowNotifications = (props: { allow: () => void; close: () => void }) => 
 					{t('WorkoutPage.bottomSheets.notifications.title')}
 				</Text>
 			</View>
-			<View className="w-full gap-[10px]">
+			<View className="gap-[10px]">
 				<Button variant="white" onPress={props.allow}>
 					{t('WorkoutPage.bottomSheets.actions.allow')}
 				</Button>

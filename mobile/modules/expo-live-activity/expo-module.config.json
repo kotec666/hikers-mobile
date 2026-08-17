@@ -1,6 +1,9 @@
 {
-  "platforms": ["apple"],
+  "platforms": ["apple", "android"],
   "apple": {
     "modules": ["ExpoLiveActivityModule"]
+  },
+  "android": {
+    "modules": ["expo.modules.liveactivity.ExpoLiveActivityModule"]
   }
 }

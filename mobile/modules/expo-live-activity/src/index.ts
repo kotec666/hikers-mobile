@@ -29,7 +29,7 @@ type ExpoLiveActivityModule = {
 
 let ExpoLiveActivity: ExpoLiveActivityModule | null = null
 
-if (Platform.OS === 'ios') {
+if (Platform.OS === 'ios' || Platform.OS === 'android') {
 	ExpoLiveActivity = requireOptionalNativeModule<ExpoLiveActivityModule>('ExpoLiveActivityModule')
 }
 
@@ -77,6 +77,9 @@ export interface LiveActivityLabels {
 	speed: string
 	averageSpeed: string
 	speedUnit: string
+	pauseActionLabel?: string
+	resumeActionLabel?: string
+	completeActionLabel?: string
 }
 
 export interface LiveActivityMetrics {

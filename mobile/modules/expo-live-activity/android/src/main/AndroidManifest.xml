@@ -1,0 +1,15 @@
+<manifest xmlns:android="http://schemas.android.com/apk/res/android">
+
+    <application>
+        <receiver
+            android:name=".LiveActivityActionReceiver"
+            android:exported="false">
+            <intent-filter>
+                <action android:name="run.hikers.app.LIVE_ACTIVITY_PAUSE" />
+                <action android:name="run.hikers.app.LIVE_ACTIVITY_RESUME" />
+                <action android:name="run.hikers.app.LIVE_ACTIVITY_COMPLETE" />
+            </intent-filter>
+        </receiver>
+    </application>
+
+</manifest>

@@ -21,6 +21,7 @@ const ru = {
 			edit: 'Редактирование',
 			workout: 'Тренировка',
 			pause: 'Пауза',
+			resume: 'Продолжить',
 			savedSuccess: 'Данные успешно сохранены',
 			quitWithoutSave: 'Выйти без сохранения данных?'
 		},

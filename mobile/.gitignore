@@ -20,6 +20,11 @@ expo-env.d.ts
 *.key
 *.mobileprovision
 
+# Local native module build artifacts
+modules/*/android/.gradle/
+modules/*/android/build/
+modules/*/android/local.properties
+
 # Metro
 .metro-health-check*
 

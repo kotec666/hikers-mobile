@@ -10,11 +10,12 @@ type WorkoutLiveActivityIcon = 'RUNNING' | 'WALKING' | 'BIKING' | 'WORKOUT'
 type WorkoutWidgetActionListener = (event: PendingWidgetAction) => void
 
 const isIOS = Platform.OS === 'ios'
+const isAndroid = Platform.OS === 'android'
 let activeWorkoutLiveActivityId: string | null = null
 
 const getWorkoutLiveActivityIcon = (workoutType: TrainingType): WorkoutLiveActivityIcon => {
 	if (workoutType === TrainingType.RUN) return 'RUNNING'
-	if (workoutType === TrainingType.WALK) return 'WALKING'
+	if (workoutType === TrainingType.WALK || workoutType === TrainingType.TRACK) return 'WALKING'
 	if (workoutType === TrainingType.BICYCLE) return 'BIKING'
 
 	return 'WORKOUT'
@@ -26,7 +27,10 @@ const buildWorkoutLiveActivityLabels = (): LiveActivityLabels => ({
 	distance: `${i18n.t('measurementUnits.range')} (${i18n.t('measurementUnits.km.short')})`,
 	speed: i18n.t('measurementUnits.speed'),
 	averageSpeed: i18n.t('measurementUnits.avgSpeed'),
-	speedUnit: `(${i18n.t('measurementUnits.kmh')})`
+	speedUnit: `(${i18n.t('measurementUnits.kmh')})`,
+	pauseActionLabel: i18n.t('common.pause'),
+	resumeActionLabel: i18n.t('common.resume'),
+	completeActionLabel: i18n.t('WorkoutPage.finishButton')
 })
 
 const getExistingActivityId = () => {
@@ -34,7 +38,7 @@ const getExistingActivityId = () => {
 	return activeActivity?.id ?? null
 }
 
-const canUseLiveActivity = () => isIOS && liveActivities.isLiveActivityAvailable()
+const canUseLiveActivity = () => (isIOS || isAndroid) && liveActivities.isLiveActivityAvailable()
 
 export const startWorkoutLiveActivity = async (
 	workoutType: TrainingType,
@@ -83,13 +87,13 @@ export const endWorkoutLiveActivity = async (): Promise<boolean> => {
 }
 
 export const consumePendingWorkoutLiveActivityAction = (): PendingWidgetAction | null => {
-	if (!isIOS) return null
+	if (!isIOS && !isAndroid) return null
 
 	return liveActivities.consumePendingWidgetAction()
 }
 
 export const addWorkoutLiveActivityWidgetActionListener = (listener: WorkoutWidgetActionListener) => {
-	if (!isIOS) return { remove: () => {} }
+	if (!isIOS && !isAndroid) return { remove: () => {} }
 
 	return liveActivities.addListener('onWidgetAction', (event) => {
 		listener(event as PendingWidgetAction)
