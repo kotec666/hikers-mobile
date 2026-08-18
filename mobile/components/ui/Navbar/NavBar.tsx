@@ -1,12 +1,5 @@
-import React, { useCallback, useEffect } from 'react'
+import React, { useCallback } from 'react'
 import { StyleSheet, View, Pressable, Platform } from 'react-native'
-import Animated, {
-	useSharedValue,
-	useAnimatedStyle,
-	withTiming,
-	interpolate,
-	interpolateColor
-} from 'react-native-reanimated'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
 import { Colors } from '@/constants/Colors'
 import { RelativePathString, usePathname } from 'expo-router'
@@ -15,69 +8,33 @@ import { tabsConfig } from '@/components/ui/Navbar/tabs.config'
 import { useSafeNavigation } from '@/hooks/useSafeNavigation'
 import { isLiquidGlassAvailable } from 'expo-glass-effect'
 
-type TabBarState = {
-	index: number
-	routes: { name: string }[]
-}
-
-type AnimatedButtonProps = {
+type NavBarButtonProps = {
 	isActive: boolean
 	onPress: () => void
 	Icon: React.FC<{ stroke: string }>
 }
 
-const AnimatedButton: React.FC<AnimatedButtonProps> = ({ isActive, onPress, Icon }) => {
-	const progress = useSharedValue(isActive ? 1 : 0)
-
-	useEffect(() => {
-		progress.value = withTiming(isActive ? 1 : 0, { duration: 250 })
-	}, [isActive, progress])
-
-	const animatedStyle = useAnimatedStyle(() => {
-		const scale = interpolate(progress.value, [0, 1], [1, 1.1])
-		const backgroundColor = interpolateColor(progress.value, [0, 1], ['transparent', Colors.white])
-
-		return {
-			transform: [{ scale }],
-			backgroundColor
-		}
-	})
-
+const NavBarButton: React.FC<NavBarButtonProps> = ({ isActive, onPress, Icon }) => {
 	const stroke = isActive ? 'black' : 'white'
 
 	return (
-		<Pressable onPress={onPress} style={{ flex: 1 }}>
-			<Animated.View style={[styles.NavBarButton, animatedStyle]}>
-				<Icon stroke={stroke} />
-			</Animated.View>
+		<Pressable
+			onPress={onPress}
+			style={[styles.NavBarButton, isActive && styles.NavBarButtonActive]}
+			collapsable={false}
+		>
+			<Icon stroke={stroke} />
 		</Pressable>
 	)
 }
 
-const NavBar = ({ state }: { state?: TabBarState }) => {
+const NavBar = () => {
 	const insets = useSafeAreaInsets()
 	const { push } = useSafeNavigation()
 	const pathname = usePathname()
 
-	// Активная вкладка определяется по pathname (глобальный контекст expo-router
-	// всегда перерисует NavBar при любой навигации), а НЕ по state табов.
-	// state.routes[state.index] в момент тяжёлого маунта экрана тренировки
-	// (инициализация карты, открытие BottomSheet геолокации, низкий FPS) может
-	// «зависнуть» на прошлой вкладке, и панель не скроется до повторного входа.
-	void state
 	const activeRouteName = tabsConfig.find((tab) => pathname.startsWith(tab.href))?.id
 	const shouldHide = activeRouteName === 'newTraining'
-
-	const hidden = useSharedValue(shouldHide ? 1 : 0)
-
-	useEffect(() => {
-		hidden.value = withTiming(shouldHide ? 1 : 0, { duration: 250 })
-	}, [shouldHide, hidden])
-
-	const animatedContainer = useAnimatedStyle(() => ({
-		opacity: 1 - hidden.value,
-		transform: [{ translateY: hidden.value * 80 }]
-	}))
 
 	const getActiveId = () => {
 		const found = tabsConfig.find((tab) => tab.id === activeRouteName)
@@ -103,11 +60,11 @@ const NavBar = ({ state }: { state?: TabBarState }) => {
 	if (isGlassAvailable) {
 		return null
 	}
+	if (shouldHide) {
+		return null
+	}
 	return (
-		<Animated.View
-			style={[styles.NavBarContainer, animatedContainer, { bottom: insets.bottom }]}
-			pointerEvents="box-none"
-		>
+		<View style={[styles.NavBarContainer, { bottom: insets.bottom }]} pointerEvents="box-none">
 			<View
 				style={[
 					styles.NavBarButtonsContainer,
@@ -125,7 +82,7 @@ const NavBar = ({ state }: { state?: TabBarState }) => {
 					/>
 				)}
 				{tabsConfig.map((tab) => (
-					<AnimatedButton
+					<NavBarButton
 						key={tab.id}
 						isActive={activeId === tab.id}
 						onPress={() => handlePress(tab.href)}
@@ -133,7 +90,7 @@ const NavBar = ({ state }: { state?: TabBarState }) => {
 					/>
 				))}
 			</View>
-		</Animated.View>
+		</View>
 	)
 }
 
@@ -165,9 +122,15 @@ const styles = StyleSheet.create({
 		overflow: 'hidden'
 	},
 	NavBarButton: {
+		flex: 1,
 		justifyContent: 'center',
 		alignItems: 'center',
-		paddingVertical: 10,
-		borderRadius: 100
+		paddingTop: 10,
+		paddingBottom: 5,
+		borderRadius: 100,
+		overflow: 'hidden'
+	},
+	NavBarButtonActive: {
+		backgroundColor: Colors.white
 	}
 })

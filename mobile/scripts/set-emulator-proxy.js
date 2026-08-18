@@ -14,6 +14,7 @@
  */
 
 const { spawnSync } = require('child_process')
+const os = require('os')
 
 const DEFAULT_PROXY_HOST = '10.0.2.2'
 const DEFAULT_PROXY_PORT = '10809'
@@ -27,6 +28,30 @@ function readArg(flag) {
 const proxyHost = process.env.EMULATOR_PROXY_HOST || readArg('--host') || DEFAULT_PROXY_HOST
 const proxyPort = process.env.EMULATOR_PROXY_PORT || readArg('--port') || DEFAULT_PROXY_PORT
 const proxyValue = `${proxyHost}:${proxyPort}`
+
+// Hosts that must always bypass the proxy: the Metro dev server (loopback and
+// the real LAN IP). Otherwise the proxy corrupts Metro's chunked/multipart
+// bundle responses and breaks the WebSocket.
+function getLanIPv4() {
+	const interfaces = os.networkInterfaces()
+	const isVirtual = /tun|tap|vethernet|virtual|docker|vpn|ppp|wintun|loopback|bluetooth|wi-fi direct/i
+	const candidates = []
+
+	for (const [name, addrs] of Object.entries(interfaces)) {
+		if (!addrs) continue
+		for (const addr of addrs) {
+			if (addr.family !== 'IPv4' || addr.internal) continue
+			if (addr.address.startsWith('169.254.')) continue
+			candidates.push({ name, address: addr.address })
+		}
+	}
+
+	const real = candidates.filter((c) => !isVirtual.test(c.name))
+	const pool = real.length ? real : candidates
+	return pool[0]?.address
+}
+
+const EXCLUDED_HOSTS = ['localhost', '127.0.0.1', '10.0.2.2', ...(getLanIPv4() ? [getLanIPv4()] : [])].join(',')
 
 function run(args) {
 	return spawnSync('adb', args, { encoding: 'utf8', stdio: ['ignore', 'pipe', 'pipe'] })
@@ -55,15 +80,30 @@ for (const serial of emulators) {
 
 	if (currentValue === proxyValue) {
 		console.log(`[${serial}] proxy already set: ${proxyValue}`)
-		continue
+	} else {
+		const putResult = run(['-s', serial, 'shell', 'settings', 'put', 'global', 'http_proxy', proxyValue])
+		if (putResult.status === 0) {
+			console.log(`[${serial}] proxy set: ${proxyValue}`)
+		} else {
+			console.error(`[${serial}] failed to set proxy:`, putResult.stderr?.trim())
+		}
 	}
 
-	const putResult = run(['-s', serial, 'shell', 'settings', 'put', 'global', 'http_proxy', proxyValue])
-	if (putResult.status === 0) {
-		console.log(`[${serial}] proxy set: ${proxyValue}`)
+	const exclusionResult = run([
+		'-s',
+		serial,
+		'shell',
+		'settings',
+		'put',
+		'global',
+		'global_http_proxy_exclusion_list',
+		EXCLUDED_HOSTS
+	])
+	if (exclusionResult.status === 0) {
+		console.log(`[${serial}] proxy exclusion list set: ${EXCLUDED_HOSTS}`)
 	} else {
-		console.error(`[${serial}] failed to set proxy:`, putResult.stderr?.trim())
+		console.error(`[${serial}] failed to set proxy exclusion list:`, exclusionResult.stderr?.trim())
 	}
 }
 
-console.log(`Done. Emulator requests will now go through ${proxyValue}.`)
+console.log(`Done. Emulator requests will now go through ${proxyValue}, excluding ${EXCLUDED_HOSTS}.`)
