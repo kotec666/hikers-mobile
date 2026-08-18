@@ -5,6 +5,8 @@ import {
 	editProfileBadge,
 	editProfileColor,
 	editProfileData,
+	confirmEmailChange,
+	requestEmailChange,
 	getProfileData,
 	IProfile
 } from '@/api/profile'
@@ -147,6 +149,24 @@ export const useConfirmEmailMutation = () => {
 	// const toast = useToast()
 	return useMutation({
 		mutationFn: ({ email, code }: { email: string; code: string }) => confirmEmailCode(email, code)
+	})
+}
+
+export const useRequestEmailChangeMutation = () => {
+	return useMutation({
+		mutationFn: ({ newEmail, password }: { newEmail: string; password: string }) =>
+			requestEmailChange(newEmail, password)
+	})
+}
+
+export const useConfirmEmailChangeMutation = () => {
+	const queryClient = useQueryClient()
+
+	return useMutation({
+		mutationFn: (code: string) => confirmEmailChange(code),
+		onSuccess: async () => {
+			await queryClient.invalidateQueries({ queryKey: QUERY_KEYS.MY_PROFILE })
+		}
 	})
 }
 

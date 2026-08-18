@@ -14,7 +14,8 @@ const timerStorageKey = 'TIMER_STORAGE'
 
 export enum TimerType {
 	EMAIL_CONFIRMATION = 'email_confirmation',
-	PASSWORD_RECOVERY = 'password_recovery'
+	PASSWORD_RECOVERY = 'password_recovery',
+	EMAIL_CHANGE = 'email_change'
 }
 
 interface IBaseTimerInfo {
@@ -24,10 +25,12 @@ interface IBaseTimerInfo {
 
 export type IEmailConfirmationTimer = IBaseTimerInfo
 export type IPasswordRecoveryTimer = IBaseTimerInfo
+export type IEmailChangeTimer = IBaseTimerInfo
 
 interface ITimerTypeMap {
 	[TimerType.EMAIL_CONFIRMATION]: IEmailConfirmationTimer
 	[TimerType.PASSWORD_RECOVERY]: IPasswordRecoveryTimer
+	[TimerType.EMAIL_CHANGE]: IEmailChangeTimer
 }
 
 type TimerCollection<T> = Record<string, T>
@@ -35,6 +38,7 @@ type TimerCollection<T> = Record<string, T>
 interface ITimerStorage {
 	[TimerType.EMAIL_CONFIRMATION]: TimerCollection<IEmailConfirmationTimer>
 	[TimerType.PASSWORD_RECOVERY]: TimerCollection<IPasswordRecoveryTimer>
+	[TimerType.EMAIL_CHANGE]: TimerCollection<IEmailChangeTimer>
 }
 
 //
@@ -43,7 +47,8 @@ interface ITimerStorage {
 
 const initialTimerStorage: ITimerStorage = {
 	email_confirmation: {},
-	password_recovery: {}
+	password_recovery: {},
+	email_change: {}
 }
 
 //

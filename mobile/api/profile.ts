@@ -81,3 +81,51 @@ export const editProfileBadge = async (badge: string): Promise<ISuccess> => {
 export const deleteMyAccount = async (): Promise<ISuccess> => {
 	return (await fetcher.delete('user/me')).json()
 }
+
+// ============================================================
+// СМЕНА ПОЧТЫ
+// Бэкенд ещё не реализован: реальные вызовы закомментированы,
+// временно работают моки. TODO: раскомментировать после бэкенда.
+// ============================================================
+
+let mockedPendingNewEmail: string | null = null
+
+/**
+ * Шаг 1: запросить код для смены почты (на новую почту).
+ * Бэкенд: POST /profile/email-change/request { newEmail, password }
+ */
+export const requestEmailChange = async (
+	newEmail: string,
+	_password: string
+): Promise<{
+	success: boolean
+	waitMs: number
+}> => {
+	// const res = await fetcher.post('profile/email-change/request', {
+	// 	json: { newEmail, password }
+	// })
+	// return (await res.json()) as { success: boolean; waitMs: number }
+
+	mockedPendingNewEmail = newEmail
+	await new Promise((resolve) => setTimeout(resolve, 600))
+	return { success: true, waitMs: 60_000 }
+}
+
+/**
+ * Шаг 2: подтвердить код смены почты.
+ * Бэкенд: POST /profile/email-change/confirm { code }
+ */
+export const confirmEmailChange = async (
+	_code: string
+): Promise<{
+	email: string
+	isEmailConfirmed: boolean
+}> => {
+	// const res = await fetcher.post('profile/email-change/confirm', {
+	// 	json: { code }
+	// })
+	// return (await res.json()) as { email: string; isEmailConfirmed: boolean }
+
+	await new Promise((resolve) => setTimeout(resolve, 600))
+	return { email: mockedPendingNewEmail ?? '', isEmailConfirmed: true }
+}

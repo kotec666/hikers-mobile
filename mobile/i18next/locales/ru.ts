@@ -630,7 +630,8 @@ const ru = {
 				inAppNotifications: 'Уведомления внутри приложения',
 				chooseYour: 'Выбор своего ',
 				color: 'цвета',
-				language: 'Язык'
+				language: 'Язык',
+				changeEmail: 'Сменить почту'
 			},
 			deleteAccount: 'Удалить аккаунт',
 			deleteAccountDetails:
@@ -640,6 +641,17 @@ const ru = {
 				accountDeleteText:
 					'Вы уверены, что хотите удалить свою учетную запись? Это действие необратимо, и все ваши данные будут безвозвратно удалены.'
 			}
+		},
+		ChangeEmailPage: {
+			header: 'Смена почты',
+			currentEmail: 'Текущая почта',
+			newEmailPlaceholder: 'Введите новую почту',
+			currentPasswordPlaceholder: 'Введите текущий пароль',
+			willSendToNewEmail: 'Мы отправим код подтверждения на новую почту',
+			codeSent: 'Мы отправили код на',
+			enterCode: 'Введите код',
+			resendCode: 'Отправить код повторно',
+			sendCode: 'Отправить код'
 		},
 		PhotoPicker: {
 			camera: 'Камера',

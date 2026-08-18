@@ -14,6 +14,8 @@ export interface IUser {
 	color: string
 	badge: string | null
 	avatarFilename: null | string
+	email?: null | string
+	isEmailConfirmed?: boolean
 }
 
 // signed-in — токен обновлён; logged-out — рефреш отклонён сервером и сессия сброшена;

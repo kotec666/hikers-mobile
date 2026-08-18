@@ -629,7 +629,8 @@ const en: Translations = {
 				inAppNotifications: 'In-app notifications',
 				chooseYour: 'Choose your ',
 				color: 'color',
-				language: 'Language'
+				language: 'Language',
+				changeEmail: 'Change email'
 			},
 			deleteAccount: 'Delete account',
 			deleteAccountDetails:
@@ -639,6 +640,17 @@ const en: Translations = {
 				accountDeleteText:
 					'Are you sure you want to delete your account? This action is irreversible, and all your data will be permanently deleted.'
 			}
+		},
+		ChangeEmailPage: {
+			header: 'Change email',
+			currentEmail: 'Current email',
+			newEmailPlaceholder: 'Enter new email',
+			currentPasswordPlaceholder: 'Enter current password',
+			willSendToNewEmail: 'We will send a confirmation code to your new email',
+			codeSent: 'We sent the code to',
+			enterCode: 'Enter the code',
+			resendCode: 'Resend code',
+			sendCode: 'Send code'
 		},
 		PhotoPicker: {
 			camera: 'Camera',

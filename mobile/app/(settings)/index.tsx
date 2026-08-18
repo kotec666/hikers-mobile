@@ -114,6 +114,10 @@ const SettingsPage = () => {
 								onPress={() => push('/(settings)/in-app-notifications')}
 							/>
 							<Setting
+								title={t('SettingsPage.settingsList.changeEmail')}
+								onPress={() => push('/(settings)/change-email')}
+							/>
+							<Setting
 								title={[
 									{ text: t('SettingsPage.settingsList.chooseYour') },
 									{ text: t('SettingsPage.settingsList.color'), color: Colors['green-main'] }
