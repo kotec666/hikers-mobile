@@ -13,7 +13,6 @@ import { IPoint } from '@/types/interfaces'
 import RNMapsUserLocationMarker, {
 	RNMapsUserLocationMarkerHandle
 } from '@/components/map/markers/UserLocationMarker/RNMapsUserLocationMarker'
-import { DEFAULT_APPLE_LEGAL_POSITION, DEFAULT_APPLE_LOGO_POSITION } from '@/constants/RNMap'
 import RNSegmentPolyline from '@/components/map/polyline/RNSegmentPolyline'
 import { cn } from '@/helpers/cn'
 
@@ -84,19 +83,23 @@ const RNMapWorkout = forwardRef<RNMapWorkoutHandle, IRNMapWorkoutProps>((props, 
 		if (!center) return
 		if (!mapRef.current) return
 
-		const cameraPosition = await mapRef.current.getCamera()
-		const newCameraPosition = {
-			...cameraPosition,
-			altitude: zoomInMeters, //  ?? 500 аналог zoom (в метрах)
-			center: { latitude: center.lat, longitude: center.lon }
-		}
-		if (animationType === RNMapAnimationType.SMOOTH) {
-			return mapRef.current.animateCamera(
-				newCameraPosition,
-				typeof durationMs === 'number' ? { duration: Math.max(0, Math.round(durationMs)) } : undefined
-			)
-		} else {
-			return mapRef.current.setCamera(newCameraPosition)
+		try {
+			const cameraPosition = await mapRef.current.getCamera()
+			const newCameraPosition = {
+				...cameraPosition,
+				altitude: zoomInMeters, //  ?? 500 аналог zoom (в метрах)
+				center: { latitude: center.lat, longitude: center.lon }
+			}
+			if (animationType === RNMapAnimationType.SMOOTH) {
+				return mapRef.current.animateCamera(
+					newCameraPosition,
+					typeof durationMs === 'number' ? { duration: Math.max(0, Math.round(durationMs)) } : undefined
+				)
+			} else {
+				return mapRef.current.setCamera(newCameraPosition)
+			}
+		} catch (error) {
+			console.warn('[RNMapWorkout] setMapCenter failed:', error)
 		}
 	}
 
@@ -201,8 +204,8 @@ const RNMapWorkout = forwardRef<RNMapWorkoutHandle, IRNMapWorkoutProps>((props, 
 				showsScale
 				showsCompass={false}
 				initialCamera={mapInitialCameraSettingsRef.current}
-				appleLogoInsets={props.appleLogoPosition || DEFAULT_APPLE_LOGO_POSITION}
-				legalLabelInsets={props.appleLegalPosition || DEFAULT_APPLE_LEGAL_POSITION}
+				{...(props.appleLogoPosition && { appleLogoInsets: props.appleLogoPosition })}
+				{...(props.appleLegalPosition && { legalLabelInsets: props.appleLegalPosition })}
 			>
 				<RNMapsUserLocationMarker
 					ref={props.userLocationMarkerRef}

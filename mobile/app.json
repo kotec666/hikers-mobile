@@ -44,111 +44,106 @@
       ]
     },
     "plugins": [
-      "expo-router",
-      [
-        "expo-quick-actions",
-        {
-          "androidIcons": {
-            "quick_action_new_training": {
-              "foregroundImage": "./assets/quick-actions/new-training.png",
-              "backgroundColor": "#FFFFFF"
-            },
-            "quick_action_search": {
-              "foregroundImage": "./assets/quick-actions/search.png",
-              "backgroundColor": "#FFFFFF"
-            },
-            "quick_action_report_a_problem": {
-              "foregroundImage": "./assets/quick-actions/report-a-problem.png",
-              "backgroundColor": "#FFFFFF"
-            }
-          }
-        }
-      ],
-      [
-        "expo-sensors",
-        {
-          "motionPermission": "Allow Hikers to access your device sensors"
-        }
-      ],
-      [
-        "expo-splash-screen",
-        {
-          "image": "./assets/images/splash-icon.png",
-          "imageWidth": 200,
-          "resizeMode": "contain",
-          "backgroundColor": "#252525"
-        }
-      ],
-      [
-        "expo-location",
-        {
-          "locationWhenInUsePermission": "We use your location to record your workouts and routes",
-          "locationAlwaysAndWhenInUsePermission": "Background location permission lets you continue recording your workout while the screen is locked",
-          "isAndroidForegroundServiceEnabled": true,
-          "isAndroidBackgroundLocationEnabled": true,
-          "isIosBackgroundLocationEnabled": true
-        }
-      ],
-      [
-        "react-native-yamap-plus",
-        {
-          "android_useYandexMapKitLite": true,
-          "ios_useYandexMapKitLite": true
-        }
-      ],
-      [
-        "expo-build-properties",
-        {
-          "ios": {
-            "usePrecompiledModules": false
-          },
-          "android": {
-            "kotlinVersion": "2.1.20",
-            "compileSdkVersion": 36,
-            "targetSdkVersion": 36,
-            "minSdkVersion": 26,
-            "buildArchs": [
-              "arm64-v8a",
-              "x86_64"
-            ],
-            "enableMinifyInReleaseBuilds": true,
-            "enableShrinkResourcesInReleaseBuilds": true,
-            "enableBundleCompression": true
-          }
-        }
-      ],
-      [
-        "expo-image-picker",
-        {
-          "photosPermission": "The app needs access to your photo library to choose an image",
-          "cameraPermission": "The app needs access to your camera to add an image"
-        }
-      ],
-      "expo-font",
-      "expo-image",
-      [
-        "expo-notifications",
-        {
-          "color": "#3a72ff",
-          "defaultChannel": "workout"
-        }
-      ],
-      "expo-secure-store",
-      "react-native-maps",
-      "@bacons/apple-targets",
-      "./plugins/with-live-activity-widget-embed-fix",
-      "expo-status-bar",
-      [
-        "expo-native-sheet-emojis",
-        {
-          "searchLocales": [
-            "en",
-            "ru"
-          ]
-        }
-      ],
-      "expo-localization"
-    ],
+		"expo-router",
+		[
+			"expo-quick-actions",
+			{
+				"androidIcons": {
+					"quick_action_new_training": {
+						"foregroundImage": "./assets/quick-actions/new-training.png",
+						"backgroundColor": "#FFFFFF"
+					},
+					"quick_action_search": {
+						"foregroundImage": "./assets/quick-actions/search.png",
+						"backgroundColor": "#FFFFFF"
+					},
+					"quick_action_report_a_problem": {
+						"foregroundImage": "./assets/quick-actions/report-a-problem.png",
+						"backgroundColor": "#FFFFFF"
+					}
+				}
+			}
+		],
+		[
+			"expo-sensors",
+			{
+				"motionPermission": "Allow Hikers to access your device sensors"
+			}
+		],
+		[
+			"expo-splash-screen",
+			{
+				"image": "./assets/images/splash-icon.png",
+				"imageWidth": 200,
+				"resizeMode": "contain",
+				"backgroundColor": "#252525"
+			}
+		],
+		[
+			"expo-location",
+			{
+				"locationWhenInUsePermission": "We use your location to record your workouts and routes",
+				"locationAlwaysAndWhenInUsePermission": "Background location permission lets you continue recording your workout while the screen is locked",
+				"isAndroidForegroundServiceEnabled": true,
+				"isAndroidBackgroundLocationEnabled": true,
+				"isIosBackgroundLocationEnabled": true
+			}
+		],
+		[
+			"react-native-yamap-plus",
+			{
+				"android_useYandexMapKitLite": true,
+				"ios_useYandexMapKitLite": true
+			}
+		],
+		[
+			"expo-build-properties",
+			{
+				"ios": {
+					"usePrecompiledModules": false
+				},
+				"android": {
+					"kotlinVersion": "2.1.20",
+					"compileSdkVersion": 36,
+					"targetSdkVersion": 36,
+					"minSdkVersion": 26,
+					"buildArchs": ["arm64-v8a", "x86_64"],
+					"enableMinifyInReleaseBuilds": true,
+					"enableShrinkResourcesInReleaseBuilds": true,
+					"enableBundleCompression": true
+				}
+			}
+		],
+		[
+			"expo-image-picker",
+			{
+				"photosPermission": "The app needs access to your photo library to choose an image",
+				"cameraPermission": "The app needs access to your camera to add an image"
+			}
+		],
+		"expo-font",
+		"expo-image",
+		[
+			"expo-notifications",
+			{
+				"color": "#3a72ff",
+				"defaultChannel": "workout"
+			}
+		],
+		"expo-secure-store",
+		"react-native-maps",
+		"@bacons/apple-targets",
+		"./plugins/with-no-push-notifications",
+		"./plugins/with-live-activity-widget-embed-fix",
+		"expo-status-bar",
+		[
+			"expo-native-sheet-emojis",
+			{
+				"searchLocales": ["en", "ru"]
+			}
+		],
+		"expo-localization"
+	],
     "experiments": {
       "typedRoutes": true
     },

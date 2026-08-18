@@ -13,6 +13,7 @@ import { useSafeNavigation } from '@/hooks/useSafeNavigation'
 import { useToggleLikePostMutation } from '@/queries/posts'
 import { api } from '@/constants/Variables'
 import { useTranslation } from 'react-i18next'
+import * as Haptics from 'expo-haptics'
 
 interface IProps {
 	postId?: string
@@ -36,6 +37,7 @@ const PostListItemBottom = (props: IProps) => {
 			return
 		}
 
+		void Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success)
 		toggleLike({
 			postId: props.postId,
 			isLiked: props.isLiked
@@ -47,6 +49,7 @@ const PostListItemBottom = (props: IProps) => {
 		const anchor = findNodeHandle(shareButtonRef.current) ?? undefined
 
 		try {
+			void Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success)
 			await Share.share(
 				{
 					...(Platform.OS === 'android' ? { message: url } : { url })
