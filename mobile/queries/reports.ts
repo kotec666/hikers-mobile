@@ -1,6 +1,6 @@
 import { useInfiniteQuery, useMutation } from '@tanstack/react-query'
 import { useToast } from '@/hooks/useToast'
-import { createReport, getReportsMy, IReport } from '@/api/reports'
+import { createReport, getReportsMy, IReport, IReportData } from '@/api/reports'
 import { QUERY_KEYS } from '@/constants/query-keys'
 import { getFieldsErrors } from '@/helpers/getFieldsErrors'
 import { ReportType } from '@shared/enums'
@@ -12,7 +12,7 @@ export const useCreateReportMutation = () => {
 	const toast = useToast()
 
 	return useMutation({
-		mutationFn: (reportData: FormData) => createReport(reportData),
+		mutationFn: (reportData: IReportData) => createReport(reportData),
 		onSuccess: () => {
 			toast.success(t('ToastMessage.success.reportSent'))
 			// queryClient.setQueryData<IPost>([...QUERY_KEYS.REPORT_DETAILS, newReport.id], newReport)

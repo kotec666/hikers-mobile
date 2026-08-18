@@ -51,10 +51,13 @@ const PostListItemHeader = ({
 	const handleSubmitReport = async () => {
 		if (isPendingCreateReport || !postId) return
 		try {
-			const formData = new FormData()
-			formData.append('type', ReportType.TO_POST)
-			formData.append('relEntityId', postId)
-			await createReportMutation(formData)
+			// const formData = new FormData()
+			// formData.append('type', ReportType.TO_POST)
+			// formData.append('relEntityId', postId)
+			await createReportMutation({
+				type: ReportType.TO_POST,
+				relEntityId: postId
+			})
 		} catch (e: unknown) {
 			await getFieldsErrors(e, t)
 		}

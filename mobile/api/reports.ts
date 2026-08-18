@@ -14,6 +14,39 @@ export interface IReport {
 	fileNames: string[]
 }
 
+interface IDeviceInfo {
+	platform: string
+	brand: string | null
+	manufacturer: string | null
+	modelName: string | null
+	deviceName: string | null
+	deviceType: string | null
+	// ОС
+	osName: string | null
+	osVersion: string | null
+	// Приложение
+	appVersion: string | null
+	buildNumber: string | null
+
+	// Локаль
+	locale: string
+
+	// Экран
+	screen: {
+		width: number
+		height: number
+		scale: number
+		fontScale: number
+	}
+}
+
+export interface IReportData {
+	type: ReportType
+	relEntityId?: string
+	text?: string
+	deviceInfo?: IDeviceInfo
+}
+
 // Сообщить о проблеме или оставить жалобу
 /**
  *
@@ -21,14 +54,32 @@ export interface IReport {
  *    type: string [ReportType]
  *    relEntityId?: string [id сущности на которую пожаловались]
  *    text?: string [описание жалобы]
- *    files?: [массив файлов]
+ *    deviceInfo?: {
+ *        platform?: string
+ *        brand?: string
+ *        manufacturer?: string
+ *        modelName?: string
+ *        deviceName?: string
+ *        deviceType?: string
+ *        osName?: string
+ *        osVersion?: string
+ *        appVersion?: string
+ *        buildNumber?: string
+ *        locale?: string
+ *        screen?: {
+ * 			width: number
+ * 			height: number
+ * 			scale: number
+ * 			fontScale: number
+ *        }
+ *    }
  * }
  *
  */
-export const createReport = async (data: BodyInit): Promise<ISuccess> => {
+export const createReport = async (data: IReportData): Promise<ISuccess> => {
 	return (
 		await fetcher.post('reports', {
-			body: data
+			json: data
 		})
 	).json()
 }
