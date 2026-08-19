@@ -20,6 +20,7 @@ import { queryClient } from '@/queries/queryClient'
 import { initializeWorkoutAutoFinishNotifications } from '@/services/workoutAutoFinishNotifications'
 import { LngLong, LngShort } from '@/store/languageStorage'
 import './../global.css'
+import { Platform } from 'react-native'
 
 SplashScreen.preventAutoHideAsync()
 
@@ -71,6 +72,8 @@ void initializeYamap()
 // })
 
 const Root = ({ isAuthenticated }: { isAuthenticated: boolean }) => {
+	const isIOS = Platform.OS === 'ios'
+
 	return (
 		<QueryClientProvider client={queryClient}>
 			<GestureHandlerRootView className="flex-1">
@@ -87,7 +90,7 @@ const Root = ({ isAuthenticated }: { isAuthenticated: boolean }) => {
 								initialRouteName={isAuthenticated ? '(tabs)' : 'index'}
 							>
 								<Stack.Protected guard={isAuthenticated}>
-									<Stack.Screen name="(tabs)" />
+									<Stack.Screen name="(tabs)" options={{ animation: isIOS ? 'fade' : 'none' }} />
 									<Stack.Screen name="find-people" />
 									<Stack.Screen name="posts/members/[id]" />
 									<Stack.Screen name="posts/[id]" />

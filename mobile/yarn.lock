@@ -7055,10 +7055,10 @@ react-native-worklets@0.10.0:
     convert-source-map "^2.0.0"
     semver "^7.7.4"
 
-react-native-yamap-plus@^6.9.1:
-  version "6.9.1"
-  resolved "https://registry.yarnpkg.com/react-native-yamap-plus/-/react-native-yamap-plus-6.9.1.tgz#a4216df59ef2caec06a20cdbbe6626cbc9597c77"
-  integrity sha512-5onDdkm0xKcEpXCgltM4zrzXql0Ht07Fk92lDJLWkrDYw27aAHyxEs+GDeWMRplIroMcbSHnnmp2C+y4A2iing==
+react-native-yamap-plus@^6.10.0:
+  version "6.10.0"
+  resolved "https://registry.yarnpkg.com/react-native-yamap-plus/-/react-native-yamap-plus-6.10.0.tgz#b1d1d14efb86009018a4f23b27074cf94c4a6aec"
+  integrity sha512-SKoiZJ6yZtB1hEsSt9NzLtpIVQB6GIie2I9wBXXszm8N/C8hmj7WrhVhrgzAYjF8Kv/pEyHhb34lzjTBd6wl2A==
 
 react-native@0.86.0:
   version "0.86.0"

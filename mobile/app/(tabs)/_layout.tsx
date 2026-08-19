@@ -12,6 +12,22 @@ import type { RouterAction } from 'expo-quick-actions/router'
 import { useTranslation } from 'react-i18next'
 
 const AppNavigator = (props: { isAuthenticated: boolean }) => {
+	const isIOS = Platform.OS === 'ios'
+
+	/*
+                animation: 'none' обязателен для вкладки с картой (Yandex MapKit).
+                Карта рендерится через нативный SurfaceView, который живёт отдельно
+                от обычного View-дерева (hole punching, минуя View.draw()).
+                Fade-переход react-native-screens реализован через нативную
+                Fragment-транзакцию с alpha-анимацией, а alpha/transform на
+                предках не применяется к SurfaceView предсказуемо — во время
+                перехода вместо карты рендерится чёрный прямоугольник.
+                С animation: 'none' экран становится видимым мгновенно,
+                без alpha-композитинга, и SurfaceView рендерится штатно.
+                Чинится через переключение карты на TextureView (проходит
+                обычный View pipeline), но такой опции в react-native-yamap-plus
+                сейчас нет.
+    */
 	return (
 		<Tabs
 			initialRouteName="profile"
@@ -27,9 +43,9 @@ const AppNavigator = (props: { isAuthenticated: boolean }) => {
 			tabBar={() => <NavBar />}
 		>
 			<Stack.Protected guard={props.isAuthenticated}>
-				<Tabs.Screen name="profile" />
-				<Tabs.Screen name="posts" />
-				<Tabs.Screen name="newTraining" />
+				<Tabs.Screen name="profile" options={{ animation: isIOS ? 'fade' : 'none' }} />
+				<Tabs.Screen name="posts" options={{ animation: isIOS ? 'fade' : 'none' }} />
+				<Tabs.Screen name="newTraining" options={{ animation: isIOS ? 'fade' : 'none' }} />
 			</Stack.Protected>
 		</Tabs>
 	)

@@ -65,7 +65,6 @@ export function NotificationListItem(props: INotificationListItemProps) {
 	}
 	return (
 		<Pressable
-			onLayout={(e) => console.log(e.currentTarget.clientHeight)}
 			onPress={() => (redirectLink ? push(redirectLink) : undefined)}
 			className={cn('flex-row gap-4 items-center bg-black-0d px-[16px]', props.className)}
 		>
