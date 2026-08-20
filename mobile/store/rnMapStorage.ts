@@ -1,5 +1,5 @@
 import { createMMKV } from 'react-native-mmkv'
-import { Camera } from 'react-native-maps'
+import type { Camera } from 'react-native-maps'
 
 export const mapStorage = createMMKV({
 	id: 'rn-map-storage'

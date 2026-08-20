@@ -6,8 +6,8 @@ import { ITrainingMetrics } from '@/api/workout'
 import { useSafeNavigation } from '@/hooks/useSafeNavigation'
 import { useFullscreenMap } from '@/hooks/useFullscreenMap'
 import FullscreenMap from '@/components/map/FullscreenMap'
-import { IYaMapWorkoutProps } from '@/components/map/YaMapWorkout'
-import { IRNMapWorkoutProps } from '@/components/map/RNMapWorkout'
+import type { IYaMapWorkoutProps } from '@/components/map/YaMapWorkout'
+import type { IRNMapWorkoutProps } from '@/components/map/RNMapWorkout'
 
 export enum PostType {
 	FEED_LIST_ITEM = 'FEED_LIST_ITEM',

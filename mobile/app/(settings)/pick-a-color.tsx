@@ -16,8 +16,8 @@ import { KeyboardAwareScrollView } from 'react-native-keyboard-controller'
 import MapComponentColorPick from '@/components/map/MapComponentColorPick'
 import { useAnimatedColorPickProps } from '@/hooks/useAnimatedColorPickProps'
 import { useProfileQuery, useUpdateProfileColorMutation } from '@/queries/my-profile'
-import { RNMapColorPickHandle } from '@/components/map/RNMapComponentColorPick'
-import { RNMapsUserLocationMarkerHandle } from '@/components/map/markers/UserLocationMarker/RNMapsUserLocationMarker'
+import type { RNMapColorPickHandle } from '@/components/map/RNMapComponentColorPick'
+import type { RNMapsUserLocationMarkerHandle } from '@/components/map/markers/UserLocationMarker/RNMapsUserLocationMarker'
 import { useTranslation } from 'react-i18next'
 
 const { height } = Dimensions.get('screen')

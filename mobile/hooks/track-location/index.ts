@@ -8,7 +8,7 @@ import {
 	IWorkoutLocationStorageItem
 } from '@/store/workoutStorage'
 import { locationEmitter } from '@/hooks/track-location/locationEmitter'
-import { Point } from 'react-native-yamap-plus'
+import type { Point } from 'react-native-yamap-plus'
 import { MetricSpeedHandle } from '@/components/training/tabs/metrics/MetricSpeed'
 import { useLatest } from '@/hooks/useLatest'
 import { AppState, AppStateStatus, Platform } from 'react-native'
@@ -19,10 +19,11 @@ import { MetricHeightHandle } from '@/components/training/tabs/metrics/MetricHei
 import { MetricAvgSpeedHandle } from '@/components/training/tabs/metrics/MetricAvgSpeed'
 import { useAuthStore } from '@/store/authStore'
 import { calculateAverageSpeedKmh, getWorkoutElapsedMs } from '@/helpers/workoutMetrics'
-import { YaMapWorkoutHandle } from '@/components/map/YaMapWorkout'
-import { YaMapUserLocationMarkerHandle } from '@/components/map/markers/UserLocationMarker/YaMapUserLocationMarker'
-import { RNMapAnimationType, RNMapWorkoutHandle } from '@/components/map/RNMapWorkout'
-import { RNMapsUserLocationMarkerHandle } from '@/components/map/markers/UserLocationMarker/RNMapsUserLocationMarker'
+import type { YaMapWorkoutHandle } from '@/components/map/YaMapWorkout'
+import type { YaMapUserLocationMarkerHandle } from '@/components/map/markers/UserLocationMarker/YaMapUserLocationMarker'
+import { RNMapAnimationType } from '@/types/mapAnimationType'
+import type { RNMapWorkoutHandle } from '@/components/map/RNMapWorkout'
+import type { RNMapsUserLocationMarkerHandle } from '@/components/map/markers/UserLocationMarker/RNMapsUserLocationMarker'
 
 export function useLocationTracking() {
 	const onStartTracking = useCallback(async () => {

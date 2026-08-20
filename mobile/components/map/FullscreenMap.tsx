@@ -2,8 +2,8 @@ import React, { useMemo } from 'react'
 import { Modal, Platform, View } from 'react-native'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
 import CloseFullscreenModeButton from '@/components/ui/CloseFullscreenModeButton'
-import { IYaMapWorkoutProps } from '@/components/map/YaMapWorkout'
-import { IRNMapWorkoutProps } from '@/components/map/RNMapWorkout'
+import type { IYaMapWorkoutProps } from '@/components/map/YaMapWorkout'
+import type { IRNMapWorkoutProps } from '@/components/map/RNMapWorkout'
 
 interface Props {
 	visible: boolean

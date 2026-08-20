@@ -1,5 +1,6 @@
 import { useCallback } from 'react'
-import { Circle, Marker, LatLng, MapCircleProps, MapMarkerProps } from 'react-native-maps'
+import { Circle, Marker } from 'react-native-maps'
+import type { LatLng, MapCircleProps, MapMarkerProps } from 'react-native-maps'
 import Animated, {
 	cancelAnimation,
 	Easing,

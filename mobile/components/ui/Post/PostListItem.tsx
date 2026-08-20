@@ -7,8 +7,8 @@ import PostBodyWrapper, { PostType } from '@/components/ui/Post/PostBodyWrapper'
 import { TrainingType } from '@shared/enums'
 import { ITrainingMetrics } from '@/api/workout'
 import { IParticipant } from '@/api/posts'
-import { IYaMapWorkoutProps } from '@/components/map/YaMapWorkout'
-import { IRNMapWorkoutProps } from '@/components/map/RNMapWorkout'
+import type { IYaMapWorkoutProps } from '@/components/map/YaMapWorkout'
+import type { IRNMapWorkoutProps } from '@/components/map/RNMapWorkout'
 
 interface IProps {
 	isMyPost?: boolean

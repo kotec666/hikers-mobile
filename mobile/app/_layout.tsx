@@ -1,8 +1,6 @@
-import i18n from '@/i18next/i18next'
 import { useFonts } from 'expo-font'
 import { Stack, SplashScreen } from 'expo-router'
 import { fontFamily } from '@/constants/Fonts'
-import { YamapInstance } from 'react-native-yamap-plus'
 import { useAuthStore } from '@/store/authStore'
 import { useEffect } from 'react'
 import InAppNotificationProvider from '@/components/providers/InAppNotificationProvider'
@@ -18,36 +16,11 @@ import { workoutStorage } from '@/store/workoutStorage'
 import { KeyboardProvider } from 'react-native-keyboard-controller'
 import { queryClient } from '@/queries/queryClient'
 import { initializeWorkoutAutoFinishNotifications } from '@/services/workoutAutoFinishNotifications'
-import { LngLong, LngShort } from '@/store/languageStorage'
+import { initializeYamap } from '@/helpers/yamap'
 import './../global.css'
 import { Platform } from 'react-native'
 
 SplashScreen.preventAutoHideAsync()
-
-const initializeYamap = async () => {
-	try {
-		const currentLang = i18n.language as LngShort
-		const languages = {
-			[LngShort.ru]: LngLong.ru,
-			[LngShort.en]: LngLong.en
-		}
-
-		await YamapInstance.setLocale(languages[currentLang])
-	} catch (error) {
-		const message = error instanceof Error ? error.message : String(error)
-
-		if (!message.includes('setLocale() should be called before initialize()')) {
-			console.warn(error)
-		}
-	}
-
-	try {
-		await YamapInstance.init(process.env.EXPO_PUBLIC_YAMAP_KEY || '')
-		console.log('Yamap initialized')
-	} catch (error) {
-		console.warn(error)
-	}
-}
 
 void initializeYamap()
 

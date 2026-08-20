@@ -1,4 +1,5 @@
-import { Animation, InitialRegion, Point, Yamap, YamapRef } from 'react-native-yamap-plus'
+import { Animation, Yamap } from 'react-native-yamap-plus'
+import type { InitialRegion, Point, YamapRef } from 'react-native-yamap-plus'
 import React, { forwardRef, useCallback, useImperativeHandle, useMemo, useRef } from 'react'
 import { View } from 'react-native'
 import { IWorkoutLocationStorageItem } from '@/store/workoutStorage'

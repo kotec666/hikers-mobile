@@ -1,5 +1,6 @@
 import { View } from 'react-native'
-import MapView, { Polyline, Camera, EdgePadding } from 'react-native-maps'
+import MapView, { Polyline } from 'react-native-maps'
+import type { Camera, EdgePadding } from 'react-native-maps'
 import React, { forwardRef, useCallback, useImperativeHandle, useMemo, useRef } from 'react'
 import RNMapsStartLocationMarker from '@/components/map/markers/StartLocationMarker/RNMapsStartLocationMarker'
 import RNMapsPauseLocationMarker from '@/components/map/markers/PauseLocationMarker/RNMapsPauseLocationMarker'
@@ -15,11 +16,7 @@ import RNMapsUserLocationMarker, {
 } from '@/components/map/markers/UserLocationMarker/RNMapsUserLocationMarker'
 import RNSegmentPolyline from '@/components/map/polyline/RNSegmentPolyline'
 import { cn } from '@/helpers/cn'
-
-export enum RNMapAnimationType {
-	SMOOTH = 'smooth',
-	LINEAR = 'linear'
-}
+import { RNMapAnimationType } from '@/types/mapAnimationType'
 
 type PolylineRef = React.ComponentRef<typeof Polyline>
 

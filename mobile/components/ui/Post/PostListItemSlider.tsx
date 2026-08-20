@@ -4,8 +4,8 @@ import Animated, { useAnimatedScrollHandler, useSharedValue } from 'react-native
 import PostSliderItem from '@/components/ui/Post/PostSliderItem'
 import { useFullscreenMap } from '@/hooks/useFullscreenMap'
 import FullscreenMap from '@/components/map/FullscreenMap'
-import { IYaMapWorkoutProps } from '@/components/map/YaMapWorkout'
-import { IRNMapWorkoutProps } from '@/components/map/RNMapWorkout'
+import type { IYaMapWorkoutProps } from '@/components/map/YaMapWorkout'
+import type { IRNMapWorkoutProps } from '@/components/map/RNMapWorkout'
 import { useFullscreenImageViewer } from '@/hooks/useFullscreenImageViewer'
 import { PATH_TO_IMAGE } from '@/constants/PATH_TO_FILES'
 

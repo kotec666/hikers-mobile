@@ -19,7 +19,7 @@ import { Page } from '@/components/ui/Page'
 import { Directions, Language, LngShort, setLngToStorage, supportedLanguages } from '@/store/languageStorage'
 import VerticalPicker from '@/components/ui/VerticalPicker/VerticalPicker'
 import { useTranslation } from 'react-i18next'
-import { YamapInstance } from 'react-native-yamap-plus'
+import { setYamapLocale } from '@/helpers/yamap'
 
 const SettingsPage = () => {
 	const { t, i18n } = useTranslation()
@@ -63,7 +63,7 @@ const SettingsPage = () => {
 		setSelectedLanguage(lang)
 
 		if (isAndroid) {
-			void YamapInstance.setLocale(lang.lngLong)
+			void setYamapLocale(lang.lngLong)
 		}
 		// перезагрузка яндекс карт не дает моментальное изменение языка, только если перезайти в приложение с перезапуском =(
 		// и перезагрузка если RTL

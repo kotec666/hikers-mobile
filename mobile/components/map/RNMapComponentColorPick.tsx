@@ -12,7 +12,7 @@ import {
 	fifthPoint,
 	sixthPoint
 } from '@/constants/RNMap'
-import { MapPolylineProps } from 'react-native-maps/dist/src/MapPolyline'
+import type { MapPolylineProps } from 'react-native-maps/dist/src/MapPolyline'
 import RNMapsUserLocationMarker, {
 	RNMapsUserLocationMarkerHandle
 } from '@/components/map/markers/UserLocationMarker/RNMapsUserLocationMarker'

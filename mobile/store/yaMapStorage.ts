@@ -1,5 +1,5 @@
 import { createMMKV } from 'react-native-mmkv'
-import { InitialRegion } from 'react-native-yamap-plus'
+import type { InitialRegion } from 'react-native-yamap-plus'
 
 export const mapStorage = createMMKV({
 	id: 'ya-map-storage'

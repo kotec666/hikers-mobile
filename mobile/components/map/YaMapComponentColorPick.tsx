@@ -9,7 +9,7 @@ import YaMapUserLocationMarker from '@/components/map/markers/UserLocationMarker
 import { mapCenter, firstPoint, secondPoint, thirdPoint, fourthPoint, fifthPoint, sixthPoint } from '@/constants/RNMap'
 import { processColor, useAnimatedProps } from 'react-native-reanimated'
 import { YaMapAnimatedPolyline } from '@/components/map/YaMapAnimatedPolyline'
-import { PolylineNativeProps } from 'react-native-yamap-plus/src/spec/PolylineNativeComponent'
+import type { PolylineNativeProps } from 'react-native-yamap-plus/src/spec/PolylineNativeComponent'
 export type AnimatedYaMapPolylineProps = ReturnType<typeof useAnimatedProps<PolylineNativeProps>>
 
 export interface IYaMapComponentColorPickProps {

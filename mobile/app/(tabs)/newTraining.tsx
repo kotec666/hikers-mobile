@@ -63,7 +63,7 @@ import {
 import type { PendingWidgetAction } from '@/modules/expo-live-activity'
 import { useFinishWorkoutMutation } from '@/queries/workout'
 import { Page } from '@/components/ui/Page'
-import { RNMapAnimationType } from '@/components/map/RNMapWorkout'
+import { RNMapAnimationType } from '@/types/mapAnimationType'
 import { updateRNMapSettings } from '@/store/rnMapStorage'
 import { useTranslation } from 'react-i18next'
 // Debugging
