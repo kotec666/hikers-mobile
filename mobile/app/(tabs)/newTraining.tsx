@@ -119,6 +119,8 @@ export default function NewTraining() {
 
 	const [chosenWorkout, setChosenWorkout] = useState<IWorkoutModeElement>(WorkoutTypesData[0])
 	const [isEndTrainingModalOpen, setIsEndTrainingModalOpen] = useState(false)
+	const [isFinishing, setIsFinishing] = useState(false)
+	const isFinishingRef = useRef(false)
 	const handleClickStartRef = useRef<(afterReboot: boolean, workoutTypeOverride?: TrainingType) => void>(() => {})
 	// Добавляем флаг ожидания старта после получения прав
 	const isPendingStartRef = useRef(false) // флаг, который отвечает за ожидание запуска тренировки (пока permissions !== granted)
@@ -178,6 +180,7 @@ export default function NewTraining() {
 	)
 
 	const handleCloseEndModal = useCallback(() => {
+		if (isFinishingRef.current) return
 		setIsEndTrainingModalOpen(false)
 	}, [])
 
@@ -799,13 +802,17 @@ export default function NewTraining() {
 	}, [user, finishWorkout])
 
 	const handleClickEndWorkout = useCallback(async () => {
+		if (isFinishingRef.current) return
+		isFinishingRef.current = true
+		setIsFinishing(true)
+		let meta: IWorkoutMeta | null | void = null
 		try {
 			await withTimeout(tracking.stopTracking(), FINISH_CLEANUP_TIMEOUT_MS, 'stopTracking')
 			await withTimeout(endWorkoutLiveActivity(), FINISH_CLEANUP_TIMEOUT_MS, 'endLiveActivity')
 
 			stopHeadingTracking()
 
-			const meta = getWorkoutMeta(user?.id)
+			meta = getWorkoutMeta(user?.id)
 			if (meta?.startedAt) void cancelWorkoutAutoFinishNotifications(meta.startedAt)
 			calculateMetricsWhenFinished(meta)
 
@@ -853,7 +860,24 @@ export default function NewTraining() {
 			router.push(`/training/viewWorkout?mode=${VIEW_WORKOUT_MODE.VIEW}&unsavedStartedAt=${meta?.startedAt}`)
 		} catch (e: unknown) {
 			console.error('handleClickEndWorkout error: ', e)
+			const msg = (e as any)?.response ? await (e as any).response.json().catch(() => null) : null
+			const isNotFound = msg?.message === ERRORS.NOT_FOUND
+			if (isNotFound) {
+				// Гонка двойного клика: тренировка уже завершена на сервере - считаем успехом, чистим локально
+				const fallbackStartedAt = meta?.startedAt ?? getWorkoutMeta(user?.id)?.startedAt
+				clearActiveWorkoutData(user?.id)
+				resetWorkoutState()
+				if (fallbackStartedAt) {
+					router.push(
+						`/training/viewWorkout?mode=${VIEW_WORKOUT_MODE.VIEW}&unsavedStartedAt=${fallbackStartedAt}`
+					)
+				}
+				return
+			}
 			await getFieldsErrors(e, t)
+		} finally {
+			isFinishingRef.current = false
+			setIsFinishing(false)
 		}
 	}, [
 		tracking,
@@ -871,9 +895,11 @@ export default function NewTraining() {
 	])
 
 	const handleClickEnd = useCallback(() => {
-		handleCloseEndModal()
+		if (isFinishingRef.current) return
+		// Закрываем модалку только после установки флага, чтобы handleCloseEndModal не заблокировал
+		setIsEndTrainingModalOpen(false)
 		void handleClickEndWorkout()
-	}, [handleClickEndWorkout, handleCloseEndModal])
+	}, [handleClickEndWorkout])
 
 	return (
 		<Page edges={['top']}>
@@ -881,6 +907,7 @@ export default function NewTraining() {
 				<EndTrainingModal
 					blurDisabled={Platform.OS === 'android'}
 					open={isEndTrainingModalOpen}
+					disabled={isFinishing}
 					handleClose={handleCloseEndModal}
 					handleClickEnd={handleClickEnd}
 				/>

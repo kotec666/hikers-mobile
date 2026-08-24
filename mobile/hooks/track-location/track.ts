@@ -99,8 +99,14 @@ TaskManager.defineTask(
 					preparedLocations.map((item) => item.pointId),
 					user?.id
 				)
+			} else {
+				console.warn('[tracking] syncTraining returned not success', result)
 			}
-		} catch {}
+		} catch (e) {
+			// 30с токен + экран заблокирован -> refresh может упасть, оставляем точки как isSaved=false
+			// они догрузятся пачками при finish (saveSingleWorkout)
+			console.warn('[tracking] syncTraining failed (will retry on finish):', e)
+		}
 	}
 )
 

@@ -8,6 +8,7 @@ import { useTranslation } from 'react-i18next'
 interface IProps {
 	open: boolean
 	blurDisabled: boolean
+	disabled?: boolean
 	handleClose: () => void
 	handleClickEnd: () => void
 }
@@ -27,10 +28,20 @@ const EndTrainingModal = memo((props: IProps) => {
 					{t('common.actionCannotBeUndone')}
 				</Text>
 				<View className="flex-row gap-[10px]">
-					<Button onPress={props.handleClickEnd} variant="white" buttonContainerClassName="flex-1">
+					<Button
+						onPress={props.handleClickEnd}
+						variant="white"
+						buttonContainerClassName="flex-1"
+						isLoading={props.disabled}
+					>
 						{t('common.yes')}
 					</Button>
-					<Button onPress={props.handleClose} variant="white" buttonContainerClassName="flex-1">
+					<Button
+						onPress={props.handleClose}
+						variant="white"
+						buttonContainerClassName="flex-1"
+						disabled={props.disabled}
+					>
 						{t('common.no')}
 					</Button>
 				</View>

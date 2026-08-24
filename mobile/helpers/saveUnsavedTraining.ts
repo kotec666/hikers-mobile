@@ -60,9 +60,14 @@ export const syncWorkoutPoints = async ({
 			return
 		}
 
-		const [batch] = chunkArray(unsavedPoints)
+		// 50 = SYNC_QUEUE_METRICS_BATCH_SIZE на бэке, меньше запросов -> меньше рефрешей при 30с токене
+		const [batch] = chunkArray(unsavedPoints, 50)
 
 		const prepared = prepareLocationsForSync(batch)
+
+		console.log(
+			`[syncWorkoutPoints] ${source} pushing ${batch.length}/${unsavedPoints.length} points, trainingId=${trainingId}`
+		)
 
 		const res = await syncTraining(trainingId, prepared)
 
